@@ -82,7 +82,7 @@ class NanoBanana {
         console.log(data);
         const task = data?.data?.find(t => t.uuid === uuid);
         if (!task) {
-          await new Promise(r => setTimeout(r, 2e3));
+          await new Promise(r => setTimeout(r, 3e3));
           continue;
         }
         if (task.status === 2) {
@@ -92,7 +92,7 @@ class NanoBanana {
         if (task.status === 3 || task.error) {
           throw new Error(task.error || "Task failed");
         }
-        await new Promise(r => setTimeout(r, 2e3));
+        await new Promise(r => setTimeout(r, 3e3));
       } catch (e) {
         if (i === max - 1) throw e;
       }

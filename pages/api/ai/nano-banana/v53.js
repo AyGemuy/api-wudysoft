@@ -125,7 +125,7 @@ class NanoBanana {
   async scanMail() {
     this.log(`Waiting link for ${this.mail}...`);
     let i = 0;
-    while (i < 20) {
+    while (i < 60) {
       try {
         const {
           data
@@ -213,7 +213,7 @@ class NanoBanana {
   }
   async poll(tid, uid) {
     let e = 0;
-    while (e < 120) {
+    while (e < 60) {
       try {
         const {
           data

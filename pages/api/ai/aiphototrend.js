@@ -3,6 +3,7 @@ import crypto from "crypto";
 import * as cheerio from "cheerio";
 import FormData from "form-data";
 import https from "https";
+import SpoofHead from "@/lib/spoof-head";
 class AIPhotoTrend {
   constructor() {
     this.base = "https://aiphototrend.yurtybs.com";
@@ -19,7 +20,8 @@ class AIPhotoTrend {
         "sec-ch-ua": '"Not(A:Brand";v="8", "Chromium";v="144"',
         "sec-ch-ua-mobile": "?1",
         "x-requested-with": "com.aiphototrend",
-        "accept-language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
+        "accept-language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
+        ...SpoofHead()
       }
     });
     this.client.interceptors.response.use(response => {
