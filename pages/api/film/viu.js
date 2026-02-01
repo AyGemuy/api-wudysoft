@@ -3,7 +3,7 @@ import crypto from "crypto";
 import qs from "qs";
 import PROXY from "@/configs/proxy-url";
 const proxy = PROXY.url;
-console.log("CORS proxy", PROXY.url);
+console.log("CORS proxy", proxy);
 class ViuApi {
   constructor() {
     this.base = `${proxy}https://api-gateway-global.viu.com`;

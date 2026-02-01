@@ -1,8 +1,11 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import PROXY from "@/configs/proxy-url";
+const proxy = PROXY.url;
+console.log("CORS proxy", proxy);
 class Otakudesu {
   constructor() {
-    this.base = "https://otakudesu.best";
+    this.base = `${proxy}https://otakudesu.best`;
     this.headers = {
       accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
       "accept-language": "id-ID",
