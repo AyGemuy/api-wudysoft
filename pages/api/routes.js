@@ -1560,6 +1560,8 @@ export default function handler(req, res) {
     { path: "/api/maker/cooltext/get", name: "Get", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/maker/cooltext/search", name: "Search", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/maker/fansign/v1", name: "V1", params: [{ "name": "prompt", "in": "query", "required": false }], },
+    { path: "/api/maker/fansign/bahlil", name: "Bahlil", params: [{ "name": "prompt", "in": "query", "required": false }], },
+    { path: "/api/maker/fansign/ustadz", name: "Ustadz", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/maker/kalender/v1", name: "V1", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/maker/ktp/v1", name: "V1", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/maker/memegen/v1", name: "V1", params: [{ "name": "prompt", "in": "query", "required": false }], },

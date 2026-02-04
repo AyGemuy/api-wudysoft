@@ -7,6 +7,8 @@ import {
 } from "axios-cookiejar-support";
 import crypto from "crypto";
 import apiConfig from "@/configs/apiConfig";
+import PROMPT from "@/configs/ai-prompt";
+import SpoofHead from "@/lib/spoof-head";
 class Gempix {
   constructor() {
     this.cfg = {
@@ -25,7 +27,8 @@ class Gempix {
         "sec-ch-ua-mobile": "?1",
         "sec-ch-ua-platform": '"Android"',
         "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",
-        priority: "u=1, i"
+        priority: "u=1, i",
+        ...SpoofHead()
       },
       endpoints: {
         auth: {
@@ -55,7 +58,7 @@ class Gempix {
         poll_max: 60,
         poll_ms: 3e3,
         model: "nano",
-        prompt: "Masterpiece, high quality"
+        prompt: PROMPT.text
       }
     };
     this.jar = new CookieJar();
@@ -118,7 +121,7 @@ class Gempix {
       });
       this.log("Waiting OTP...");
       let code = null;
-      for (let i = 0; i < 60; i++) {
+      for (let i = 0; i < 20; i++) {
         await this.sleep(3e3);
         const {
           data: inbox
@@ -207,7 +210,7 @@ class Gempix {
       const mKey = Object.keys(this.cfg.endpoints.models).find(k => model?.toLowerCase().includes(k)) || this.cfg.defaults.model;
       const mCfg = this.cfg.endpoints.models[mKey];
       const pText = prompt || this.cfg.defaults.prompt;
-      this.log(`Model: ${mKey.toUpperCase()}`);
+      this.log(`Mode: ${mKey.toUpperCase()}`);
       const urls = [];
       if (image) {
         const list = Array.isArray(image) ? image : [image];
@@ -268,11 +271,11 @@ class Gempix {
   async status({
     session,
     task_id,
-    model
+    mode
   }) {
     if (session) this.load(session);
     try {
-      const mKey = Object.keys(this.cfg.endpoints.models).find(k => model?.toLowerCase().includes(k)) || "nano";
+      const mKey = Object.keys(this.cfg.endpoints.models).find(k => mode?.toLowerCase().includes(k)) || "nano";
       const url = `${this.cfg.endpoints.models[mKey].status}${task_id}`;
       return (await this.req("GET", url))?.data;
     } catch {
@@ -281,7 +284,7 @@ class Gempix {
       };
     }
   }
-  async wait(id, model) {
+  async wait(id, mode) {
     this.log(`Polling ${id}...`);
     const {
       poll_max,
@@ -291,12 +294,12 @@ class Gempix {
       await this.sleep(poll_ms);
       const res = await this.status({
         task_id: id,
-        model: model
+        mode: mode
       });
       const st = res.status || res.task?.status;
       if (["completed", "success"].includes(st)) {
         this.log("Done!");
-        return this.wrap(res, model);
+        return this.wrap(res, mode);
       }
       if (st === "failed") return {
         success: false,
@@ -309,7 +312,7 @@ class Gempix {
       error: "Timeout"
     };
   }
-  wrap(d, model) {
+  wrap(d, mode) {
     const r = d.result || d.task?.result || {};
     let media = [];
     if (r.images) media = r.images.map(x => x.url);
@@ -317,8 +320,8 @@ class Gempix {
     else if (d.task?.video_720p_url) media = [d.task.video_720p_url];
     return {
       success: true,
-      model: model,
-      type: model === "nano" ? "image" : "video",
+      model: mode,
+      type: mode === "nano" ? "image" : "video",
       media: media,
       cost: d.credits_used || d.task?.credits_used,
       session: this.save()
