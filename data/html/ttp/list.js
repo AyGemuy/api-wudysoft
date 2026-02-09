@@ -323,10 +323,9 @@ const templates = [{
                     var neonColor = getNeonColor();
                     teks.style.color = neonColor;
                     teks.style.borderColor = neonColor;
-                    teks.style.boxShadow = 
-                        `0 0 20px ${neonColor}, 
-                         inset 0 0 20px ${neonColor}40,
-                         0 0 40px ${neonColor}30`;
+                    teks.style.boxShadow = '0 0 20px ' + neonColor + ', ' +
+'inset 0 0 20px ' + neonColor + '40,' +
+'0 0 40px ' + neonColor + '30';
                 }, 200);
             } else {
                 teks.style.color = "#00ffea";
