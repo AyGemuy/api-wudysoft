@@ -6,7 +6,7 @@ const THEMES = {
     coords: "210,395,800,1350",
     lineSpacing: 70,
     fontSize: 59,
-    width: 39,
+    width: 900,
     height: 1600
   },
   blank: {
