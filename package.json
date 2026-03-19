@@ -100,7 +100,7 @@
     "mime-types": "latest",
     "moment": "^2.29.1",
     "moment-timezone": "latest",
-    "mongoose": "latest",
+    "mongoose": "^8.23.0",
     "mqtt": "latest",
     "next-secure-headers": "latest",
     "next-auth": "latest",

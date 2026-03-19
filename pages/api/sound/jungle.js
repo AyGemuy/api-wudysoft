@@ -1,68 +1,71 @@
-import fetch from "node-fetch";
+import axios from "axios";
 import * as cheerio from "cheerio";
-const AudioJungle = async (category, page = 1) => {
-  try {
-    const url = `https://audiojungle.net/search/${category}?page=${page}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch data: ${response.statusText}`);
-    const html = await response.text();
-    const $ = cheerio.load(html);
-    const sounds = [];
-    $("div.shared-item_cards-list-audio_card_component__root").each((i, elem) => {
-      const src = $(elem).find("source").attr("src");
-      const id = $(elem).data("item-id");
-      const name = $(elem).data("impression-name");
-      const brand = $(elem).data("impression-brand");
-      const price = $(elem).data("price");
-      const link = $(elem).find("a.shared-item_cards-list-audio_card_component__itemLinkOverlay").attr("href");
-      if (src) {
+class AudioJungle {
+  constructor() {
+    this.base = "https://audiojungle.net";
+    this.client = axios.create({
+      timeout: 1e4
+    });
+  }
+  async fetchSounds(category, page = 1) {
+    try {
+      const {
+        data
+      } = await this.client.get(`${this.base}/search/${category}?page=${page}`, {
+        responseType: "text"
+      });
+      const $ = cheerio.load(data);
+      const sounds = [];
+      $("div.shared-item_cards-list-audio_card_component__root").each((_, el) => {
+        const src = $(el).find("source").attr("src");
+        if (!src) return;
+        const link = $(el).find("a.shared-item_cards-list-audio_card_component__itemLinkOverlay").attr("href");
         sounds.push({
           src: src,
-          id: id,
-          name: name,
-          brand: brand,
-          price: price,
-          link: link ? `https://audiojungle.net${link}` : null
+          id: $(el).data("item-id"),
+          name: $(el).data("impression-name"),
+          brand: $(el).data("impression-brand"),
+          price: $(el).data("price"),
+          link: link ? `${this.base}${link}` : null
         });
-      }
-    });
-    if (sounds.length === 0) throw new Error("No sound data found");
-    return sounds;
-  } catch (error) {
-    console.error("Error fetching sounds:", error.message);
-    throw new Error(`Error fetching AudioJungle: ${error.message}`);
+      });
+      if (!sounds.length) throw new Error(JSON.stringify({
+        message: "No sound data found."
+      }));
+      return sounds;
+    } catch (e) {
+      const status = e.response?.status;
+      throw new Error(e.message.startsWith("{") ? e.message : JSON.stringify({
+        message: status ? `Fetch failed (HTTP ${status}).` : `Fetch failed: ${e.message}`
+      }));
+    }
   }
-};
-export default async function handler(req, res) {
-  const {
+  async generate({
     category,
     page,
     id
-  } = req.method === "GET" ? req.query : req.body;
-  if (!category) {
-    return res.status(400).json({
-      success: false,
-      message: "Category is required"
-    });
+  } = {}) {
+    if (!category) throw new Error(JSON.stringify({
+      message: "Parameter 'category' is required."
+    }));
+    const sounds = await this.fetchSounds(category, page);
+    const idx = id ? parseInt(id) - 1 : Math.floor(Math.random() * sounds.length);
+    if (idx < 0 || idx >= sounds.length) throw new Error(JSON.stringify({
+      message: `Index out of range. Valid: 1–${sounds.length}.`
+    }));
+    return sounds[idx];
   }
+}
+export default async function handler(req, res) {
+  const params = req.method === "GET" ? req.query : req.body;
   try {
-    const sounds = await AudioJungle(category, page);
-    const index = id ? parseInt(id) - 1 : Math.floor(Math.random() * sounds.length);
-    if (index < 0 || index >= sounds.length) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid id"
-      });
-    }
-    const sound = sounds[index];
+    const api = new AudioJungle();
+    const data = await api.generate(params);
     return res.status(200).json({
       success: true,
-      data: sound
+      data: data
     });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+  } catch (e) {
+    return res.status(500).json(JSON.parse(e.message));
   }
 }
