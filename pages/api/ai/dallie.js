@@ -141,7 +141,7 @@ class Dallie {
       } = await this.toBuffer(image);
       const fd = new FormData();
       fd.append("instruction", prompt);
-      fd.append("model", model || "gemini-2.0-flash-exp");
+      fd.append("model", model || "gemini-2.5-flash-image");
       fd.append("file", buf, {
         filename: "file.jpg",
         contentType: type

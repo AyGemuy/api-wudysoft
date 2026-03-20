@@ -679,6 +679,7 @@ export default function handler(req, res) {
     { path: "/api/ai/nano-banana/v61", name: "V61", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/ai/nano-banana/v62", name: "V62", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/ai/nano-banana/v63", name: "V63", params: [{ "name": "prompt", "in": "query", "required": false }], },
+    { path: "/api/ai/nano-banana/v64", name: "V64", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/ai/stable-horde", name: "Stable-horde", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/ai/seneca", name: "Seneca", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/ai/aiimageeditor", name: "Aiimageeditor", params: [{ "name": "prompt", "in": "query", "required": false }], },

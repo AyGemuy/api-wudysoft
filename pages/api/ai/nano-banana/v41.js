@@ -3,7 +3,7 @@ import https from "https";
 import FormData from "form-data";
 import crypto from "crypto";
 import SpoofHead from "@/lib/spoof-head";
-class EzAi {
+class NanoBanana {
   constructor() {
     this.agent = new https.Agent({
       rejectUnauthorized: false,
@@ -183,7 +183,7 @@ export default async function handler(req, res) {
       error: "Parameter 'prompt' diperlukan"
     });
   }
-  const api = new EzAi();
+  const api = new NanoBanana();
   try {
     const data = await api.generate(params);
     return res.status(200).json(data);

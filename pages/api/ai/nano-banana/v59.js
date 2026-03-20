@@ -1,7 +1,7 @@
 import axios from "axios";
 import FormData from "form-data";
 import crypto from "crypto";
-class BananoAI {
+class NanoBanana {
   constructor() {
     this.baseUrl = "https://api.bananoai.store";
     this.token = null;
@@ -174,7 +174,7 @@ export default async function handler(req, res) {
       }
     });
   }
-  const api = new BananoAI();
+  const api = new NanoBanana();
   try {
     let response;
     switch (action) {
