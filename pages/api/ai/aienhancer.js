@@ -97,7 +97,13 @@ class AIEnhancer {
       if (typeof input === "string" && input.startsWith("http")) {
         console.log(`[Image] Fetching from URL: ${input}`);
         const res = await axios.get(input, {
-          responseType: "arraybuffer"
+          responseType: "arraybuffer",
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            Referer: new URL(input).origin
+          }
         });
         const mime = res.headers["content-type"] || "image/jpeg";
         const base64 = Buffer.from(res.data).toString("base64");

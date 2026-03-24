@@ -59,7 +59,13 @@ class NananaAI {
       console.log("[INFO] Uploading image...");
       const form = new FormData();
       const buffer = Buffer.isBuffer(imgData) ? imgData : imgData.startsWith("http") ? (await axios.get(imgData, {
-        responseType: "arraybuffer"
+        responseType: "arraybuffer",
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+          Referer: new URL(imgData).origin
+        }
       })).data : Buffer.from(imgData.replace(/^data:image\/\w+;base64,/, ""), "base64");
       form.append("image", buffer, {
         filename: `image-${Date.now()}.jpg`,

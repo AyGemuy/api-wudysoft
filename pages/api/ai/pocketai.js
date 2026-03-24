@@ -55,7 +55,12 @@ class PocketAI {
       if (typeof img === "string" && (img.startsWith("http://") || img.startsWith("https://"))) {
         const res = await axios.get(img, {
           responseType: "arraybuffer",
-          timeout: 1e4
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            Referer: new URL(img).origin
+          }
         });
         const base64 = btoa(Array.from(new Uint8Array(res.data)).map(b => String.fromCharCode(b)).join(""));
         const mime = res.headers["content-type"] || "image/jpeg";

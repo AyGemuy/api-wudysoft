@@ -95,7 +95,13 @@ class NanoBanana {
       if (Buffer.isBuffer(src)) return src;
       if (typeof src === "string") {
         if (src.startsWith("http")) return (await axios.get(src, {
-          responseType: "arraybuffer"
+          responseType: "arraybuffer",
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            Referer: new URL(src).origin
+          }
         })).data;
         if (src.startsWith("data:")) return Buffer.from(src.split(",")[1], "base64");
         return Buffer.from(src, "base64");
