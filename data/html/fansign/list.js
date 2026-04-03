@@ -119,7 +119,7 @@ const templateData = [{
   padding: 10,
   rotate: null
 }, {
-  imageUrl: "https://8upload.com/image/ac29250b838398ec/perpus.jpg",
+  imageUrl: "https://iili.io/B3XUqdX.jpg",
   left: 211,
   top: 585,
   width: 498,
@@ -129,7 +129,7 @@ const templateData = [{
   padding: 10,
   rotate: "-2deg"
 }, {
-  imageUrl: "https://8upload.com/image/da41634c1154be59/ruang.jpg",
+  imageUrl: "https://iili.io/B3XUwkg.jpg",
   left: 176,
   top: 395,
   width: 234,

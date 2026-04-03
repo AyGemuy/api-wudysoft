@@ -14,12 +14,12 @@ class BahlilGen {
   genHtml(params) {
     const text = params.text || "Bahlil";
     const photoLibrary = {
-      normal: "https://8upload.com/image/fea07694059184d8/IMG-20260203-WA0084.jpg",
-      sad: "https://8upload.com/image/22a2bee870758cca/Generated_Image_February_03__2026_-_11_44PM.png",
-      beach: "https://8upload.com/image/42449058da9d827b/Generated_Image_February_03__2026_-_11_45PM.png",
-      minyak: "https://8upload.com/image/d86aabfb6e3481d8/Generated_Image_February_03__2026_-_11_46PM.png",
-      sawit: "https://8upload.com/image/b5f19608b846a8cd/Generated_Image_February_03__2026_-_11_47PM.png",
-      old: "https://8upload.com/image/666308d3524090ee/Generated_Image_February_03__2026_-_11_48PM.png"
+      normal: "https://iili.io/B3WRBxS.jpg",
+      sad: "https://iili.io/B3WRPXS.png",
+      beach: "https://iili.io/B3W552s.png",
+      minyak: "https://iili.io/B3W5yas.png",
+      sawit: "https://iili.io/B3W7GNR.png",
+      old: "https://iili.io/B3WYdUg.png"
     };
     const photoKey = params.photo || "normal";
     const selectedPhoto = photoLibrary[photoKey] || photoLibrary.normal;

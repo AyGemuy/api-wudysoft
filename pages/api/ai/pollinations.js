@@ -3,59 +3,83 @@ import qs from "qs";
 import FormData from "form-data";
 class PolliNations {
   constructor() {
-    this.imgbbConfig = {
-      url: "https://api.imgbb.com/1/upload",
-      key: "624e42298985c3cb644f4c12282b8d31",
-      expiration: 21600,
+    this.keys = ["sk_HKIJFyshGDbq5jrUVUVRRtSqnEg6zeDx", "plln_sk_GNq6hFXGtrbMXCJDKsgNpEYE25VHL0Fm"];
+    this.keyIndex = 0;
+    this.freeImageKeys = ["6d207e02198a847aa98d0a2a901485a5"];
+    this.freeImageKeyIndex = 0;
+    this.uploaderConfig = {
+      url: "https://freeimage.host/api/1/upload",
       headers: {
-        "User-Agent": "okhttp/5.3.2",
-        "Accept-Encoding": "gzip"
+        "User-Agent": "okhttp/4.9.2",
+        Accept: "application/json"
       }
     };
-    this.browserHeaders = {
-      "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
-      "Content-Type": "application/json",
-      Accept: "*/*"
-    };
-    this.skey = "sk_HKIJFyshGDbq5jrUVUVRRtSqnEg6zeDx";
     this.clients = {
       text: axios.create({
         baseURL: "https://text.pollinations.ai",
-        headers: this.browserHeaders
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
+          "Content-Type": "application/json",
+          Accept: "*/*"
+        }
       }),
       image: axios.create({
         baseURL: "https://image.pollinations.ai",
-        headers: this.browserHeaders
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
+          Accept: "*/*"
+        }
       }),
       gen: axios.create({
         baseURL: "https://gen.pollinations.ai",
-        headers: this.browserHeaders
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          Accept: "image/*,*/*;q=0.8",
+          "Accept-Encoding": "gzip",
+          "cache-control": "no-cache"
+        }
       })
+    };
+  }
+  nextKey() {
+    const key = this.keys[this.keyIndex];
+    this.keyIndex = (this.keyIndex + 1) % this.keys.length;
+    return key;
+  }
+  nextFreeImageKey() {
+    const key = this.freeImageKeys[this.freeImageKeyIndex];
+    this.freeImageKeyIndex = (this.freeImageKeyIndex + 1) % this.freeImageKeys.length;
+    return key;
+  }
+  authHeader(key) {
+    return {
+      authorization: `Bearer ${key}`
+    };
+  }
+  err(message) {
+    return {
+      error: true,
+      message: message
     };
   }
   async run({
     mode,
     ...params
   }) {
-    console.log(`\n[PolliNations] Starting Mode: ${mode?.toUpperCase()}`);
-    try {
-      if (!mode) throw new Error("Parameter 'mode' is required (chat | image | audio)");
-      switch (mode.toLowerCase()) {
-        case "chat":
-          return await this._chat(params);
-        case "image":
-          return await this._image(params);
-        case "audio":
-          return await this._audio(params);
-        default:
-          throw new Error(`Invalid mode: ${mode}. Available: chat, image, audio.`);
-      }
-    } catch (error) {
-      console.error(`[PolliNations] Critical Error in ${mode}:`, error.message);
-      throw error;
+    console.log(`\n[PolliNations] Mode: ${mode?.toUpperCase()}`);
+    if (!mode) return this.err("mode required: chat | image | audio");
+    switch (mode.toLowerCase()) {
+      case "chat":
+        return await this.chat(params);
+      case "image":
+        return await this.image(params);
+      case "audio":
+        return await this.audio(params);
+      default:
+        return this.err(`Invalid mode: ${mode}`);
     }
   }
-  async _chat({
+  async chat({
     messages = [],
     prompt,
     media = null,
@@ -64,34 +88,34 @@ class PolliNations {
     seed,
     jsonMode = false
   }) {
+    console.log("[Chat] Starting...");
     try {
-      console.log("[Chat] Initializing...");
-      if (!prompt && (!messages || messages.length === 0)) {
-        throw new Error("Chat requires 'prompt' string or 'messages' array.");
-      }
-      let finalMessages = Array.isArray(messages) ? [...messages] : [];
+      if (!prompt && messages.length === 0) return this.err("Provide 'prompt' or 'messages'.");
+      const finalMessages = [...messages];
       const userContent = [];
-      if (prompt) userContent.push({
-        type: "text",
-        text: prompt
-      });
+      if (prompt) {
+        userContent.push({
+          type: "text",
+          text: prompt
+        });
+      }
       if (media) {
-        console.log("[Chat] Processing media attachment...");
-        const imageUrl = await this._resolveMedia(media);
+        console.log("[Chat] Resolving media...");
+        const imageUrl = await this.resolveMedia(media);
+        if (imageUrl?.error) return imageUrl;
         userContent.push({
           type: "image_url",
           image_url: {
             url: imageUrl
           }
         });
-        console.log(`[Chat] Media attached: ${imageUrl}`);
+        console.log(`[Chat] Media resolved: ${imageUrl}`);
       }
-      if (userContent.length > 0) {
-        finalMessages.push({
-          role: "user",
-          content: userContent
-        });
-      }
+      if (userContent.length > 0) finalMessages.push({
+        role: "user",
+        content: userContent
+      });
+      const key = this.nextKey();
       const payload = {
         model: model,
         messages: finalMessages,
@@ -102,136 +126,162 @@ class PolliNations {
           seed: seed
         }
       };
-      console.log("[Chat] Sending payload to OpenAI endpoint...");
-      const response = await this.clients.text.post(`/openai?key=${this.skey}`, payload);
-      console.log("[Chat] Success.");
-      return response.data;
+      const res = await this.clients.text.post("/openai", payload, {
+        headers: this.authHeader(key)
+      });
+      return res.data;
     } catch (error) {
-      console.error("[Chat] Request Failed:", error.response?.data || error.message);
-      throw new Error(`Chat Error: ${error.message}`);
+      console.error("[Chat] Failed:", error.response?.data || error.message);
+      return this.err(`Chat Error: ${error.message}`);
     }
   }
-  async _image({
+  async image({
     prompt,
-    model = "flux",
-    width = 1024,
-    height = 1024,
+    image = null,
+    model,
+    width,
+    height,
     seed,
     nologo = true,
     enhance = true,
     safe = true
   }) {
-    try {
-      if (!prompt) throw new Error("Prompt is required for image generation.");
-      const params = {
-        width: width,
-        height: height,
-        model: model,
+    console.log("[Image] Starting...");
+    if (!prompt) return this.err("prompt required.");
+    const isI2I = image !== null && image !== undefined;
+    if (isI2I) {
+      return await this._i2i({
+        prompt: prompt,
+        image: image,
+        model: model || "p-image-edit",
+        width: width || 1080,
+        height: height || 1920,
+        safe: safe
+      });
+    } else {
+      return await this._t2i({
+        prompt: prompt,
+        model: model || "flux",
+        width: width || 1024,
+        height: height || 1024,
+        seed: seed,
         nologo: nologo,
         enhance: enhance,
-        safe: safe,
-        seed: seed || Math.floor(Math.random() * 1e9),
-        key: this.skey
-      };
-      const queryString = qs.stringify(params);
-      const url = `/prompt/${encodeURIComponent(prompt)}?${queryString}`;
-      console.log(`[Image] Fetching: ${this.clients.image.defaults.baseURL}${url}`);
-      const response = await this.clients.image.get(url, {
-        responseType: "arraybuffer"
+        safe: safe
       });
-      console.log(`[Image] Success (${response.data.length} bytes).`);
+    }
+  }
+  async _t2i(params) {
+    try {
+      const key = this.nextKey();
+      const resolvedSeed = params.seed || Math.floor(Math.random() * 1e9);
+      const q = qs.stringify({
+        ...params,
+        seed: resolvedSeed
+      });
+      const res = await this.clients.image.get(`/prompt/${encodeURIComponent(params.prompt)}?${q}`, {
+        responseType: "arraybuffer",
+        headers: this.authHeader(key)
+      });
       return {
         type: "buffer",
         mime: "image/jpeg",
-        data: Buffer.from(response.data)
+        data: Buffer.from(res.data)
       };
     } catch (error) {
-      console.error("[Image] Generation Failed:", error.message);
-      throw new Error(`Image Gen Error: ${error.message}`);
+      return this.err(`T2I Error: ${error.message}`);
     }
   }
-  async _audio({
+  async _i2i(params) {
+    try {
+      const imageUrl = await this.resolveMedia(params.image);
+      if (imageUrl?.error) return imageUrl;
+      const key = this.nextKey();
+      const q = qs.stringify({
+        ...params,
+        image: imageUrl
+      });
+      const res = await this.clients.gen.get(`/image/${encodeURIComponent(params.prompt)}?${q}`, {
+        responseType: "arraybuffer",
+        headers: this.authHeader(key)
+      });
+      return {
+        type: "buffer",
+        mime: "image/jpeg",
+        data: Buffer.from(res.data)
+      };
+    } catch (error) {
+      return this.err(`I2I Error: ${error.message}`);
+    }
+  }
+  async audio({
     prompt,
     model = "openai-audio",
     voice = "alloy"
   }) {
     try {
-      if (!prompt) throw new Error("Prompt/Text is required for audio generation.");
-      const params = {
+      if (!prompt) return this.err("prompt required.");
+      const key = this.nextKey();
+      const q = qs.stringify({
         model: model,
-        voice: voice,
-        key: this.skey
-      };
-      const queryString = qs.stringify(params);
-      const url = `/text/${encodeURIComponent(prompt)}?${queryString}`;
-      console.log(`[Audio] Fetching: ${this.clients.gen.defaults.baseURL}${url}`);
-      const response = await this.clients.gen.get(url, {
-        responseType: "arraybuffer"
+        voice: voice
       });
-      console.log(`[Audio] Success (${response.data.length} bytes).`);
+      const res = await this.clients.gen.get(`/text/${encodeURIComponent(prompt)}?${q}`, {
+        responseType: "arraybuffer",
+        headers: this.authHeader(key)
+      });
       return {
         type: "buffer",
         mime: "audio/mpeg",
-        data: Buffer.from(response.data)
+        data: Buffer.from(res.data)
       };
     } catch (error) {
-      console.error("[Audio] Generation Failed:", error.message);
-      throw new Error(`Audio Gen Error: ${error.message}`);
+      return this.err(`Audio Error: ${error.message}`);
     }
   }
-  async _resolveMedia(media) {
+  async resolveMedia(media) {
     try {
-      if (typeof media === "string" && (media.startsWith("http://") || media.startsWith("https://"))) {
-        return media;
-      }
-      let bufferToUpload;
-      let filename = "upload.jpg";
+      if (typeof media === "string" && /^https?:\/\//.test(media)) return media;
+      let buf;
       if (Buffer.isBuffer(media)) {
-        bufferToUpload = media;
+        buf = media;
       } else if (typeof media === "string") {
-        const base64Clean = media.replace(/^data:image\/\w+;base64,/, "");
-        bufferToUpload = Buffer.from(base64Clean, "base64");
+        buf = Buffer.from(media.replace(/^data:image\/\w+;base64,/, ""), "base64");
       } else {
-        throw new Error("Media format not supported. Use Buffer, Base64 String, or URL.");
+        return this.err("Media must be Buffer, base64, or URL.");
       }
-      return await this._uploadToImgBB(bufferToUpload, filename);
+      return await this.uploadToFreeImage(buf);
     } catch (error) {
-      console.error("[ResolveMedia] Error:", error.message);
-      throw error;
+      return this.err(`ResolveMedia Error: ${error.message}`);
     }
   }
-  async _uploadToImgBB(buffer, filename) {
+  async uploadToFreeImage(buffer) {
+    console.log(`[FreeImage] Uploading (${buffer.length} bytes)...`);
     try {
-      console.log(`[ImgBB] Uploading buffer (${buffer.length} bytes)...`);
+      const key = this.nextFreeImageKey();
       const form = new FormData();
-      form.append("image", buffer, {
-        filename: filename
+      form.append("source", buffer, {
+        filename: "upload.jpg"
       });
-      const config = {
-        method: "POST",
-        url: this.imgbbConfig.url,
+      form.append("action", "upload");
+      const {
+        data
+      } = await axios.post(this.uploaderConfig.url, form, {
         params: {
-          key: this.imgbbConfig.key,
-          expiration: this.imgbbConfig.expiration
+          key: key,
+          format: "json"
         },
         headers: {
-          ...this.imgbbConfig.headers,
+          ...this.uploaderConfig.headers,
           ...form.getHeaders()
-        },
-        data: form
-      };
-      const response = await axios.request(config);
-      if (response.data && response.data.success) {
-        const url = response.data.data.url;
-        console.log(`[ImgBB] Upload Success: ${url}`);
-        return url;
-      } else {
-        throw new Error("ImgBB API returned success: false");
-      }
+        }
+      });
+      if (data?.status_code !== 200) return this.err("FreeImage upload failed");
+      console.log(`[FreeImage] Upload success: ${data.image.url}`);
+      return data.image.url;
     } catch (error) {
-      const detail = error.response?.data ? JSON.stringify(error.response.data) : error.message;
-      console.error(`[ImgBB] Upload Failed: ${detail}`);
-      throw new Error("Failed to upload image to ImgBB.");
+      console.error("[FreeImage] Failed:", error.response?.data || error.message);
+      return this.err(`FreeImage Error: ${error.message}`);
     }
   }
 }
@@ -239,16 +289,15 @@ export default async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const api = new PolliNations();
   try {
-    const result = await api.run(input);
+    const result = await api.run(params);
     if (result.type === "buffer") {
       res.setHeader("Content-Type", result.mime);
       return res.status(200).send(result.data);
     }
     return res.status(200).json(result);
   } catch (error) {
-    const errorMessage = error.message || "Terjadi kesalahan saat memproses.";
     return res.status(500).json({
-      error: errorMessage
+      error: error.message
     });
   }
 }
