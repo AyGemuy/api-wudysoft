@@ -1,4 +1,4 @@
-const axios = require("axios");
+import axios from "axios";
 class AnimeKill {
   constructor() {
     this.baseURL = "https://apis.animekill.com";

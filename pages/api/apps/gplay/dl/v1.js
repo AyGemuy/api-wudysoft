@@ -1,118 +1,322 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import PROXY from "@/configs/proxy-url";
-const proxy = PROXY.url;
-console.log("CORS proxy", proxy);
+import {
+  execSync
+} from "child_process";
 class Mi9Downloader {
-  constructor() {
-    this.baseUrl = "https://apkdownloader.pages.dev";
-    this.tokenApi = `${proxy}https://token.mi9.com/`;
-    this.dataApi = `${proxy}https://api.mi9.com/get`;
+  constructor(options = {}) {
+    this.base_url = options.base_url || "https://apkdownloader.pages.dev";
+    this.token_api = options.token_api || "https://token.mi9.com/";
+    this.data_api = options.data_api || "https://api.mi9.com/get";
+    this.store_api = "https://play.google.com/store/apps/details";
     this.headers = {
       accept: "*/*",
-      "accept-language": "id-ID",
-      "content-type": "application/json",
-      origin: this.baseUrl,
-      referer: this.baseUrl + "/",
+      "accept-language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
+      origin: this.base_url,
+      referer: `${this.base_url}/`,
       "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",
       "sec-ch-ua-platform": '"Android"',
       "sec-ch-ua-mobile": "?1"
     };
-    this.mapDev = ["phone", "tablet", "tv", "ydev"];
-    this.mapArch = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"];
-    this.mapSdk = ["default", "35", "34", "33", "32", "31", "30", "29", "28", "27", "26", "25", "24", "23", "22", "21", "20", "19", "18", "17", "16", "15"];
-    this.mapLang = ["en", "af", "am", "ar", "az", "be", "bg", "bn", "bs", "ca", "cs", "da", "de", "el", "es", "et", "eu", "fa", "fi", "fil", "fr", "gl", "gu", "he", "hi", "hr", "hu", "hy", "id", "is", "it", "ja", "ka", "kk", "km", "kn", "ko", "ky", "lo", "lt", "lv", "mk", "ml", "mn", "mr", "ms", "my", "ne", "nl", "no", "pa", "pl", "pt-BR", "pt-PT", "ro", "ru", "si", "sk", "sl", "sq", "sr", "sv", "sw", "ta", "te", "th", "tr", "uk", "ur", "uz", "vi", "zh-CN", "zh-TW", "zu"];
+    this.valid_devices = ["phone", "tablet", "tv", "ydev"];
+    this.valid_archs = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"];
+    this.valid_sdks = ["default", "36", "35", "34", "33", "32", "31", "30", "29", "28", "27", "26", "25", "24", "23", "22", "21", "20", "19", "18", "17", "16", "15"];
+    this.valid_langs = ["en", "id", "af", "am", "ar", "az", "be", "bg", "bn", "bs", "ca", "cs", "da", "de", "el", "es", "et", "eu", "fa", "fi", "fil", "fr", "gl", "gu", "he", "hi", "hr", "hu", "hy", "is", "it", "ja", "ka", "kk", "km", "kn", "ko", "ky", "lo", "lt", "lv", "mk", "ml", "mn", "mr", "ms", "my", "ne", "nl", "no", "pa", "pl", "pt-BR", "pt-PT", "ro", "ru", "si", "sk", "sl", "sq", "sr", "sv", "sw", "ta", "te", "th", "tr", "uk", "ur", "uz", "vi", "zh-CN", "zh-TW", "zu"];
+    this.timeout = options.timeout || 3e4;
   }
-  log(msg) {
-    console.log(`[Mi9-DL] ${msg}`);
+  _log(msg, level = "INFO") {
+    console.log(`[${level}] [Mi9-DL] ${msg}`);
   }
-  val(input, list, def) {
-    return list.includes(input) ? input : def;
+  _validate(input, allowedList, defaultValue) {
+    return allowedList.includes(input) ? input : defaultValue;
   }
-  pid(str) {
+  _extractPackageId(str) {
+    if (!str) return null;
     const regex = /id=([a-zA-Z0-9_.]+)/;
-    const match = str?.match(regex);
-    return match ? match[1] : str;
+    const match = str.match(regex);
+    return match ? match[1] : str.trim();
   }
-  async getPlayInfo(urlOrId) {
-    const pkg = this.pid(urlOrId);
-    const playUrl = `https://play.google.com/store/apps/details?id=${pkg}`;
-    this.log(`Fetching Play Store Info: ${pkg}`);
+  _curl({
+    url,
+    method = "GET",
+    headers = {},
+    body = null
+  }) {
+    const headerArgs = Object.entries({
+      ...this.headers,
+      ...headers
+    }).map(([key, value]) => `-H '${key}: ${value}'`).join(" ");
+    let command = `curl -s -X ${method} "${url}" ${headerArgs}`;
+    if (method === "POST" && body) {
+      const dataRaw = JSON.stringify(body).replace(/'/g, "'\\''");
+      command += ` --data-raw '${dataRaw}'`;
+    }
     try {
-      const {
-        data: html
-      } = await axios.get(playUrl, {
-        headers: this.headers
+      return execSync(command, {
+        encoding: "utf-8",
+        maxBuffer: 15 * 1024 * 1024
       });
-      const $ = cheerio.load(html);
-      this.log("Play Store HTML received, parsing...");
-      const info = {
-        package_id: pkg,
-        url: playUrl,
-        title: $("h1 span").text().trim() || "No Title",
-        developer: $(".Vbfug span").text().trim() || $(".Au0qPl").text().trim() || "Unknown Developer",
-        icon: $(".Mqg6jb img").attr("src") || $(".T75of").first().attr("src"),
-        rating: $(".TT9eCd").text().trim().replace(",", ".") || "0",
-        updated: $(".xg1aie").text().trim() || "Unknown",
-        description: $(".bARER").text().trim(),
-        whats_new: $('[itemprop="description"]').first().text().trim(),
-        downloads: $(".wVqUob").filter((i, el) => $(el).text().includes("Download")).find(".ClM7O").text().trim() || "N/A",
-        reviews: $(".wVqUob").filter((i, el) => $(el).text().includes("ulasan") || $(el).text().includes("reviews")).find(".g1rdde").text().trim() || "N/A",
-        screenshots: []
-      };
-      $(".Atcj9b img").each((i, el) => {
-        const src = $(el).attr("srcset") || $(el).attr("src") || $(el).attr("data-src");
-        if (src) {
-          const cleanSrc = src.split(" ")[0];
-          info.screenshots.push(cleanSrc);
+    } catch (error) {
+      throw new Error(`Curl error: ${error.message}`);
+    }
+  }
+  async _axios(url, options = {}) {
+    const config = {
+      url: url,
+      method: options.method || "GET",
+      headers: {
+        ...this.headers,
+        ...options.headers
+      },
+      timeout: this.timeout,
+      ...options.data && {
+        data: options.data
+      },
+      ...options.params && {
+        params: options.params
+      }
+    };
+    try {
+      const response = await axios(config);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Axios error: ${error.message}`);
+    }
+  }
+  _parseSSE(rawText) {
+    let lastEvent = null;
+    const lines = rawText.split("\n");
+    for (const line of lines) {
+      if (line.startsWith("data:")) {
+        try {
+          const data = JSON.parse(line.slice(5).trim());
+          if (data.html || data.progress === 100) {
+            lastEvent = data;
+          }
+        } catch (e) {}
+      }
+    }
+    return lastEvent;
+  }
+  async getDetail(input) {
+    const pkg = this._extractPackageId(input);
+    if (!pkg) {
+      this._log("Invalid package ID or URL", "ERROR");
+      return null;
+    }
+    const playUrl = `${this.store_api}?id=${pkg}&hl=id&gl=ID`;
+    this._log(`Fetching detail for ${pkg} from ${playUrl}`);
+    try {
+      const html = await this._axios(playUrl, {
+        headers: {
+          "accept-language": "id-ID,id;q=0.9"
         }
       });
-      this.log(`Info retrieved: ${info.title} (${info.updated})`);
-      return info;
-    } catch (err) {
-      this.log(`Play Store Error: ${err.message}`);
+      const $ = cheerio.load(html);
+      const title = $("h1 span.AfwdI").first().text().trim() || $("h1").first().text().trim();
+      const devName = $(".Vbfug a span").first().text().trim() || $(".Vbfug span").first().text().trim();
+      const devLink = "https://play.google.com" + ($(".Vbfug a").attr("href") || "");
+      const devImg = null;
+      const rating = $(".TT9eCd").first().text().trim() + " bintang";
+      let totalReviews = $(".EHUI5b").first().text().trim() || $(".g1rdde:contains('ulasan')").first().text().trim() || "0";
+      let installs = "Tidak diketahui";
+      $(".wVqUob").each((i, el) => {
+        if ($(el).find(".g1rdde").text().trim() === "Download") {
+          installs = $(el).find(".ClM7O").text().trim();
+          return false;
+        }
+      });
+      const breakdown = {};
+      $(".JzwBgb").each((i, el) => {
+        const star = $(el).find(".Qjdn7d").text().trim();
+        const countMatch = $(el).attr("aria-label")?.match(/([\d.]+)\s+ulasan/);
+        const count = countMatch ? countMatch[1] : "0";
+        if (star) breakdown[`star_${star}`] = count;
+      });
+      let category = "";
+      $(".Uc6QCc .VfPpkd-vQzf8d").each((i, el) => {
+        const txt = $(el).text().trim();
+        if (txt && !txt.includes("#") && !txt.includes("gratis")) category = txt;
+      });
+      const contentRating = $('[itemprop="contentRating"] span').first().text().trim() || "Tidak tersedia";
+      let privacyPolicy = $("a[href*='privacy-policy']").attr("href");
+      if (!privacyPolicy) privacyPolicy = $("a[href*='privacy']").attr("href") || "https://policies.google.com/privacy";
+      const isVerified = $(".VfPpkd-vQzf8d").text().includes("diverifikasi") || false;
+      const updatedOn = $(".xg1aie").first().text().trim() || "Tidak tersedia";
+      const description = $(".bARER").first().text().trim() || "Tidak ada deskripsi";
+      let whatsNew = "";
+      $("section").each((i, sec) => {
+        if ($(sec).find("h2.XfZNbf:contains('Yang baru')").length) {
+          whatsNew = $(sec).find("[itemprop='description']").first().text().trim() || $(sec).find(".SfzRHd div").first().text().trim();
+          return false;
+        }
+      });
+      if (!whatsNew) whatsNew = $(".reAt0").first().text().trim() || "Tidak ada informasi perubahan.";
+      const screenshots = [];
+      $(".Atcj9b img").each((i, img) => {
+        let src = $(img).attr("srcset")?.split(" ")[0] || $(img).attr("src");
+        if (src && !src.includes("data:image")) screenshots.push(src);
+      });
+      const latestReviews = [];
+      $(".EGFGHd").slice(0, 5).each((i, rev) => {
+        const $rev = $(rev);
+        const userName = $rev.find(".X5PpBb").first().text().trim() || "Anonim";
+        const userPic = $rev.find(".gSGphe img").first().attr("src") || null;
+        let stars = 0;
+        $rev.find(".iXRFPc .F7XJmb").each((j, starEl) => {
+          if ($(starEl).find(".Z1Dz7b").length) stars++;
+        });
+        const date = $rev.find(".bp9Aid").first().text().trim() || "Tanggal tidak diketahui";
+        const comment = $rev.find(".h3YV2d").first().text().trim() || "Tidak ada komentar";
+        const likes = $rev.find(".AJTPZc").text().match(/\d+/)?.[0] || "0";
+        latestReviews.push({
+          user_name: userName,
+          user_pic: userPic,
+          rating: stars,
+          date: date,
+          comment: comment,
+          likes: likes
+        });
+      });
+      const hasInAppPurchases = $(".UIuSk:contains('Pembelian dalam aplikasi')").length > 0;
+      const supportedDevices = [];
+      if ($(".AqX8Cf").length) supportedDevices.push($(".vO0kpf .AqX8Cf").text().trim());
+      let version = "Tidak tersedia";
+      let requiresAndroid = "Tidak tersedia";
+      let exactDownloads = "Tidak tersedia";
+      let inAppPriceRange = "Tidak tersedia";
+      let interactiveElements = "Tidak tersedia";
+      let permissions = "Tidak tersedia";
+      let releaseDate = "Tidak tersedia";
+      let offeredBy = devName;
+      const $dialog = $(".G1zzid");
+      if ($dialog.length) {
+        $dialog.find(".sMUprd").each((i, item) => {
+          const label = $(item).find(".q078ud").text().trim();
+          const value = $(item).find(".reAt0").text().trim();
+          switch (label) {
+            case "Versi":
+              version = value;
+              break;
+            case "Perlu Android versi":
+              requiresAndroid = value;
+              break;
+            case "Download":
+              exactDownloads = value;
+              break;
+            case "Pembelian dalam aplikasi":
+              inAppPriceRange = value;
+              break;
+            case "Elemen interaktif":
+              interactiveElements = value;
+              break;
+            case "Izin":
+              permissions = value;
+              break;
+            case "Dirilis tanggal":
+              releaseDate = value;
+              break;
+            case "Ditawarkan oleh":
+              offeredBy = value;
+              break;
+          }
+        });
+      }
+      if (releaseDate === "Tidak tersedia") {
+        const script = $('script[type="application/ld+json"]').html();
+        if (script) {
+          try {
+            const json = JSON.parse(script);
+            if (json.datePublished) releaseDate = json.datePublished;
+          } catch (e) {}
+        }
+      }
       return {
-        error: true,
-        message: "Failed to fetch Play Store data",
-        details: err.message
+        id: pkg,
+        link: playUrl,
+        title: title,
+        developer: {
+          name: devName,
+          img: devImg,
+          link: devLink
+        },
+        stats: {
+          rating: rating,
+          total_reviews: totalReviews,
+          installs: installs,
+          breakdown: breakdown,
+          exact_downloads: exactDownloads
+        },
+        metadata: {
+          category: category || "Tidak tersedia",
+          content_rating: contentRating,
+          released_on: releaseDate,
+          privacy_policy: privacyPolicy,
+          in_app_purchases: hasInAppPurchases,
+          in_app_price_range: inAppPriceRange,
+          version: version,
+          requires_android: requiresAndroid,
+          interactive_elements: interactiveElements,
+          permissions: permissions,
+          offered_by: offeredBy
+        },
+        is_verified: isVerified,
+        updated_on: updatedOn,
+        supported_devices: supportedDevices,
+        description: description,
+        whats_new: whatsNew,
+        screenshots: screenshots,
+        latest_reviews: latestReviews
       };
+    } catch (err) {
+      this._log(`Error in getDetail: ${err.message}`, "ERROR");
+      return null;
     }
   }
   async download({
-    url,
-    ...rest
+    query,
+    device = "phone",
+    arch = "arm64-v8a",
+    sdk = "default",
+    lang = "en"
   }) {
-    const pkg = this.pid(url);
-    const playInfo = await this.getPlayInfo(pkg) || [];
+    const pkg = this._extractPackageId(query);
+    if (!pkg) {
+      return {
+        error: true,
+        message: "URL atau Package ID tidak valid"
+      };
+    }
+    const playInfo = await this.getDetail(pkg);
     const conf = {
       package: pkg,
-      device: this.val(rest.device, this.mapDev, "phone"),
-      arch: this.val(rest.arch, this.mapArch, "arm64-v8a"),
-      sdk: this.val(rest.sdk, this.mapSdk, "default"),
-      lang: this.val(rest.language, this.mapLang, "en"),
+      device: this._validate(device, this.valid_devices, "phone"),
+      arch: this._validate(arch, this.valid_archs, "arm64-v8a"),
+      sdk: this._validate(sdk, this.valid_sdks, "default"),
+      lang: this._validate(lang, this.valid_langs, "en"),
       vc: "",
       device_id: ""
     };
-    this.log(`Start download process: ${pkg}`);
-    this.log(`Config: Device=${conf.device}, Arch=${conf.arch}, SDK=${conf.sdk}`);
     try {
-      this.log("Requesting token...");
-      const pLoad = {
-        package: conf.package,
-        device: conf.device,
-        arch: conf.arch,
-        vc: conf.vc,
-        device_id: conf.device_id,
-        sdk: conf.sdk
-      };
-      const rToken = await axios.post(this.tokenApi, pLoad, {
-        headers: this.headers
+      this._log(`Meminta token untuk ${pkg}...`);
+      const tokenRaw = this._curl({
+        url: this.token_api,
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: {
+          package: conf.package,
+          device: conf.device,
+          arch: conf.arch,
+          vc: conf.vc,
+          device_id: conf.device_id,
+          sdk: conf.sdk
+        }
       });
-      const dToken = rToken?.data;
-      if (!dToken?.success) throw new Error("Failed to get token");
-      const token = dToken.token;
-      const ts = dToken.timestamp;
-      const dataObj = {
+      const tokenData = JSON.parse(tokenRaw);
+      if (!tokenData?.success) throw new Error("Gagal mendapatkan token dari Mi9");
+      const dataPayload = Buffer.from(JSON.stringify({
         hl: conf.lang,
         package: conf.package,
         device: conf.device,
@@ -120,77 +324,72 @@ class Mi9Downloader {
         vc: conf.vc,
         device_id: conf.device_id,
         sdk: conf.sdk,
-        timestamp: ts
-      };
-      const b64Data = Buffer.from(JSON.stringify(dataObj)).toString("base64");
-      this.log("Fetching APK links...");
-      const rData = await axios.get(this.dataApi, {
-        params: {
-          token: token,
-          data: b64Data
-        },
+        timestamp: tokenData.timestamp
+      })).toString("base64");
+      this._log("Mengambil link download via SSE...");
+      const sseUrl = `${this.data_api}?token=${tokenData.token}&data=${encodeURIComponent(dataPayload)}`;
+      const sseRaw = this._curl({
+        url: sseUrl,
         headers: {
-          ...this.headers,
           accept: "text/event-stream"
         }
       });
-      const lines = rData?.data?.split("\n") || [];
-      let lastJson = null;
-      for (const line of lines) {
-        if (line.startsWith("data:")) {
-          try {
-            const jsonStr = line.replace("data:", "").trim();
-            if (!jsonStr) continue;
-            const parsed = JSON.parse(jsonStr);
-            if (parsed.html || parsed.progress === 100) lastJson = parsed;
-          } catch (e) {}
-        }
-      }
-      if (!lastJson || !lastJson.html) throw new Error("No HTML data found in response");
-      const mi9Result = this.pars(lastJson.html, conf) || [];
+      const sseParsed = this._parseSSE(sseRaw);
+      if (!sseParsed || !sseParsed.html) throw new Error("Tidak ada data download dalam response SSE");
+      const apkInfo = this._parseApkInfo(sseParsed.html, conf);
       return {
         source: "Mi9",
-        download: mi9Result,
+        status: "success",
+        download: apkInfo,
         detail: playInfo
       };
     } catch (err) {
-      this.log(`Error: ${err.message}`);
+      this._log(`Download error: ${err.message}`, "ERROR");
       return {
         error: true,
         message: err.message
       };
     }
   }
-  pars(html, conf) {
+  _parseApkInfo(html, conf) {
     const $ = cheerio.load(html);
-    const res = {
-      package: conf.package,
-      name: $("ul.apk_ad_info li._title a").text().trim(),
-      version: $("ul.apk_ad_info span._version").text().trim(),
-      developer: $("ul.apk_ad_info li").last().text().replace("Developer:", "").trim(),
+    const result = {
+      id: conf.package,
+      name: $("ul.apk_ad_info li._title a").first().text().trim() || "Tidak diketahui",
+      version: $("ul.apk_ad_info span._version").text().trim() || "Tidak diketahui",
+      icon: $(".apk_ad img").attr("src") || null,
+      developer: "Tidak diketahui",
+      update: "Tidak diketahui",
+      android: "Tidak diketahui",
       files: []
     };
+    $("ul.apk_ad_info li").each((i, el) => {
+      const text = $(el).text();
+      if (text.includes("Developer:")) result.developer = text.replace("Developer:", "").trim();
+      if (text.includes("Update:")) result.update = text.replace("Update:", "").trim();
+      if (text.includes("Android")) result.android = $(el).find("strong").text().trim();
+    });
     $(".apk_files_item").each((i, el) => {
-      const name = $(el).find("span.der_name").text().trim();
-      const size = $(el).find("span.der_size").text().trim();
-      const link = $(el).find("a").attr("href");
-      if (link) {
-        res.files.push({
-          filename: name,
-          size: size,
-          url: link
+      const fileName = $(el).find("span.der_name").text().trim();
+      const fileSize = $(el).find("span.der_size").text().trim();
+      const downloadUrl = $(el).find("a").attr("href");
+      if (downloadUrl) {
+        result.files.push({
+          name: fileName,
+          size: fileSize,
+          url: downloadUrl
         });
       }
     });
-    this.log(`Success! Found ${res.files.length} APK files.`);
-    return res;
+    return result;
   }
 }
 export default async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
-  if (!params.url) {
+  if (!params.query) {
     return res.status(400).json({
-      error: "Parameter 'url' diperlukan"
+      error: "Parameter 'query' diperlukan",
+      example: "com.whatsapp"
     });
   }
   const api = new Mi9Downloader();

@@ -60,10 +60,10 @@ class UstadzGen {
   genHtml(params) {
     const questionText = params.text?.trim() || "Ustadz";
     const photoLibrary = {
-      normal: "https://8upload.com/image/1fc2ae3661204ddb/Generated_Image_February_04__2026_-_8_00AM.png",
-      ketawa: "https://8upload.com/image/bf1af3ddf2d436ea/Generated_Image_February_04__2026_-_11_24AM.png",
-      mikir: "https://8upload.com/image/1115d78d226fc1e6/Generated_Image_February_04__2026_-_11_20AM.png",
-      mulut: "https://8upload.com/image/2f9fbb9f0db3aea0/Generated_Image_February_04__2026_-_11_09AM.png"
+      normal: "https://iili.io/BxsnDI2.png",
+      ketawa: "https://iili.io/BxsoXTl.png",
+      mikir: "https://iili.io/BxsxFFn.png",
+      mulut: "https://iili.io/BxsxcwQ.png"
     };
     const canvasWidth = params.width || 832;
     const canvasHeight = params.height || 1248;
