@@ -45,7 +45,7 @@ function getClientIp(req) {
     return req.ip || req.headers.get("x-forwarded-for") || "unknown";
   }
 }
-const DOMAIN_URL = apiConfig.DOMAIN_URL || "wudysoft.xyz";
+const DOMAIN_URL = apiConfig.DOMAIN_URL || "wudysoft.my.id";
 const NEXTAUTH_SECRET = apiConfig.JWT_SECRET;
 const DEFAULT_PROTOCOL = "https://";
 const axiosInstance = axios.create({

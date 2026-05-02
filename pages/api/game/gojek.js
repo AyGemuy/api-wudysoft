@@ -7,157 +7,168 @@ class OjekEngine {
     this.api = {
       route: "https://router.project-osrm.org/route/v1/driving",
       geo: "https://nominatim.openstreetmap.org/search",
-      reverse: "https://nominatim.openstreetmap.org/reverse",
-      yandex_info: "https://yandex.com/maps/api/location-info/get"
+      rev: "https://nominatim.openstreetmap.org/reverse"
     };
-    this.categories = ["cafe", "restaurant", "hospital", "school", "market", "mosque", "park"];
+    this.cats = ["cafe", "restaurant", "hospital", "school", "market", "mosque", "park"];
     this.badges = [{
-      trips: 1,
-      icon: "🛵",
-      label: "Driver Baru"
+      t: 1,
+      i: "🛵",
+      l: "Driver Baru"
     }, {
-      trips: 5,
-      icon: "⭐",
-      label: "Driver Aktif"
+      t: 5,
+      i: "⭐",
+      l: "Driver Aktif"
     }, {
-      trips: 10,
-      icon: "🔥",
-      label: "Driver Handal"
+      t: 10,
+      i: "🔥",
+      l: "Driver Handal"
     }, {
-      trips: 25,
-      icon: "💎",
-      label: "Driver Elite"
+      t: 25,
+      i: "💎",
+      l: "Driver Elite"
     }, {
-      trips: 50,
-      icon: "👑",
-      label: "Driver Legendaris"
+      t: 50,
+      i: "👑",
+      l: "Driver Legendaris"
     }];
   }
-  generate_user_id() {
+  genId() {
     return "Ojek-" + Math.random().toString(36).substring(2, 8).toUpperCase();
   }
-  encode(obj) {
-    return Buffer.from(JSON.stringify(obj)).toString("base64");
+  enc(o) {
+    return Buffer.from(JSON.stringify(o)).toString("base64");
   }
-  decode(str) {
+  dec(s) {
     try {
-      return str ? JSON.parse(Buffer.from(str, "base64").toString()) : null;
+      return s ? JSON.parse(Buffer.from(s, "base64").toString()) : null;
     } catch {
       return null;
     }
   }
-  decode_polyline_arr(str) {
-    let index = 0,
+  decodePoly(str) {
+    let idx = 0,
       lat = 0,
       lng = 0,
       coords = [],
       shift = 0,
-      result = 0,
-      byte = null;
-    try {
-      while (index < str.length) {
-        byte = null;
-        shift = 0;
-        result = 0;
-        do {
-          byte = str.charCodeAt(index++) - 63;
-          result |= (byte & 31) << shift;
-          shift += 5;
-        } while (byte >= 32);
-        lat += result & 1 ? ~(result >> 1) : result >> 1;
-        byte = null;
-        shift = 0;
-        result = 0;
-        do {
-          byte = str.charCodeAt(index++) - 63;
-          result |= (byte & 31) << shift;
-          shift += 5;
-        } while (byte >= 32);
-        lng += result & 1 ? ~(result >> 1) : result >> 1;
-        coords.push({
-          lat: lat / 1e5,
-          lon: lng / 1e5
-        });
-      }
-    } catch {}
+      res = 0,
+      b = null;
+    while (idx < str.length) {
+      shift = 0;
+      res = 0;
+      do {
+        b = str.charCodeAt(idx++) - 63;
+        res |= (b & 31) << shift;
+        shift += 5;
+      } while (b >= 32);
+      lat += res & 1 ? ~(res >> 1) : res >> 1;
+      shift = 0;
+      res = 0;
+      do {
+        b = str.charCodeAt(idx++) - 63;
+        res |= (b & 31) << shift;
+        shift += 5;
+      } while (b >= 32);
+      lng += res & 1 ? ~(res >> 1) : res >> 1;
+      coords.push({
+        lat: lat / 1e5,
+        lon: lng / 1e5
+      });
+    }
     return coords;
   }
-  async get_city_bbox(kota) {
-    try {
-      const res = await this.http.get(this.api.geo, {
-        params: {
-          q: kota,
-          format: "json",
-          limit: 1,
-          featuretype: "city",
-          addressdetails: 1
-        },
-        headers: {
-          "User-Agent": "OjekEngine-v6.9.3"
-        }
-      });
-      const city = res.data?.[0];
-      if (!city?.boundingbox) throw new Error(`Kota "${kota}" tidak ditemukan.`);
-      const [lat_min, lat_max, lon_min, lon_max] = city.boundingbox.map(Number);
-      return {
-        lat_min: lat_min,
-        lat_max: lat_max,
-        lon_min: lon_min,
-        lon_max: lon_max
-      };
-    } catch (err) {
-      throw new Error(`Bbox Error: ${err.message}`);
+  getBboxAndSpan(coords, marginFactor = 1.2) {
+    if (!coords.length) return {
+      ll: null,
+      spn: null
+    };
+    let minLat = Infinity,
+      maxLat = -Infinity,
+      minLon = Infinity,
+      maxLon = -Infinity;
+    for (const c of coords) {
+      minLat = Math.min(minLat, c.lat);
+      maxLat = Math.max(maxLat, c.lat);
+      minLon = Math.min(minLon, c.lon);
+      maxLon = Math.max(maxLon, c.lon);
     }
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLon = (minLon + maxLon) / 2;
+    let spanLat = (maxLat - minLat) * marginFactor;
+    let spanLon = (maxLon - minLon) * marginFactor;
+    if (spanLat < .001) spanLat = .001;
+    if (spanLon < .001) spanLon = .001;
+    return {
+      ll: `${centerLon},${centerLat}`,
+      spn: `${spanLon},${spanLat}`
+    };
   }
-  async search_in_city(kategori, kota, bbox) {
-    try {
-      const {
-        lat_min,
-        lat_max,
-        lon_min,
-        lon_max
-      } = bbox;
-      const viewbox = `${lon_min},${lat_max},${lon_max},${lat_min}`;
-      const res = await this.http.get(this.api.geo, {
-        params: {
-          q: kategori ? `${kategori}, ${kota}` : kota,
-          format: "json",
-          limit: 20,
-          bounded: 1,
-          viewbox: viewbox,
-          addressdetails: 1,
-          "accept-language": "id"
-        },
-        headers: {
-          "User-Agent": "OjekEngine-v6.9.3"
-        }
-      });
-      return res.data.filter(l => l.osm_type !== "relation" && l.lat && l.lon);
-    } catch {
-      return [];
-    }
+  buildMap(pStart, pEnd, encodedPoly, prog) {
+    const coords = this.decodePoly(encodedPoly);
+    if (!coords.length) return this.fallbackMap(pStart, pEnd);
+    const curIdx = Math.min(coords.length - 1, Math.floor(prog / 100 * (coords.length - 1)));
+    const driver = coords[curIdx] || pStart;
+    const remaining = coords.slice(curIdx);
+    const sample = arr => {
+      if (arr.length <= 30) return arr;
+      let step = Math.ceil(arr.length / 30),
+        res = [];
+      for (let i = 0; i < arr.length; i += step) res.push(arr[i]);
+      if (res[res.length - 1] !== arr[arr.length - 1]) res.push(arr[arr.length - 1]);
+      return res;
+    };
+    const bluePoints = sample(remaining).map(c => `${c.lon},${c.lat}`).join(",");
+    const plBlue = bluePoints ? `&pl=c:0066FF,w:6,${bluePoints}` : "";
+    const pts = `${pStart.lon},${pStart.lat},pm2rdm~${pEnd.lon},${pEnd.lat},pm2blm~${driver.lon},${driver.lat},pm2gnm`;
+    const {
+      ll,
+      spn
+    } = this.getBboxAndSpan(coords);
+    const viewport = ll && spn ? `&ll=${ll}&spn=${spn}` : "";
+    const base = `size=650,450&pt=${pts}${plBlue}${viewport}&lang=id_ID`;
+    return {
+      normal: `https://static-maps.yandex.ru/1.x/?l=map,trf&${base}`,
+      sat: `https://static-maps.yandex.ru/1.x/?l=sat,trf&${base}`,
+      nav: `https://yandex.com/maps/?rtext=${driver.lat},${driver.lon}~${pEnd.lat},${pEnd.lon}&rtt=auto`
+    };
   }
-  async get_yandex_info(lat, lon) {
-    try {
-      const res = await this.http.get(this.api.yandex_info, {
-        params: {
-          ajax: 1,
-          center: `${lon},${lat}`,
-          lang: "id",
-          zoom: 18
-        },
-        headers: {
-          "User-Agent": "Mozilla/5.0"
-        }
-      });
-      return res.data?.data || null;
-    } catch {
-      return null;
-    }
+  fallbackMap(pStart, pEnd) {
+    const pts = `${pStart.lon},${pStart.lat},pm2rdm~${pEnd.lon},${pEnd.lat},pm2blm`;
+    const base = `size=650,450&pt=${pts}&lang=id_ID`;
+    return {
+      normal: `https://static-maps.yandex.ru/1.x/?l=map,trf&${base}`,
+      sat: `https://static-maps.yandex.ru/1.x/?l=sat,trf&${base}`,
+      nav: `https://yandex.com/maps/?rtext=${pStart.lat},${pStart.lon}~${pEnd.lat},${pEnd.lon}&rtt=auto`
+    };
   }
-  async reverse_geocode(lat, lon) {
+  drvInfo(state) {
+    const badge = this.badges.reduce((a, b) => state.total_trips >= b.t ? b : a, this.badges[0]);
+    return {
+      id: state.user_id,
+      lvl: state.level,
+      xp: state.xp,
+      xpNext: state.level * 200 - state.xp,
+      trips: state.total_trips,
+      saldo: `Rp ${state.balance.toLocaleString()}`,
+      badge: `${badge.i} ${badge.l}`,
+      status: state.active_trip ? "On Trip" : "Ready"
+    };
+  }
+  fmtTime(ts) {
+    const d = new Date(ts);
+    return d.toLocaleString("id-ID", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    });
+  }
+  async locDetail(lat, lon) {
     try {
-      const [osmRes, yndxData] = await Promise.all([this.http.get(this.api.reverse, {
+      const res = await this.http.get(this.api.rev, {
         params: {
           lat: lat,
           lon: lon,
@@ -167,87 +178,38 @@ class OjekEngine {
           "accept-language": "id"
         },
         headers: {
-          "User-Agent": "OjekEngine-v6.9.3"
-        }
-      }).catch(() => ({
-        data: {}
-      })), this.get_yandex_info(lat, lon)]);
-      const a = osmRes.data?.address || {};
-      const y = yndxData || {};
-      const nama_tempat = a.amenity || a.building || a.shop || a.office || a.leisure || a.tourism || y.title || "Titik Lokasi";
-      const jalan = y.subtitle || (a.road ? `Jl. ${a.road}` : "-");
-      const kelurahan_desa = a.village || a.neighbourhood || a.quarter || "-";
-      const kecamatan = a.suburb || a.city_district || "-";
-      const kota_kabupaten = a.city || a.town || a.county || a.municipality || "-";
-      const provinsi = a.state || a.region || "-";
-      const kode_pos = a.postcode || "-";
-      const full_address = a.display_name || y.address || `${nama_tempat}, ${jalan}, ${kota_kabupaten}`;
-      return {
-        nama_tempat: nama_tempat,
-        jalan: jalan,
-        kelurahan_desa: kelurahan_desa,
-        kecamatan: kecamatan,
-        kota_kabupaten: kota_kabupaten,
-        provinsi: provinsi,
-        kode_pos: kode_pos,
-        full_address: full_address,
-        koordinat: `${lat}, ${lon}`
-      };
-    } catch {
-      return {
-        nama_tempat: "Lokasi Tidak Diketahui",
-        jalan: "-",
-        kelurahan_desa: "-",
-        kecamatan: "-",
-        kota_kabupaten: "-",
-        provinsi: "-",
-        kode_pos: "-",
-        full_address: "-",
-        koordinat: `${lat}, ${lon}`
-      };
-    }
-  }
-  format_alamat_singkat(geo) {
-    const unik = [...new Set([geo.nama_tempat, geo.jalan, geo.kecamatan])].filter(i => i !== "-");
-    return unik.length > 0 ? unik.join(", ") : "Titik Jemput/Tujuan";
-  }
-  async get_osrm_route(p_start, p_end) {
-    try {
-      const res = await this.http.get(`${this.api.route}/${p_start.lon},${p_start.lat};${p_end.lon},${p_end.lat}`, {
-        params: {
-          overview: "full",
-          geometries: "polyline"
+          "User-Agent": "OjekEngine"
         }
       });
-      const road = res.data.routes?.[0];
-      if (!road) throw new Error("Jalan tidak bisa dihubungkan.");
-      return road;
-    } catch (err) {
-      throw new Error(`OSRM Error: ${err.message}`);
+      const a = res.data?.address || {};
+      const nama = a.amenity || a.building || a.shop || a.road || "Lokasi";
+      const kota = a.city || a.town || a.village || a.county || "";
+      return `${nama}, ${kota}`.replace(/, $/, "");
+    } catch {
+      return `${lat},${lon}`;
     }
   }
-  build_maps(p_start, p_end, encoded_polyline) {
-    const sLat = parseFloat(p_start.lat),
-      sLon = parseFloat(p_start.lon);
-    const eLat = parseFloat(p_end.lat),
-      eLon = parseFloat(p_end.lon);
-    const coords_arr = this.decode_polyline_arr(encoded_polyline);
-    const sample = coords_arr.filter((_, i) => i % 8 === 0);
-    const yandex_path = sample.map(c => `${c.lon},${c.lat}`).join(",");
-    const marker_start = `pm2blm`;
-    const marker_end = `pm2rdm`;
+  async cityBox(kota) {
+    const res = await this.http.get(this.api.geo, {
+      params: {
+        q: kota,
+        format: "json",
+        limit: 1,
+        featuretype: "city"
+      },
+      headers: {
+        "User-Agent": "OjekEngine"
+      }
+    });
+    const c = res.data?.[0];
+    if (!c) throw new Error(`Kota ${kota} tidak ditemukan`);
+    const b = c.boundingbox.map(Number);
     return {
-      peta_jalan: `https://static-maps.yandex.ru/1.x/?l=map&size=650,450&pt=${sLon},${sLat},${marker_start}~${eLon},${eLat},${marker_end}&pl=c:0066FFCC,w:5,${yandex_path}&lang=id_ID`,
-      peta_satelit: `https://static-maps.yandex.ru/1.x/?l=sat,skl&size=650,450&pt=${sLon},${sLat},${marker_start}~${eLon},${eLat},${marker_end}&pl=c:0066FFCC,w:5,${yandex_path}&lang=id_ID`,
-      link_navigasi: `https://yandex.com/maps/?rtext=${sLat},${sLon}~${eLat},${eLon}&rtt=auto`
+      lat_min: b[0],
+      lat_max: b[1],
+      lon_min: b[2],
+      lon_max: b[3]
     };
-  }
-  get_badge(total_trips) {
-    let badge = this.badges[0];
-    for (const b of this.badges) {
-      if (total_trips >= b.trips) badge = b;
-    }
-    return badge;
   }
   async run({
     spot,
@@ -255,134 +217,155 @@ class OjekEngine {
     user_id
   }) {
     try {
-      let s = this.decode(state) || {
-        user_id: user_id || this.generate_user_id(),
+      let s = this.dec(state) || {
+        user_id: user_id || this.genId(),
         level: 1,
         xp: 0,
         balance: 5e4,
         total_trips: 0,
-        active_trip: null
+        active_trip: null,
+        last_spot: spot || "Makassar"
       };
+      if (spot) s.last_spot = spot;
+      const kota = s.last_spot;
       const now = Date.now();
       if (s.active_trip) {
         const t = s.active_trip;
-        const sisa = Math.ceil((t.end_at - now) / 1e3);
-        if (sisa > 0) {
-          const progres = Math.min(99, Math.floor((now - t.start_at) / (t.end_at - t.start_at) * 100));
+        const total = t.end_at - t.start_at;
+        const sisaDet = Math.ceil((t.end_at - now) / 1e3);
+        if (sisaDet > 0) {
+          const prog = Math.min(99, Math.floor((now - t.start_at) / total * 100));
+          const maps = this.buildMap(t.p_start, t.p_end, t.geometry, prog);
+          const coords = this.decodePoly(t.geometry);
+          const curIdx = Math.floor(prog / 100 * (coords.length - 1));
+          const driverPos = coords[curIdx] || t.p_start;
+          const locDriver = await this.locDetail(driverPos.lat, driverPos.lon);
           return {
-            status: "dalam_perjalanan",
-            user_id: s.user_id,
-            pesan: `🛵 Driver meluncur ke ${t.dest_name}`,
-            sisa_waktu_detik: sisa,
-            progres_persen: `${progres}%`,
-            rute: {
-              dari: t.start_name,
-              ke: t.dest_name,
-              jarak_km: t.distance,
-              tarif: `Rp ${t.fare.toLocaleString("id-ID")}`
+            s: "perjalanan",
+            uid: s.user_id,
+            area: kota,
+            msg: `🛵 Menuju ${t.dest_name}`,
+            dr: this.drvInfo(s),
+            loc: {
+              pickup: await this.locDetail(t.p_start.lat, t.p_start.lon),
+              drop: await this.locDetail(t.p_end.lat, t.p_end.lon),
+              cur: locDriver
             },
-            peta: t.maps,
-            state: this.encode(s)
+            tm: {
+              start: this.fmtTime(t.start_at),
+              eta: this.fmtTime(t.end_at),
+              left: `${Math.floor(sisaDet / 60)}m ${sisaDet % 60}s`
+            },
+            trip: {
+              leftDist: (t.distance * (1 - prog / 100)).toFixed(2) + " km",
+              prog: prog + "%"
+            },
+            map: maps,
+            state: this.enc(s)
           };
         }
-        const level_lama = s.level;
-        const xp_gained = Math.ceil(t.distance * 12) + 10;
-        const bonus_tip = Math.floor(Math.random() * 6e3);
-        const total_bayar = t.fare + bonus_tip;
-        s.balance += total_bayar;
-        s.xp += xp_gained;
-        s.level = Math.floor(s.xp / 150) + 1;
-        s.total_trips = (s.total_trips || 0) + 1;
+        const tip = Math.floor(Math.random() * 5e3) + 1e3;
+        const earn = t.fare + tip;
+        s.balance += earn;
+        s.xp += Math.ceil(t.distance * 15);
+        s.level = Math.floor(s.xp / 200) + 1;
+        s.total_trips++;
         s.active_trip = null;
-        const badge = this.get_badge(s.total_trips);
-        const xp_next = s.level * 150 - s.xp;
+        const fmtRp = v => `Rp ${v.toLocaleString()}`;
         return {
-          status: "selesai",
-          user_id: s.user_id,
-          keterangan: "🏁 Trip selesai! Penumpang puas.",
-          ringkasan_trip: {
-            dari: t.start_name,
-            ke: t.dest_name,
-            jarak_km: t.distance,
-            durasi_menit: Math.ceil((t.end_at - t.start_at) / 6e4)
+          s: "selesai",
+          uid: s.user_id,
+          msg: `🏁 Selesai sampai di ${t.dest_name}`,
+          dr: this.drvInfo(s),
+          detail: {
+            dist: t.distance + " km",
+            dur: Math.ceil((t.end_at - t.start_at) / 6e4) + " menit",
+            fare: fmtRp(t.fare),
+            tip: fmtRp(tip),
+            total: fmtRp(earn),
+            saldo: fmtRp(s.balance)
           },
-          pembayaran: {
-            ongkos: `Rp ${t.fare.toLocaleString("id-ID")}`,
-            tip: `Rp ${bonus_tip.toLocaleString("id-ID")}`,
-            total: `Rp ${total_bayar.toLocaleString("id-ID")}`
+          loc: {
+            from: await this.locDetail(t.p_start.lat, t.p_start.lon),
+            to: await this.locDetail(t.p_end.lat, t.p_end.lon)
           },
-          rewards: {
-            xp_didapat: `+${xp_gained} XP`,
-            xp_total: s.xp,
-            xp_ke_level: `${xp_next} XP lagi ke Level ${s.level + 1}`,
-            level: s.level,
-            level_naik: s.level > level_lama,
-            badge: `${badge.icon} ${badge.label}`,
-            total_trip: s.total_trips
-          },
-          saldo: {
-            masuk: `+Rp ${total_bayar.toLocaleString("id-ID")}`,
-            total: `Rp ${s.balance.toLocaleString("id-ID")}`
-          },
-          state: this.encode(s)
+          finish: this.fmtTime(now),
+          tipMsg: `✨ Tip ${fmtRp(tip)} ✨`,
+          state: this.enc(s)
         };
       }
-      const kota = spot || "Makassar";
-      const bbox = await this.get_city_bbox(kota);
-      const randCat = this.categories[Math.floor(Math.random() * this.categories.length)];
-      let locs = await this.search_in_city(randCat, kota, bbox);
-      if (locs.length < 2) locs = await this.search_in_city("place", kota, bbox);
-      if (locs.length < 2) locs = await this.search_in_city("", kota, bbox);
-      if (locs.length < 2) throw new Error(`Koordinat lokasi di ${kota} tidak memadai.`);
+      const box = await this.cityBox(kota);
+      const cat = this.cats[Math.floor(Math.random() * this.cats.length)];
+      const geoRes = await this.http.get(this.api.geo, {
+        params: {
+          q: `${cat}, ${kota}`,
+          format: "json",
+          limit: 15,
+          bounded: 1,
+          viewbox: `${box.lon_min},${box.lat_max},${box.lon_max},${box.lat_min}`,
+          addressdetails: 1,
+          "accept-language": "id"
+        },
+        headers: {
+          "User-Agent": "OjekEngine"
+        }
+      });
+      const locs = geoRes.data.filter(l => l.lat && l.lon);
+      if (locs.length < 2) throw new Error("Lokasi tidak cukup");
       const shuffled = locs.sort(() => .5 - Math.random());
-      const p_start = shuffled[0];
-      const p_end = shuffled[1];
-      const road = await this.get_osrm_route(p_start, p_end);
-      const [geo_start, geo_end] = await Promise.all([this.reverse_geocode(p_start.lat, p_start.lon), this.reverse_geocode(p_end.lat, p_end.lon)]);
-      const maps = this.build_maps(p_start, p_end, road.geometry);
-      const km = parseFloat((road.distance / 1e3).toFixed(2));
-      const durasi = Math.ceil(road.duration);
-      const ongkos = Math.max(12e3, Math.ceil(km * 4500));
-      const ringkasan_start = this.format_alamat_singkat(geo_start);
-      const ringkasan_end = this.format_alamat_singkat(geo_end);
-      s.active_trip = {
-        start_name: ringkasan_start,
-        dest_name: ringkasan_end,
-        distance: km,
-        fare: ongkos,
-        start_at: now,
-        end_at: now + durasi * 1e3,
-        maps: maps
+      const pStart = {
+        lat: parseFloat(shuffled[0].lat),
+        lon: parseFloat(shuffled[0].lon)
       };
-      const badge = this.get_badge(s.total_trips || 0);
+      const pEnd = {
+        lat: parseFloat(shuffled[1].lat),
+        lon: parseFloat(shuffled[1].lon)
+      };
+      const routeRes = await this.http.get(`${this.api.route}/${pStart.lon},${pStart.lat};${pEnd.lon},${pEnd.lat}`, {
+        params: {
+          overview: "full",
+          geometries: "polyline"
+        }
+      });
+      const road = routeRes.data.routes[0];
+      const [nameS, nameE] = await Promise.all([this.locDetail(pStart.lat, pStart.lon), this.locDetail(pEnd.lat, pEnd.lon)]);
+      const km = parseFloat((road.distance / 1e3).toFixed(2));
+      const dur = Math.ceil(road.duration);
+      const fare = Math.max(12e3, Math.ceil(km * 4500));
+      s.active_trip = {
+        start_name: nameS,
+        dest_name: nameE,
+        distance: km,
+        fare: fare,
+        start_at: now,
+        end_at: now + dur * 1e3,
+        geometry: road.geometry,
+        p_start: pStart,
+        p_end: pEnd
+      };
+      const maps = this.buildMap(pStart, pEnd, road.geometry, 0);
       return {
-        status: "dimulai",
-        user_id: s.user_id,
+        s: "dimulai",
+        uid: s.user_id,
         area: kota,
-        pesanan: {
-          jemput: ringkasan_start,
-          jemput_detail: geo_start,
-          tujuan: ringkasan_end,
-          tujuan_detail: geo_end,
-          jarak_km: km,
-          tarif: `Rp ${ongkos.toLocaleString("id-ID")}`,
-          estimasi_waktu: `${Math.ceil(durasi / 60)} menit`
+        msg: `✅ Jemput di ${nameS}`,
+        dr: this.drvInfo(s),
+        trip: {
+          pickup: nameS,
+          drop: nameE,
+          dist: km + " km",
+          est: Math.ceil(dur / 60) + " menit",
+          fare: `Rp ${fare.toLocaleString()}`
         },
-        peta: maps,
-        profil_driver: {
-          level: s.level,
-          xp: s.xp,
-          badge: `${badge.icon} ${badge.label}`,
-          saldo: `Rp ${s.balance.toLocaleString("id-ID")}`,
-          total_trip: s.total_trips || 0
-        },
-        state: this.encode(s)
+        startTime: this.fmtTime(now),
+        map: maps,
+        state: this.enc(s)
       };
     } catch (err) {
       return {
-        status: "error",
-        pesan_sistem: err.message,
-        state: state || null
+        s: "error",
+        msg: err.message,
+        state: state
       };
     }
   }

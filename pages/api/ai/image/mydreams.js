@@ -7,6 +7,7 @@ import {
 } from "axios-cookiejar-support";
 import FormData from "form-data";
 import * as cheerio from "cheerio";
+import apiConfig from "@/configs/apiConfig";
 const CONFIG = {
   MODELS: {
     FREE: ["stabble-diffusion/furricanes-human-mix", "stabble-diffusion/epicrealism-v4", "stabble-diffusion/illustration", "stabble-diffusion/helloflatcute2d", "stabble-diffusion/aniverse", "stabble-diffusion/furryrock-v7", "stabble-diffusion/wand-ducstyle"],
@@ -53,7 +54,7 @@ class MyDreams {
       password: null,
       isLoggedIn: false
     };
-    this.mailApi = "https://wudysoft.xyz/api/mails/v9";
+    this.mailApi = `https://${apiConfig.DOMAIN_URL}/api/mails/v9`;
   }
   log(msg, type = "INFO") {
     const time = new Date().toLocaleTimeString();

@@ -1,27 +1,52 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import {
+  CookieJar
+} from "tough-cookie";
+import {
+  wrapper
+} from "axios-cookiejar-support";
+wrapper(axios);
 class BudgetQuiz {
   constructor() {
     this.baseUrl = "https://sirup.inaproc.id/sirup/caripaketctr/search";
     this.detailUrl = "https://sirup.inaproc.id/sirup/rup/detailPaketPenyedia2020";
+    this.indexUrl = "https://sirup.inaproc.id/sirup/caripaketctr/index";
+    this.jar = new CookieJar();
+    this.client = axios.create({
+      jar: this.jar,
+      withCredentials: true
+    });
     this.headers = {
-      accept: "application/json, text/javascript, */*; q=0.01",
-      "accept-language": "id-ID",
+      accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      "accept-language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
+      "accept-encoding": "gzip, deflate, br",
       "cache-control": "no-cache",
       pragma: "no-cache",
-      priority: "u=1, i",
-      referer: "https://sirup.inaproc.id/sirup/caripaketctr/index",
-      "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
+      "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127"',
       "sec-ch-ua-mobile": "?1",
       "sec-ch-ua-platform": '"Android"',
-      "sec-fetch-dest": "empty",
-      "sec-fetch-mode": "cors",
-      "sec-fetch-site": "same-origin",
+      "sec-fetch-dest": "document",
+      "sec-fetch-mode": "navigate",
+      "sec-fetch-site": "none",
+      "sec-fetch-user": "?1",
+      "upgrade-insecure-requests": "1",
       "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",
-      "x-requested-with": "XMLHttpRequest",
-      cookie: "PLAY_SESSION=7ed948c1fd4dffdb7ea70727a7e6c6cbe33b0826-___TS=1777297299148&tahunAnggaranPilihan=2026&menu=cariPaket2"
+      connection: "keep-alive"
     };
     this.keywords = ["Pembangunan", "Pengadaan", "Rehabilitasi", "Pemeliharaan", "Renovasi"];
+    this._sessionReady = false;
+  }
+  async _initSession() {
+    if (this._sessionReady) return;
+    await this.client.get(this.indexUrl, {
+      headers: {
+        ...this.headers,
+        referer: "https://sirup.inaproc.id/"
+      },
+      timeout: 15e3
+    });
+    this._sessionReady = true;
   }
   _idr(number) {
     return new Intl.NumberFormat("id-ID", {
@@ -41,6 +66,7 @@ class BudgetQuiz {
   }
   async generate() {
     try {
+      await this._initSession();
       const random_keyword = this.keywords[Math.floor(Math.random() * this.keywords.length)];
       const search_params = {
         tahunAnggaran: "2026",
@@ -91,22 +117,36 @@ class BudgetQuiz {
       };
       const {
         data: searchResult
-      } = await axios.get(this.baseUrl, {
-        headers: this.headers,
-        params: search_params
+      } = await this.client.get(this.baseUrl, {
+        headers: {
+          ...this.headers,
+          accept: "application/json, text/javascript, */*; q=0.01",
+          referer: this.indexUrl,
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "same-origin",
+          "x-requested-with": "XMLHttpRequest"
+        },
+        params: search_params,
+        timeout: 15e3
       });
       if (!searchResult.data || searchResult.data.length === 0) throw new Error("Data tidak ditemukan.");
       const paket = searchResult.data[Math.floor(Math.random() * searchResult.data.length)];
       const {
         data: html
-      } = await axios.get(this.detailUrl, {
+      } = await this.client.get(this.detailUrl, {
         headers: {
           ...this.headers,
-          accept: "text/html"
+          accept: "text/html,application/xhtml+xml,*/*;q=0.9",
+          referer: this.indexUrl,
+          "sec-fetch-dest": "iframe",
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-site": "same-origin"
         },
         params: {
           idPaket: paket.id
-        }
+        },
+        timeout: 15e3
       });
       const $ = cheerio.load(html);
       const getVal = label => $(`.label-left:contains("${label}")`).next().text().trim();
