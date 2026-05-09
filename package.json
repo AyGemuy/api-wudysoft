@@ -84,7 +84,7 @@
     "emoji-regex": "latest",
     "eventsource": "latest",
     "fake-useragent": "latest",
-    "file-type": "latest",
+    "file-type": "^21.3.4",
     "formdata-node": "latest",
     "image-size": "latest",
     "javascript-obfuscator": "latest",

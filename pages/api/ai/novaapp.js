@@ -1,0 +1,576 @@
+import axios from "axios";
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Constants
+// ══════════════════════════════════════════════════════════════════════════════
+
+const FB_KEY         = "AIzaSyBBr35pmWkZsnSV_Zc1Enk-tGp_4RGw7a8";
+const FB_SIGNUP_URL  = `https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=${FB_KEY}`;
+const FB_REFRESH_URL = `https://securetoken.googleapis.com/v1/token?key=${FB_KEY}`;
+const NOVA_BASE      = "https://api.novaapp.ai/api";
+const STORAGE_BASE   = "https://firebasestorage.googleapis.com/v0/b/chat-ai-prod.appspot.com/o";
+
+const UA_NOVA   = "okhttp/5.0.0-alpha.11";
+const UA_DALVIK = "Dalvik/2.1.0 (Linux; U; Android 15; RMX3890 Build/AQ3A.240812.002)";
+const PKG       = "com.scaleup.chatai";
+const CERT      = "61ED377E85D386A8DFEE6B864BD85B0BFAA5AF81";
+const GMPID     = "1:733459559012:android:3ea24552bf7997a38d6571";
+const APPCHECK  = "eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==";
+
+const DEFAULT_USER_ID = "274f5334d0665b2124bf3d96d1c48a17";
+
+// ── Image pipeline IDs ────────────────────────────────────────────────────────
+const IMG = {
+  dev:     1,   // Flux Dev
+  schnell: 2,   // Flux Schnell (default)
+  seed4:   3,   // Seedream 4.0
+  ideo3:   4,   // Ideogram 3.0
+  kontext: 5,   // Flux Kontext
+  pro:     6,   // Flux Pro
+  hunyuan: 7,   // Hunyuan
+  gptimg:  8,   // GPT-Image-1
+  dalle3:  9,   // DALL-E 3
+  banana:  10,  // Nano Banana
+  qwen:    11,  // Qwen Image
+  auto:    12,  // Auto
+  zturbo:  13,  // Z-Image Turbo
+};
+
+const PIPELINE = {
+  1: "flux_dev",          2: "flux_schnell",     3: "seedream_v4_0",
+  4: "ideogram_v3",       5: "flux_kontext_pro",  6: "flux_pro_v1_1",
+  7: "hunyuan_image_v3",  8: "gpt_image_1",       9: "gpt_image_1",
+  10: "nano_banana",     11: "qwen_image",        12: "auto",
+  13: "z_image_turbo",
+};
+
+// ── Model map (52 entries, persis curl) ───────────────────────────────────────
+const MODEL_MAP = [
+  { key: 0,  value: "mpwyUrxHu4Xa47BP5lPEgwk/NcaFFlnhBk3SA745INc=" },
+  { key: 2,  value: "utq91e3b3StjmuMJGullm0fDoieGv2EhMsvPdq2jc34=" },
+  { key: 3,  value: "FIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQogrY=" },
+  { key: 4,  value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQoaaa=" },
+  { key: 5,  value: "nIjaUTDhbb/r4IxrhYKBUzRLrshrJldlVgKL8EQobbb=" },
+  { key: 6,  value: "nIjaUTDhcc/r4IxrhYKBUzRLrshrJldlVgKL8EQoccc=" },
+  { key: 7,  value: "nIjaUTDhdd/r4IxrhYKBUzRLrshrJldlVgKL8EQoddd=" },
+  { key: 8,  value: "nIjaUTDhee/r4IxrhYKBUzRLrshrJldlVgKL8EQoeee=" },
+  { key: 9,  value: "nIjaUTDhff/r4IxrhYKBUzRLrshrJldlVgKL8EQofff=" },
+  { key: 10, value: "nIjaUTDhgg/r4IxrhYKBUzRLrshrJldlVgKL8EQoggg=" },
+  { key: 11, value: "nIjaUTDhgg/r4IxrhYKBUzRLrshrJldlVgKL8EQohhh=" },
+  { key: 12, value: "nIjaUTDhgg/r4IxrhYKBUzRLrshrJldlVgKL8EQojjj=" },
+  { key: 13, value: "nIjaUTDhgg/r4IxrhYKBUzRLrshrJldlVgKL8EQokkk=" },
+  { key: 14, value: "nIjaUTDhgg/r4IxrhYKBUzRLrshrJldlVgKL8EQolll=" },
+  { key: 15, value: "nIjaUTDhgg/r4IxrhYKBUzRLrshrJldlVgKL8EQommm=" },
+  { key: 16, value: "nIjaUTDhgg/r4IxrhYKBUzRLrshrJldlVgKL8EQonnn=" },
+  { key: 17, value: "nIjaUTDhgg/r4IxrhYKBUzRLrshrJldlVgKL8EQoppp=" },
+  { key: 18, value: "nIjaUTDhgg/r4IxrhYKBUzRLrshrJldlVgKL8EQorrr=" },
+  { key: 19, value: "nIjaUTDhgg/r4IxrhYKBUzRLrshrJldlVgKL8EQosss=" },
+  { key: 20, value: "nIjaUTDhgg/r4IxrhYKBUzRLrshrJldlVgKL8EQottt=" },
+  { key: 21, value: "nIjaUTDhgg/r4IxrhYKBUzRLrshrJldlVgKL8EQouuu=" },
+  { key: 22, value: "nIjaUTDhgg/r4IxrhYKBUzRLrshrJldlVgKL8EQovvv=" },
+  { key: 23, value: "nIjaUTDhgg/r4IxrhYKBUzRLrshrJldlVgKL8EQoyyy=" },
+  { key: 24, value: "nIjaUTDhgg/r4IxrhYKBUzRLrshrJldlVgKL8EQozzz=" },
+  { key: 25, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozaa=" },
+  { key: 26, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozab=" },
+  { key: 27, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozac=" },
+  { key: 28, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozad=" },
+  { key: 29, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozae=" },
+  { key: 30, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozaf=" },
+  { key: 31, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozag=" },
+  { key: 32, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozah=" },
+  { key: 33, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozai=" },
+  { key: 34, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozaj=" },
+  { key: 35, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozak=" },
+  { key: 36, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozal=" },
+  { key: 37, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozam=" },
+  { key: 38, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozan=" },
+  { key: 39, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozao=" },
+  { key: 40, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozap=" },
+  { key: 41, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozaq=" },
+  { key: 42, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozar=" },
+  { key: 43, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozas=" },
+  { key: 44, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozat=" },
+  { key: 45, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozau=" },
+  { key: 46, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozav=" },
+  { key: 47, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozaw=" },
+  { key: 48, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozax=" },
+  { key: 49, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozay=" },
+  { key: 50, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozaz=" },
+  { key: 51, value: "nIjaUTDhgL/r4IxrhYKBUzRLrshrJldlVgKL8EQozba=" },
+];
+
+// ── Firebase headers (shared) ─────────────────────────────────────────────────
+const FB_HDR = {
+  "User-Agent":          UA_DALVIK,
+  "Connection":          "Keep-Alive",
+  "Accept-Encoding":     "gzip",
+  "Content-Type":        "application/json",
+  "X-Android-Package":   PKG,
+  "X-Android-Cert":      CERT,
+  "Accept-Language":     "id-ID, en-US",
+  "X-Client-Version":    "Android/Fallback/X24000001/FirebaseCore-Android",
+  "X-Firebase-GMPID":    GMPID,
+  "X-Firebase-Client":   "H4sIAAAAAAAA_6tWykhNLCpJSk0sKVayio7VUSpLLSrOzM9TslIyUqoFAFyivEQfAAAA",
+  "X-Firebase-AppCheck": APPCHECK,
+};
+
+const FB_STORAGE_HDR = {
+  "User-Agent":                 UA_DALVIK,
+  "Connection":                 "Keep-Alive",
+  "Accept-Encoding":            "gzip",
+  "x-firebase-appcheck":        APPCHECK,
+  "X-Firebase-Storage-Version": "Android/22.0.1",
+  "x-firebase-gmpid":           GMPID,
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Helpers
+// ══════════════════════════════════════════════════════════════════════════════
+
+const randHex   = (n) => [...Array(n)].map(() => Math.floor(Math.random() * 16).toString(16)).join("");
+const randAlnum = (n) => {
+  const c = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  return [...Array(n)].map(() => c[Math.floor(Math.random() * c.length)]).join("");
+};
+
+// Resolve image input → { b64, mime }
+// Accepts: URL string | base64 string | data-URI | Buffer
+async function resolveImg(src) {
+  if (Buffer.isBuffer(src))
+    return { b64: src.toString("base64"), mime: "image/jpeg" };
+  if (typeof src === "string") {
+    if (src.startsWith("data:")) {
+      const [meta, b64] = src.split(",");
+      return { b64, mime: meta.replace("data:", "").replace(";base64", "") };
+    }
+    if (src.startsWith("http")) {
+      console.log("[img] downloading", src);
+      const { data } = await axios.get(src, { responseType: "arraybuffer" });
+      return { b64: Buffer.from(data).toString("base64"), mime: "image/jpeg" };
+    }
+    return { b64: src, mime: "image/jpeg" }; // raw base64
+  }
+  throw new Error("unsupported image type");
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// NovaAI  —  single class for chat + image generation
+// ══════════════════════════════════════════════════════════════════════════════
+class NovaAI {
+  constructor() {
+    this.token      = null;
+    this.refresh    = null;
+    this.exp        = 0;
+    this.uid        = null;
+    this.platformId = randHex(16);
+    this.userId     = DEFAULT_USER_ID; // fixed; used for register & all x_user_id headers
+  }
+
+  // ── Token lifecycle ─────────────────────────────────────────────────────────
+
+  _setTok({ idToken, refreshToken, localId, expiresIn }) {
+    this.token   = idToken;
+    this.refresh = refreshToken ?? this.refresh;
+    this.uid     = localId ?? this.uid;
+    this.exp     = Date.now() + (Number(expiresIn) - 60) * 1000;
+  }
+
+  async _signup() {
+    console.log("[auth] Firebase anonymous signup…");
+    const { data } = await axios.post(
+      FB_SIGNUP_URL,
+      { clientType: "CLIENT_TYPE_ANDROID" },
+      { headers: FB_HDR }
+    );
+    this._setTok(data);
+    console.log("[auth] signup ok  uid =", this.uid, " expires_in =", data.expiresIn);
+  }
+
+  async _refreshTok() {
+    console.log("[auth] refreshing token…");
+    try {
+      const { data } = await axios.post(
+        FB_REFRESH_URL,
+        { grantType: "refresh_token", refreshToken: this.refresh },
+        { headers: FB_HDR }
+      );
+      this._setTok({
+        idToken:      data.id_token,
+        refreshToken: data.refresh_token,
+        localId:      data.user_id,
+        expiresIn:    data.expires_in,
+      });
+      console.log("[auth] refresh ok");
+    } catch {
+      await this._signup(); // fallback ke signup baru
+    }
+  }
+
+  // Auto-called before every API request
+  async _ensureAuth() {
+    if (!this.token)            return this._signup();
+    if (Date.now() >= this.exp) return this._refreshTok();
+  }
+
+  // ── Nova API shared headers ─────────────────────────────────────────────────
+
+  _hdr(extra = {}) {
+    return {
+      "User-Agent":      UA_NOVA,
+      "Accept-Encoding": "gzip",
+      "Content-Type":    "application/json",
+      x_pr:              "true",
+      x_platform:        "android",
+      x_dev:             "false",
+      x_version:         "3",
+      x_image_version:   "4",
+      x_platform_id:     this.platformId,
+      x_user_id:         this.userId,
+      x_token:           this.token ?? "",
+      ...extra,
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // register  →  POST /api/v3/users/{userId}
+  // body: { fcmToken, model: MODEL_MAP }
+  // ══════════════════════════════════════════════════════════════════════════
+  async register(fcmToken = "") {
+    await this._ensureAuth();
+    console.log("[register] userId =", this.userId);
+    try {
+      const { data } = await axios.post(
+        `${NOVA_BASE}/v3/users/${this.userId}`,
+        { fcmToken, model: MODEL_MAP },
+        { headers: this._hdr() }
+      );
+      console.log("[register] ok  isPremium =", data?.data?.isPremium,
+                  " totalCredit =", data?.data?.totalCredit);
+      return data;
+    } catch (e) {
+      console.error("[register] error", e?.response?.data ?? e.message);
+      throw e;
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // tokenCount  →  POST /api/token-count
+  // body: { content, model }
+  // ══════════════════════════════════════════════════════════════════════════
+  async tokenCount(content, model = 11) {
+    await this._ensureAuth();
+    try {
+      const { data } = await axios.post(
+        `${NOVA_BASE}/token-count`,
+        { content, model },
+        { headers: this._hdr() }
+      );
+      console.log("[token-count] token =", data?.token);
+      return data?.token ?? 0;
+    } catch (e) {
+      console.error("[token-count] error", e?.response?.data ?? e.message);
+      return 0;
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // _uploadImg  →  Firebase Storage resumable upload
+  // Dipakai oleh chat (vision) dan generate (edit mode)
+  // prefix: "vision" untuk chat, "image-generation" untuk generate
+  // ══════════════════════════════════════════════════════════════════════════
+  async _uploadImg(b64, mime = "image/jpeg", prefix = "vision") {
+    const ts      = Date.now();
+    const ext     = mime.split("/")[1] ?? "jpg";
+    const uid     = this.uid ?? this.userId;
+    const name    = prefix === "vision"
+      ? `vision/${uid}/${ts}/vision-image-input-${randAlnum(8)}.${ext}`
+      : `image-generation/${uid}/${ts}/result.${ext}`;
+    const encoded = encodeURIComponent(name);
+    const initUrl = `${STORAGE_BASE}?name=${encoded}&uploadType=resumable&upload_protocol=resumable`;
+    const buf     = Buffer.from(b64, "base64");
+
+    const sHdr = {
+      ...FB_STORAGE_HDR,
+      Authorization: `Firebase ${this.token}`,
+    };
+
+    console.log("[upload] initiating…", name);
+    const init = await axios.post(initUrl, null, {
+      headers: {
+        ...sHdr,
+        "Content-Type":                        mime,
+        "X-Goog-Upload-Command":               "start",
+        "X-Goog-Upload-Protocol":              "resumable",
+        "X-Goog-Upload-Header-Content-Length": buf.length,
+        "X-Goog-Upload-Header-Content-Type":   mime,
+      },
+    }).catch((e) => { console.error("[upload] init error", e?.response?.data ?? e.message); throw e; });
+
+    const uploadUrl =
+      init.headers["x-goog-upload-url"] ??
+      init.headers["location"]           ??
+      initUrl;
+
+    console.log("[upload] uploading", buf.length, "bytes…");
+    const result = await axios.post(uploadUrl, buf, {
+      headers: {
+        ...sHdr,
+        "Content-Type":           "application/octet-stream",
+        "X-Goog-Upload-Command":  "upload, finalize",
+        "X-Goog-Upload-Protocol": "resumable",
+        "X-Goog-Upload-Offset":   "0",
+      },
+      maxBodyLength:    Infinity,
+      maxContentLength: Infinity,
+    }).catch((e) => { console.error("[upload] finalize error", e?.response?.data ?? e.message); throw e; });
+
+    const storageName = result?.data?.name ?? name;
+    console.log("[upload] ok  name =", storageName);
+    return storageName;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // chat  →  POST /api/chat  (non-stream)
+  //
+  // Auto: auth → register → tokenCount → chat
+  //
+  // headers:
+  //   x_stream: false  x_model  x_token_count  x_function_status
+  //   x_cross_model  x_cross_pdf_model  x_cross_assistant_model
+  //   x_function_use  x_search  x_web_search_source  x_chat_id
+  //
+  // body: { messages:[{ role:"user", content:[...parts] }], modelMap }
+  //   part text : { type:"text", text }
+  //   part image: { type:"image", fileUrl:"/<storagePath>", mimeType }
+  //
+  // returns: string (reply text)
+  // ══════════════════════════════════════════════════════════════════════════
+  async chat({ prompt, image = null, model = 11, chatId, fcmToken = "", ...rest }) {
+    // 1. ensure auth
+    await this._ensureAuth();
+
+    // 2. auto register
+    await this.register(fcmToken);
+
+    // 3. count tokens
+    const tc = await this.tokenCount(prompt, model);
+    console.log("[chat] token-count =", tc);
+
+    chatId = chatId ?? randAlnum(20);
+    console.log("[chat] model =", model, " chatId =", chatId);
+
+    // 4. build content parts
+    const contentParts = [{ type: "text", text: prompt }];
+
+    if (image != null) {
+      console.log("[chat] uploading vision image…");
+      const { b64, mime } = await resolveImg(image);
+      const storagePath   = await this._uploadImg(b64, mime, "vision");
+      contentParts.push({ type: "image", fileUrl: `/${storagePath}`, mimeType: mime });
+    }
+
+    // 5. send chat
+    const body = {
+      messages: [{ role: "user", content: contentParts }],
+      modelMap:  MODEL_MAP,
+      ...rest,
+    };
+
+    const headers = this._hdr({
+      x_stream:                "false",
+      x_model:                 String(model),
+      x_token_count:           String(tc),
+      x_function_status:       "false",
+      x_cross_model:           "false",
+      x_cross_pdf_model:       "true",
+      x_cross_assistant_model: "true",
+      x_function_use:          "true",
+      x_search:                "false",
+      x_web_search_source:     "0",
+      x_chat_id:               chatId,
+    });
+
+    console.log("[chat] sending…");
+    try {
+      const { data } = await axios.post(`${NOVA_BASE}/chat`, body, { headers });
+      const reply = data ?? "";
+      console.log("[chat] done =", reply);
+      return reply;
+    } catch (e) {
+      console.error("[chat] error", e?.response?.data ?? e.message);
+      throw e;
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // generate  →  POST /api/image-generator
+  //
+  // Auto: auth → (upload input image if provided) → generate → download
+  //
+  // returns: { ok, url, buffer, contentType, raw }
+  // ══════════════════════════════════════════════════════════════════════════
+  async generate({ prompt, image = null, modelId = IMG.schnell, style = 0, ...rest }) {
+    await this._ensureAuth();
+
+    const pipeline    = PIPELINE[modelId] ?? "flux_schnell";
+    const uid         = this.uid ?? this.userId;
+    const storagePath = rest.url ?? `image-generation/${uid}/${Date.now()}/result.jpeg`;
+
+    // Resolve input image (for edit/kontext mode)
+    let imageBase64 = null;
+    if (image) {
+      const { b64 } = await resolveImg(image);
+      imageBase64 = b64;
+    }
+
+    console.log("[generate] pipeline =", pipeline, " prompt =", prompt);
+    let raw;
+    try {
+      const { data } = await axios.post(
+        `${NOVA_BASE}/image-generator`,
+        {
+          pipeline,
+          prompt,
+          url: storagePath,
+          ...(imageBase64 ? { image: imageBase64 } : {}),
+          ...rest,
+        },
+        {
+          headers: this._hdr({
+            x_model:       String(modelId),
+            x_style:       String(style),
+            x_source:      "2",
+            x_edit_source: "1",
+          }),
+        }
+      );
+      raw = data;
+    } catch (e) {
+      const err = e?.response?.data ?? e.message;
+      console.error("[generate] error:", err);
+      return { ok: false, error: err };
+    }
+
+    // Build download URL
+    const rawUrl = raw?.url ?? raw?.data?.url ?? raw?.image_url ?? storagePath;
+    const imgUrl = rawUrl.startsWith("http")
+      ? rawUrl
+      : `${STORAGE_BASE}/${encodeURIComponent(rawUrl)}?alt=media`;
+
+    console.log("[generate] ok  url =", imgUrl);
+
+    // Download result
+    const dl = await this._downloadImg(imgUrl);
+    if (!dl.ok) return { ok: false, error: dl.error };
+
+    return { ok: true, url: imgUrl, buffer: dl.buffer, contentType: dl.contentType, raw };
+  }
+
+  // ── internal: download from Firebase Storage ──────────────────────────────
+  async _downloadImg(storageUrl) {
+    await this._ensureAuth();
+    const url = storageUrl.includes("?alt=media")
+      ? storageUrl
+      : `${storageUrl}?alt=media`;
+    try {
+      const res = await axios.get(url, {
+        responseType: "arraybuffer",
+        headers: { ...FB_STORAGE_HDR, Authorization: `Firebase ${this.token}` },
+      });
+      const buffer      = Buffer.from(res.data);
+      const contentType = res.headers["content-type"] ?? "image/jpeg";
+      console.log("[download] ok", buffer.length, "bytes |", contentType);
+      return { ok: true, buffer, contentType };
+    } catch (e) {
+      const err = e?.response?.data ?? e.message;
+      console.error("[download] error:", err);
+      return { ok: false, error: err };
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Demo
+// ══════════════════════════════════════════════════════════════════════════════
+
+export default async function handler(req, res) {
+  const {
+    action,
+    ...params
+  } = req.method === "GET" ? req.query : req.body;
+
+  const validActions = ["chat", "generate"];
+
+  if (!action) {
+    return res.status(400).json({
+      status: false,
+      error: "Parameter 'action' wajib diisi.",
+      available_actions: validActions
+    });
+  }
+
+  if (!validActions.includes(action)) {
+    return res.status(400).json({
+      status: false,
+      error: `Action tidak valid: '${action}'.`,
+      valid_actions: validActions
+    });
+  }
+
+  const api = new NovaAI();
+
+  try {
+    let response;
+
+    switch (action) {
+      case "chat":
+        if (!params.prompt) {
+          return res.status(400).json({
+            status: false,
+            error: "Parameter 'prompt' wajib diisi untuk action 'chat'."
+          });
+        }
+        response = await api.chat(params);
+        
+        // Response chat dikirim sebagai JSON
+        return res.status(200).json({
+          status: true,
+          action: action,
+          ...response
+        });
+
+      case "generate":
+        if (!params.prompt) {
+          return res.status(400).json({
+            status: false,
+            error: "Parameter 'prompt' wajib diisi untuk action 'generate'."
+          });
+        }
+        response = await api.generate(params);
+
+        if (!response || !response.buffer) {
+          return res.status(502).json({
+            status: false,
+            error: "Gagal menghasilkan gambar atau buffer kosong."
+          });
+        }
+
+        // Response generate dikirim sebagai Image
+        res.setHeader("Content-Type", response.contentType || "image/png");
+        return res.status(200).send(response.buffer);
+
+      default:
+        return res.status(400).json({
+          status: false,
+          error: "Action tidak dikenali."
+        });
+    }
+  } catch (error) {
+    console.error(`[FATAL ERROR] Kegagalan pada action '${action}':`, error);
+    return res.status(500).json({
+      status: false,
+      message: "Terjadi kesalahan internal server.",
+      error: error.message || "Unknown Error"
+    });
+  }
+}
