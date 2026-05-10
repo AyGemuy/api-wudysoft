@@ -811,6 +811,7 @@ export default function handler(req, res) {
     { path: "/api/ai/dataplazma", name: "Dataplazma", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/ai/longcat", name: "Longcat", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/ai/novaapp", name: "Novaapp", params: [{ "name": "prompt", "in": "query", "required": false }], },
+    { path: "/api/ai/sahabat-ai", name: "Sahabat-ai", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/ai/runner-ai", name: "Runner-ai", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/ai/sara-study", name: "Sara-study", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/ai/sd-gpt", name: "Sd-gpt", params: [{ "name": "prompt", "in": "query", "required": false }], },
