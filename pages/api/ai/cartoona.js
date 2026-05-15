@@ -231,7 +231,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       status: true,
       action: action,
-      ...response
+      result: response
     });
   } catch (error) {
     console.error(`[FATAL ERROR] Kegagalan pada action '${action}':`, error);

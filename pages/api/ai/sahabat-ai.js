@@ -75,7 +75,7 @@ function buildHeaders(token, csrf, body, extra = {}) {
     ...extra
   };
 }
-export class SahabatAI {
+class SahabatAI {
   constructor() {
     this.token = null;
     this.csrf = null;
