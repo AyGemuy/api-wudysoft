@@ -24,6 +24,11 @@ class AssistantClient {
         referer: "https://docs.musixmatch.com/lyrics-api/matcher/matcher-lyrics-get",
         id: "musixmatch",
         path: "/musixmatch/message"
+      },
+      claude: {
+        referer: "https://code.claude.com/docs/en/cli-reference",
+        id: "claude-code",
+        path: "/claude-code/message"
       }
     };
   }
