@@ -201,6 +201,7 @@ class SahabatAI {
       let outConvId = conversationId ?? "";
       let outMsgId = messageId ?? "";
       let sources = [];
+      let chunks = [];
       let buf = "";
       let curEvent = "";
       await new Promise((resolve, reject) => {
@@ -220,6 +221,11 @@ class SahabatAI {
               if (!payload) continue;
               try {
                 const json = JSON.parse(payload);
+                chunks.push(json);
+                if (json?.type === "message_ids") {
+                  outConvId = json?.conversation_id ?? outConvId;
+                  outMsgId = json?.message_id ?? outMsgId;
+                }
                 switch (curEvent) {
                   case "content_block_delta": {
                     const delta = json?.delta?.text ?? "";
@@ -255,7 +261,8 @@ class SahabatAI {
         text: text,
         conversationId: outConvId,
         messageId: outMsgId,
-        sources: sources
+        sources: sources,
+        chunks: chunks
       };
     } catch (e) {
       console.error("[chat] error", JSON.stringify(e?.response?.data ?? e.message));

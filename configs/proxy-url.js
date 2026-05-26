@@ -4,8 +4,11 @@ class ProxyManager {
       name: "caliph",
       url: "https://cors.caliph.my.id/"
     }, {
-      name: "eu",
-      url: "https://cors.eu.org/"
+      name: "seep",
+      url: "https://seep.eu.org/"
+    }, {
+      name: "codefrau",
+      url: "https://cors.codefrau.workers.dev/"
     }, {
       name: "rpoxy",
       url: "https://rpoxy.apis6.workers.dev/"

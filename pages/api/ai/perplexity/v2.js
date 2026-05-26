@@ -4,7 +4,7 @@ import {
 } from "uuid";
 import PROXY from "@/configs/proxy-cors";
 const proxy = PROXY.url;
-console.log("CORS proxy", PROXY.url);
+console.log("CORS proxy", proxy);
 class Perplexity {
   constructor() {
     this.baseUrl = `${proxy}https://www.perplexity.ai/rest/sse/perplexity_ask`;
