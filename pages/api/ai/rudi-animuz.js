@@ -165,7 +165,6 @@ class Rudi {
       this.clientId = this.embedId;
       this.ready = true;
       console.log(`[init] success: embedId=${this.embedId} clientId=${this.clientId}`);
-      console.log(this.greets);
       return this;
     } catch (e) {
       console.error("[init] error:", e?.message);
@@ -212,7 +211,6 @@ class Rudi {
       const fid = crypto.randomBytes(13).toString("hex");
       const key = `code_interpreter/${fid}.${this._extOf(mime)}`;
       const ps = await this._presign(key);
-      console.log(ps);
       const fd = new FormData();
       const fields = ps?.fields || {};
       for (const [k, v] of Object.entries(fields)) fd.append(k, v);
@@ -306,64 +304,74 @@ class Rudi {
       }));
       const resp = await new Promise((resolve, reject) => {
         let chunks = [];
+        let rawEvents = [];
         let tid = setTimeout(() => {
-          if (this.ws) {
-            this.ws.close();
-            console.log("[ws] closed due to timeout");
-          }
+          cleanup();
           reject(new Error("ws timeout"));
         }, 3e4);
-        const reset = () => {
+        const resetTimeout = () => {
           clearTimeout(tid);
           tid = setTimeout(() => {
-            if (this.ws) {
-              this.ws.close();
-              console.log("[ws] closed due to timeout");
-            }
+            cleanup();
             reject(new Error("ws timeout"));
           }, 3e4);
+        };
+        const cleanup = () => {
+          clearTimeout(tid);
+          if (this.ws) {
+            this.ws.removeListener("message", onMsg);
+            this.ws.removeListener("error", onError);
+            this.ws.removeListener("close", onClose);
+            try {
+              this.ws.close();
+            } catch {}
+          }
         };
         const onMsg = raw => {
           try {
             const msg = JSON.parse(raw.toString());
-            console.log(msg);
+            resetTimeout();
+            rawEvents.push(msg);
             if (msg?.event === "ack" || msg?.event === "action") {
-              reset();
               return;
             }
             if (msg?.event === "message_stream" && msg?.sender === "assistant") {
-              chunks.push(msg?.content || "");
-              reset();
+              if (msg?.content) chunks.push(msg.content);
               return;
             }
             if (msg?.event === "message" && msg?.sender === "assistant") {
-              const full = chunks.length ? chunks.join("") + (msg?.message || "") : msg?.message || "";
-              clearTimeout(tid);
-              if (this.ws) {
-                this.ws.close();
-                console.log("[ws] closed after receiving full response");
-              }
+              const fullText = chunks.join("") + (msg?.message || "");
+              cleanup();
               resolve({
-                content: full,
-                raw: msg
+                content: fullText || msg?.message || "",
+                chunks: rawEvents
               });
             }
           } catch (e) {
             console.error("[ws parse] error:", e?.message);
           }
         };
-        this.ws.on("message", onMsg);
-        this.ws.once("error", e => {
-          clearTimeout(tid);
-          if (this.ws) this.ws.close();
+        const onError = e => {
+          cleanup();
           reject(e);
-        });
-        this.ws.once("close", () => {
-          clearTimeout(tid);
-          reject(new Error("ws closed unexpectedly"));
-        });
+        };
+        const onClose = () => {
+          if (chunks.length > 0) {
+            cleanup();
+            resolve({
+              content: chunks.join(""),
+              chunks: rawEvents
+            });
+          } else {
+            cleanup();
+            reject(new Error("ws closed unexpectedly without data"));
+          }
+        };
+        this.ws.on("message", onMsg);
+        this.ws.once("error", onError);
+        this.ws.once("close", onClose);
       });
-      if (!this.greets.length && !restored) {
+      if (!restored) {
         this.greets = [{
           role: "assistant",
           content: resp.content
@@ -376,7 +384,7 @@ class Rudi {
       return {
         state: newState,
         result: resp.content,
-        raw: resp.raw
+        chunks: resp.chunks
       };
     } catch (e) {
       console.error("[chat] error:", e?.message);

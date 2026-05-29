@@ -1,49 +1,49 @@
 import axios from "axios";
 import crypto from "crypto";
 const BASE_URL = "https://aiplatform.tattooidea.ai/aimodels/api/v1/ai";
-const MODEL_CHANNEL = {
-  nanobanana: "NANOBANANA_IMAGE",
-  "nanobanana-pro": "NANOBANANA_PRO_IMAGE",
-  "nanobanana-2": "NANOBANANA_2_IMAGE",
-  Sora: "GPT_4O_IMAGE",
-  "flux-kontext-pro": "FLUX_IMAGE",
-  "flux-kontext-max": "FLUX_IMAGE",
-  seedream: "SEEDREAM_V4_IMAGE",
-  "midjourney-relaxed": "MJ_IMAGE",
-  "midjourney-fast": "MJ_IMAGE",
-  "midjourney-turbo": "MJ_IMAGE",
-  "flux-2-flex": "FLUX2_FLEX_IMAGE",
-  "flux-2-pro": "FLUX2_PRO_IMAGE",
-  "z-image": "Z_IMAGE",
-  "seedream-v4-5": "SEEDREAM_V45_IMAGE",
-  "seedream-5-lite": "SEEDREAM_V5_LITE_IMAGE"
-};
-const VALID_RATIOS = {
-  "1:1": true,
-  "9:16": true,
-  "16:9": true,
-  "3:4": true,
-  "4:3": true,
-  "3:2": true,
-  "2:3": true,
-  "5:4": true,
-  "4:5": true,
-  "1:2": true,
-  "2:1": true,
-  "21:9": true,
-  auto: true
-};
-const VALID_OUTPUTS = {
-  png: true,
-  jpeg: true,
-  jpg: true
-};
 class NanoBanana {
   constructor() {
     this.uniqueId = crypto.randomBytes(16).toString("hex");
     this.pageId = 711;
     this.source = "nanobanana2ai.com";
     this.channel = null;
+    this.MODEL_CHANNEL = {
+      nanobanana: "NANOBANANA_IMAGE",
+      "nanobanana-pro": "NANOBANANA_PRO_IMAGE",
+      "nanobanana-2": "NANOBANANA_2_IMAGE",
+      Sora: "GPT_4O_IMAGE",
+      "flux-kontext-pro": "FLUX_IMAGE",
+      "flux-kontext-max": "FLUX_IMAGE",
+      seedream: "SEEDREAM_V4_IMAGE",
+      "midjourney-relaxed": "MJ_IMAGE",
+      "midjourney-fast": "MJ_IMAGE",
+      "midjourney-turbo": "MJ_IMAGE",
+      "flux-2-flex": "FLUX2_FLEX_IMAGE",
+      "flux-2-pro": "FLUX2_PRO_IMAGE",
+      "z-image": "Z_IMAGE",
+      "seedream-v4-5": "SEEDREAM_V45_IMAGE",
+      "seedream-5-lite": "SEEDREAM_V5_LITE_IMAGE"
+    };
+    this.VALID_RATIOS = {
+      "1:1": true,
+      "9:16": true,
+      "16:9": true,
+      "3:4": true,
+      "4:3": true,
+      "3:2": true,
+      "2:3": true,
+      "5:4": true,
+      "4:5": true,
+      "1:2": true,
+      "2:1": true,
+      "21:9": true,
+      auto: true
+    };
+    this.VALID_OUTPUTS = {
+      png: true,
+      jpeg: true,
+      jpg: true
+    };
     this.client = axios.create({
       baseURL: BASE_URL,
       headers: {
@@ -73,18 +73,24 @@ class NanoBanana {
       ok: false,
       error: "model is required"
     };
-    if (!Object.keys(MODEL_CHANNEL).includes(model)) return {
-      ok: false,
-      error: `model invalid, valid: ${Object.keys(MODEL_CHANNEL).join(", ")}`
-    };
-    if (ratio && !VALID_RATIOS[ratio]) return {
-      ok: false,
-      error: `ratio invalid, valid: ${Object.keys(VALID_RATIOS).join(", ")}`
-    };
-    if (output && !VALID_OUTPUTS[output]) return {
-      ok: false,
-      error: `output invalid, valid: ${Object.keys(VALID_OUTPUTS).join(", ")}`
-    };
+    if (!Object.keys(this.MODEL_CHANNEL).includes(model)) {
+      return {
+        ok: false,
+        error: `model invalid, valid: ${Object.keys(this.MODEL_CHANNEL).join(", ")}`
+      };
+    }
+    if (ratio && !this.VALID_RATIOS[ratio]) {
+      return {
+        ok: false,
+        error: `ratio invalid, valid: ${Object.keys(this.VALID_RATIOS).join(", ")}`
+      };
+    }
+    if (output && !this.VALID_OUTPUTS[output]) {
+      return {
+        ok: false,
+        error: `output invalid, valid: ${Object.keys(this.VALID_OUTPUTS).join(", ")}`
+      };
+    }
     return {
       ok: true
     };
@@ -225,9 +231,7 @@ class NanoBanana {
     }
   }
   sleep(ms) {
-    return new Promise(function(resolve) {
-      setTimeout(resolve, ms);
-    });
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
   async poll(taskId, maxTries, interval) {
     maxTries = maxTries || 60;
@@ -297,13 +301,16 @@ class NanoBanana {
     }
   }
   async generate({
-    model,
+    model = "nanobanana-2",
     prompt,
     image,
-    ratio,
-    output,
+    ratio = "auto",
+    output = "png",
     ...rest
-  }) {
+  } = {}) {
+    model = model || "nanobanana-2";
+    ratio = ratio || "auto";
+    output = output || "png";
     this.log("generate start", {
       model: model,
       prompt: prompt?.slice(0, 60),
@@ -323,7 +330,7 @@ class NanoBanana {
         this.log("generate validation fail", v.error);
         return v;
       }
-      const channel = this.channel || MODEL_CHANNEL[model] || "NANOBANANA_2_IMAGE";
+      const channel = this.channel || this.MODEL_CHANNEL[model] || "NANOBANANA_2_IMAGE";
       this.channel = channel;
       this.log("generate channel", channel);
       let imageUrls = [];

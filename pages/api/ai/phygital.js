@@ -261,7 +261,8 @@ class Phygital {
         balance: d.credits_balance,
         isInfinity: d.is_infinity,
         expiration: d.expiration_date,
-        breakdowns: d.credits_balance_breakdowns ?? []
+        breakdowns: d.credits_balance_breakdowns ?? [],
+        state: this._enc(this.s)
       };
       console.log(`[credits] balance:${out.balance} infinity:${out.isInfinity} exp:${out.expiration}`);
       return out;
@@ -345,7 +346,8 @@ class Phygital {
       const raw = await this._nodes();
       const all = raw.map(e => this._norm(e));
       const out = {
-        result: onlyAvailable ? all.filter(n => n.avail) : all
+        result: onlyAvailable ? all.filter(n => n.avail) : all,
+        state: this._enc(this.s)
       };
       return out;
     } catch (e) {
@@ -371,7 +373,8 @@ class Phygital {
       const prompts = records.map(r => r.fields?.Prompt).filter(Boolean);
       console.log(`[hints] ${prompts.length} prompts received`);
       const out = {
-        result: prompts
+        result: prompts,
+        state: this._enc(this.s)
       };
       return out;
     } catch (e) {

@@ -20,7 +20,6 @@ class LefiAI {
     this.tok = null;
     this.mail = null;
     this.ip = null;
-    this.user = null;
     this.http = this._mkHttp();
   }
   _uid() {
@@ -149,7 +148,6 @@ class LefiAI {
       this.ip = raw?.ip ?? null;
       this.ck = raw?.ck ?? {};
       console.log("[dec] ok — mail:", this.mail, "| ip:", this.ip, "| ck:", Object.keys(this.ck).length);
-      await this.whoami();
     } catch (e) {
       console.error("[dec] gagal parse, reset state:", e.message);
       this.tok = null;
@@ -172,52 +170,6 @@ class LefiAI {
     } catch (e) {
       console.error("[ip] gagal:", e?.response?.data ?? e.message);
       this.ip = "0.0.0.0";
-    }
-  }
-  async whoami() {
-    try {
-      console.log("[whoami] fetch...");
-      const res = await this.http.get(BASE + "/api/apps/" + AID + "/entities/User/me", {
-        headers: this._h()
-      });
-      this.user = res.data;
-      console.log("[whoami] ok — credits:", res.data?.credits, "| role:", res.data?.role);
-      return res.data;
-    } catch (e) {
-      console.error("[whoami] gagal:", e?.response?.data ?? e.message);
-      return null;
-    }
-  }
-  async setCredits(credits) {
-    if (credits === undefined) credits = 100;
-    try {
-      console.log("[credits] set ke " + credits + "...");
-      const res = await this.http.put(BASE + "/api/apps/" + AID + "/entities/User/me", {
-        credits: credits
-      }, {
-        headers: this._h({
-          "content-type": "application/json"
-        })
-      });
-      console.log("[credits] ok, sekarang:", res.data?.credits);
-      if (this.user) this.user.credits = res.data?.credits;
-      return res.data;
-    } catch (e) {
-      console.error("[credits] gagal:", e?.response?.data ?? e.message);
-      throw e;
-    }
-  }
-  async addCredits(n) {
-    try {
-      console.log("[credits] tambah " + n + "...");
-      const me = await this.whoami();
-      const current = me?.credits ?? 0;
-      const total = current + n;
-      console.log("[credits] " + current + " + " + n + " = " + total);
-      return this.setCredits(total);
-    } catch (e) {
-      console.error("[credits:add] gagal:", e.message);
-      throw e;
     }
   }
   async mkMail() {
@@ -447,8 +399,6 @@ class LefiAI {
       console.log("[run] mulai...");
       if (state) await this.dec(state);
       if (!this.tok) await this.login();
-      await this.setCredits();
-      await this.whoami();
       const imgUrls = await this.resolve(image);
       const url = await this.gen(prompt, imgUrls, rest);
       if (!url) throw new Error("url kosong dari gen");
@@ -458,8 +408,7 @@ class LefiAI {
       return {
         result: url,
         state: newState,
-        saved: saved?.id ?? null,
-        ...this.user ?? {}
+        saved: saved?.id ?? null
       };
     } catch (e) {
       console.error("[run] gagal:", e.message);

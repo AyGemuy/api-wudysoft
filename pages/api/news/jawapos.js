@@ -189,8 +189,8 @@ class Jawapos {
     if (!query) throw new Error("query required");
     const res = await this._gql(this.q.search, {
       keyword: query,
-      page: page,
-      limit: limit
+      page: Number(page),
+      limit: Number(limit)
     });
     if (!detail) return res;
     const list = res?.searchArticle?.data ?? [];
@@ -204,8 +204,8 @@ class Jawapos {
     ...rest
   } = {}) {
     const res = await this._gql(this.q.latest, {
-      page: page,
-      limit: limit
+      page: Number(page),
+      limit: Number(limit)
     });
     if (!detail) return res;
     const list = res?.articles?.data ?? [];
@@ -243,8 +243,8 @@ class Jawapos {
     if (!slug) throw new Error("category slug required");
     return this._gql(this.q.category, {
       slug: slug,
-      page: page,
-      limit: limit
+      page: Number(page),
+      limit: Number(limit)
     });
   }
   async author({
@@ -256,8 +256,8 @@ class Jawapos {
     if (!slug) throw new Error("author slug required");
     return this._gql(this.q.author, {
       slug: slug,
-      page: page,
-      limit: limit
+      page: Number(page),
+      limit: Number(limit)
     });
   }
   async menu() {

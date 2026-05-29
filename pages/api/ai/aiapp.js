@@ -348,7 +348,7 @@ class AiAppAI {
       throw e;
     }
   }
-  async tokenCount(content, model = 11) {
+  async tokenCount(content, model = 2) {
     await this._ensureAuth();
     try {
       const {
@@ -416,7 +416,7 @@ class AiAppAI {
   async chat({
     prompt,
     image = null,
-    model = 11,
+    model = 2,
     chatId,
     fcmToken = "",
     ...rest
