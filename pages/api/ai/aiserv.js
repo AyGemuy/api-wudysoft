@@ -1,214 +1,170 @@
 import axios from "axios";
-import FormData from "form-data";
-import crypto from "crypto";
-const FB_KEY = "AIzaSyD7w2BvFDOoPofWuBWzDZGsRNG-3eX4CUc";
-const FB_BASE = "https://www.googleapis.com/identitytoolkit/v3/relyingparty";
-const API_BASE = "https://aiserv.org/api/v2";
-const UA_DALVIK = "Dalvik/2.1.0 (Linux; U; Android 15; RMX3890 Build/AQ3A.240812.002)";
-const UA_OKHTTP = "okhttp/4.12.0";
-const FB_HDR = {
-  "User-Agent": UA_DALVIK,
-  Connection: "Keep-Alive",
-  "Accept-Encoding": "gzip",
-  "Content-Type": "application/json",
-  "X-Android-Package": "com.appstation.chatgpt",
-  "X-Android-Cert": "61ED377E85D386A8DFEE6B864BD85B0BFAA5AF81",
-  "Accept-Language": "id-ID, en-US",
-  "X-Client-Version": "Android/Fallback/X24000001/FirebaseCore-Android",
-  "X-Firebase-GMPID": "1:470502623630:android:c94d34995c6e3af67abcdf",
-  "X-Firebase-Client": "H4sIAAAAAAAA_6tWykhNLCpJSk0sKVayio7VUSpLLSrOzM9TslIyUqoFAFyivEQfAAAA"
-};
-class AiServ {
+class AiChat {
   constructor() {
+    this.cfg = {
+      base: "https://aiserv.org/api/v2",
+      tokUrl: "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyD7w2BvFDOoPofWuBWzDZGsRNG-3eX4CUc",
+      plat: "android",
+      ver: "3.3.0",
+      fallbackModel: "openrouter/auto"
+    };
     this.token = null;
-    this.uid = null;
-    this._ready = false;
-    this.fb = axios.create({
-      baseURL: FB_BASE
+    this.exp = 0;
+    this.history = [];
+    this.client = axios.create({
+      baseURL: this.cfg.base,
+      headers: {
+        "User-Agent": "okhttp/4.12.0",
+        "Accept-Encoding": "gzip",
+        "Content-Type": "application/json"
+      }
     });
-    this.api = axios.create({
-      baseURL: API_BASE
-    });
+    console.log("[System] Robust Engine initialized.");
   }
-  _rcid() {
-    return crypto.randomBytes(16).toString("hex");
-  }
-  async _signup() {
-    console.log("[signup] creating anonymous Firebase user...");
+  _build(role, content) {
     try {
-      const res = await this.fb.post(`/signupNewUser?key=${FB_KEY}`, {
-        clientType: "CLIENT_TYPE_ANDROID"
-      }, {
-        headers: FB_HDR
-      });
-      const token = res.data?.idToken;
-      const uid = res.data?.localId;
-      if (!token || !uid) throw new Error(`missing idToken/localId: ${JSON.stringify(res.data)}`);
-      console.log("[signup] ✓ uid:", uid, "| token:", token.slice(0, 20) + "…");
+      console.log(`[Process] Building message payload for [${role}]...`);
       return {
-        token: token,
-        uid: uid
+        id: Math.random().toString(36).substring(2, 15),
+        role: role || "user",
+        content: content || "Hai",
+        files: [],
+        created: Date.now(),
+        status: "success",
+        quote: "",
+        ...role === "assistant" ? {
+          streaming: false
+        } : {}
       };
     } catch (err) {
-      const detail = err.response ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}` : err.message;
-      throw new Error(`[signup] FAILED: ${detail}`);
+      console.error("[Error _build]", err.message);
+      throw err;
     }
   }
-  async _verify(token) {
-    console.log("[verify] checking account info...");
+  async _token() {
+    console.log("[Auth] Fetching new token from Google Identity...");
     try {
-      const res = await this.fb.post(`/getAccountInfo?key=${FB_KEY}`, {
-        idToken: token
-      }, {
-        headers: FB_HDR
-      });
-      const user = res.data?.users?.[0];
-      if (!user) throw new Error(`no user in response: ${JSON.stringify(res.data)}`);
-      console.log("[verify] ✓ uid:", user.localId, "| provider:", user.providerUserInfo?.[0]?.providerId ?? "anonymous");
-      return user;
-    } catch (err) {
-      const detail = err.response ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}` : err.message;
-      throw new Error(`[verify] FAILED: ${detail}`);
-    }
-  }
-  async _register(token) {
-    console.log("[register] registering user at aiserv...");
-    try {
-      const res = await this.api.post("/user", {
-        timezone: -480,
-        language: "id",
-        platform: "android",
-        customerInfo: {
-          nonSubscriptionTransactions: [],
-          originalPurchaseDate: null,
-          allPurchaseDatesMillis: {},
-          managementURL: null,
-          allPurchaseDates: {},
-          originalAppUserId: `$RCAnonymousID:${this._rcid()}`,
-          allExpirationDates: {},
-          firstSeen: new Date().toISOString(),
-          originalPurchaseDateMillis: null,
-          allExpirationDatesMillis: {},
-          requestDateMillis: Date.now(),
-          latestExpirationDate: null,
-          firstSeenMillis: Date.now(),
-          allPurchasedProductIdentifiers: [],
-          subscriptionsByProductIdentifier: {},
-          requestDate: new Date().toISOString(),
-          latestExpirationDateMillis: null,
-          originalApplicationVersion: null,
-          activeSubscriptions: [],
-          entitlements: {
-            active: {},
-            verification: "NOT_REQUESTED",
-            all: {}
-          }
+      const res = await this.client.request({
+        method: "POST",
+        url: this.cfg.tokUrl,
+        data: {
+          returnSecureToken: true
         }
-      }, {
+      });
+      this.token = res?.data || null;
+      this.exp = Date.now() + (parseInt(this.token?.expiresIn || "3600", 10) - 60) * 1e3;
+      console.log("[Auth] Token persistent allocation complete.");
+      return this.token?.idToken;
+    } catch (err) {
+      console.error("[Error _token]", err?.response?.data || err.message);
+      throw err;
+    }
+  }
+  async _stream(id, tk) {
+    console.log(`[Stream] Attaching pipeline to Job ID: ${id}`);
+    try {
+      const res = await this.client.request({
+        method: "GET",
+        url: `/chat/stream/${id}`,
         headers: {
-          "User-Agent": UA_OKHTTP,
-          "Accept-Encoding": "gzip",
-          "Content-Type": "application/json",
-          authorization: `Bearer ${token}`,
-          "x-platform": "android"
+          Accept: "text/event-stream",
+          "cache-control": "no-cache",
+          authorization: `Bearer ${tk}`,
+          "x-platform": this.cfg.plat
         }
       });
-      const id = res.data?.id;
-      if (!id) throw new Error(`no id in response: ${JSON.stringify(res.data)}`);
-      console.log("[register] ✓ user id:", id, "| created:", res.data?.createdAt);
-      return res.data;
+      console.log("[Stream] Parsing chunks via index slicing...");
+      const lines = (res?.data || "").split("\n");
+      let txt = "";
+      for (const line of lines) {
+        if (line.startsWith("data:")) {
+          try {
+            const json = JSON.parse(line.slice(5).trim());
+            if (json?.type === "data") txt += json?.content || "";
+          } catch (_) {}
+        }
+      }
+      console.log("[Stream] Parsing complete.");
+      return txt;
     } catch (err) {
-      const detail = err.response ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}` : err.message;
-      throw new Error(`[register] FAILED: ${detail}`);
-    }
-  }
-  async _auth(providedToken = null) {
-    if (providedToken) {
-      console.log("[auth] using provided token:", providedToken.slice(0, 20) + "…");
-      this.token = providedToken;
-      this._ready = true;
-      return;
-    }
-    if (this._ready) {
-      console.log("[auth] already authenticated, skipping");
-      return;
-    }
-    console.log("[auth] starting auto auth flow...");
-    try {
-      const {
-        token,
-        uid
-      } = await this._signup();
-      await this._verify(token);
-      await this._register(token);
-      this.token = token;
-      this.uid = uid;
-      this._ready = true;
-      console.log("[auth] ✓ auth complete | uid:", uid);
-    } catch (err) {
-      console.error("[auth] ✗ FAILED:", err.message);
+      console.error("[Error _stream]", err?.response?.data || err.message);
       throw err;
     }
   }
   async chat({
-    token = null,
+    token,
     prompt,
-    model = "gpt-5-mini",
-    isPro = false,
-    mode = "text",
-    history = [],
+    messages,
     ...rest
   }) {
-    console.log("─".repeat(55));
-    console.log("[chat] prompt:", prompt);
-    console.log("[chat] model:", model, "| mode:", mode, "| isPro:", isPro);
-    console.log("[chat] token provided:", token ? "yes" : "no (auto auth)");
+    console.log("[Engine] Context compilation initialized...");
     try {
-      await this._auth(token);
-      const messages = [...history, {
-        role: "user",
-        content: prompt
-      }];
-      console.log("[chat] messages count:", messages.length);
-      const form = new FormData();
-      form.append("mode", mode);
-      form.append("isPro", String(isPro));
-      form.append("model", model);
-      messages.forEach((msg, i) => {
-        form.append(`messages[${i}][role]`, msg.role);
-        form.append(`messages[${i}][content]`, msg.content);
-      });
-      for (const [k, v] of Object.entries(rest)) {
-        form.append(k, String(v));
-        console.log("[chat] extra field:", k, "=", v);
+      const isExp = Date.now() >= this.exp;
+      const actTok = token || !isExp && this.token?.idToken || await this._token();
+      if (Array.isArray(messages) && messages.length > 0) {
+        console.log("[Engine] Syncing external history context...");
+        this.history = [...messages];
       }
-      console.log("[chat] sending request...");
-      const res = await this.api.post("/chat/prompt", form, {
+      this.history.push(this._build("user", prompt || "Hai"));
+      console.log("[Validation] Inspecting available server models array...");
+      let chosenModel = rest?.model || this.cfg.fallbackModel;
+      try {
+        const resModels = await this.client.request({
+          method: "GET",
+          url: "/chat/models",
+          headers: {
+            authorization: `Bearer ${actTok}`,
+            "x-platform": this.cfg.plat,
+            "x-app-version": rest?.appVersion || this.cfg.ver
+          }
+        });
+        const modelsList = Array.isArray(resModels?.data) ? resModels.data : [];
+        const isModelValid = modelsList.some(m => m?.model === chosenModel || m?.id === chosenModel);
+        if (!isModelValid) {
+          console.warn(`[Validation Warning] Model [${chosenModel}] unavailable. Fallback to default allocation logic.`);
+          chosenModel = this.cfg.fallbackModel;
+        } else {
+          console.log(`[Validation] Verified model target: [${chosenModel}]`);
+        }
+      } catch (errModels) {
+        console.warn("[Validation Warning] Validation stream connection failure, using target request raw parameter instead.", errModels.message);
+      }
+      console.log(`[Engine] Transmitting payload under verified model ID: ${chosenModel}`);
+      const res = await this.client.request({
+        method: "POST",
+        url: "/chat/stream",
         headers: {
-          "User-Agent": UA_OKHTTP,
-          "Accept-Encoding": "gzip",
-          authorization: `Bearer ${this.token}`,
-          "x-platform": "android",
-          ...form.getHeaders()
+          authorization: `Bearer ${actTok}`,
+          "x-platform": this.cfg.plat,
+          "x-app-version": rest?.appVersion || this.cfg.ver
+        },
+        data: {
+          mode: rest?.mode || "text",
+          action: rest?.action || "create",
+          isPro: rest?.isPro ?? false,
+          model: chosenModel,
+          messages: this.history
         }
       });
-      const msg = res.data?.message || res.data;
-      const limit = res.data?.limit;
-      if (!msg) throw new Error(`no message in response: ${JSON.stringify(res.data)}`);
-      console.log("[chat] ✓ reply:", msg.content);
-      console.log("[chat] ✓ credits left:", limit?.left ?? "?", "/", limit?.full ?? "?");
-      console.log("[chat] ✓ token (reusable):", this.token.slice(0, 20) + "…");
-      console.log("─".repeat(55));
+      const id = res?.data?.jobId;
+      if (!id) throw new Error("Missing transactional server Job ID mapping token.");
+      console.log(`[Engine] Execution pointer assigned to Job ID: ${id}`);
+      const reply = await this._stream(id, actTok);
+      this.history.push(this._build("assistant", reply));
+      console.log("[Engine] Context cycle operation successfully completed.");
       return {
-        token: this.token,
-        result: msg,
-        limit: limit
+        result: reply,
+        history: [...this.history],
+        token: actTok,
+        info: {
+          id: id,
+          model: chosenModel,
+          limit: res?.data?.limit || null
+        }
       };
     } catch (err) {
-      const detail = err.response ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}` : err.message;
-      console.error("[chat] ✗ FAILED:", detail);
-      console.log("─".repeat(55));
-      throw new Error(`[chat] FAILED: ${detail}`);
+      console.error("[Error chat]", err?.response?.data || err.message);
+      throw err;
     }
   }
 }
@@ -219,7 +175,7 @@ export default async function handler(req, res) {
       error: "Parameter 'prompt' diperlukan"
     });
   }
-  const api = new AiServ();
+  const api = new AiChat();
   try {
     const data = await api.chat(params);
     return res.status(200).json(data);

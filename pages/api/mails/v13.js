@@ -1,5 +1,4 @@
 import cloudscraper from "cloudscraper";
-
 const BASE_HEADERS = {
   accept: "application/json, text/plain, */*",
   "accept-language": "id-ID",
@@ -18,12 +17,19 @@ const BASE_HEADERS = {
   "sec-fetch-site": "same-origin",
   "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36"
 };
-
 class ClientService {
-  async request({ url, body, method, headers, ...rest }) {
+  async request({
+    url,
+    body,
+    method,
+    headers,
+    ...rest
+  }) {
     const u = url || "";
     const m = method || "GET";
-    const h = headers || { "User-Agent": "Mozilla/5.0" };
+    const h = headers || {
+      "User-Agent": "Mozilla/5.0"
+    };
     const max = rest?.maxRetries || 5;
     const wait = rest?.retryDelay || 3e3;
     for (let i = 0; i < max; i++) {
@@ -56,13 +62,11 @@ class ClientService {
     }
   }
 }
-
 class TempMailLAClient {
   constructor() {
     this.apiBase = "https://tempmail.la/api/mail";
     this.client = new ClientService();
   }
-
   async create() {
     try {
       console.log("START: Creating new TempMail.la email...");
@@ -70,7 +74,7 @@ class TempMailLAClient {
         url: `${this.apiBase}/create`,
         method: "POST",
         headers: BASE_HEADERS,
-        body: JSON.stringify({}),
+        body: JSON.stringify({})
       });
       console.log("SUCCESS: TempMail.la email created.", data);
       return data?.data || data;
@@ -79,8 +83,10 @@ class TempMailLAClient {
       throw new Error(error.message);
     }
   }
-
-  async message({ email: address, cursor = null }) {
+  async message({
+    email: address,
+    cursor = null
+  }) {
     if (!address) throw new Error("Email address is required.");
     try {
       console.log(`START: Fetching mailbox for ${address}...`);
@@ -88,7 +94,10 @@ class TempMailLAClient {
         url: `${this.apiBase}/box`,
         method: "POST",
         headers: BASE_HEADERS,
-        body: JSON.stringify({ address, cursor }),
+        body: JSON.stringify({
+          address: address,
+          cursor: cursor
+        })
       });
       console.log(`SUCCESS: Mailbox retrieved for ${address}.`);
       return data?.data || data;

@@ -1,308 +1,317 @@
 import axios from "axios";
-import * as cheerio from "cheerio";
-import crypto from "crypto";
 import {
-  EventSource
-} from "eventsource";
-import SpoofHead from "@/lib/spoof-head";
+  wrapper
+} from "axios-cookiejar-support";
+import {
+  CookieJar
+} from "tough-cookie";
+import * as cheerio from "cheerio";
+const BASE = "https://chatx.ai";
+const UA = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36";
 class ChatX {
   constructor() {
-    this.baseUrl = "https://chatx.ai";
-    this.axiosInstance = axios.create({
-      baseURL: this.baseUrl,
-      withCredentials: true
-    });
-    this.cookies = "";
-    this.csrfToken = "";
-    this.userId = "";
-    this.chatsId = "";
-    this.axiosInstance.interceptors.response.use(response => {
-      const setCookieHeader = response.headers["set-cookie"];
-      if (setCookieHeader) {
-        const newCookies = setCookieHeader.map(cookie => cookie.split(";")[0]);
-        const existingCookieMap = new Map(this.cookies.split("; ").filter(Boolean).map(c => c.split("=")));
-        newCookies.forEach(newCookie => {
-          const [name, value] = newCookie.split("=");
-          existingCookieMap.set(name, value);
-        });
-        this.cookies = Array.from(existingCookieMap).map(([name, value]) => `${name}=${value}`).join("; ");
-        this.axiosInstance.defaults.headers.common["Cookie"] = this.cookies;
-      }
-      return response;
-    }, error => {
-      console.error("Axios response interceptor error:", error.message);
-      return Promise.reject(error);
-    });
-    this.axiosInstance.interceptors.request.use(config => {
-      if (this.cookies) config.headers["Cookie"] = this.cookies;
-      if (this.csrfToken && config.method === "post") config.headers["X-CSRF-TOKEN"] = this.csrfToken;
-      return config;
-    }, error => {
-      console.error("Axios request interceptor error:", error.message);
-      return Promise.reject(error);
-    });
-  }
-  randomCryptoIP() {
-    return Array.from(crypto.randomBytes(4)).map(b => b % 256).join(".");
-  }
-  buildHeaders(extra = {}) {
-    const ip = this.randomCryptoIP();
-    return {
-      accept: "*/*",
-      "accept-language": "id-ID,id;q=0.9",
-      origin: this.baseUrl,
-      referer: `${this.baseUrl}/`,
-      "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
-      "sec-ch-ua": `"Chromium";v="131", "Not_A Brand";v="24", "Microsoft Edge Simulate";v="131", "Lemur";v="131"`,
-      "sec-ch-ua-mobile": "?1",
-      "sec-ch-ua-platform": `"Android"`,
-      "sec-fetch-dest": "empty",
-      "sec-fetch-mode": "cors",
-      "sec-fetch-site": "same-origin",
-      "x-request-id": this.chatsId,
-      ...SpoofHead(),
-      ...extra
-    };
-  }
-  async initializeSession() {
-    if (this.csrfToken && this.cookies && this.chatsId) {
-      return {
-        csrfToken: this.csrfToken,
-        cookies: this.cookies,
-        chatsId: this.chatsId
-      };
-    }
-    try {
-      console.log("Initializing session - fetching cookies, CSRF token, and chat ID...");
-      const response = await this.axiosInstance.get("/", {
-        headers: this.buildHeaders({
-          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
-        })
-      });
-      const $ = cheerio.load(response.data);
-      this.csrfToken = $('meta[name="csrf-token"]').attr("content");
-      const formToken = $('form[action="https://chatx.ai/dologin"] input[name="_token"]').attr("value");
-      if (formToken) {
-        this.csrfToken = formToken;
-        console.log("CSRF Token obtained from login form.");
-      } else if (this.csrfToken) {
-        console.log("CSRF Token obtained from meta tag.");
-      } else {
-        console.warn("CSRF token not found on initial page load.");
-      }
-      const chatIDMatch = $('div.chats a[onclick^="openconversions"]').attr("onclick");
-      if (chatIDMatch) {
-        const match = chatIDMatch.match(/'(\d+)'/);
-        if (match && match[1]) {
-          this.chatsId = match[1];
-          console.log("Chat ID obtained from div.chats:", this.chatsId);
-        } else {
-          console.warn("Chat ID not found in openconversions attribute. Setting a default random ID.");
-          this.chatsId = this.randomCryptoIP().replace(/\./g, "");
-        }
-      } else {
-        console.warn("Chat ID element not found on initial page load. Setting a default random ID.");
-        this.chatsId = this.randomCryptoIP().replace(/\./g, "");
-      }
-      if (response.headers["set-cookie"]) {
-        this.cookies = response.headers["set-cookie"].map(cookie => cookie.split(";")[0]).join("; ");
-        this.axiosInstance.defaults.headers.common["Cookie"] = this.cookies;
-        console.log("Initial Cookies obtained.");
-      } else {
-        console.warn("No initial cookies found in the response.");
-      }
-      if (!this.csrfToken && !this.cookies && !this.chatsId) throw new Error("Failed to get initial CSRF token, cookies, and chat ID.");
-      console.log("Session initialization complete.");
-      return {
-        csrfToken: this.csrfToken,
-        cookies: this.cookies,
-        chatsId: this.chatsId
-      };
-    } catch (error) {
-      console.error("Error during session initialization:", error.message);
-      throw error;
-    }
-  }
-  async getChatAndUserIds() {
-    if (!this.userId || !this.chatsId) {
-      await this.initializeSession();
-    }
-    if (!this.userId) {
-      this.userId = this.chatsId;
-      console.log("User ID not explicitly found, using chats ID as User ID:", this.userId);
-    }
-    const data = new URLSearchParams({
-      _token: this.csrfToken,
-      id: this.chatsId,
-      page: "0"
-    }).toString();
-    const headers = this.buildHeaders({
-      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-      "X-Requested-With": "XMLHttpRequest",
-      Accept: "application/json, text/javascript, */*; q=0.01"
-    });
-    try {
-      console.log(`Attempting to fetch user ID and chats ID from /en/openconversions with chatsId: ${this.chatsId}...`);
-      const response = await this.axiosInstance.post("/en/openconversions", data, {
-        headers: headers
-      });
-      if (response.data && response.data.chats) {
-        this.userId = response.data.chats.user_id;
-        this.chatsId = response.data.chats.id;
-        console.log("User ID obtained from /en/openconversions:", this.userId);
-        console.log("Chats ID obtained from /en/openconversions:", this.chatsId);
-      } else {
-        console.warn("User ID or Chats ID not found in /en/openconversions response. Using existing/generated IDs.");
-      }
-      return {
-        userId: this.userId,
-        chatsId: this.chatsId
-      };
-    } catch (error) {
-      console.error("Error fetching user ID and chats ID from /en/openconversions:", error.message);
-      console.warn("Failed to get user ID and chats ID from API. Using existing/generated IDs:", this.userId, this.chatsId);
-      return {
-        userId: this.userId,
-        chatsId: this.chatsId
-      };
-    }
-  }
-  async sendChat({
-    prompt,
-    current_model = "gpt3",
-    is_web = 0
-  }) {
-    await this.initializeSession();
-    await this.getChatAndUserIds();
-    const data = new URLSearchParams({
-      _token: this.csrfToken,
-      user_id: this.userId,
-      chats_id: this.chatsId,
-      prompt: prompt,
-      current_model: current_model,
-      is_web: is_web
-    }).toString();
-    const headers = this.buildHeaders({
-      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-      "X-Requested-With": "XMLHttpRequest",
-      Accept: "application/json, text/javascript, */*; q=0.01"
-    });
-    try {
-      console.log("Sending chat prompt...");
-      const response = await this.axiosInstance.post("/en/sendchat", data, {
-        headers: headers
-      });
-      console.log("SendChat response received.");
-      return response.data;
-    } catch (error) {
-      console.error("Error sending chat:", error.message);
-      throw error;
-    }
-  }
-  async streamChat({
-    current_model = "gpt3",
-    conversions_id,
-    ass_conversions_id,
-    g_recaptcha_response = "",
-    reasoning_effort = "medium",
-    is_web = 0
-  }) {
-    await this.initializeSession();
-    await this.getChatAndUserIds();
-    const params = new URLSearchParams({
-      user_id: this.userId,
-      chats_id: this.chatsId,
-      current_model: current_model,
-      conversions_id: conversions_id,
-      ass_conversions_id: ass_conversions_id,
-      g_recaptcha_response: g_recaptcha_response,
-      is_web: is_web,
-      reasoning_effort: reasoning_effort
-    }).toString();
-    const streamUrl = `${this.baseUrl}/en/chats_stream?${params}`;
-    console.log("Starting chat stream from URL:", streamUrl);
-    const esOptions = {
+    this.jar = new CookieJar();
+    this.http = wrapper(axios.create({
+      baseURL: BASE,
+      jar: this.jar,
+      withCredentials: true,
       headers: {
-        Cookie: this.cookies,
-        ...this.buildHeaders({
-          Accept: "text/event-stream"
-        })
+        "user-agent": UA,
+        "accept-language": "id-ID"
       }
+    }));
+    this.token = null;
+    this.userId = null;
+    this.chatId = null;
+    this.convId = null;
+    this.assConvId = null;
+  }
+  headers(customHeaders = {}) {
+    return {
+      accept: "application/json, text/javascript, */*; q=0.01",
+      "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "x-csrf-token": this.token,
+      "x-requested-with": "XMLHttpRequest",
+      referer: `${BASE}/gpt`,
+      ...customHeaders
     };
-    return new Promise((resolve, reject) => {
-      let fullContent = "";
-      const es = new EventSource(streamUrl, esOptions);
-      es.onopen = () => console.log("EventSource connection opened.");
-      es.onmessage = event => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.choices?.[0]?.delta?.content) fullContent += data.choices[0].delta.content;
-          else if (event.data === "[DONE]") {
-            console.log("Stream received [DONE] event.");
-            es.close();
-            resolve(fullContent);
-          }
-        } catch (e) {
-          if (event.data === "[DONE]") {
-            console.log("Stream received [DONE] event during parsing attempt.");
-            es.close();
-            resolve(fullContent);
-          } else {
-            console.error("Error parsing EventSource message:", e.message, "Data:", event.data);
-          }
-        }
-      };
-      es.onerror = err => {
-        console.error("EventSource error:", err);
-        es.close();
-        reject(new Error("EventSource error during stream: " + (err.message || "Unknown error")));
-      };
-      es.onclose = () => {
-        console.log("EventSource connection closed.");
-        resolve(fullContent);
-      };
+  }
+  body(obj) {
+    return new URLSearchParams({
+      _token: this.token,
+      ...obj
     });
+  }
+  log(tag, ...msg) {
+    console.log(`[${tag}]`, ...msg);
+  }
+  save() {
+    try {
+      const b64 = Buffer.from(JSON.stringify({
+        cookies: this.jar.toJSON(),
+        token: this.token,
+        userId: this.userId,
+        chatId: this.chatId,
+        convId: this.convId,
+        assConvId: this.assConvId
+      })).toString("base64");
+      this.log("save", "State berhasil diexport, panjang:", b64.length);
+      return b64;
+    } catch (e) {
+      this.log("save", "ERROR gagal export state:", e.message);
+      return null;
+    }
+  }
+  load(b64) {
+    try {
+      const s = JSON.parse(Buffer.from(b64, "base64").toString("utf8"));
+      this.jar = CookieJar.fromJSON(JSON.stringify(s.cookies));
+      this.token = s.token;
+      this.userId = s.userId;
+      this.chatId = s.chatId ? String(s.chatId) : null;
+      this.convId = s.convId ? String(s.convId) : null;
+      this.assConvId = s.assConvId ? String(s.assConvId) : null;
+      this.log("load", "State loaded -> user:", this.userId, "| chat:", this.chatId, "| conv:", this.convId, "| assConv:", this.assConvId);
+      return true;
+    } catch (e) {
+      this.log("load", "ERROR gagal muat state:", e.message);
+      return false;
+    }
+  }
+  async connect() {
+    try {
+      this.log("connect", "Melakukan GET ke /gpt...");
+      const res = await this.http.get("/gpt", {
+        headers: {
+          accept: "text/html"
+        }
+      });
+      const $ = cheerio.load(res.data);
+      this.token = $('meta[name="csrf-token"]').attr("content") || null;
+      this.userId = $('input[name="user_id"]').val() || $("#user_id").val() || null;
+      if (!this.chatId) {
+        const htmlId = $('input[name="chats_id"]').val() || $("#chats_id").val() || null;
+        if (htmlId) this.chatId = String(htmlId);
+      }
+      this.log("connect", "Hasil -> token:", this.token, "| userId:", this.userId, "| chatId:", this.chatId);
+      if (!this.token) throw new Error("Gagal mendapatkan CSRF Token via Cheerio");
+      if (!this.userId) throw new Error("Gagal mendapatkan User ID via Cheerio");
+    } catch (e) {
+      this.log("connect", "ERROR:", e.message);
+      throw e;
+    }
+  }
+  async create() {
+    try {
+      this.log("create", "Melakukan POST ke /newchat...");
+      const res = await this.http.post("/newchat", this.body({
+        user_id: this.userId,
+        is_manual: 0
+      }), {
+        headers: this.headers()
+      });
+      const $ = cheerio.load(res.data);
+      const extractedId = $("[data-action='chatedit']").first().attr("data-id");
+      if (!extractedId) {
+        throw new Error("Murni Cheerio gagal menemukan id room dari HTML response /newchat.");
+      }
+      this.chatId = String(extractedId).trim();
+      this.log("create", "Room baru berhasil didapatkan via server:", this.chatId);
+    } catch (e) {
+      this.log("create", "FATAL ERROR:", e.message);
+      throw e;
+    }
+  }
+  async open() {
+    try {
+      this.log("open", "Melakukan sinkronisasi room via /openconversions untuk id:", this.chatId);
+      const res = await this.http.post("/openconversions", this.body({
+        id: this.chatId,
+        page: 0
+      }), {
+        headers: this.headers()
+      });
+      if (res.data?.chats?.id) {
+        this.chatId = String(res.data.chats.id);
+      }
+      this.log("open", "Sinkronisasi room sukses");
+    } catch (e) {
+      this.log("open", "ERROR sinkronisasi room:", e.message);
+      throw e;
+    }
+  }
+  async setModel(model) {
+    try {
+      this.log("model", "Mengubah pengaturan model aktif ke:", model);
+      await this.http.post("/user_model", this.body({
+        model: model
+      }), {
+        headers: this.headers()
+      });
+      this.log("model", "Model sukses diterapkan");
+    } catch (e) {
+      this.log("model", "ERROR gagal menerapkan model:", e.message);
+      throw e;
+    }
+  }
+  async setTitle(title) {
+    try {
+      const shortTitle = title.slice(0, 50);
+      this.log("title", "Mengubah judul obrolan menjadi:", shortTitle);
+      await this.http.post("/editchat", this.body({
+        id: this.chatId,
+        title: shortTitle
+      }), {
+        headers: this.headers()
+      });
+      this.log("title", "Judul room diperbarui");
+    } catch (e) {
+      this.log("title", "ERROR gagal update judul:", e.message);
+    }
+  }
+  async send(customPayload = {}) {
+    try {
+      this.log("send", "Mengirim data prompt ke /sendchat...");
+      const defaultPayload = {
+        user_id: this.userId,
+        chats_id: this.chatId,
+        is_web: "0",
+        is_youtube: "0"
+      };
+      const res = await this.http.post("/sendchat", this.body({
+        ...defaultPayload,
+        ...customPayload
+      }), {
+        headers: this.headers()
+      });
+      if (res.data?.conversions_id) this.convId = String(res.data.conversions_id);
+      if (res.data?.ass_conversions_id) this.assConvId = String(res.data.ass_conversions_id);
+      this.log("send", "Respons sendchat -> convId:", this.convId, "| assConvId:", this.assConvId);
+      return res.data;
+    } catch (e) {
+      this.log("send", "ERROR gagal mengirim payload chat:", e.message);
+      throw e;
+    }
+  }
+  async stream(customParams = {}) {
+    try {
+      this.log("stream", "Menginisialisasi koneksi Server-Sent Events (SSE)...");
+      const defaultParams = {
+        user_id: this.userId,
+        chats_id: this.chatId,
+        conversions_id: this.convId,
+        ass_conversions_id: this.assConvId,
+        is_web: "0",
+        is_youtube: "0",
+        reasoning_effort: "low",
+        verbosity: "low"
+      };
+      const q = new URLSearchParams({
+        ...defaultParams,
+        ...customParams
+      });
+      const res = await this.http.get(`/chats_stream?${q}`, {
+        headers: {
+          accept: "text/event-stream",
+          referer: `${BASE}/gpt`
+        },
+        responseType: "stream"
+      });
+      return new Promise((resolve, reject) => {
+        let fullText = "";
+        let buffer = "";
+        const streamChunks = [];
+        res.data.on("data", chunk => {
+          buffer += chunk.toString();
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line.startsWith("data:")) continue;
+            const rawData = line.slice(5).trim();
+            if (!rawData || ["end", "[DONE]"].includes(rawData)) continue;
+            try {
+              const parsed = JSON.parse(rawData);
+              streamChunks.push(parsed);
+              if (parsed?.type === "response.output_text.delta" && parsed.delta != null) {
+                fullText += parsed.delta;
+                process.stdout.write(parsed.delta);
+              }
+            } catch {}
+          }
+        });
+        res.data.on("end", () => {
+          console.log();
+          this.log("stream", "Koneksi stream ditutup. Total panjang karakter:", fullText.length);
+          resolve({
+            text: fullText,
+            chunks: streamChunks
+          });
+        });
+        res.data.on("error", err => {
+          this.log("stream", "ERROR di tengah aliran data stream:", err.message);
+          reject(err);
+        });
+      });
+    } catch (e) {
+      this.log("stream", "ERROR fatal inisialisasi stream:", e.message);
+      throw e;
+    }
   }
   async chat({
     prompt,
-    current_model = "gpt3",
-    is_web = 0
+    model = "gpt3",
+    state = null,
+    ...rest
   }) {
     try {
-      console.log("Starting combined chat process...");
-      await this.initializeSession();
-      console.log("Session ensured.");
-      await this.getChatAndUserIds();
-      console.log(`User ID: ${this.userId}, Chats ID: ${this.chatsId} ensured.`);
-      console.log(`Sending prompt: "${prompt}" with model: "${current_model}"`);
-      const sendChatResponse = await this.sendChat({
-        prompt: prompt,
-        current_model: current_model,
-        is_web: is_web
-      });
-      if (sendChatResponse?.conversions_id && sendChatResponse?.ass_conversions_id) {
-        const {
-          conversions_id: conversionsId,
-          ass_conversions_id: assConversionsId
-        } = sendChatResponse;
-        console.log(`Initial chat sent. Conversions ID: ${conversionsId}, Ass Conversions ID: ${assConversionsId}.`);
-        console.log("Starting to stream the chat response...");
-        const streamContent = await this.streamChat({
-          current_model: current_model,
-          conversions_id: conversionsId,
-          ass_conversions_id: assConversionsId,
-          is_web: is_web
-        });
-        console.log("Chat stream finished.");
-        return streamContent;
+      if (state) {
+        this.log("chat", "Mendefinisikan sesi & auto-set ID dari state...");
+        this.load(state);
       } else {
-        const errorMessage = "SendChat did not return valid conversions_id or ass_conversions_id.";
-        console.error(errorMessage, sendChatResponse);
-        throw new Error(errorMessage);
+        this.log("chat", "Membuka lembaran room sesi baru murni...");
+        this.chatId = this.convId = this.assConvId = null;
       }
-    } catch (error) {
-      console.error("Error in combined chat method:", error.message);
-      throw error;
+      await this.connect();
+      if (!this.chatId) {
+        await this.create();
+        await this.open();
+        await this.setModel(model);
+        await this.setTitle(prompt);
+      } else {
+        this.log("chat", "Bypass create room, mengunci data lama -> chatId:", this.chatId);
+        await this.open();
+        await this.setModel(model);
+      }
+      const sentData = await this.send({
+        prompt: prompt,
+        current_model: model,
+        ...rest
+      });
+      if (!sentData?.response) {
+        throw new Error(sentData?.messages || "Server menolak permintaan payload chat.");
+      }
+      const {
+        text,
+        chunks
+      } = await this.stream({
+        current_model: model,
+        ...rest
+      });
+      return {
+        ok: true,
+        reply: text,
+        chunks: chunks,
+        quota: sentData.quota ?? null,
+        state: this.save()
+      };
+    } catch (e) {
+      this.log("chat", "FATAL ERROR ALUR CHAT:", e.message);
+      return {
+        ok: false,
+        error: e.message,
+        chunks: [],
+        state: null
+      };
     }
   }
 }
@@ -310,18 +319,17 @@ export default async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.prompt) {
     return res.status(400).json({
-      error: "Prompt are required"
+      error: "Parameter 'prompt' diperlukan"
     });
   }
+  const api = new ChatX();
   try {
-    const chatClient = new ChatX();
-    const response = await chatClient.chat(params);
-    return res.status(200).json({
-      result: response
-    });
+    const data = await api.chat(params);
+    return res.status(200).json(data);
   } catch (error) {
-    res.status(500).json({
-      error: error.message || "Internal Server Error"
+    const errorMessage = error.message || "Terjadi kesalahan saat memproses request";
+    return res.status(500).json({
+      error: errorMessage
     });
   }
 }
