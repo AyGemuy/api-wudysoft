@@ -65,7 +65,7 @@ const createSpinner = text => {
   };
   return spinner;
 };
-const Provider = ["Catbox", "Litterbox", "Doodstream", "Fexnet", "DOffice", "Bash", "FileDitch", "Filebin", "Fileio", "Filezone", "FreeImage", "Gofile", "Gozic", "Hostfile", "Imgbb", "Kitc", "Kraken", "MediaUpload", "Eax", "Nullbyte", "Vello", "Lusia", "Pomf2", "Sazumi", "Sohu", "Gizai", "PhoTo", "Sojib", "Instantiated", "Exonity", "Zcy", "BltokProject", "Maricon", "Nauval", "Supa", "Knowee", "Puticu", "Stylar", "Telegraph", "Tmpfiles", "Cloudmini", "Babup", "Transfersh", "Ucarecdn", "Uguu", "UploadEE", "Uploadify", "Videy", "Uplider", "ZippyShare", "Quax", "Aceimg"];
+const Provider = ["Catbox", "Litterbox", "Doodstream", "Fexnet", "DOffice", "Bash", "FileDitch", "Filebin", "Fileio", "Filezone", "FreeImage", "Gofile", "Gozic", "Hostfile", "Imgbb", "Kitc", "Kraken", "Leopard", "Poners", "Kappa", "Shz", "MediaUpload", "Eax", "Nullbyte", "Vello", "Lusia", "Pomf2", "Sazumi", "Sohu", "Gizai", "PhoTo", "Sojib", "Instantiated", "Exonity", "Zcy", "BltokProject", "Maricon", "Nauval", "Supa", "Knowee", "Puticu", "Stylar", "Telegraph", "Tmpfiles", "Cloudmini", "Babup", "Transfersh", "Ucarecdn", "Uguu", "UploadEE", "Uploadify", "Videy", "Uplider", "ZippyShare", "Quax", "Aceimg"];
 class Uploader {
   constructor() {
     this.Provider = Provider;
@@ -423,6 +423,92 @@ class Uploader {
       spinner.succeed(chalk.green("Uploaded to Krakenfiles.com"));
       const html = await (await fetch(referer + file.url)).text();
       return cheerio.load(html)("#link1").val();
+    } catch (error) {
+      handleError(error, spinner);
+    }
+  }
+  async Leopard(content) {
+    const spinner = createSpinner("Uploading to Leopard Hosting").start();
+    try {
+      const {
+        formData
+      } = await createFormData(content, "uploadContent");
+      formData.append("showname", "yes");
+      formData.append("password", "");
+      const response = await axios.post("https://leopard.hosting.pecon.us/upload.php", formData, {
+        headers: {
+          "User-Agent": fakeUa()
+        }
+      });
+      spinner.succeed(chalk.green("Uploaded to Leopard Hosting"));
+      const html = response.data;
+      const $ = cheerio.load(html);
+      const downloadLink = $(".pageContainer a").first().attr("href");
+      if (!downloadLink) throw new Error("Gagal mendapatkan link download dari respons.");
+      return downloadLink;
+    } catch (error) {
+      handleError(error, spinner);
+    }
+  }
+  async Poners(content) {
+    const spinner = createSpinner("Uploading to Pone.rs").start();
+    try {
+      const {
+        formData
+      } = await createFormData(content, "files[]");
+      const response = await axios.post("https://pone.rs/upload.php", formData, {
+        headers: {
+          "User-Agent": fakeUa()
+        }
+      });
+      const resData = response.data;
+      if (!resData.success || !resData.files || resData.files.length === 0) {
+        throw new Error("Gagal mengupload atau format respons tidak sesuai.");
+      }
+      spinner.succeed(chalk.green("Uploaded to Pone.rs"));
+      return resData.files[0].url;
+    } catch (error) {
+      handleError(error, spinner);
+    }
+  }
+  async Kappa(content) {
+    const spinner = createSpinner("Uploading to Kappa.lol").start();
+    try {
+      const {
+        formData
+      } = await createFormData(content, "file");
+      const response = await axios.post("https://kappa.lol/api/upload", formData, {
+        headers: {
+          "User-Agent": fakeUa()
+        }
+      });
+      const resData = response.data;
+      const url = resData?.link || null;
+      if (!url) throw new Error("Gagal mendapatkan link download dari respons.");
+      spinner.succeed(chalk.green("Uploaded to Kappa.lol"));
+      return url;
+    } catch (error) {
+      handleError(error, spinner);
+    }
+  }
+  async Shz(content) {
+    const spinner = createSpinner("Uploading to Shz.al").start();
+    try {
+      const {
+        formData
+      } = await createFormData(content, "c");
+      formData.append("e", "7d");
+      const response = await axios.post("https://shz.al/", formData, {
+        headers: {
+          "User-Agent": fakeUa()
+        }
+      });
+      const {
+        url
+      } = response.data;
+      if (!url) throw new Error("Gagal mendapatkan URL dari response.");
+      spinner.succeed(chalk.green("Uploaded to Shz.al"));
+      return url;
     } catch (error) {
       handleError(error, spinner);
     }

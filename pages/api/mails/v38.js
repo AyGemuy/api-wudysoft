@@ -1,6 +1,6 @@
 import axios from "axios";
 import crypto from "crypto";
-class FakemailAPI {
+class TempMail {
   constructor() {
     this.url = "https://fakemail.app/v1/api";
     this.key = "bulubulu321";

@@ -2,7 +2,6 @@ import axios from "axios";
 import {
   createHash
 } from "crypto";
-import SpoofHead from "@/lib/spoof-head";
 const BASE = "https://zimage.run";
 const UA = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36";
 const HEADS = {
@@ -12,8 +11,7 @@ const HEADS = {
   Origin: BASE,
   Referer: BASE + "/",
   "sec-ch-ua-mobile": "?1",
-  "sec-ch-ua-platform": '"Android"',
-  ...SpoofHead()
+  "sec-ch-ua-platform": '"Android"'
 };
 const RATIOS = {
   "1:1": {
