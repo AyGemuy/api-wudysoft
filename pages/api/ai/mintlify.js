@@ -29,6 +29,11 @@ class AssistantClient {
         referer: "https://code.claude.com/docs/en/cli-reference",
         id: "claude-code",
         path: "/claude-code/message"
+      },
+      kits: {
+        referer: "https://docs.kits.ai/",
+        id: "kitsai-74",
+        path: "/kitsai-74/message"
       }
     };
   }
