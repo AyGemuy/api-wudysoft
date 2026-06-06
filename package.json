@@ -108,6 +108,7 @@
     "@ducanh2912/next-pwa": "latest",
     "node-fetch": "latest",
     "node-html-parser": "latest",
+    "node-rsa": "latest",
     "pdfkit": "latest",
     "qrcode": "latest",
     "qs": "latest",
