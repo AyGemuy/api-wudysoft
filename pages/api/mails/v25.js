@@ -1,233 +1,201 @@
-import fetch from "node-fetch";
-class MailTmClient {
-  constructor(baseUrl) {
-    this.baseUrl = baseUrl || "https://api.mail.tm";
-  }
-  log(message, level = "info") {
-    const icons = {
-      info: "ℹ",
-      error: "✖",
-      success: "✓"
-    };
-    console.log(`${icons[level] || icons.info} ${message}`);
-  }
-  randStr(length = 10) {
-    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-    return Array.from({
-      length: length
-    }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  }
-  async req({
-    path,
-    method = "GET",
-    headers = {},
-    body = null,
-    query = null
-  }) {
-    const url = `${this.baseUrl}${path || "/"}`;
-    const queryString = query ? `?${new URLSearchParams(query)}` : "";
-    const fullUrl = `${url}${queryString}`;
-    const options = {
-      method: method,
-      headers: {
-        "Content-Type": "application/ld+json",
-        ...headers
-      }
-    };
-    if ((method === "POST" || method === "PUT" || method === "PATCH") && body) {
-      options.body = JSON.stringify(body);
-    }
+import axios from "axios";
+import crypto from "crypto";
+class TempMail {
+  constructor() {
     try {
-      const response = await fetch(fullUrl, options);
-      const status = response?.status || 0;
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({}));
-        const errorMessage = errorBody?.message || errorBody?.detail || response.statusText;
-        const error = new Error(`HTTP ${status}: ${errorMessage}`);
-        error.status = status;
-        error.details = errorBody;
-        throw error;
-      }
-      const data = status === 204 ? {
-        success: true,
-        message: "Resource deleted successfully"
-      } : await response.json().catch(() => null);
-      return data;
-    } catch (error) {
-      if (error.status) throw error;
-      throw new Error(`Connection Error: ${error?.message || "Unknown error"}`);
+      this.token = "";
+      this.address = "";
+      this.password = "";
+      this.baseUrl = "https://api.mail.tm";
+      this.headers = {
+        accept: "application/json",
+        "accept-language": "id-ID",
+        "cache-control": "no-cache",
+        origin: "https://internxt.com",
+        pragma: "no-cache",
+        priority: "u=1, i",
+        referer: "https://internxt.com/",
+        "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
+        "sec-ch-ua-mobile": "?1",
+        "sec-ch-ua-platform": '"Android"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "cross-site",
+        "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36"
+      };
+      console.log("[MailTm] Client structural entry point initialized.");
+    } catch (err) {
+      console.error("[MailTm] Init crash:", err?.message);
     }
   }
-  async domains({
-    page = 1
-  } = {}) {
-    const data = await this.req({
-      path: "/domains",
-      query: {
-        page: page
+  _r(type) {
+    try {
+      const v = "aeiou";
+      const c = "bcdfghjklmnpqrstvwxyz";
+      const rc = str => str.charAt(crypto.randomInt ? crypto.randomInt(0, str.length) : Math.floor(Math.random() * str.length));
+      const rn = (min, max) => crypto.randomInt ? crypto.randomInt(min, max) : Math.floor(Math.random() * (max - min)) + min;
+      if (type === "user") {
+        let name = "";
+        const syl = rn(3, 5);
+        for (let i = 0; i < syl; i++) {
+          name += rc(c) + rc(v);
+        }
+        return `${name}${rn(10, 99)}`;
       }
-    });
-    return data?.["hydra:member"] || [];
+      let pass = rc(c).toUpperCase() + rc(v);
+      for (let i = 0; i < 3; i++) {
+        pass += rc(c) + rc(v);
+      }
+      return `${pass}${rn(100, 999)}`;
+    } catch (err) {
+      return crypto.randomUUID ? crypto.randomUUID().split("-")[0] : Math.random().toString(36).substring(2, 10);
+    }
   }
-  async createAccount({
-    address,
-    password
-  }) {
-    return this.req({
-      path: "/accounts",
-      method: "POST",
-      body: {
-        address: address,
-        password: password
+  _s(obj) {
+    try {
+      if (Array.isArray(obj)) return obj.map(v => this._s(v));
+      if (obj !== null && typeof obj === "object" && obj.constructor === Object) {
+        return Object.keys(obj).reduce((acc, key) => {
+          const sk = key.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`).replace("@", "at_");
+          acc[sk] = this._s(obj[key]);
+          return acc;
+        }, {});
       }
-    });
+      return obj;
+    } catch (err) {
+      return obj;
+    }
   }
-  async token({
-    address,
-    password
-  }) {
-    return this.req({
-      path: "/token",
-      method: "POST",
-      body: {
-        address: address,
-        password: password
-      }
-    });
+  async _q(method, path, data, tok) {
+    try {
+      const act = tok || this.token;
+      const hdrs = {
+        ...this.headers
+      };
+      if (act) hdrs["authorization"] = `Bearer ${act}`;
+      const res = await axios({
+        method: method || "GET",
+        url: `${this.baseUrl}${path}`,
+        headers: hdrs,
+        data: data || null
+      });
+      return res?.data || null;
+    } catch (err) {
+      console.error(`[MailTm] Err [${method}] ${path}:`, err?.response?.data || err?.message);
+      throw err;
+    }
   }
-  async delete_account({
-    accountId,
-    token
+  async _t(tok) {
+    try {
+      if (tok || this.token) return tok || this.token;
+      console.log("[MailTm] Token absence detected. Requesting auto registration...");
+      const acc = await this.create({});
+      return acc?.token || "";
+    } catch (err) {
+      return "";
+    }
+  }
+  async domain({
+    token,
+    ...rest
   }) {
-    return this.req({
-      path: `/accounts/${accountId}`,
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`
+    try {
+      console.log("[MailTm] Pulling accessible network domains...");
+      const act = token || this.token;
+      const p = rest?.page || 1;
+      const raw = await this._q("GET", `/domains?page=${p}`, null, act);
+      return {
+        result: this._s(raw),
+        token: act
+      };
+    } catch (err) {
+      return {
+        result: null,
+        token: token || this.token
+      };
+    }
+  }
+  async create({
+    token,
+    ...rest
+  }) {
+    try {
+      console.log("[MailTm] Initializing identity constructor routine...");
+      let addr = rest?.address || this.address;
+      let pass = rest?.password || this.password;
+      if (!addr) {
+        const doms = await this.domain({
+          token: token || this.token
+        });
+        const selected = doms?.result?.[0]?.domain || "wshu.net";
+        addr = `${this._r("user")}@${selected}`;
       }
-    });
+      if (!pass) pass = this._r("pass");
+      this.address = addr;
+      this.password = pass;
+      console.log(`[MailTm] Committing mapping for address target: ${addr}`);
+      const body = {
+        address: addr,
+        password: pass
+      };
+      const accRaw = await this._q("POST", "/accounts", body, token);
+      console.log("[MailTm] Exchanging credentials for identity token signature...");
+      const tokRaw = await this._q("POST", "/token", body, token);
+      this.token = tokRaw?.token || this.token;
+      return {
+        result: this._s({
+          ...accRaw,
+          account_password: pass
+        }),
+        token: this.token
+      };
+    } catch (err) {
+      return {
+        result: null,
+        token: token || this.token
+      };
+    }
   }
   async message({
-    page = 1,
     token,
-    allPages = false
+    ...rest
   }) {
-    if (!token) {
-      throw new Error("Token is required to fetch messages.");
-    }
-    let allMessages = [];
-    let currentPage = page;
-    let hasMore = true;
-    while (hasMore) {
-      const data = await this.req({
-        path: "/messages",
-        query: {
-          page: currentPage
-        },
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      const messagesList = data?.["hydra:member"] || [];
-      if (!messagesList || messagesList.length === 0 || !allPages) {
-        hasMore = false;
-        if (!allPages) return messagesList;
-      }
-      allMessages = [...allMessages, ...messagesList];
-      const hasNext = data?.["hydra:view"]?.["hydra:next"];
-      if (allPages && hasNext) {
-        currentPage++;
-      } else {
-        hasMore = false;
-      }
-    }
-    return allMessages;
-  }
-  async message_by_id({
-    messageId,
-    token
-  }) {
-    if (!messageId || !token) {
-      throw new Error("messageId and token are required.");
-    }
-    return this.req({
-      path: `/messages/${messageId}`,
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-  }
-  async delete_message({
-    messageId,
-    token
-  }) {
-    if (!messageId || !token) {
-      throw new Error("messageId and token are required.");
-    }
-    return this.req({
-      path: `/messages/${messageId}`,
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-  }
-  async create(options = {}, retries = 3) {
-    let {
-      domain,
-      address,
-      password,
-      forceRandom = false
-    } = options;
-    if (!domain) {
-      const domains = await this.domains({
-        page: 1
-      });
-      domain = domains?.[0]?.domain;
-      if (!domain) {
-        throw new Error("No domain available from Mail.tm");
-      }
-    }
-    let baseAddress = address;
-    if (forceRandom || !address) {
-      address = `user-${this.randStr(10)}@${domain}`;
-    } else if (address && !address.includes("@")) {
-      address = `${address}@${domain}`;
-    }
-    password = password || this.randStr(12);
-    this.log(`Creating: ${address}`, "info");
     try {
-      const account = await this.createAccount({
-        address: address,
-        password: password
-      });
-      const accountId = account?.id;
-      const tokenResponse = await this.token({
-        address: address,
-        password: password
-      });
-      const token = tokenResponse?.token;
-      if (!token || !accountId) {
-        throw new Error("Failed to get token after account creation.");
+      const act = await this._t(token);
+      const msgId = rest?.id || rest?.msg_id || null;
+      if (msgId) {
+        console.log(`[MailTm] Deep pulling targeted single node package message: ${msgId}`);
+        const single = await this._q("GET", `/messages/${msgId}`, null, act);
+        return {
+          result: this._s(single),
+          token: act
+        };
       }
-      this.log(`Created: ${address}`, "success");
+      console.log("[MailTm] Syncing current mailbox message queue registry...");
+      const p = rest?.page || 1;
+      const shallow = await this._q("GET", `/messages?page=${p}`, null, act) || [];
+      const detailed = [];
+      console.log(`[MailTm] Parsing sequence buffer for ${shallow.length} mail packages via loop matrix...`);
+      for (const item of shallow) {
+        try {
+          const id = item?.id;
+          if (id) {
+            const content = await this._q("GET", `/messages/${id}`, null, act);
+            if (content) detailed.push(content);
+          }
+        } catch (subErr) {
+          detailed.push(item);
+        }
+      }
       return {
-        token: token,
-        address: address,
-        password: password,
-        accountId: accountId,
-        accountInfo: account
+        result: this._s(detailed),
+        token: act
       };
-    } catch (error) {
-      if (error.status === 422 && error.message.includes("already used") && retries > 0) {
-        this.log(`Address taken, trying random...`, "info");
-        return this.create({
-          domain: domain,
-          password: password,
-          forceRandom: true
-        }, retries - 1);
-      }
-      throw error;
+    } catch (err) {
+      return {
+        result: null,
+        token: token || this.token
+      };
     }
   }
 }
@@ -236,78 +204,55 @@ export default async function handler(req, res) {
     action,
     ...params
   } = req.method === "GET" ? req.query : req.body;
-  const api = new MailTmClient();
+  const validActions = ["domain", "create", "message"];
+  if (!action) {
+    return res.status(400).json({
+      status: false,
+      error: "Parameter 'action' wajib diisi.",
+      available_actions: validActions,
+      usage: {
+        method: "GET / POST",
+        example: "/?action=create"
+      }
+    });
+  }
+  const api = new TempMail();
   try {
-    let result;
-    let status = 200;
+    let response;
     switch (action) {
-      case "create":
-        result = await api.create(params);
-        status = 201;
+      case "domain":
+        response = await api.domain(params);
         break;
-      case "token":
-        if (!params.address || !params.password) {
-          return res.status(400).json({
-            success: false,
-            error: "Missing 'address' or 'password' parameters."
-          });
-        }
-        result = await api.token(params);
+      case "create":
+        response = await api.create(params);
         break;
       case "message":
         if (!params.token) {
           return res.status(400).json({
-            success: false,
-            error: "Missing 'token' parameter."
+            status: false,
+            error: "Parameter 'token' wajib diisi untuk action 'message'."
           });
         }
-        result = await api.message(params);
-        break;
-      case "message_by_id":
-        if (!params.messageId || !params.token) {
-          return res.status(400).json({
-            success: false,
-            error: "Missing 'messageId' or 'token' parameters."
-          });
-        }
-        result = await api.message_by_id(params);
-        break;
-      case "domains":
-        result = await api.domains(params);
-        break;
-      case "delete_account":
-        if (!params.accountId || !params.token) {
-          return res.status(400).json({
-            success: false,
-            error: "Missing 'accountId' or 'token' parameters."
-          });
-        }
-        result = await api.delete_account(params);
-        break;
-      case "delete_message":
-        if (!params.messageId || !params.token) {
-          return res.status(400).json({
-            success: false,
-            error: "Missing 'messageId' or 'token' parameters."
-          });
-        }
-        result = await api.delete_message(params);
+        response = await api.message(params);
         break;
       default:
         return res.status(400).json({
-          success: false,
-          error: "Invalid action. Use 'create', 'token', 'message', 'message_by_id', 'domains', 'delete_account', or 'delete_message'."
+          status: false,
+          error: `Action tidak valid: ${action}.`,
+          valid_actions: validActions
         });
     }
-    return res.status(status).json(result);
+    return res.status(200).json({
+      action: action,
+      status: true,
+      ...response
+    });
   } catch (error) {
-    console.error(`✖ API Error:`, error.message);
-    const status = error.status || 500;
-    return res.status(status).json({
-      success: false,
-      error: error.message,
-      details: error.details,
-      timestamp: Date.now()
+    console.error(`[FATAL ERROR] Kegagalan pada action '${action}':`, error);
+    return res.status(500).json({
+      status: false,
+      message: "Terjadi kesalahan internal pada server atau target website.",
+      error: error.message || "Unknown Error"
     });
   }
 }

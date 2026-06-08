@@ -6,18 +6,34 @@ import {
   wrapper
 } from "axios-cookiejar-support";
 import crypto from "crypto";
+import FormData from "form-data";
 class QuillbotChat {
   constructor() {
     this.token = "empty-token";
     this.jar = new CookieJar();
+    this.modeConfig = {
+      chat: {
+        required: ["prompt"]
+      },
+      raven: {
+        required: ["prompt"]
+      },
+      image: {
+        required: ["prompt"]
+      },
+      edit: {
+        required: ["prompt", "files"]
+      }
+    };
+    this.availableModes = Object.keys(this.modeConfig);
     try {
-      const deviceId = this.uid();
+      const deviceId = this._uid();
       this.headers = {
         accept: "text/event-stream",
         "accept-language": "id-ID",
         "cache-control": "no-cache",
         "content-type": "application/json",
-        cookie: `qbDeviceId=${deviceId}; anonID=${this.hex(16)}; ajs_anonymous_id=${deviceId}; premium=false; authenticated=${this.token !== "empty-token"};`,
+        cookie: `qbDeviceId=${deviceId}; anonID=${this._hex(16)}; ajs_anonymous_id=${deviceId}; premium=false; authenticated=${this.token !== "empty-token"};`,
         origin: "https://quillbot.com",
         "platform-type": "webapp",
         referer: "https://quillbot.com/ai-chat/c/new?tools=web_search",
@@ -36,25 +52,34 @@ class QuillbotChat {
         baseURL: "https://quillbot.com",
         headers: this.headers
       }));
-      this.log("init", "Client siap");
+      this._log("init", "Client siap");
     } catch (err) {
-      this.log("error", `Init failed: ${err.message}`);
+      this._log("error", `Init failed: ${err.message}`);
       throw err;
     }
   }
-  uid() {
+  _uid() {
     return crypto.randomUUID();
   }
-  hex(n) {
+  _hex(n) {
     return crypto.randomBytes(n / 2).toString("hex");
   }
-  log(step, msg) {
+  _log(step, msg) {
     console.log(`[QB:${step.toUpperCase()}] ${msg}`);
   }
-  clean(text) {
+  _clean(text) {
     return (text ?? "").trim();
   }
-  parseChat(raw) {
+  _detectMime(buf) {
+    if (!buf || buf.length < 12) return "image/jpeg";
+    const head = buf.subarray(0, 12);
+    if (head[0] === 137 && head[1] === 80 && head[2] === 78 && head[3] === 71) return "image/png";
+    if (head[0] === 255 && head[1] === 216) return "image/jpeg";
+    if (head[0] === 71 && head[1] === 73 && head[2] === 70) return "image/gif";
+    if (head[0] === 82 && head[1] === 73 && head[2] === 70 && head[3] === 70) return "image/webp";
+    return "image/jpeg";
+  }
+  _parseChat(raw) {
     const out = {
       result: "",
       annotations: [],
@@ -66,7 +91,6 @@ class QuillbotChat {
     try {
       const text = Buffer.isBuffer(raw) ? raw.toString() : raw ?? "";
       const lines = text.split("\n").filter(l => l.trim());
-      this.log("parse", `${lines.length} baris diterima`);
       for (const line of lines) {
         try {
           const data = JSON.parse(line);
@@ -88,21 +112,158 @@ class QuillbotChat {
           }
         } catch {}
       }
-      out.result = this.clean(out.result);
+      out.result = this._clean(out.result);
     } catch (err) {
-      this.log("error", `Parse chat failed: ${err.message}`);
+      this._log("error", `Parse chat failed: ${err.message}`);
     }
     return out;
   }
-  async raven(prompt, rest = {}) {
+  async upImg(imageInput, options = {}) {
+    const {
+      filename = `image_${Date.now()}.jpg`,
+        chatId = this._uid(),
+        namespace = "ai-chat"
+    } = options;
+    let buffer, mime;
+    if (Buffer.isBuffer(imageInput)) {
+      buffer = imageInput;
+      mime = this._detectMime(buffer);
+    } else if (typeof imageInput === "string" && imageInput.startsWith("data:image")) {
+      const match = imageInput.match(/^data:([^;]+);base64,(.+)$/);
+      if (!match) return {
+        success: false,
+        error: "Invalid base64 format"
+      };
+      mime = match[1];
+      buffer = Buffer.from(match[2], "base64");
+    } else if (typeof imageInput === "string" && (imageInput.startsWith("http://") || imageInput.startsWith("https://"))) {
+      try {
+        const resp = await axios.get(imageInput, {
+          responseType: "arraybuffer"
+        });
+        buffer = Buffer.from(resp.data);
+        mime = resp.headers["content-type"] || "image/jpeg";
+      } catch (e) {
+        return {
+          success: false,
+          error: `Download failed: ${e.message}`
+        };
+      }
+    } else if (typeof imageInput === "string") {
+      buffer = Buffer.from(imageInput, "base64");
+      mime = "image/png";
+    } else return {
+      success: false,
+      error: "Unsupported input type. Use URL, base64, or Buffer."
+    };
+    const ext = mime.split("/")[1] || "jpg";
+    const finalName = filename.includes(".") ? filename : `${filename}.${ext}`;
+    let docId;
+    try {
+      const createRes = await this.client.post("/api/docupine/documents", {
+        name: finalName,
+        documentMeta: {
+          file_name: finalName,
+          chatId: chatId
+        },
+        namespace: namespace,
+        dirPath: ""
+      }, {
+        headers: {
+          "qb-product": "AI-CHAT",
+          "content-type": "application/json"
+        }
+      });
+      docId = createRes.data?.data?.id;
+      if (!docId) return {
+        success: false,
+        error: "No document ID"
+      };
+    } catch (err) {
+      return {
+        success: false,
+        error: `Create doc failed: ${err.message}`
+      };
+    }
+    const form = new FormData();
+    form.append("file", buffer, {
+      filename: finalName,
+      contentType: mime
+    });
+    try {
+      await this.client.put(`/api/docupine/documents/${docId}/content`, form, {
+        headers: {
+          ...form.getHeaders(),
+          "qb-product": "AI-CHAT",
+          "x-beaver-change_timestamp": Date.now().toString(),
+          "x-beaver-create_new": "false",
+          "x-beaver-current_version": "1"
+        }
+      });
+    } catch (err) {
+      return {
+        success: false,
+        error: `Upload failed: ${err.message}`,
+        documentId: docId
+      };
+    }
+    let url = null;
+    try {
+      const info = await this.client.get(`/api/docupine/documents/${docId}`, {
+        headers: {
+          "qb-product": "AI-CHAT"
+        }
+      });
+      url = info.data?.data?.document?.url || null;
+    } catch (e) {
+      this._log("warn", `Could not fetch doc URL: ${e.message}`);
+    }
+    this._log("upImg", `Uploaded ${finalName} -> ${docId}`);
+    return {
+      success: true,
+      documentId: docId,
+      url: url,
+      name: finalName,
+      mimeType: mime,
+      size: buffer.length,
+      chatId: chatId
+    };
+  }
+  async uploadFiles(fileInputs, baseOptions = {}) {
+    const inputs = Array.isArray(fileInputs) ? fileInputs : [fileInputs];
+    const results = [];
+    for (const file of inputs) {
+      const res = await this.upImg(file, baseOptions);
+      if (!res.success) return {
+        success: false,
+        error: res.error,
+        partial: results
+      };
+      results.push({
+        id: res.documentId,
+        mimeType: res.mimeType,
+        name: res.name,
+        url: res.url
+      });
+    }
+    return {
+      success: true,
+      files: results
+    };
+  }
+  async sendRaven(prompt, files = [], rest = {}) {
     const payload = {
       stream: true,
       message: {
         role: "user",
         content: prompt,
-        messageId: this.uid(),
+        messageId: this._uid(),
         createdAt: new Date().toISOString(),
-        files: []
+        files: files.map(f => ({
+          id: f.id,
+          mimeType: f.mimeType,
+          name: f.name
+        }))
       },
       product: "ai-chat",
       originUrl: "/ai-chat",
@@ -126,50 +287,56 @@ class QuillbotChat {
         status: "processing",
         chatId: null
       };
-      return new Promise((resolve, reject) => {
+      return new Promise(resolve => {
         res.data.on("data", chunk => {
-          try {
-            const text = chunk.toString();
-            const lines = text.split("\n");
-            for (const line of lines) {
-              if (!line.trim() || !line.startsWith("data:")) continue;
-              try {
-                const jsonStr = line.slice(5).trim();
-                if (jsonStr === "[DONE]") continue;
-                const data = JSON.parse(jsonStr);
-                result.result += data.chunk ?? data.content ?? "";
-                result.status = data.status ?? result.status;
-                result.chatId = data.chatId ?? data.data?.chatId ?? result.chatId;
-                data.annotation && result.annotations.push(data.annotation);
-                data.title && result.titles.push(data.title);
-              } catch {}
-            }
-          } catch (err) {
-            this.log("error", `Stream data error: ${err.message}`);
+          const text = chunk.toString();
+          for (const line of text.split("\n")) {
+            if (!line.trim() || !line.startsWith("data:")) continue;
+            try {
+              const jsonStr = line.slice(5).trim();
+              if (jsonStr === "[DONE]") continue;
+              const data = JSON.parse(jsonStr);
+              result.result += data.chunk ?? data.content ?? "";
+              result.status = data.status ?? result.status;
+              result.chatId = data.chatId ?? data.data?.chatId ?? result.chatId;
+              data.annotation && result.annotations.push(data.annotation);
+              data.title && result.titles.push(data.title);
+            } catch {}
           }
         });
         res.data.on("end", () => {
           result.status = result.status || "completed";
-          result.result = this.clean(result.result);
-          this.log("stream", "Raven selesai");
+          result.result = this._clean(result.result);
+          this._log("stream", "Raven selesai");
           resolve(result);
         });
         res.data.on("error", err => {
-          this.log("error", `Stream error: ${err.message}`);
-          reject(err);
+          this._log("error", `Stream error: ${err.message}`);
+          resolve({
+            ...result,
+            status: "error",
+            error: err.message
+          });
         });
       });
     } catch (err) {
-      this.log("error", `Raven request failed: ${err.message}`);
-      throw err;
+      this._log("error", `Raven request failed: ${err.message}`);
+      return {
+        success: false,
+        error: err.message
+      };
     }
   }
-  async chat(prompt, chatId, rest = {}) {
-    const id = chatId ?? this.uid();
+  async sendChat(prompt, chatId, files = [], rest = {}) {
+    const id = chatId ?? this._uid();
     const payload = {
       message: {
         content: prompt,
-        files: [],
+        files: files.map(f => ({
+          id: f.id,
+          mimeType: f.mimeType,
+          name: f.name
+        })),
         prompt: {
           id: "ai_chat"
         }
@@ -188,73 +355,233 @@ class QuillbotChat {
           referer: `https://quillbot.com/ai-chat/c/${id}`
         }
       });
-      const parsed = this.parseChat(res.data);
+      const parsed = this._parseChat(res.data);
       parsed.chatId = parsed.chatId ?? id;
       parsed.status = parsed.status || "completed";
       return parsed;
     } catch (err) {
-      this.log("error", `Chat request failed: ${err.response?.status || err.message}`);
-      throw err;
-    }
-  }
-  async generate({
-    mode = "chat",
-    prompt = "",
-    chatId,
-    verbose = false,
-    ...rest
-  } = {}) {
-    if (!prompt?.trim()) {
-      this.log("warn", "Prompt kosong");
-      return {
-        success: false,
-        error: "Prompt tidak boleh kosong",
-        content: "",
-        mode: mode,
-        timestamp: new Date().toISOString()
-      };
-    }
-    verbose && this.log("start", `Mode: ${mode} | "${prompt.slice(0, 60)}..."`);
-    const start = Date.now();
-    let rawResult;
-    try {
-      rawResult = mode.toLowerCase() === "raven" ? await this.raven(prompt, rest) : await this.chat(prompt, chatId, rest);
-    } catch (err) {
-      this.log("error", `Generate failed: ${err.message}`);
+      this._log("error", `Chat request failed: ${err.response?.status || err.message}`);
       return {
         success: false,
         error: err.message,
-        content: "",
+        result: ""
+      };
+    }
+  }
+  async genImg(prompt, options = {}) {
+    const {
+      category = "Auto",
+        aspectRatio = "1:1",
+        promptId = "image/generate-image"
+    } = options;
+    if (!prompt?.trim()) return {
+      success: false,
+      error: "Prompt tidak boleh kosong"
+    };
+    try {
+      const res = await this.client.post("/api/raven/generate/image", {
+        prompt: prompt,
+        category: category,
+        aspectRatio: aspectRatio,
+        promptId: promptId
+      }, {
+        headers: {
+          "qb-product": "IMAGE-GENERATOR",
+          "content-type": "application/json",
+          accept: "application/json"
+        }
+      });
+      this._log("genImg", "Success");
+      return {
+        success: true,
+        images: res.data.images || res.data.data?.images || [],
+        urls: res.data.urls || [],
+        raw: res.data
+      };
+    } catch (err) {
+      this._log("error", `Gen image failed: ${err.message}`);
+      return {
+        success: false,
+        error: err.message
+      };
+    }
+  }
+  async editImg(prompt, files, options = {}) {
+    const {
+      chatId = this._uid(),
+        namespace = "ai-chat", ...rest
+    } = options;
+    if (!prompt?.trim()) return {
+      success: false,
+      error: "Prompt tidak boleh kosong"
+    };
+    const payload = {
+      message: {
+        content: prompt + "\n\n",
+        files: files,
+        prompt: {
+          id: "image/edit-image",
+          version: 7,
+          variables: {
+            title: "Free AI photo editor",
+            summary: "Upgrade your photos with the AI photo editor."
+          }
+        }
+      },
+      context: {
+        editorContext: "",
+        selectionContext: "",
+        userDialect: "en-us",
+        apiVersion: 2
+      },
+      origin: {
+        name: "ai-chat.chat",
+        url: "https://quillbot.com"
+      },
+      ...rest
+    };
+    try {
+      const res = await this.client.post(`/api/ai-chat/chat/conversation/${chatId}`, payload, {
+        responseType: "text",
+        headers: {
+          "qb-product": "AI-CHAT",
+          referer: `https://quillbot.com/ai-chat/c/${chatId}`,
+          "content-type": "application/json"
+        }
+      });
+      const parsed = this._parseChat(res.data);
+      parsed.chatId = parsed.chatId ?? chatId;
+      parsed.status = parsed.status || "completed";
+      parsed.uploadedFiles = files;
+      return {
+        success: true,
+        mode: "edit",
+        content: parsed.result,
+        status: parsed.status,
+        chatId: parsed.chatId,
+        annotations: parsed.annotations,
+        titles: parsed.titles,
+        uploadedFiles: parsed.uploadedFiles,
+        timestamp: new Date().toISOString()
+      };
+    } catch (err) {
+      this._log("error", `Edit image failed: ${err.message}`);
+      return {
+        success: false,
+        error: err.message
+      };
+    }
+  }
+  async generate(params = {}) {
+    const {
+      mode = "chat",
+        prompt,
+        chatId,
+        verbose = false,
+        imageOptions = {},
+        files = null, ...rest
+    } = params;
+    if (!this.modeConfig[mode]) {
+      return {
+        success: false,
+        error: `Mode '${mode}' tidak dikenal. Mode tersedia: ${this.availableModes.join(", ")}`,
         mode: mode,
         timestamp: new Date().toISOString()
       };
     }
-    const time = Date.now() - start;
-    verbose && this.log("done", `${time}ms | ${rawResult.result.length} chars`);
-    return {
-      success: true,
-      mode: mode,
-      content: rawResult.result,
-      status: rawResult.status ?? "completed",
-      chatId: rawResult.chatId,
-      annotations: rawResult.annotations ?? [],
-      titles: rawResult.titles ?? [],
-      metadata: {
-        length: rawResult.result.length,
-        wordCount: rawResult.result.split(/\s+/).filter(Boolean).length,
-        hasCitations: (rawResult.annotations ?? []).length > 0
-      },
-      timestamp: new Date().toISOString()
-    };
+    const config = this.modeConfig[mode];
+    const missing = config.required.filter(field => {
+      if (field === "prompt") return !prompt?.trim();
+      if (field === "files") return !files || Array.isArray(files) && files.length === 0;
+      return false;
+    });
+    if (missing.length) {
+      return {
+        success: false,
+        error: `Mode '${mode}' membutuhkan field: ${missing.join(", ")}`,
+        mode: mode
+      };
+    }
+    let uploadedFiles = [];
+    if (files && (mode === "chat" || mode === "raven" || mode === "edit")) {
+      const uploadResult = await this.uploadFiles(files, {
+        chatId: chatId
+      });
+      if (!uploadResult.success) {
+        return {
+          success: false,
+          error: `Upload files gagal: ${uploadResult.error}`,
+          partial: uploadResult.partial
+        };
+      }
+      uploadedFiles = uploadResult.files;
+    }
+    switch (mode) {
+      case "image":
+        return await this.genImg(prompt, imageOptions);
+      case "edit":
+        if (!uploadedFiles.length) {
+          return {
+            success: false,
+            error: "Mode edit memerlukan minimal satu file gambar"
+          };
+        }
+        return await this.editImg(prompt, uploadedFiles, {
+          chatId: chatId,
+          ...imageOptions
+        });
+      case "raven": {
+        verbose && this._log("start", `Mode raven | "${prompt.slice(0, 60)}..."`);
+        const start = Date.now();
+        const raw = await this.sendRaven(prompt, uploadedFiles, rest);
+        if (raw.success === false) return raw;
+        const time = Date.now() - start;
+        verbose && this._log("done", `${time}ms | ${raw.result.length} chars`);
+        return {
+          success: true,
+          mode: mode,
+          content: raw.result,
+          status: raw.status ?? "completed",
+          chatId: raw.chatId,
+          annotations: raw.annotations ?? [],
+          titles: raw.titles ?? [],
+          metadata: {
+            length: raw.result.length,
+            wordCount: raw.result.split(/\s+/).filter(Boolean).length,
+            hasCitations: (raw.annotations ?? []).length > 0
+          },
+          timestamp: new Date().toISOString()
+        };
+      }
+      case "chat":
+      default: {
+        verbose && this._log("start", `Mode chat | "${prompt.slice(0, 60)}..."`);
+        const start = Date.now();
+        const raw = await this.sendChat(prompt, chatId, uploadedFiles, rest);
+        if (raw.success === false) return raw;
+        const time = Date.now() - start;
+        verbose && this._log("done", `${time}ms | ${raw.result.length} chars`);
+        return {
+          success: true,
+          mode: mode,
+          content: raw.result,
+          status: raw.status ?? "completed",
+          chatId: raw.chatId,
+          annotations: raw.annotations ?? [],
+          titles: raw.titles ?? [],
+          metadata: {
+            length: raw.result.length,
+            wordCount: raw.result.split(/\s+/).filter(Boolean).length,
+            hasCitations: (raw.annotations ?? []).length > 0
+          },
+          timestamp: new Date().toISOString()
+        };
+      }
+    }
   }
 }
 export default async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
-  if (!params.prompt) {
-    return res.status(400).json({
-      error: "Parameter 'prompt' diperlukan"
-    });
-  }
   const api = new QuillbotChat();
   try {
     const data = await api.generate(params);
