@@ -1,344 +1,216 @@
 import axios from "axios";
-import https from "https";
-import {
-  randomBytes,
-  createHash
-} from "crypto";
-import FormData from "form-data";
 import crypto from "crypto";
-import SpoofHead from "@/lib/spoof-head";
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+const RATIO = {
+  "4:3": {
+    width: 1440,
+    height: 1080
+  },
+  "3:4": {
+    width: 1080,
+    height: 1440
+  },
+  "1:1": {
+    width: 1024,
+    height: 1024
+  },
+  "16:9": {
+    width: 1440,
+    height: 810
+  },
+  "9:16": {
+    width: 810,
+    height: 1440
+  }
+};
+const sleep = ms => new Promise(res => setTimeout(res, ms));
 class DreamFace {
-  constructor() {
-    const httpsAgent = new https.Agent({
-      keepAlive: true,
-      maxSockets: 100,
-      timeout: 6e4
-    });
+  constructor(userId = null) {
+    this.userId = userId || this.h16(8);
+    this.hdrs = {
+      "User-Agent": `Mozilla/5.0 (Linux; Android 15; RMX3890 Build/AQ3A.240812.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/148.0.7778.215 Mobile Safari/537.36 userId/${this.userId} DreamFace/6.28.0`,
+      Accept: "application/json, text/plain, */*",
+      "Content-Type": "application/json",
+      "sec-ch-ua-platform": '"Android"',
+      "sec-ch-ua": '"Chromium";v="148", "Android WebView";v="148", "Not/A)Brand";v="99"',
+      "sec-ch-ua-mobile": "?1",
+      origin: "https://cloudf.dreamfaceapp.com",
+      "x-requested-with": "com.dreamapp.dubhe",
+      "sec-fetch-site": "same-origin",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-dest": "empty",
+      referer: "https://cloudf.dreamfaceapp.com/m/imgGenerator.html",
+      "accept-language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
+      priority: "u=1, i",
+      Cookie: `userid=${this.userId}; userid=${this.userId}`,
+      "user-id": this.userId,
+      "platform-type": "ANDROID",
+      "app-version": "6.28.0",
+      "system-version": "15",
+      "app-type": "dreamface_free",
+      language: "id"
+    };
     this.api = axios.create({
-      baseURL: "https://tools.dreamfaceapp.com/dw-server",
-      headers: {
-        "client-id": "354ca12f042677e272e987a2304f7784",
-        "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/5.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/5.36",
-        accept: "application/json",
-        origin: "https://tools.dreamfaceapp.com",
-        referer: "https://tools.dreamfaceapp.com/tools/ai-image",
-        ...SpoofHead()
-      },
-      httpsAgent: httpsAgent,
+      baseURL: "https://cloudf.dreamfaceapp.com",
+      headers: this.hdrs,
       timeout: 6e4
     });
-    this.credentials = {};
-    console.log("DreamFace client initialized with increased HTTPS timeout.");
   }
-  _rand(len = 8) {
-    return randomBytes(len).toString("hex");
+  md5(s) {
+    return crypto.createHash("md5").update(s).digest("hex");
   }
-  async _req(config) {
+  h16(n) {
+    return crypto.randomBytes(n).toString("hex");
+  }
+  uuid() {
+    const h = crypto.randomBytes(16).toString("hex");
+    return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(12, 15)}-${(parseInt(h[15], 16) & 3 | 8).toString(16)}${h.slice(16, 19)}-${h.slice(19, 31)}`;
+  }
+  sign(body) {
     try {
-      console.log(`\n---\n[REQUEST] -> ${config.method?.toUpperCase() || "GET"} ${config.url}`);
-      const response = await this.api(config);
-      console.log(`[RESPONSE DATA] <- ${config.url}`);
-      console.log(JSON.stringify(response.data, null, 2));
-      if (response.data?.status_code === "THS12140000000" || config.url.includes("check_subscribe") && response.data?.status === 0) {
-        return response.data.data ?? response.data;
-      }
-      throw new Error(`API Error: ${response.data?.status_msg || "Success condition not met."}`);
-    } catch (error) {
-      console.error(`Request Failed for ${config.url}:`, error.response?.data || error.message);
-      throw error;
+      const ts = body.timestamp || Date.now().toString();
+      return this.md5(`app_type=dreamface_free&app_version=6.28.0&timestamp=${ts}&user_id=${this.userId}`);
+    } catch (e) {
+      console.error("[Sign Error]", e.message);
+      return this.md5(Date.now().toString());
     }
   }
-  async _initSession() {
-    console.log("Initializing user session and attempting to claim free credits...");
-    const accountPayload = {
-      platform_type: "MOBILE",
-      tenant_name: "dream_face",
-      account_id: this.credentials.accountId,
-      user_id: this.credentials.userId
+  base(extra = {}) {
+    const ts = Date.now();
+    return {
+      user_id: this.userId,
+      country_code: "id",
+      timestamp: ts,
+      platform_type: "ANDROID",
+      app_version: "6.28.0",
+      app_type: "dreamface_free",
+      language: "id",
+      token: this.md5(`${this.userId}${ts}dreamface_free`),
+      ...extra
     };
-    await this._req({
-      url: "/sys_config/query/pay_source",
-      method: "GET"
-    });
-    await this._req({
-      url: "/rights/check_animate_free_today",
-      method: "POST",
-      data: {
-        ...accountPayload,
-        play_types: ["TEXT_TO_IMAGE_GPT"]
-      },
-      headers: {
-        "content-type": "application/json"
-      }
-    });
-    await this._req({
-      url: "/notification/get_unread",
-      method: "POST",
-      data: accountPayload,
-      headers: {
-        "content-type": "application/json"
-      }
-    });
-    await this._req({
-      url: "/rights/get_free_rights",
-      method: "POST",
-      data: accountPayload,
-      headers: {
-        "content-type": "application/json"
-      }
-    });
-    await this._req({
-      url: "/user/save_user_login",
-      method: "POST",
-      data: {
-        ...accountPayload,
-        device_system: "PC-Mobile",
-        device_name: "PC-Mobile",
-        app_version: "4.7.1",
-        time_zone: 8
-      },
-      headers: {
-        "content-type": "application/json"
-      }
-    });
-    const creditsData = await this._req({
-      url: "/credits/get_remaining_credits",
-      method: "POST",
-      data: {
-        ...accountPayload,
-        time_zone: "Asia/Jakarta"
-      },
-      headers: {
-        "content-type": "application/json"
-      }
-    });
-    this.credentials.credits = creditsData;
-    console.log(`Credit check completed. Free credits: ${creditsData?.free_count || 0}`);
   }
-  async _login() {
-    console.log("Attempting to log in and create a new account...");
-    const email = `${this._rand(12)}@mail.com`;
-    const password = this._rand(8);
-    const initialUserId = createHash("md5").update(this._rand(16)).digest("hex");
-    const payload = {
-      password: password,
-      user_id: initialUserId,
-      third_id: email,
-      third_platform: "EMAIL",
-      third_ext: {
-        email: email
-      },
-      register_source: "seo",
-      platform_type: "MOBILE",
-      tenant_name: "dream_face"
-    };
-    const loginData = await this._req({
-      url: "/user/login",
-      method: "POST",
-      data: payload,
-      headers: {
-        "content-type": "application/json"
-      }
-    });
-    const {
-      token,
-      account_id: accountId,
-      user_id: userId
-    } = loginData;
-    if (!token || !accountId || !userId) throw new Error("Login failed: Missing token or user IDs.");
-    this.credentials = {
-      token: token,
-      userId: userId,
-      accountId: accountId,
-      email: email
-    };
-    this.api.defaults.headers.common["token"] = token;
-    console.log(`Login successful. Account ID: ${accountId}`);
-    await this._initSession();
-  }
-  async _upload(image) {
-    let imageBuffer;
-    const fileName = `${this._rand(12)}.png`;
-    if (Buffer.isBuffer(image)) {
-      console.log(`Processing image from Buffer...`);
-      imageBuffer = image;
-    } else if (typeof image === "string" && image.startsWith("http")) {
-      console.log(`Processing image from URL: ${image}`);
-      const response = await axios.get(image, {
-        responseType: "arraybuffer"
+  async post(url, body) {
+    try {
+      console.log(`[POST] -> ${url}`);
+      const signature = this.sign(body);
+      const headers = {
+        ...this.hdrs,
+        "x-signature": signature
+      };
+      const res = await this.api.post(url, body, {
+        headers: headers
       });
-      imageBuffer = response.data;
-    } else if (typeof image === "string") {
-      console.log(`Processing image from Base64 string...`);
-      imageBuffer = Buffer.from(image, "base64");
-    } else {
-      throw new Error("Unsupported image type. Please provide a Buffer, URL, or Base64 string.");
+      console.log(`[POST OK] -> Status: ${res.status}`);
+      return res.data;
+    } catch (e) {
+      console.error(`[POST ERR] -> ${url}:`, e.message);
+      if (e.response) console.error("[POST ERR DETAILS]:", JSON.stringify(e.response.data));
+      throw e;
     }
-    const form = new FormData();
-    form.append("file", imageBuffer, {
-      filename: fileName,
-      contentType: "image/png"
-    });
-    const uploadData = await this._req({
-      url: `/phone_file/upload_for_step_image?user_id=${this.credentials.userId}`,
-      method: "POST",
-      data: form,
-      headers: {
-        ...form.getHeaders()
-      }
-    });
-    const filePath = uploadData?.file_path;
-    if (!filePath) throw new Error("Image upload failed.");
-    console.log(`Upload successful. Server path: ${filePath}`);
-    return filePath;
   }
-  async _poll(taskId) {
-    console.log(`Polling for task result with ID: ${taskId}`);
-    const maxAttempts = 30;
-    for (let attempts = 1; attempts <= maxAttempts; attempts++) {
-      await delay(5e3);
-      console.log(`[Attempt ${attempts}/${maxAttempts}] Checking task status...`);
-      try {
-        const pollData = await this._req({
-          url: "/work_session/list",
-          method: "POST",
-          data: {
-            user_id: this.credentials.userId,
-            account_id: this.credentials.accountId,
-            page: 1,
-            size: 10,
-            session_type: "AI_IMAGE",
-            platform_type: "MOBILE",
-            tenant_name: "dream_face"
-          },
-          headers: {
-            "content-type": "application/json"
-          }
-        });
-        const task = pollData?.list?.find(item => item.work_details?.[0]?.animate_id === taskId);
-        const workDetails = task?.work_details?.[0];
-        if (workDetails) {
-          const workStatus = workDetails.work_status;
-          if (workStatus === 200) {
-            console.log("Task completed successfully!");
-            return task;
-          }
-          if (workStatus === -1 || task?.session_status === -1) {
-            console.error(`Task ${taskId} failed on the server.`);
-            const errorMessage = workDetails.work_msg || `Generation task failed with server status: ${workStatus}.`;
-            throw new Error(errorMessage);
-          }
+  async poll(taskId) {
+    try {
+      const pld = this.base({
+        animate_id_list: [taskId]
+      });
+      const res = await this.post("/df-server/reface/animate_image_list_poll", pld);
+      const list = res?.data?.animate_image_list || [];
+      return list.find(i => i.animate_id === taskId) || null;
+    } catch (e) {
+      console.error(`[Poll Error] ID ${taskId}:`, e.message);
+      return null;
+    }
+  }
+  async track(taskId, delayMs = 3e3, timeoutMs = 12e4) {
+    try {
+      console.log(`[Tracking] ID: ${taskId}`);
+      const limit = Date.now() + timeoutMs;
+      while (Date.now() < limit) {
+        await sleep(delayMs);
+        const data = await this.poll(taskId);
+        if (!data) continue;
+        console.log(`[Tracking] State: ${data.state}`);
+        if (["success", "done", "finish"].includes(data.state.toLowerCase())) {
+          return data;
         }
-      } catch (pollError) {
-        console.error(`An error occurred during polling attempt ${attempts}:`, pollError.message);
-        if (pollError.message.includes("failed with server status")) {
-          throw pollError;
+        if (["fail", "failed", "timeout", "error"].includes(data.state.toLowerCase())) {
+          throw new Error(`Server error: ${JSON.stringify(data)}`);
         }
       }
+      throw new Error("Timeout");
+    } catch (e) {
+      console.error("[Tracking Error]:", e.message);
+      throw e;
     }
-    throw new Error(`Task polling timed out for task ID: ${taskId}.`);
   }
-  async _waitForCredits(maxAttempts = 10, interval = 3e4) {
-    for (let i = 1; i <= maxAttempts; i++) {
-      await this._initSession();
-      const credits = this.credentials.credits?.free_count ?? 0;
-      if (credits > 0) {
-        console.log(`Credits available: ${credits}. Proceeding with generation.`);
-        return;
-      }
-      if (i < maxAttempts) {
-        console.log(`Attempt ${i}/${maxAttempts}: No free credits. Waiting for ${interval / 1e3}s before retrying...`);
-        await delay(interval);
-      }
-    }
-    throw new Error("Account has no free credits after multiple attempts. Aborting.");
-  }
-  async generate({
+  async create({
     prompt,
-    imageUrl,
-    model,
-    ratio,
+    ratio = "4:3",
+    tpl = "APP-FLUX-T2I",
     ...rest
   }) {
-    if (!this.credentials.token) await this._login();
-    await this._waitForCredits();
-    console.log(`Starting generation...`);
-    const isImg2Img = !!imageUrl;
-    let photoInfoList = [{
-      photo_path: ""
-    }];
-    if (isImg2Img) {
-      const urls = Array.isArray(imageUrl) ? imageUrl : [imageUrl];
-      const uploadedUrls = [];
-      for (const url of urls) {
-        const uploadedPath = await this._upload(url);
-        uploadedUrls.push(uploadedPath);
-      }
-      photoInfoList = uploadedUrls.map(path => ({
-        photo_path: path
-      }));
-    }
-    const type = isImg2Img ? "image2image" : "text2image";
-    const finalModel = model || (isImg2Img ? "gemini" : "flux");
-    const finalRatio = ratio || (isImg2Img ? "1:1" : "4:3");
-    console.log(`Mode: ${type}, Model: ${finalModel}, Ratio: ${finalRatio}, Prompt: "${prompt}"`);
-    const payload = {
-      create_work_session: true,
-      app_version: "4.7.1",
-      work_type: "AI_IMAGE",
-      template_id: isImg2Img ? "ai-image-gemini" : "ai-image",
-      timestamp: Date.now(),
-      play_types: [isImg2Img ? "IMAGE_TO_IMAGE_GEMINI" : "TEXT_TO_IMAGE"],
-      user_id: this.credentials.userId,
-      account_id: this.credentials.accountId,
-      ext: {
-        sing_title: prompt.substring(0, 10)
-      },
-      photo_info_list: photoInfoList,
-      ai_gen_image_info: {
-        type: type,
-        width: 1024,
-        height: 768,
-        prompts: [{
-          content: prompt,
-          type: "text"
-        }],
-        model: finalModel,
-        quality: "low",
-        ratio: finalRatio,
+    try {
+      if (!prompt) throw new Error("Parameter 'prompt' wajib diisi!");
+      const dims = RATIO[ratio] || RATIO["4:3"];
+      const taskId = this.uuid();
+      const payload = this.base({
+        template_id: tpl,
+        play_types: ["TEXT_TO_IMAGE"],
+        photo_info_list: [{}],
+        ext: {
+          sing_title: prompt,
+          singer: "Text to image"
+        },
+        ext_params: {
+          hit_ab: false,
+          free_strategy: "dream_image",
+          client_free_strategy: "others",
+          free_count: 1,
+          default_free_strategy: true
+        },
+        ai_gen_image_info: {
+          type: "text2image",
+          prompts: [{
+            content: prompt,
+            type: "text",
+            language: "en"
+          }],
+          ...dims,
+          ratio: ratio
+        },
+        pt_infos: [],
+        cur_task_id: taskId,
         ...rest
-      },
-      platform_type: "MOBILE",
-      tenant_name: "dream_face"
-    };
-    const generationData = await this._req({
-      url: "/face/animate_image_web",
-      method: "POST",
-      data: payload,
-      headers: {
-        "content-type": "application/json"
+      });
+      const res = await this.post("/df-server/face_v5/animate_image_v5", payload);
+      if (res.status_code !== "THS12140000000") {
+        throw new Error(`Gagal mengirim tugas T2I: ${res.status_msg}`);
       }
-    });
-    const taskId = generationData?.animate_image_id;
-    if (taskId) return await this._poll(taskId);
-    throw new Error("Failed to create generation task.");
+      const targetId = res.data.animate_image_id || taskId;
+      return await this.track(targetId);
+    } catch (e) {
+      console.error("[Generation Failed]:", e.message);
+      return {
+        error: true,
+        msg: e.message
+      };
+    }
   }
 }
 export default async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.prompt) {
     return res.status(400).json({
-      error: "Prompt are required"
+      error: "Parameter 'prompt' diperlukan"
     });
   }
+  const api = new DreamFace();
   try {
-    const client = new DreamFace();
-    const response = await client.generate(params);
-    return res.status(200).json(response);
+    const data = await api.create(params);
+    return res.status(200).json(data);
   } catch (error) {
-    res.status(500).json({
-      error: error.message || "Internal Server Error"
+    const errorMessage = error.message || "Terjadi kesalahan saat memproses request";
+    return res.status(500).json({
+      error: errorMessage
     });
   }
 }
