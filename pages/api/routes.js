@@ -1514,6 +1514,7 @@ export default function handler(req, res) {
     { path: "/api/download/artstation/v1", name: "V1", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/download/lazada", name: "Lazada", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/download/ucweb", name: "Ucweb", params: [{ "name": "prompt", "in": "query", "required": false }], },
+    { path: "/api/download/ssyoutube", name: "Ssyoutube", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/film/asianload", name: "Asianload", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/film/dramabay", name: "Dramabay", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/film/jadwalnonton", name: "Jadwalnonton", params: [{ "name": "prompt", "in": "query", "required": false }], },
