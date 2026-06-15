@@ -1,97 +1,87 @@
 import axios from "axios";
 import crypto from "crypto";
-const BASE = "https://api-sahabat-ai.ioh.co.id";
-const ORIGIN = "https://chat.sahabat-ai.com";
-const SK = "SAHABATAI";
-const AV = "1.1.0";
-const RC = "PWA";
-const RL = "ID";
-const UA = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36";
-const DM = "Linux armv81";
-const DMK = "Chrome";
-const OS = "Linux armv81";
-const OSV = "127.0.0.0";
-const SEC_HDR = {
-  "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
-  "sec-ch-ua-mobile": "?1",
-  "sec-ch-ua-platform": '"Android"',
-  "Sec-Fetch-Dest": "empty",
-  "Sec-Fetch-Mode": "cors",
-  "Sec-Fetch-Site": "cross-site"
-};
-const DID = crypto.randomUUID().replace(/-/g, "").toUpperCase();
-
-function avM(a) {
-  let n = "";
-  for (let i = 1; i < a.length; i += 2) n += a[i];
-  return n;
-}
-
-function bj9(body, salt) {
-  return crypto.createHash("sha512").update(JSON.stringify(body) + salt, "utf8").digest("hex");
-}
-
-function sign(body) {
-  const rt = crypto.randomUUID().replace(/-/g, "").toUpperCase();
-  const salt = avM((RC + rt).toLowerCase());
-  const rs = bj9(body, salt);
-  return {
-    rt: rt,
-    rs: rs
-  };
-}
-
-function buildHeaders(token, csrf, body, extra = {}) {
-  const {
-    rt,
-    rs
-  } = sign(body);
-  return {
-    "User-Agent": UA,
-    Accept: "*/*",
-    "Accept-Language": "id-ID",
-    "Cache-Control": "no-cache",
-    Connection: "keep-alive",
-    Origin: ORIGIN,
-    Pragma: "no-cache",
-    Referer: `${ORIGIN}/`,
-    "content-type": "application/json",
-    ...SEC_HDR,
-    "x-av": AV,
-    "x-cf": csrf ?? "",
-    "x-did": DID,
-    "x-dm": DM,
-    "x-dmk": DMK,
-    "x-os": OS,
-    "x-osv": OSV,
-    "x-rc": RC,
-    "x-rl": RL,
-    "x-rs": rs,
-    "x-rt": rt,
-    "x-sk": SK,
-    ...token ? {
-      AUTHORIZATION: `Bearer ${token}`
-    } : {},
-    ...extra
-  };
-}
 class SahabatAI {
   constructor() {
+    this.config = {
+      BASE: "https://api-sahabat-ai.ioh.co.id",
+      ORIGIN: "https://chat.sahabat-ai.com",
+      UA: "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",
+      SEC_HDR: {
+        "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
+        "sec-ch-ua-mobile": "?1",
+        "sec-ch-ua-platform": '"Android"',
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "cross-site"
+      }
+    };
+    this.DID = crypto.randomUUID().replace(/-/g, "").toUpperCase();
     this.token = null;
     this.csrf = null;
     this.accessKey = null;
     this.exp = 0;
   }
+  _avM(a) {
+    let n = "";
+    for (let i = 1; i < a.length; i += 2) n += a[i];
+    return n;
+  }
+  _bj9(body, salt) {
+    return crypto.createHash("sha512").update(JSON.stringify(body) + salt, "utf8").digest("hex");
+  }
+  _sign(body) {
+    const rt = crypto.randomUUID().replace(/-/g, "").toUpperCase();
+    const salt = this._avM(("pwa" + rt).toLowerCase());
+    const rs = this._bj9(body, salt);
+    return {
+      rt: rt,
+      rs: rs
+    };
+  }
+  _buildHeaders(token, csrf, body, extra = {}) {
+    const {
+      rt,
+      rs
+    } = this._sign(body);
+    return {
+      "User-Agent": this.config.UA,
+      Accept: "*/*",
+      "Accept-Language": "id-ID",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+      Origin: this.config.ORIGIN,
+      Pragma: "no-cache",
+      Referer: `${this.config.ORIGIN}/`,
+      "content-type": "application/json",
+      ...this.config.SEC_HDR,
+      "x-av": "1.1.0",
+      "x-cf": csrf ?? "",
+      "x-did": this.DID,
+      "x-dm": "Linux armv81",
+      "x-dmk": "Chrome",
+      "x-os": "Linux armv81",
+      "x-osv": "127.0.0.0",
+      "x-rc": "PWA",
+      "x-rl": "ID",
+      "x-rs": rs,
+      "x-rt": rt,
+      "x-sk": "SAHABATAI",
+      ...token ? {
+        AUTHORIZATION: `Bearer ${token}`
+      } : {},
+      ...extra
+    };
+  }
   _h(body = {}, extra = {}) {
-    return buildHeaders(this.token, this.csrf, body, extra);
+    return this._buildHeaders(this.token, this.csrf, body, extra);
   }
   async getToken() {
-    console.log("[token] getting anonymous token…  x-did =", DID);
+    console.log("[token] getting anonymous token…  x-did =", this.DID);
     const body = {};
     try {
       const {
         data
-      } = await axios.post(`${BASE}/api/v1/token/get`, body, {
+      } = await axios.post(`${this.config.BASE}/api/v1/token/get`, body, {
         headers: this._h(body)
       });
       this.token = data?.data?.token ?? null;
@@ -119,7 +109,7 @@ class SahabatAI {
     try {
       const {
         data
-      } = await axios.post(`${BASE}/api/v1/config/agentcategorycontent`, body, {
+      } = await axios.post(`${this.config.BASE}/api/v1/config/agentcategorycontent`, body, {
         headers: this._h(body)
       });
       console.log("[categories] ok  count =", data?.data?.length);
@@ -135,7 +125,7 @@ class SahabatAI {
     try {
       const {
         data
-      } = await axios.post(`${BASE}/api/v1/config/getagents`, body, {
+      } = await axios.post(`${this.config.BASE}/api/v1/config/getagents`, body, {
         headers: this._h(body)
       });
       console.log("[agents] ok  count =", data?.data?.length);
@@ -153,7 +143,7 @@ class SahabatAI {
     try {
       const {
         data
-      } = await axios.post(`${BASE}/api/v1/notification/pushtoken`, body, {
+      } = await axios.post(`${this.config.BASE}/api/v1/notification/pushtoken`, body, {
         headers: this._h(body)
       });
       console.log("[push] ok  device_id =", data?.data?.device_id);
@@ -193,7 +183,7 @@ class SahabatAI {
     try {
       const {
         data: stream
-      } = await axios.post(`${BASE}/api/v1/chat/conversation`, body, {
+      } = await axios.post(`${this.config.BASE}/api/v1/chat/conversation`, body, {
         headers: headers,
         responseType: "stream"
       });

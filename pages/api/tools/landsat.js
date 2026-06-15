@@ -334,7 +334,7 @@ class Landsat {
   async _uploadHtml(html) {
     try {
       console.log("[UPLOAD] Mengirim HTML ke API...");
-      const res = await axios.post(`https://${apiConfig.DOMAIN_URL}/api/tools/html2img/v22`, {
+      const res = await axios.post(`https://${apiConfig.DOMAIN_URL}/api/tools/html2img/v20`, {
         html: html
       }, {
         headers: {

@@ -1,12 +1,21 @@
-import {
-  execSync
-} from "child_process";
+import axios from "axios";
 import crypto from "crypto";
+import PROXY from "@/configs/proxy-cors";
+const proxy = PROXY.url;
+console.log("CORS proxy", proxy);
 class SSYoutube {
   constructor() {
     this.tsDef = 1781077401086;
     this.tscDef = 0;
     this.secret = "a206400c60b78bd376073d4a840f8b65098e4d4bccd7d19aa90a1b9f0d615ecd";
+    this.commonHeaders = {
+      "accept-language": "id-ID",
+      referer: "https://id.ssyoutube.com/",
+      "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
+      "sec-ch-ua-mobile": "?1",
+      "sec-ch-ua-platform": '"Android"',
+      "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36"
+    };
   }
   _sign(url, ts) {
     try {
@@ -19,22 +28,19 @@ class SSYoutube {
       return null;
     }
   }
-  _msec() {
+  async _msec() {
     try {
-      console.log("[PROSES] Mengambil nilai msec dari server via cURL...");
-      const cmd = `curl -s 'https://id.ssyoutube.com/msec' \\
-              -H 'accept: */*' \\
-              -H 'accept-language: id-ID' \\
-              -H 'referer: https://id.ssyoutube.com/' \\
-              -H 'sec-ch-ua: "Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"' \\
-              -H 'sec-ch-ua-mobile: ?1' \\
-              -H 'sec-ch-ua-platform: "Android"' \\
-              -H 'sec-fetch-dest: empty' \\
-              -H 'sec-fetch-mode: cors' \\
-              -H 'sec-fetch-site: same-origin' \\
-              -H 'user-agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36'`;
-      const res = execSync(cmd).toString();
-      return JSON.parse(res).msec;
+      console.log("[PROSES] Mengambil nilai msec dari server via Axios...");
+      const response = await axios.get(`${proxy}https://id.ssyoutube.com/msec`, {
+        headers: {
+          ...this.commonHeaders,
+          accept: "*/*",
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "same-origin"
+        }
+      });
+      return response.data.msec;
     } catch (err) {
       console.error("[ERROR] Gagal mengambil msec server:", err.message);
       return null;
@@ -45,7 +51,7 @@ class SSYoutube {
   }) {
     try {
       console.log("[PROSES] Memulai alur download untuk URL:", url);
-      const msec = this._msec();
+      const msec = await this._msec();
       if (!msec) return {
         success: false,
         error: "Gagal mendapatkan msec"
@@ -58,40 +64,36 @@ class SSYoutube {
         error: "Gagal membuat signature"
       };
       console.log(`[SUKSES] ts dihitung: ${ts}, _s: ${s}`);
-      const payload = JSON.stringify({
+      const payload = {
         target_url: url,
         ts: ts,
         _ts: this.tsDef,
         _tsc: this.tscDef,
         _s: s
-      });
+      };
       console.log("[PROSES] Mengirim payload ke endpoint api/convert...");
-      const cmd = `curl -s 'https://api-wh.ssyoutube.com/api/convert' \\
-              -H 'accept: application/json, text/plain, */*' \\
-              -H 'accept-language: id-ID' \\
-              -H 'cache-control: no-cache' \\
-              -H 'content-type: application/json' \\
-              -H 'origin: https://id.ssyoutube.com' \\
-              -H 'pragma: no-cache' \\
-              -H 'priority: u=1, i' \\
-              -H 'referer: https://id.ssyoutube.com/' \\
-              -H 'sec-ch-ua: "Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"' \\
-              -H 'sec-ch-ua-mobile: ?1' \\
-              -H 'sec-ch-ua-platform: "Android"' \\
-              -H 'sec-fetch-dest: empty' \\
-              -H 'sec-fetch-mode: cors' \\
-              -H 'sec-fetch-site: same-site' \\
-              -H 'user-agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36' \\
-              --data-raw '${payload}'`;
-      const res = execSync(cmd).toString();
+      const response = await axios.post(`${proxy}https://api-wh.ssyoutube.com/api/convert`, payload, {
+        headers: {
+          ...this.commonHeaders,
+          accept: "application/json, text/plain, */*",
+          "cache-control": "no-cache",
+          "content-type": "application/json",
+          origin: "https://id.ssyoutube.com",
+          pragma: "no-cache",
+          priority: "u=1, i",
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "same-site"
+        }
+      });
       console.log("[SUKSES] Respons asli API berhasil didapatkan.");
-      return JSON.parse(res);
+      return response.data;
     } catch (err) {
       console.error("[FATAL ERROR] Terjadi kegagalan pada method download:", err.message);
       return {
         success: false,
         error: err.message,
-        output: err.output ? err.output.toString() : null
+        output: err.response ? err.response.data : null
       };
     }
   }
