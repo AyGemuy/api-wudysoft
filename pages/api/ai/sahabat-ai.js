@@ -155,22 +155,22 @@ class SahabatAI {
   }
   async chat({
     prompt,
-    conversationId = null,
-    messageId = null,
-    agentId = null,
-    modelId = "0",
+    conversation_id = null,
+    message_id = null,
+    agent_id = null,
+    model_id = "0",
     files = [],
-    isRetry = false
+    is_retry = false
   }) {
     await this._auth();
-    console.log("[chat] prompt =", prompt, " agentId =", agentId);
+    console.log("[chat] prompt =", prompt, " agent_id =", agent_id);
     const body = {
       query: prompt,
-      conversation_id: conversationId ?? null,
-      message_id: messageId ?? null,
-      isretry: isRetry,
-      agentid: agentId ?? null,
-      modelid: String(modelId),
+      conversation_id: conversation_id ?? null,
+      message_id: message_id ?? null,
+      isretry: is_retry,
+      agentid: agent_id ?? null,
+      modelid: String(model_id),
       files: files
     };
     const headers = this._h(body, {
@@ -188,8 +188,8 @@ class SahabatAI {
         responseType: "stream"
       });
       let text = "";
-      let outConvId = conversationId ?? "";
-      let outMsgId = messageId ?? "";
+      let outConvId = conversation_id ?? "";
+      let outMsgId = message_id ?? "";
       let sources = [];
       let chunks = [];
       let buf = "";
@@ -248,9 +248,9 @@ class SahabatAI {
       });
       console.log("[chat] done  chars =", text.length, " convId =", outConvId);
       return {
-        text: text,
-        conversationId: outConvId,
-        messageId: outMsgId,
+        result: text,
+        conversation_id: outConvId,
+        message_id: outMsgId,
         sources: sources,
         chunks: chunks
       };

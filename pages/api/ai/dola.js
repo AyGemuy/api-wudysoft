@@ -883,7 +883,7 @@ class DolaClient {
     }
   }
   async generate({
-    mode,
+    mode = "chat",
     prompt,
     state,
     ...rest
@@ -962,18 +962,6 @@ class DolaClient {
       this.err("generate", e);
       return this.errRes(e.message, stateSnapshot());
     }
-  }
-  async chat({
-    prompt,
-    state,
-    ...rest
-  }) {
-    rest.mode = "chat";
-    return this.generate(Object.assign({
-      prompt: prompt,
-      state: state,
-      mode: "chat"
-    }, rest));
   }
 }
 export default async function handler(req, res) {
