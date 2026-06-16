@@ -21,8 +21,7 @@ class StoriesIG {
   _sign(url, ts) {
     try {
       console.log("[PROSES] Menggenerate signature HMAC _s untuk StoriesIG...");
-      const jsonPart = `{"sf_url":"${url}"}`;
-      const strMentah = `${jsonPart}${ts}`;
+      const strMentah = `${url}${ts}`;
       const keyBuffer = Buffer.from(this.saltHex, "hex");
       return crypto.createHmac("sha256", keyBuffer).update(strMentah).digest("hex");
     } catch (err) {
@@ -61,7 +60,7 @@ class StoriesIG {
         error: "Gagal mendapatkan msec dari storiesig"
       };
       console.log(`[SUKSES] msec didapat: ${msec}`);
-      const ts = Math.floor(msec * 1e3) - 1380;
+      const ts = Math.floor(msec * 1e3) - 1675;
       const s = this._sign(url, ts);
       if (!s) return {
         success: false,
