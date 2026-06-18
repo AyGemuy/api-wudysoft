@@ -7,7 +7,7 @@ class FlippedChat {
     this.userId = null;
     this.xmppPwd = null;
     this.token = null;
-    this.botId = null;
+    this.botId = "200669482277761206";
     this.key = "QnQDFfOwIk85SYE6kNtsHVPLCzvP8Y9K";
     this.base = "https://api.flipped.chat";
     this.wsUrl = "wss://im.flipped.chat/ws";

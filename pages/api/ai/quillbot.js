@@ -10,6 +10,8 @@ import FormData from "form-data";
 class QuillbotChat {
   constructor() {
     this.token = "empty-token";
+    this._refreshToken = null;
+    this._expiry = 0;
     this.jar = new CookieJar();
     this.modeConfig = {
       chat: {
@@ -26,14 +28,68 @@ class QuillbotChat {
       }
     };
     this.availableModes = Object.keys(this.modeConfig);
+    this.deviceId = this._uid();
+    this.anonId = this._hex(16);
+    this.client = null;
+    this.headers = {};
+  }
+  async _genToken() {
+    const API_KEY = "AIzaSyAhX7hgWsGjY-Lo6eqwJmuRU2xxNRTY7kQ";
+    const REFERER = "https://quillbot.com";
+    const now = Date.now();
+    if (this.token !== "empty-token" && this._expiry > now + 6e4) {
+      return this.token;
+    }
+    if (this._refreshToken) {
+      try {
+        const res = await axios.post(`https://securetoken.googleapis.com/v1/token?key=${API_KEY}`, new URLSearchParams({
+          grant_type: "refresh_token",
+          refresh_token: this._refreshToken
+        }).toString(), {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Referer: REFERER
+          }
+        });
+        const data = res.data;
+        this.token = data.id_token || data.access_token;
+        this._refreshToken = data.refresh_token || this._refreshToken;
+        this._expiry = now + (parseInt(data.expires_in) || 3600) * 1e3;
+        return this.token;
+      } catch {
+        this.token = "empty-token";
+        this._refreshToken = null;
+        this._expiry = 0;
+      }
+    }
+    const res = await axios.post(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_KEY}`, {
+      returnSecureToken: true
+    }, {
+      headers: {
+        "Content-Type": "application/json",
+        Referer: REFERER
+      }
+    });
+    const data = res.data;
+    this.token = data.idToken;
+    this._refreshToken = data.refreshToken;
+    this._expiry = now + parseInt(data.expiresIn) * 1e3;
+    return this.token;
+  }
+  async init(customToken = null) {
     try {
-      const deviceId = this._uid();
+      if (customToken) {
+        this.token = customToken;
+      } else {
+        this.token = await this._genToken() || "empty-token";
+      }
+      const isAuthenticated = this.token !== "empty-token";
       this.headers = {
         accept: "text/event-stream",
         "accept-language": "id-ID",
         "cache-control": "no-cache",
         "content-type": "application/json",
-        cookie: `qbDeviceId=${deviceId}; anonID=${this._hex(16)}; ajs_anonymous_id=${deviceId}; premium=false; authenticated=${this.token !== "empty-token"};`,
+        cookie: `qbDeviceId=${this.deviceId}; anonID=${this.anonId}; ajs_anonymous_id=${this.deviceId}; premium=false; authenticated=${isAuthenticated};`,
         origin: "https://quillbot.com",
         "platform-type": "webapp",
         referer: "https://quillbot.com/ai-chat/c/new?tools=web_search",
@@ -52,7 +108,7 @@ class QuillbotChat {
         baseURL: "https://quillbot.com",
         headers: this.headers
       }));
-      this._log("init", "Client siap");
+      this._log("init", `Client siap (Authenticated: ${isAuthenticated})`);
     } catch (err) {
       this._log("error", `Init failed: ${err.message}`);
       throw err;
@@ -474,18 +530,22 @@ class QuillbotChat {
   }
   async generate(params = {}) {
     const {
+      token,
       mode = "chat",
-        prompt,
-        chatId,
-        verbose = false,
-        imageOptions = {},
-        files = null, ...rest
+      prompt,
+      chatId,
+      verbose = false,
+      imageOptions = {},
+      files = null,
+      ...rest
     } = params;
+    await this.init(token);
     if (!this.modeConfig[mode]) {
       return {
         success: false,
         error: `Mode '${mode}' tidak dikenal. Mode tersedia: ${this.availableModes.join(", ")}`,
         mode: mode,
+        token: this.token,
         timestamp: new Date().toISOString()
       };
     }
@@ -499,7 +559,8 @@ class QuillbotChat {
       return {
         success: false,
         error: `Mode '${mode}' membutuhkan field: ${missing.join(", ")}`,
-        mode: mode
+        mode: mode,
+        token: this.token
       };
     }
     let uploadedFiles = [];
@@ -511,33 +572,41 @@ class QuillbotChat {
         return {
           success: false,
           error: `Upload files gagal: ${uploadResult.error}`,
-          partial: uploadResult.partial
+          partial: uploadResult.partial,
+          token: this.token
         };
       }
       uploadedFiles = uploadResult.files;
     }
+    let finalResponse;
     switch (mode) {
       case "image":
-        return await this.genImg(prompt, imageOptions);
+        finalResponse = await this.genImg(prompt, imageOptions);
+        break;
       case "edit":
         if (!uploadedFiles.length) {
           return {
             success: false,
-            error: "Mode edit memerlukan minimal satu file gambar"
+            error: "Mode edit memerlukan minimal satu file gambar",
+            token: this.token
           };
         }
-        return await this.editImg(prompt, uploadedFiles, {
+        finalResponse = await this.editImg(prompt, uploadedFiles, {
           chatId: chatId,
           ...imageOptions
         });
+        break;
       case "raven": {
         verbose && this._log("start", `Mode raven | "${prompt.slice(0, 60)}..."`);
         const start = Date.now();
         const raw = await this.sendRaven(prompt, uploadedFiles, rest);
-        if (raw.success === false) return raw;
+        if (raw.success === false) return {
+          ...raw,
+          token: this.token
+        };
         const time = Date.now() - start;
         verbose && this._log("done", `${time}ms | ${raw.result.length} chars`);
-        return {
+        finalResponse = {
           success: true,
           mode: mode,
           content: raw.result,
@@ -552,16 +621,20 @@ class QuillbotChat {
           },
           timestamp: new Date().toISOString()
         };
+        break;
       }
       case "chat":
       default: {
         verbose && this._log("start", `Mode chat | "${prompt.slice(0, 60)}..."`);
         const start = Date.now();
         const raw = await this.sendChat(prompt, chatId, uploadedFiles, rest);
-        if (raw.success === false) return raw;
+        if (raw.success === false) return {
+          ...raw,
+          token: this.token
+        };
         const time = Date.now() - start;
         verbose && this._log("done", `${time}ms | ${raw.result.length} chars`);
-        return {
+        finalResponse = {
           success: true,
           mode: mode,
           content: raw.result,
@@ -576,8 +649,13 @@ class QuillbotChat {
           },
           timestamp: new Date().toISOString()
         };
+        break;
       }
     }
+    return {
+      ...finalResponse,
+      token: this.token
+    };
   }
 }
 export default async function handler(req, res) {

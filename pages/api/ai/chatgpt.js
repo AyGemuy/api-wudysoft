@@ -2,12 +2,12 @@ import axios from "axios";
 import https from "https";
 import crypto from "crypto";
 class ChatGPTClient {
-  constructor(options = {}) {
+  constructor() {
     this.baseURL = "https://chatgpt.com";
-    this.deviceId = options.deviceId || crypto.randomUUID();
-    this.language = options.language || "en-US";
-    this.timezone = options.timezone || "Europe/Berlin";
-    this.timezoneOffset = options.timezoneOffset || -120;
+    this.deviceId = crypto.randomUUID();
+    this.language = "en-US";
+    this.timezone = "Europe/Berlin";
+    this.timezoneOffset = -120;
     this.tokenCSRF = null;
     this.tokenOaiSC = null;
     this.conduitToken = null;
@@ -290,24 +290,24 @@ class ChatGPTClient {
       }
     }).filter(Boolean).pop()?.message.content.parts.join("") || input;
   }
-  async chat(options = {}) {
-    const {
-      prompt = "Hello, how are you?",
-        messages = [],
-        model = "auto",
-        timezone_offset_min = -120,
-        history_and_training_disabled = false,
-        conversation_mode = {
-          kind: "primary_assistant",
-          plugin_ids: null
-        },
-        force_paragen = false,
-        force_paragen_model_slug = "",
-        force_nulligen = false,
-        force_rate_limit = false,
-        reset_rate_limits = false,
-        force_use_sse = true, ...rest
-    } = options;
+  async chat({
+    prompt = "Hello, how are you?",
+    messages = [],
+    model = "auto",
+    timezone_offset_min = -120,
+    history_and_training_disabled = false,
+    conversation_mode = {
+      kind: "primary_assistant",
+      plugin_ids: null
+    },
+    force_paragen = false,
+    force_paragen_model_slug = "",
+    force_nulligen = false,
+    force_rate_limit = false,
+    reset_rate_limits = false,
+    force_use_sse = true,
+    ...rest
+  }) {
     if (!prompt && messages.length === 0) {
       throw new Error("Prompt or messages are required");
     }
@@ -368,7 +368,7 @@ class ChatGPTClient {
       console.log("✅ Response received.");
       return {
         result: parsed,
-        rawResponse: text,
+        raw: text,
         success: true
       };
     } catch (error) {
