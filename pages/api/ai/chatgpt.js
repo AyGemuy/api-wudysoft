@@ -1,7 +1,7 @@
 import axios from "axios";
 import https from "https";
 import crypto from "crypto";
-class ChatGPTClient {
+class ChatGPT {
   constructor() {
     this.baseURL = "https://chatgpt.com";
     this.deviceId = crypto.randomUUID();
@@ -395,20 +395,19 @@ class ChatGPTClient {
 }
 export default async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
-  if (!params.prompt) return res.status(400).json({
-    message: "No prompt provided"
-  });
-  const client = new ChatGPTClient({
-    language: "en-US",
-    timezone: "Europe/Berlin"
-  });
+  if (!params.prompt) {
+    return res.status(400).json({
+      error: "Parameter 'prompt' diperlukan"
+    });
+  }
+  const api = new ChatGPT();
   try {
-    const result = await client.chat(params);
-    return res.status(200).json(result);
+    const data = await api.chat(params);
+    return res.status(200).json(data);
   } catch (error) {
+    const errorMessage = error.message || "Terjadi kesalahan saat memproses request";
     return res.status(500).json({
-      message: "Error generating content",
-      error: error.message
+      error: errorMessage
     });
   }
 }

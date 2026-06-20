@@ -1,6 +1,6 @@
 import axios from "axios";
 import FormData from "form-data";
-class ApiService {
+class MentorChat {
   constructor() {
     this.log = function(step, info) {
       console.log(`[${step}]`, typeof info === "object" ? info?.status || info?.code || "" : info);
@@ -268,15 +268,16 @@ class ApiService {
     }
   }
 }
-const api = new ApiService();
-async function start() {
-  console.log("=== RUNNING IMPLEMENTASI DENGAN NAMA FUNGSI SINGKAT ===\n");
-  console.log("[TEST: CHAT TEXT VIA SHORT FUNCTION NAME]");
-  const resChat = await api.gen({
-    mode: "chat",
-    prompt: "Halo, selamat pagi!"
-  });
-  console.log("Respon Chat:", resChat);
-  console.log("\n--------------------------------------------\n");
+export default async function handler(req, res) {
+  const params = req.method === "GET" ? req.query : req.body;
+  const api = new MentorChat();
+  try {
+    const data = await api.generate(params);
+    return res.status(200).json(data);
+  } catch (error) {
+    const errorMessage = error.message || "Terjadi kesalahan saat memproses request";
+    return res.status(500).json({
+      error: errorMessage
+    });
+  }
 }
-start();
