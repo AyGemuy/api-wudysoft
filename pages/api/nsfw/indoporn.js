@@ -1,6 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import PROXY from "@/configs/proxy-cors";
+import PROXY from "@/configs/proxy-url";
 const proxy = PROXY.url;
 console.log("CORS proxy", proxy);
 class IndoPorn {
@@ -12,7 +12,7 @@ class IndoPorn {
     };
   }
   _url(target) {
-    return `${this.proxyUrl}${encodeURIComponent(target)}`;
+    return `${this.proxyUrl}${target}`;
   }
   _slug(url) {
     if (!url) return null;

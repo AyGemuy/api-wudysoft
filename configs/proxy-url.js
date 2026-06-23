@@ -10,14 +10,8 @@ class ProxyManager {
       name: "codefrau",
       url: "https://cors.codefrau.workers.dev/"
     }, {
-      name: "rpoxy",
-      url: "https://rpoxy.apis6.workers.dev/"
-    }, {
       name: "prox",
       url: "https://prox.26bruunjorl.workers.dev/"
-    }, {
-      name: "aged",
-      url: "https://aged-hill-ab3a.apis4.workers.dev/"
     }, {
       name: "wave",
       url: "https://plain-wave-6f5f.apis1.workers.dev/"

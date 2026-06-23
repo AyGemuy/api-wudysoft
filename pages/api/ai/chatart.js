@@ -277,7 +277,7 @@ class ChatArt {
       }
       const map = {
         v6: "/v6/chat_gpt/chat",
-        v4: "/v5/chat_gpt/chat",
+        v5: "/v5/chat_gpt/chat",
         vision: "/v1/chat_gpt/chat_vision"
       };
       if (!map[mode]) {

@@ -4,9 +4,6 @@ class ProxyManager {
       name: "artemisandros",
       url: "https://cors.artemisandros.workers.dev/?"
     }, {
-      name: "supershadowcube",
-      url: "https://cloudflare-cors-anywhere.supershadowcube.workers.dev/?url="
-    }, {
       name: "r2d2",
       url: "https://cors.r2d2.to/?"
     }, {
