@@ -28,6 +28,8 @@ class IndoPorn {
     return raw ? raw.includes("%") ? raw : `${raw}%` : null;
   }
   async home({
+    limit,
+    detail,
     ...rest
   } = {}) {
     console.log("[LOG] Memproses halaman home...");
@@ -38,7 +40,10 @@ class IndoPorn {
         ...rest
       });
       const $ = cheerio.load(response?.data || "");
-      const videos = $('.thumb-block.video-preview-item, [class*="thumb-block"]').map((_, el) => {
+      let elements = $('.thumb-block.video-preview-item, [class*="thumb-block"]');
+      const max = limit ? parseInt(limit) : null;
+      if (max) elements = elements.slice(0, max);
+      const initialVideos = elements.map((_, el) => {
         const $el = $(el);
         const rawLink = $el.find("a").attr("href") || null;
         const finalLink = rawLink ? rawLink.startsWith("http") ? rawLink : `${this.baseUrl}${rawLink}` : null;
@@ -53,10 +58,27 @@ class IndoPorn {
           actors: this._actor($el.attr("class"))
         };
       }).get().filter(v => v.title && v.link);
-      console.log(`[LOG] Sukses mendapatkan ${videos.length} video.`);
+      let finalVideos = [];
+      if (detail === true || detail === "true") {
+        console.log(`[LOG] Mengambil rincian detail secara berurutan untuk ${initialVideos.length} video...`);
+        for (const video of initialVideos) {
+          const det = await this.detail({
+            url: video.link,
+            ...rest
+          });
+          if (det.status) {
+            finalVideos.push(det.result);
+          } else {
+            finalVideos.push(video);
+          }
+        }
+      } else {
+        finalVideos = initialVideos;
+      }
+      console.log(`[LOG] Sukses mendapatkan ${finalVideos.length} video.`);
       return {
         status: true,
-        result: videos
+        result: finalVideos
       };
     } catch (error) {
       console.error("[LOG ERROR] Gagal di fungsi home:", error?.message || null);
@@ -69,10 +91,10 @@ class IndoPorn {
   async search({
     query,
     limit,
+    detail,
     ...rest
   }) {
     const q = query || "";
-    const max = limit ? parseInt(limit) : null;
     console.log(`[LOG] Memproses pencarian kata kunci: "${q}"`);
     try {
       const target = `${this.baseUrl}/?s=${encodeURIComponent(q)}`;
@@ -82,8 +104,9 @@ class IndoPorn {
       });
       const $ = cheerio.load(response?.data || "");
       let elements = $('.thumb-block.video-preview-item, [class*="thumb-block"]');
+      const max = limit ? parseInt(limit) : null;
       if (max) elements = elements.slice(0, max);
-      const videos = elements.map((_, el) => {
+      const initialVideos = elements.map((_, el) => {
         const $el = $(el);
         const rawLink = $el.find("a").attr("href") || null;
         const finalLink = rawLink ? rawLink.startsWith("http") ? rawLink : `${this.baseUrl}${rawLink}` : null;
@@ -98,10 +121,27 @@ class IndoPorn {
           actors: this._actor($el.attr("class"))
         };
       }).get().filter(v => v.title && v.link);
-      console.log(`[LOG] Sukses menemukan ${videos.length} video.`);
+      let finalVideos = [];
+      if (detail === true || detail === "true") {
+        console.log(`[LOG] Mengambil rincian detail secara berurutan untuk ${initialVideos.length} video...`);
+        for (const video of initialVideos) {
+          const det = await this.detail({
+            url: video.link,
+            ...rest
+          });
+          if (det.status) {
+            finalVideos.push(det.result);
+          } else {
+            finalVideos.push(video);
+          }
+        }
+      } else {
+        finalVideos = initialVideos;
+      }
+      console.log(`[LOG] Sukses menemukan ${finalVideos.length} video.`);
       return {
         status: true,
-        result: videos
+        result: finalVideos
       };
     } catch (error) {
       console.error("[LOG ERROR] Gagal di fungsi search:", error?.message || null);
@@ -155,13 +195,13 @@ class IndoPorn {
         link: fullUrl,
         description: $('meta[itemprop="description"]').attr("content") || $('meta[name="description"]').attr("content") || null,
         duration: $('meta[itemprop="duration"]').attr("content") || null,
-        video_url: $('meta[itemprop="contentURL"]').attr("content") || null,
-        thumbnail: $('meta[property="og:image"]').attr("content") || $(".video-main-thumb").attr("src") || null,
+        video_url: $('meta[itemprop="contentURL"]').attr("content") || $('meta[itemprop="embedURL"]').attr("content") || $(".responsive-player iframe").attr("src") || $(".video-player iframe").attr("src") || null,
+        thumbnail: $('meta[property="og:image"]').attr("content") || $('meta[itemprop="thumbnailUrl"]').attr("content") || $(".video-main-thumb").attr("src") || null,
         categories: categories,
         actors: actors,
         likes: parseInt($(".likes_count").text()) || 0,
         dislikes: parseInt($(".dislikes_count").text()) || 0,
-        post_id: $("article").attr("data-post-id") || $("[data-post-id]").attr("data-post-id") || null,
+        post_id: $("article").attr("id")?.replace("post-", "") || $("article").attr("data-post-id") || null,
         author: $('meta[itemprop="author"]').attr("content") || null,
         upload_date: $('meta[itemprop="uploadDate"]').attr("content") || null,
         related_videos: relatedVideos
@@ -194,9 +234,9 @@ export default async function handler(req, res) {
       usage: {
         method: "GET / POST",
         examples: {
-          home: "/indoporn?action=home",
-          search: "/indoporn?action=search&query=yuri&limit=5",
-          detail: "/indoporn?action=detail&url=vina-sky-doggy-fucked-with-huge-dick-bg-porn-video"
+          home: "/indoporn?action=home&limit=5&detail=true",
+          search: "/indoporn?action=search&query=asian&limit=2&detail=true",
+          detail: "/indoporn?action=detail&url=slug-video-disini"
         }
       }
     });
@@ -219,8 +259,7 @@ export default async function handler(req, res) {
         if (!params.query) {
           return res.status(400).json({
             status: false,
-            error: "Parameter 'query' wajib diisi untuk action 'search'.",
-            example: "/indoporn?action=search&query=yuri"
+            error: "Parameter 'query' wajib diisi untuk action 'search'."
           });
         }
         response = await api.search(params);
@@ -229,8 +268,7 @@ export default async function handler(req, res) {
         if (!params.url) {
           return res.status(400).json({
             status: false,
-            error: "Parameter 'url' (bisa berupa Full URL atau Slug) wajib diisi untuk action 'detail'.",
-            example: "/indoporn?action=detail&url=vina-sky-doggy-fucked-with-huge-dick-bg-porn-video"
+            error: "Parameter 'url' wajib diisi untuk action 'detail'."
           });
         }
         response = await api.detail(params);
@@ -238,15 +276,13 @@ export default async function handler(req, res) {
       default:
         return res.status(400).json({
           status: false,
-          error: `Action tidak dikenali: '${action}'.`,
-          valid_actions: validActions
+          error: `Action tidak dikenali.`
         });
     }
     if (!response) {
       return res.status(502).json({
         status: false,
-        action: action,
-        error: "Tidak ada respons dari scraper IndoPorn. Coba lagi nanti."
+        error: "Tidak ada respons dari scraper IndoPorn."
       });
     }
     return res.status(200).json({
@@ -257,7 +293,7 @@ export default async function handler(req, res) {
     console.error(`[FATAL ERROR] Kegagalan pada action '${action}':`, error);
     return res.status(500).json({
       status: false,
-      message: "Terjadi kesalahan internal pada server Next.js atau target proxy/website.",
+      message: "Terjadi kesalahan internal pada server.",
       error: error?.message || "Unknown Error"
     });
   }

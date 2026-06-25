@@ -12,9 +12,9 @@ class AskGpt5 {
   _gen() {
     const salt = crypto.randomBytes(4).toString("hex");
     return {
-      name: `u_${salt}`,
-      email: `u_${salt}@mail.com`,
-      pass: `p_${salt}A1!`
+      name: `Guest${salt}`,
+      email: `guest${salt}@mail.com`,
+      pass: `Pwd${salt}A1!`
     };
   }
   _dec(st) {

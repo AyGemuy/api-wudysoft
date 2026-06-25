@@ -9,17 +9,17 @@ import {
 const UA = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36";
 const BASE = "https://www.mirrored.to";
 class MirroredSolver {
-  constructor(opts = {}) {
-    this.jar = opts.jar ?? new CookieJar();
+  constructor() {
+    this.jar = new CookieJar();
     this.client = wrapper(axios.create({
       jar: this.jar,
       withCredentials: true,
       headers: {
-        "User-Agent": opts.userAgent || UA,
+        "User-Agent": UA,
         "Accept-Language": "id-ID",
         "Cache-Control": "no-cache"
       },
-      timeout: opts.timeout ?? 6e4
+      timeout: 6e4
     }));
   }
   log(...args) {
@@ -81,12 +81,10 @@ class MirroredSolver {
       this.log("Extracting file meta...");
       const $ = cheerio.load(html ?? "");
       const dlHref = $("#download-link").attr("href") ?? null;
-      const uid = url?.match(/\/(?:files|multilinks)\/([A-F0-9a-f]+)/i)?.[1] ?? null;
-      const hash = dlHref?.match(/hash=([A-F0-9a-f=+|%]+)/i)?.[1] ?? null;
+      const uid = url?.match(/\/(?:files|multilinks)\/([A-Za-z0-9]+)/i)?.[1] ?? null;
       const fname = $("h3.hdark").first().text()?.trim() || null;
       return {
         uid: uid,
-        hash: hash,
         fname: fname,
         dlHref: dlHref
       };
@@ -94,7 +92,6 @@ class MirroredSolver {
       this.log("_extMeta error ->", err?.message);
       return {
         uid: null,
-        hash: null,
         fname: null,
         dlHref: null
       };
@@ -199,14 +196,15 @@ class MirroredSolver {
       const firstHtml = await this.get(url);
       const {
         uid,
-        hash,
-        fname
+        fname,
+        dlHref
       } = this._extMeta(firstHtml, url);
-      if (!uid || !hash) return {
+      if (!dlHref) return {
         url: url,
-        error: "Gagal extract uid/hash"
+        error: "Gagal extract download link (dlHref kosong)"
       };
-      const dlUrl = `${BASE}/files/${uid}/?hash=${hash}&dl=0`;
+      const dlUrl = dlHref.startsWith("http") ? dlHref : new URL(dlHref, BASE).toString();
+      this.log("Using dlUrl ->", dlUrl);
       const dlHtml = await this.get(dlUrl);
       const mirstatsUrl = this._extStats(dlHtml);
       if (!mirstatsUrl) return {

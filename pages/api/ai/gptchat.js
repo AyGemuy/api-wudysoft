@@ -9,7 +9,7 @@ class GptChat {
       this.models = FREE_MODELS;
       this.defaultModel = DEFAULT_MODEL;
       this.api = axios.create({
-        timeout: opts.timeout || 6e4,
+        timeout: 6e4,
         headers: {
           "User-Agent": "Mozilla/5.0 (Linux; Android 15; RMX3890 Build/AQ3A.240812.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/149.0.7827.91 Mobile Safari/537.36",
           "Accept-Encoding": "gzip, deflate, br, zstd",
