@@ -66,7 +66,7 @@ class TempMail {
   } = {}) {
     try {
       console.log("[PROSES] Memulai pembuatan email baru...");
-      const fixName = name || this._an().toLowerCase() + this._ai(100, 1e3);
+      const fixName = name || this._an().toLowerCase() + this._ai(1e3, 1e4);
       const fixDomain = this.domains[this._ai(0, this.domains.length - 1)];
       const email = `${fixName}${fixDomain}`;
       console.log(`[PROSES] Mengirim request email target: ${email}`);
@@ -119,8 +119,12 @@ class TempMail {
           headers: this.headers
         });
         const detailDecoded = this._dec(detailRes.data?.data);
-        fullMessages.push(detailDecoded);
+        fullMessages.push({
+          ...msg,
+          ...detailDecoded
+        });
       }
+      fullMessages.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
       console.log("[PROSES] Seluruh detail pesan berhasil diambil, mengubah ke format snake_case...");
       const result = this._snake(fullMessages);
       return {

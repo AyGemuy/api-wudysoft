@@ -1,7 +1,7 @@
 import axios from "axios";
 class Mobinime {
   constructor() {
-    this.inst = axios.create({
+    this.instance = axios.create({
       baseURL: "https://air.vunime.my.id/mobinime",
       headers: {
         "accept-encoding": "gzip",
@@ -17,49 +17,56 @@ class Mobinime {
       console.log("[home] Fetching homepage...");
       const {
         data
-      } = await this.inst.get("/pages/homepage");
+      } = await this.instance.get("/pages/homepage");
       console.log("[home] Success");
       return data;
-    } catch (e) {
-      console.error("[home] Error:", e?.message);
-      throw new Error(e?.message || "Failed to fetch homepage");
+    } catch (error) {
+      console.error("[home] Error:", error?.message);
+      return {
+        success: false,
+        error: error?.message || "Failed to fetch homepage"
+      };
     }
   }
-  async list(t, {
-    p = "0",
-    c = "15",
-    g = ""
+  async list({
+    type,
+    page = "0",
+    count = "15",
+    genre = "",
+    ...rest
   } = {}) {
     try {
-      console.log(`[list] Type: ${t}, Page: ${p}, Count: ${c}, Genre: ${g}`);
-      const types = {
+      console.log(`[list] Fetching type: ${type}, page: ${page}, count: ${count}`);
+      const animeTypes = {
         series: "1",
         movie: "3",
         ova: "2",
         "live-action": "4"
       };
-      const tid = types[t] || null;
-      if (!tid) throw new Error(`Valid types: ${Object.keys(types).join(", ")}`);
-      if (isNaN(p)) throw new Error("Invalid page");
-      if (isNaN(c)) throw new Error("Invalid count");
-      const genres = await this.genres();
-      const gid = genres?.find(x => x?.title?.toLowerCase()?.replace(/\s+/g, "-") === g?.toLowerCase())?.id || null;
-      if (g && !gid) throw new Error(`Valid genres: ${genres?.map(x => x?.title?.toLowerCase()?.replace(/\s+/g, "-"))?.join(", ")}`);
-      const {
-        data
-      } = await this.inst.post("/anime/list", {
-        perpage: c?.toString() || "15",
-        startpage: p?.toString() || "0",
+      const typeId = animeTypes[type] || null;
+      const genresData = await this.genres();
+      const genreSlug = genre?.toLowerCase()?.replace(/\s+/g, "-");
+      const genreId = genresData?.find(x => x?.title?.toLowerCase()?.replace(/\s+/g, "-") === genreSlug)?.id || "";
+      const payload = {
+        perpage: count?.toString(),
+        startpage: page?.toString(),
         userid: "",
         sort: "",
-        genre: gid || "",
-        jenisanime: tid
-      });
+        genre: genreId,
+        jenisanime: typeId,
+        ...rest
+      };
+      const {
+        data
+      } = await this.instance.post("/anime/list", payload);
       console.log("[list] Success");
       return data;
-    } catch (e) {
-      console.error("[list] Error:", e?.message);
-      throw new Error(e?.message || "Failed to fetch list");
+    } catch (error) {
+      console.error("[list] Error:", error?.message);
+      return {
+        success: false,
+        error: error?.message || "Failed to fetch list"
+      };
     }
   }
   async genres() {
@@ -67,82 +74,113 @@ class Mobinime {
       console.log("[genres] Fetching genres...");
       const {
         data
-      } = await this.inst.get("/anime/genre");
+      } = await this.instance.get("/anime/genre");
       console.log("[genres] Success");
       return data;
-    } catch (e) {
-      console.error("[genres] Error:", e?.message);
-      throw new Error(e?.message || "Failed to fetch genres");
+    } catch (error) {
+      console.error("[genres] Error:", error?.message);
+      return {
+        success: false,
+        error: error?.message || "Failed to fetch genres"
+      };
     }
   }
-  async search(q, {
-    p = "0",
-    c = "25"
+  async search({
+    query,
+    page = "0",
+    count = "25",
+    ...rest
   } = {}) {
     try {
-      console.log(`[search] Query: ${q}, Page: ${p}, Count: ${c}`);
-      if (!q) throw new Error("Query required");
-      if (isNaN(p)) throw new Error("Invalid page");
-      if (isNaN(c)) throw new Error("Invalid count");
+      console.log(`[search] Searching: ${query}, page: ${page}`);
+      const payload = {
+        perpage: count?.toString(),
+        startpage: page?.toString(),
+        q: query,
+        ...rest
+      };
       const {
         data
-      } = await this.inst.post("/anime/search", {
-        perpage: c?.toString() || "25",
-        startpage: p?.toString() || "0",
-        q: q
-      });
+      } = await this.instance.post("/anime/search", payload);
       console.log("[search] Success");
       return data;
-    } catch (e) {
-      console.error("[search] Error:", e?.message);
-      throw new Error(e?.message || "Failed to search");
+    } catch (error) {
+      console.error("[search] Error:", error?.message);
+      return {
+        success: false,
+        error: error?.message || "Failed to search"
+      };
     }
   }
-  async detail(id) {
-    try {
-      console.log(`[detail] ID: ${id}`);
-      if (!id || isNaN(id)) throw new Error("Valid id required");
-      const {
-        data
-      } = await this.inst.post("/anime/detail", {
-        id: id?.toString()
-      });
-      console.log("[detail] Success");
-      return data;
-    } catch (e) {
-      console.error("[detail] Error:", e?.message);
-      throw new Error(e?.message || "Failed to fetch detail");
-    }
-  }
-  async stream(aid, eid, {
-    q = "HD"
+  async detail({
+    id,
+    ...rest
   } = {}) {
     try {
-      console.log(`[stream] AnimeID: ${aid}, EpisodeID: ${eid}, Quality: ${q}`);
-      if (!aid || !eid) throw new Error("Anime ID & Episode ID required");
+      console.log(`[detail] Fetching ID: ${id}`);
+      const payload = {
+        id: id?.toString(),
+        ...rest
+      };
       const {
-        data: srv
-      } = await this.inst.post("/anime/get-server-list", {
-        id: eid?.toString(),
-        animeId: aid?.toString(),
+        data
+      } = await this.instance.post("/anime/detail", payload);
+      console.log("[detail] Success");
+      return data;
+    } catch (error) {
+      console.error("[detail] Error:", error?.message);
+      return {
+        success: false,
+        error: error?.message || "Failed to fetch detail"
+      };
+    }
+  }
+  async stream({
+    anime_id,
+    episode_id,
+    quality = "HD",
+    ...rest
+  } = {}) {
+    try {
+      console.log(`[stream] Fetching AnimeID: ${anime_id}, EpisodeID: ${episode_id}, Quality: ${quality}`);
+      const {
+        data: res
+      } = await this.instance.post("/anime/get-server-list", {
+        id: episode_id?.toString(),
+        animeId: anime_id?.toString(),
         jenisAnime: "1",
         userId: ""
       });
-      console.log("[stream] Got server, fetching URL...");
-      const {
-        data
-      } = await this.inst.post("/anime/get-url-video", {
-        url: srv?.serverurl || "",
-        quality: q || "HD",
-        position: "0"
-      });
-      const url = data?.url || null;
-      if (!url) throw new Error("Stream URL not found");
+      const list = res?.list || [];
+      let selected = list.find(x => x?.quality?.toUpperCase() === quality?.toUpperCase()) || list[0];
+      if (selected) {
+        console.log(`[stream] Get final URL for quality: ${selected.quality}`);
+        const {
+          data: video
+        } = await this.instance.post("/anime/get-url-video", {
+          url: selected.url,
+          quality: selected.quality,
+          position: "0",
+          ...rest
+        });
+        selected = {
+          ...selected,
+          url: video?.url || selected.url
+        };
+      }
       console.log("[stream] Success");
-      return url;
-    } catch (e) {
-      console.error("[stream] Error:", e?.message);
-      throw new Error(e?.message || "Failed to get stream");
+      return {
+        status: true,
+        selected: selected || null,
+        list: list
+      };
+    } catch (err) {
+      console.error("[stream] Error:", err?.message);
+      return {
+        status: false,
+        selected: null,
+        list: []
+      };
     }
   }
 }
@@ -151,76 +189,95 @@ export default async function handler(req, res) {
     action,
     ...params
   } = req.method === "GET" ? req.query : req.body;
+  const validActions = ["home", "list", "genres", "search", "detail", "stream"];
   if (!action) {
     return res.status(400).json({
-      error: "Parameter 'action' wajib diisi",
-      actions: ["home", "list", "genres", "search", "detail", "stream"]
+      status: false,
+      error: "Parameter 'action' wajib diisi.",
+      available_actions: validActions,
+      usage: {
+        method: "GET / POST",
+        examples: {
+          home: "/mobinime?action=home",
+          list: "/mobinime?action=list&type=series&page=0&count=15",
+          genres: "/mobinime?action=genres",
+          search: "/mobinime?action=search&query=naruto&page=0",
+          detail: "/mobinime?action=detail&id=123",
+          stream: "/mobinime?action=stream&anime_id=123&episode_id=456&quality=HD"
+        }
+      }
+    });
+  }
+  if (!validActions.includes(action)) {
+    return res.status(400).json({
+      status: false,
+      error: `Action tidak valid: '${action}'.`,
+      valid_actions: validActions
     });
   }
   const api = new Mobinime();
   try {
-    let result;
+    let response;
     switch (action) {
       case "home":
-        result = await api.home();
+        response = await api.home();
         break;
       case "list":
-        if (!params.type) {
-          return res.status(400).json({
-            error: "Parameter 'type' wajib diisi untuk action 'list'",
-            valid_types: ["series", "movie", "ova", "live-action"]
-          });
-        }
-        result = await api.list(params.type, {
-          p: params.page || params.p,
-          c: params.count || params.c,
-          g: params.genre || params.g
-        });
+        response = await api.list(params);
         break;
       case "genres":
-        result = await api.genres();
+        response = await api.genres();
         break;
       case "search":
-        if (!params.query && !params.q) {
+        if (!params.query) {
           return res.status(400).json({
-            error: "Parameter 'query' atau 'q' wajib diisi untuk action 'search'"
+            status: false,
+            error: "Parameter 'query' wajib diisi untuk search."
           });
         }
-        result = await api.search(params.query || params.q, {
-          p: params.page || params.p,
-          c: params.count || params.c
-        });
+        response = await api.search(params);
         break;
       case "detail":
         if (!params.id) {
           return res.status(400).json({
-            error: "Parameter 'id' wajib diisi untuk action 'detail'"
+            status: false,
+            error: "Parameter 'id' wajib diisi untuk detail."
           });
         }
-        result = await api.detail(params.id);
+        response = await api.detail(params);
         break;
       case "stream":
-        if (!params.aid || !params.eid) {
+        if (!params.anime_id || !params.episode_id) {
           return res.status(400).json({
-            error: "Parameter 'aid' (anime id) dan 'eid' (episode id) wajib diisi untuk action 'stream'"
+            status: false,
+            error: "Parameter 'anime_id' dan 'episode_id' wajib diisi untuk stream."
           });
         }
-        result = await api.stream(params.aid, params.eid, {
-          q: params.quality || params.q
-        });
+        response = await api.stream(params);
         break;
       default:
         return res.status(400).json({
-          error: `Action tidak valid: ${action}`,
-          valid_actions: ["home", "list", "genres", "search", "detail", "stream"]
+          status: false,
+          error: "Action tidak dikenali."
         });
     }
-    return res.status(200).json(result);
-  } catch (e) {
-    console.error(`[API ERROR] Action '${action}':`, e?.message);
+    if (!response) {
+      return res.status(502).json({
+        status: false,
+        error: "Server target tidak memberikan respon atau data kosong."
+      });
+    }
+    return res.status(200).json({
+      status: true,
+      action: action,
+      result: response
+    });
+  } catch (error) {
+    console.error(`[API ERROR] Exception on '${action}':`, error);
     return res.status(500).json({
       status: false,
-      error: e?.message || "Terjadi kesalahan internal pada server"
+      message: "Terjadi kesalahan pada internal server API.",
+      error: error.message || "Unknown Error"
     });
   }
 }

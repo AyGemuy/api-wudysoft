@@ -1,39 +1,51 @@
 import axios from "axios";
 import crypto from "crypto";
-const BASE = "https://tempmailget.com";
-const UA = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36";
 class TempMail {
   constructor() {
     this.email = null;
+    this.base = "https://tempmailget.com";
+    this.ua = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36";
   }
-  http() {
+  _api() {
     return axios.create({
-      baseURL: BASE,
+      baseURL: this.base,
       headers: {
         accept: "*/*",
         "accept-language": "id-ID",
         "cache-control": "no-cache",
         pragma: "no-cache",
         priority: "u=1, i",
-        referer: BASE + "/",
+        referer: this.base + "/",
         "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
         "sec-ch-ua-mobile": "?1",
         "sec-ch-ua-platform": '"Android"',
         "sec-fetch-dest": "empty",
         "sec-fetch-mode": "cors",
         "sec-fetch-site": "same-origin",
-        "user-agent": UA
+        "user-agent": this.ua
       }
     });
+  }
+  _rand(name) {
+    if (name) return name;
+    const pfx = ["luckyshark", "boldlion", "fasttiger", "cleverfox"];
+    const rPfx = pfx[Math.floor(Math.random() * pfx.length)];
+    return `${rPfx}${crypto.randomInt(1e3, 1e4)}`;
   }
   async getDomains() {
     try {
       console.log("[TempMail] domain: fetch daftar domain aktif …");
-      const res = await this.http().get("/api/domains");
-      return res.data;
+      const res = await this._api().get("/api/domains");
+      return {
+        status: true,
+        result: res.data
+      };
     } catch (e) {
       console.error("[TempMail][ERR] domain:", e.message);
-      throw e;
+      return {
+        status: false,
+        result: e.message
+      };
     }
   }
   async create({
@@ -45,23 +57,27 @@ class TempMail {
       let dom = domain;
       if (!dom) {
         const domData = await this.getDomains();
-        if (domData && domData.domains && domData.domains.length > 0) {
-          dom = domData.domains[0];
+        if (domData.status && domData.result?.domains?.length > 0) {
+          dom = domData.result.domains[0];
         } else {
           dom = "codelearnfast.com";
         }
       }
-      const prefixes = ["luckyshark", "boldlion", "fasttiger", "cleverfox"];
-      const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-      const user = name || `${randomPrefix}${crypto.randomInt(1e3, 9999)}`;
+      const user = this._rand(name);
       this.email = `${user}@${dom}`;
       console.log("[TempMail] create: email berhasil dibuat ->", this.email);
       return {
-        email: this.email
+        status: true,
+        result: {
+          email: this.email
+        }
       };
     } catch (e) {
       console.error("[TempMail][ERR] create:", e.message);
-      throw e;
+      return {
+        status: false,
+        result: e.message
+      };
     }
   }
   async message({
@@ -71,20 +87,25 @@ class TempMail {
       const addr = email || this.email;
       if (!addr) throw new Error("email kosong");
       console.log("[TempMail] message: hit POST refresh inbox ->", addr);
-      const res = await this.http().post(`/api/emails/refresh?address=${encodeURIComponent(addr)}`, null, {
+      const res = await this._api().post(`/api/emails/refresh?address=${encodeURIComponent(addr)}`, null, {
         headers: {
           "content-length": "0",
-          origin: BASE
+          origin: this.base
         }
       });
-      const data = res.data;
-      console.log("[TempMail] message: sukses fetch,", Array.isArray(data) ? data.length : 0, "pesan.");
+      console.log("[TempMail] message: sukses fetch,", Array.isArray(res.data) ? res.data.length : 0, "pesan.");
       return {
-        mails: data
+        status: true,
+        result: {
+          mails: res.data
+        }
       };
     } catch (e) {
       console.error("[TempMail][ERR] message:", e.message);
-      throw e;
+      return {
+        status: false,
+        result: e.message
+      };
     }
   }
 }

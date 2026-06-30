@@ -95,76 +95,111 @@ class TempMail {
       });
       console.log(`[SUCCESS] Respon dari ${path} diterima.`);
       return {
-        success: true,
-        token: activeToken,
-        data: res.data
+        status: true,
+        result: res?.data?.data || res?.data,
+        token: activeToken
       };
     } catch (err) {
       console.error(`[ERROR_REQ] Gagal pada path ${path}:`);
       const errorData = err.response ? err.response.data : err.message;
       return {
-        success: false,
-        token: this.token,
-        error: errorData
+        status: false,
+        error: errorData,
+        token: this.token
       };
     }
   }
   async message({
     token
   } = {}) {
-    if (token) {
-      this.setToken(token);
-    } else {
-      this._getToken();
-    }
-    console.log("[API] Mengambil daftar inbox...");
-    const result = await this._req("GET", "/inbox");
-    if (result.success && Array.isArray(result.data) && result.data.length > 0) {
-      console.log(`[AUTO] Terdeteksi ${result.data.length} email masuk. Menarik isi HTML pesan...`);
-      const enrichedEmails = await Promise.all(result.data.map(async email => {
-        const id = email.id || email.hash_email;
-        if (id) {
-          const viewDetail = await this.view({
-            id: id
-          });
-          return {
-            ...email,
-            content: viewDetail.success ? viewDetail.data : null
-          };
+    try {
+      if (token) this.setToken(token);
+      else this._getToken();
+      console.log("[API] Mengambil daftar inbox...");
+      const response = await this._req("GET", "/inbox");
+      if (response.status && Array.isArray(response.result) && response.result.length > 0) {
+        console.log(`[AUTO] Terdeteksi ${response.result.length} email masuk. Menarik isi HTML pesan...`);
+        const enrichedEmails = [];
+        for (const email of response.result) {
+          const id = email.id || email.hash_email;
+          if (id) {
+            const viewDetail = await this.view({
+              id: id
+            });
+            enrichedEmails.push({
+              ...email,
+              content: viewDetail.status ? viewDetail.result : null
+            });
+          } else {
+            enrichedEmails.push(email);
+          }
         }
-        return email;
-      }));
-      result.data = enrichedEmails;
+        response.result = enrichedEmails;
+      }
+      return response;
+    } catch (err) {
+      console.error("[ERROR_METHOD_MESSAGE] Gagal memproses pesan:", err.message);
+      return {
+        status: false,
+        error: err.message,
+        token: this.token
+      };
     }
-    return result;
   }
   async domain({
     token
   } = {}) {
-    if (token) this.setToken(token);
-    else this._getToken();
-    console.log("[API] Mengambil daftar domain...");
-    return await this._req("GET", "/inbox/domains");
+    try {
+      if (token) this.setToken(token);
+      else this._getToken();
+      console.log("[API] Mengambil daftar domain...");
+      return await this._req("GET", "/inbox/domains");
+    } catch (err) {
+      console.error("[ERROR_METHOD_DOMAIN] Gagal mengambil domain:", err.message);
+      return {
+        status: false,
+        error: err.message,
+        token: this.token
+      };
+    }
   }
   async create({
     domain = "anowt.com",
     token
   } = {}) {
-    if (token) this.setToken(token);
-    else this._getToken();
-    console.log(`[API] Membuat email baru dengan domain: ${domain}...`);
-    return await this._req("POST", "/inbox/create", {
-      domain: domain
-    });
+    try {
+      if (token) this.setToken(token);
+      else this._getToken();
+      console.log(`[API] Membuat email baru dengan domain: ${domain}...`);
+      return await this._req("POST", "/inbox/create", {
+        domain: domain
+      });
+    } catch (err) {
+      console.error("[ERROR_METHOD_CREATE] Gagal membuat email:", err.message);
+      return {
+        status: false,
+        error: err.message,
+        token: this.token
+      };
+    }
   }
   async view({
     id,
     token
   } = {}) {
-    if (token) this.setToken(token);
-    else this._getToken();
-    console.log(`[API] Mengambil isi pesan untuk ID/Hash: ${id}...`);
-    return await this._req("GET", `/inbox/view/${id}`);
+    try {
+      if (token) this.setToken(token);
+      else this._getToken();
+      console.log(`[API] Mengambil isi pesan untuk ID/Hash: ${id}...`);
+      return await this._req("GET", `/inbox/view/${id}`);
+    } catch (err) {
+      console.error("[ERROR_METHOD_VIEW] Gagal mengambil detail pesan:", err.message);
+      return {
+        status: false,
+        error: err.message,
+        token: this.token
+      };
+    }
   }
 }
 export default async function handler(req, res) {
