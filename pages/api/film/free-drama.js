@@ -897,14 +897,14 @@ export default async function handler(req, res) {
       usage: {
         method: "GET / POST",
         examples: {
-          session: "/free-drama?action=session&firebase_token=...",
-          refresh_token: "/free-drama?action=refresh_token&refresh_token=...",
-          config: "/free-drama?action=config&token=...",
-          home: "/free-drama?action=home&token=...&page=1",
-          detail: "/free-drama?action=detail&token=...&channel_id=276857",
-          search: "/free-drama?action=search&token=...&q=guard",
-          update_settings: '/free-drama?action=update_settings&token=...&settings={"audio-quality":"Auto"}',
-          download: "/free-drama?action=download&url=https://media.cdn.kukufm.com/video-episode/.../480p.m3u8"
+          session: "/?action=session&firebase_token=...",
+          refresh_token: "/?action=refresh_token&refresh_token=...",
+          config: "/?action=config&token=...",
+          home: "/?action=home&token=...&page=1",
+          detail: "/?action=detail&token=...&channel_id=276857",
+          search: "/?action=search&token=...&q=guard",
+          update_settings: '/?action=update_settings&token=...&settings={"audio-quality":"Auto"}',
+          download: "/?action=download&url=https://media.cdn.kukufm.com/video-episode/.../480p.m3u8"
         }
       }
     });

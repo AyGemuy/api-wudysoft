@@ -343,25 +343,26 @@ class An1Client {
       const data = res.data;
       if (!data?.success) return null;
       const files = data.data || [];
-      const fList = await Promise.all(files.map(async (file, idx) => {
+      const fList = [];
+      for (const [idx, file] of files.entries()) {
         try {
           const fApiUrl = `${aUrl}/${idx}`;
           const fHeaders = this._bHead(fApiUrl, opts);
           const uRes = await axios.get(fApiUrl, {
             headers: fHeaders
           });
-          return {
+          fList.push({
             ...file,
             url: uRes.data?.data?.url || null
-          };
+          });
         } catch (fErr) {
           console.error(`[modradar] Error fetching file index ${idx}:`, fErr.message);
-          return {
+          fList.push({
             ...file,
             url: null
-          };
+          });
         }
-      }));
+      }
       return {
         package: {
           ...data.package

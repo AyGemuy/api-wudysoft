@@ -4,9 +4,9 @@ class Manhwalist {
   constructor() {
     this.baseURL = "https://manhwalist02.asia";
     this.headers = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",
       Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.5",
+      "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
       Referer: "https://manhwalist02.asia/"
     };
     this.axios = axios.create({
@@ -189,8 +189,7 @@ class Manhwalist {
           }).filter(Boolean);
         }
       }
-      const sidebarPopular = [];
-      $(".serieslist.pop ul li").each((_, li) => {
+      const sidebarPopular = $(".serieslist.pop ul li").get().map(li => {
         const $li = $(li);
         const title = $li.find(".leftseries h2 a").text().trim();
         const link = $li.find(".leftseries h2 a").attr("href");
@@ -202,7 +201,7 @@ class Manhwalist {
           const parts = link.split("/").filter(Boolean);
           slug = parts.pop();
         }
-        sidebarPopular.push({
+        return {
           title: title,
           slug: slug,
           url: link ? link.startsWith("http") ? link : this.baseURL + link : null,
@@ -210,7 +209,7 @@ class Manhwalist {
           rating: rating.value,
           rating_percent: rating.percent,
           genres: genres
-        });
+        };
       });
       const result = {
         popular: popular,
@@ -254,18 +253,22 @@ class Manhwalist {
       }
       const params = new URLSearchParams();
       params.set("s", query);
-      if (page > 1) params.set("page", page);
       if (type) params.set("type", type);
       if (status) params.set("status", status);
       if (genre) params.set("genre[]", genre);
       if (order) params.set("order", order);
-      const url = `${this.baseURL}/?${params.toString()}`;
-      console.log(`[search] Searching: "${query}" page: ${page}`);
+      let url = "";
+      if (page > 1) {
+        url = `${this.baseURL}/page/${page}/?${params.toString()}`;
+      } else {
+        url = `${this.baseURL}/?${params.toString()}`;
+      }
+      console.log(`[search] Searching: "${query}" page: ${page} -> ${url}`);
       const {
-        status,
+        status: reqStatus,
         result: html
       } = await this._req(url);
-      if (!status) return {
+      if (!reqStatus) return {
         status: false,
         result: {
           error: html.error
@@ -349,7 +352,7 @@ class Manhwalist {
       const title = $(".entry-title").text().trim() || $("h1.entry-title").text().trim();
       const alternative = $(".alternative").text().trim() || null;
       const synopsis = $(".entry-content-single p, .entry-content-single .wd-full p").text().trim() || null;
-      const cover = $(".thumb img, .bigbanner").attr("src") || null;
+      const cover = $(".thumb img").attr("src") || $(".bigbanner").attr("src") || null;
       const statusText = $('.imptdt:contains("Status") i').text().trim() || null;
       const type = $('.imptdt:contains("Type") a').text().trim() || null;
       const released = $('.imptdt:contains("Released") i').text().trim() || null;
@@ -360,35 +363,53 @@ class Manhwalist {
       const followers = $(".bmc").text().trim().replace(/Followed by\s*/, "") || null;
       const genres = $(".mgen a").get().map(a => $(a).text().trim()).filter(Boolean);
       const rating = this._parseRating($(".rating-prc, .rating"));
-      const chapters = $("#chapterlist ul li").get().map(el => this._parseChapter($, el)).filter(ch => ch.number !== null);
+      const chapters = $("#chapterlist ul li").get().map(el => {
+        const $li = $(el);
+        const link = $li.find("a").attr("href");
+        const rawNum = $li.attr("data-num") || $li.data("num");
+        const chapText = $li.find(".chapternum").text().trim();
+        const number = rawNum ? parseFloat(rawNum) : chapText.replace(/Chapter\s*/i, "") ? parseFloat(chapText.replace(/Chapter\s*/i, "")) : null;
+        const date = $li.find(".chapterdate").text().trim() || null;
+        let chSlug = null;
+        if (link) {
+          const parts = link.split("/").filter(Boolean);
+          chSlug = parts.pop();
+        }
+        return {
+          number: number,
+          title: chapText || null,
+          slug: chSlug,
+          url: link ? link.startsWith("http") ? link : this.baseURL + link : null,
+          date: date
+        };
+      }).filter(ch => ch.number !== null);
       const firstChapter = chapters.length ? chapters[chapters.length - 1] : null;
       const lastChapter = chapters.length ? chapters[0] : null;
       const related = $(".listupd .bs").get().map(el => {
         const card = this._parseCard($, el);
         return card.title ? card : null;
       }).filter(Boolean);
-      const sidebarPopular = [];
-      $(".serieslist.pop ul li").each((_, li) => {
+      const sidebarPopular = $(".serieslist.pop ul li").get().map(li => {
         const $li = $(li);
-        const title = $li.find(".leftseries h2 a").text().trim();
-        const link = $li.find(".leftseries h2 a").attr("href");
-        const icon = $li.find(".imgseries img").attr("src") || null;
-        const rating = this._parseRating($li);
-        const genres = $li.find(".leftseries span a").get().map(a => $(a).text().trim()).filter(Boolean);
-        let slug = null;
-        if (link) {
-          const parts = link.split("/").filter(Boolean);
-          slug = parts.pop();
+        const titlePop = $li.find(".leftseries h2 a").text().trim();
+        const linkPop = $li.find(".leftseries h2 a").attr("href");
+        const iconPop = $li.find(".imgseries img").attr("src") || null;
+        const ratingPop = this._parseRating($li);
+        const genresPop = $li.find(".leftseries span a").get().map(a => $(a).text().trim()).filter(Boolean);
+        let slugPop = null;
+        if (linkPop) {
+          const parts = linkPop.split("/").filter(Boolean);
+          slugPop = parts.pop();
         }
-        sidebarPopular.push({
-          title: title,
-          slug: slug,
-          url: link ? link.startsWith("http") ? link : this.baseURL + link : null,
-          icon: icon ? icon.startsWith("http") ? icon : this.baseURL + icon : null,
-          rating: rating.value,
-          rating_percent: rating.percent,
-          genres: genres
-        });
+        return {
+          title: titlePop,
+          slug: slugPop,
+          url: linkPop ? linkPop.startsWith("http") ? linkPop : this.baseURL + linkPop : null,
+          icon: iconPop ? iconPop.startsWith("http") ? iconPop : this.baseURL + iconPop : null,
+          rating: ratingPop.value,
+          rating_percent: ratingPop.percent,
+          genres: genresPop
+        };
       });
       const breadcrumb = $(".ts-breadcrumb a").get().map(a => ({
         name: $(a).text().trim(),
@@ -434,22 +455,22 @@ class Manhwalist {
   }
   async chapter({
     url = null,
-    slug = null,
-    chapterSlug = null
+    slug = null
   } = {}) {
     try {
       let chapterUrl = url;
       if (!chapterUrl) {
-        if (!chapterSlug) {
-          console.warn("[chapter] chapterSlug is missing");
+        if (!slug) {
+          console.warn("[chapter] Slug is missing");
           return {
             status: false,
             result: {
-              error: 'Parameter "chapterSlug" wajib'
+              error: 'Parameter "slug" wajib'
             }
           };
         }
-        chapterUrl = `${this.baseURL}/${chapterSlug}/`;
+        const cleanSlug = slug.replace(/^\/|\/$/g, "");
+        chapterUrl = `${this.baseURL}/${cleanSlug}/`;
       }
       console.log(`[chapter] Fetching: ${chapterUrl}`);
       const {
@@ -464,28 +485,115 @@ class Manhwalist {
       };
       const $ = cheerio.load(html);
       const title = $(".entry-title").text().trim() || $("h1.entry-title").text().trim();
-      const images = $("#readerarea img.ts-main-image").get().map(img => $(img).attr("src")).filter(Boolean);
+      let images = [];
+      let mangaPostId = null;
+      let currentChapterId = null;
+      $("script").each((_, script) => {
+        const content = $(script).html() || "";
+        if (content.includes("ts_reader.run")) {
+          try {
+            const match = content.match(/ts_reader\.run\(([\s\S]*?)\);/);
+            if (match && match[1]) {
+              const jsonData = JSON.parse(match[1]);
+              if (jsonData.sources && jsonData.sources[0] && jsonData.sources[0].images) {
+                images = jsonData.sources[0].images;
+              }
+            }
+          } catch (e) {
+            console.error("[chapter] Gagal parse JSON ts_reader:", e.message);
+          }
+        }
+        if (content.includes("var post_id") && content.includes("var chapter_id")) {
+          const postMatch = content.match(/var\s+post_id\s*=\s*(\d+)/);
+          const chapMatch = content.match(/var\s+chapter_id\s*=\s*(\d+)/);
+          if (postMatch) mangaPostId = postMatch[1];
+          if (chapMatch) currentChapterId = chapMatch[1];
+        }
+      });
+      if (images.length === 0) {
+        images = $("#readerarea img.ts-main-image, #readerarea img").get().map(el => {
+          return $(el).attr("src") || $(el).attr("data-src");
+        }).filter(Boolean);
+      }
+      if (currentChapterId) {
+        try {
+          await this.axios.post(`${this.baseURL}/wp-admin/admin-ajax.php`, new URLSearchParams({
+            action: "dynamic_view_ajax",
+            post_id: currentChapterId
+          }), {
+            headers: {
+              ...this.headers,
+              "X-Requested-With": "XMLHttpRequest",
+              Referer: chapterUrl
+            }
+          });
+        } catch (e) {
+          console.error("[chapter] Gagal trigger dynamic_view_ajax:", e.message);
+        }
+      }
+      let chapterOptions = [];
+      if (mangaPostId) {
+        console.log(`[chapter] Fetching full chapter list via AJAX for Manga ID: ${mangaPostId}`);
+        try {
+          const {
+            data: ajaxHtml
+          } = await this.axios.post(`${this.baseURL}/wp-admin/admin-ajax.php`, new URLSearchParams({
+            action: "get_chapters",
+            id: mangaPostId
+          }), {
+            headers: {
+              ...this.headers,
+              "X-Requested-With": "XMLHttpRequest",
+              Referer: chapterUrl
+            }
+          });
+          if (ajaxHtml) {
+            const $ajax = cheerio.load(ajaxHtml);
+            chapterOptions = $ajax("option").get().map(el => {
+              const $opt = $ajax(el);
+              const value = $opt.val();
+              const label = $opt.text().trim();
+              const chId = $opt.attr("data-id") || null;
+              return {
+                chapter_id: chId ? parseInt(chId) : null,
+                label: label,
+                url: value && value !== "" ? value.startsWith("http") ? value : this.baseURL + value : null,
+                selected: chId === currentChapterId
+              };
+            }).filter(opt => opt.url !== null);
+          }
+        } catch (e) {
+          console.error("[chapter] Gagal mengambil chapters via AJAX:", e.message);
+        }
+      }
+      if (chapterOptions.length === 0) {
+        chapterOptions = $("#chapter option").get().map(el => {
+          const $opt = $(el);
+          const value = $opt.val();
+          const label = $opt.text().trim();
+          return {
+            chapter_id: null,
+            label: label,
+            url: value && value !== "" ? value.startsWith("http") ? value : this.baseURL + value : null,
+            selected: $opt.prop("selected") || false
+          };
+        }).filter(opt => opt.url !== null);
+      }
       const prevLink = $(".ch-prev-btn").attr("href") || null;
       const nextLink = $(".ch-next-btn").attr("href") || null;
-      const chapterOptions = $("#chapter option").get().map(opt => {
-        const $opt = $(opt);
-        const value = $opt.val();
-        const label = $opt.text().trim();
-        const selected = $opt.prop("selected") || false;
-        return {
-          label: label,
-          url: value && value !== "" ? value.startsWith("http") ? value : this.baseURL + value : null,
-          selected: selected
-        };
-      }).filter(opt => opt.url !== null);
       const seriesLink = $(".allc a").attr("href") || null;
       const seriesTitle = $(".allc a").text().trim() || null;
-      const breadcrumb = $(".ts-breadcrumb a").get().map(a => ({
-        name: $(a).text().trim(),
-        url: $(a).attr("href") ? $(a).attr("href").startsWith("http") ? $(a).attr("href") : this.baseURL + $(a).attr("href") : null
-      }));
+      const breadcrumb = $(".ts-breadcrumb a").get().map(el => {
+        const $a = $(el);
+        return {
+          name: $a.text().trim(),
+          url: $a.attr("href") ? $a.attr("href").startsWith("http") ? $a.attr("href") : this.baseURL + $a.attr("href") : null
+        };
+      });
       const result = {
         title: title,
+        manga_id: mangaPostId ? parseInt(mangaPostId) : null,
+        chapter_id: currentChapterId ? parseInt(currentChapterId) : null,
         images: images,
         total_pages: images.length,
         prev_url: prevLink ? prevLink.startsWith("http") ? prevLink : this.baseURL + prevLink : null,
@@ -512,13 +620,11 @@ class Manhwalist {
   }
   async download({
     url = null,
-    slug = null,
-    chapterSlug = null
+    slug = null
   } = {}) {
-    return this.chapter({
+    return await this.chapter({
       url: url,
-      slug: slug,
-      chapterSlug: chapterSlug
+      slug: slug
     });
   }
 }
@@ -540,7 +646,7 @@ export default async function handler(req, res) {
           home: "/?action=home&page=1",
           search: "/?action=search&query=nano+machine&type=manga",
           detail: "/?action=detail&slug=nano-machine",
-          chapter: "/?action=chapter&chapterSlug=nano-machine-chapter-01"
+          chapter: "/?action=chapter&slug=nano-machine-chapter-01"
         }
       }
     });
@@ -585,19 +691,19 @@ export default async function handler(req, res) {
         response = await api.detail(options);
         break;
       case "chapter":
-        if (!options.url && !options.chapterSlug) {
+        if (!options.url && !options.slug) {
           return res.status(400).json({
             status: false,
-            error: "Parameter 'url' atau 'chapterSlug' wajib diisi untuk action 'chapter'."
+            error: "Parameter 'url' atau 'slug' wajib diisi untuk action 'chapter'."
           });
         }
         response = await api.chapter(options);
         break;
       case "download":
-        if (!options.url && !options.chapterSlug) {
+        if (!options.url && !options.slug) {
           return res.status(400).json({
             status: false,
-            error: "Parameter 'url' atau 'chapterSlug' wajib diisi untuk action 'download'."
+            error: "Parameter 'url' atau 'slug' wajib diisi untuk action 'download'."
           });
         }
         response = await api.download(options);

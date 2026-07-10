@@ -1,244 +1,342 @@
 import axios from "axios";
-import https from "https";
 import crypto from "crypto";
-import {
-  v4 as uuidv4
-} from "uuid";
-import Encoder from "@/lib/encoder";
-import SpoofHead from "@/lib/spoof-head";
-class SunoraAPI {
+class SunoraClient {
   constructor() {
-    this.baseURL = "https://api.sunora.mavtao.com/api";
-    this.xAuth = null;
-    this.deviceId = this.genId();
-    this.httpsAgent = new https.Agent({
-      rejectUnauthorized: true,
-      keepAlive: true
-    });
-    this.client = axios.create({
-      baseURL: this.baseURL,
-      httpsAgent: this.httpsAgent,
-      headers: {
-        "User-Agent": "Dart/3.4 (dart:io)",
-        "Accept-Encoding": "gzip",
-        "Content-Type": "application/json",
-        version: "2.2.2",
-        buildnumber: "105",
-        platform: "android",
-        ...SpoofHead()
-      },
-      timeout: 12e4
-    });
+    this.baseUrl = "https://api.sunora.mavtao.com/api";
+    this.defHdrs = {
+      "User-Agent": "Dart/3.4 (dart:io)",
+      "Accept-Encoding": "gzip",
+      version: "2.2.2",
+      buildnumber: "105",
+      platform: "android",
+      "sentry-trace": "4348b9c43abb452294800a8aebdde3e1-15a0704eae464de2"
+    };
   }
-  async enc(data) {
-    const {
-      uuid: jsonUuid
-    } = await Encoder.enc({
-      data: data,
-      method: "combined"
-    });
-    return jsonUuid;
-  }
-  async dec(uuid) {
-    const decryptedJson = await Encoder.dec({
-      uuid: uuid,
-      method: "combined"
-    });
-    return decryptedJson.text;
-  }
-  genId() {
+  _devId() {
     return crypto.randomBytes(8).toString("hex");
   }
-  traceId() {
-    return uuidv4();
+  _enc(obj) {
+    return Buffer.from(JSON.stringify(obj)).toString("base64");
   }
-  async ensureAuth() {
-    if (!this.xAuth) {
-      await this.login();
+  _dec(str) {
+    return JSON.parse(Buffer.from(str, "base64").toString("utf8"));
+  }
+  _hdrs(stateObj) {
+    const token = stateObj?.token || "";
+    const userId = stateObj?.userId || "";
+    const headers = {
+      ...this.defHdrs
+    };
+    if (token) headers["x-auth"] = token;
+    if (userId) {
+      headers["baggage"] = `sentry-trace_id=4348b9c43abb452294800a8aebdde3e1,sentry-public_key=a43e6ad8a03eecf1f26c1720f9593f21,sentry-release=com.mavtao.ai.song.generator.maker.sunora%402.2.2%2B105,sentry-environment=production,sentry-user_id=${userId}`;
     }
+    return headers;
   }
-  async login() {
-    try {
-      const sentryTrace = this.traceId();
-      const response = await this.client.post("/auth/login", {
-        device_id: this.deviceId
-      }, {
-        headers: {
-          "sentry-trace": sentryTrace
-        }
-      });
-      if (response?.data?.code === 0 && response?.data?.data?.token) {
-        this.xAuth = response.data.data.token;
-        console.log("Login successful");
-        return response.data;
-      } else {
-        throw new Error(`Login failed: ${response?.data?.message || "Unknown error"}`);
+  _val(inputs) {
+    for (const [key, value] of Object.entries(inputs)) {
+      if (!value || typeof value === "string" && value.trim() === "") {
+        return {
+          status: false,
+          error: `Missing required field: '${key}'`
+        };
       }
-    } catch (error) {
-      console.error("Login error:", error?.response?.data || error.message);
-      if (error.code?.includes("CERT") || error.message?.includes("certificate")) {
-        console.log("Retrying with relaxed SSL...");
-        this.httpsAgent = new https.Agent({
-          rejectUnauthorized: false
-        });
-        this.client.defaults.httpsAgent = this.httpsAgent;
-        return this.login();
-      }
-      throw error;
     }
+    return null;
   }
-  async lyrics({
-    prompt,
-    ...rest
-  }) {
+  async _autoState(state) {
+    if (!state) {
+      console.log("[Process] State missing, triggering auto auth init...");
+      const auth = await this.initAuth();
+      if (!auth.status) return {
+        error: auth.error
+      };
+      return {
+        tokenStr: auth.data,
+        stateObj: this._dec(auth.data)
+      };
+    }
+    return {
+      tokenStr: state,
+      stateObj: this._dec(state)
+    };
+  }
+  async initAuth() {
     try {
-      await this.ensureAuth();
-      const sentryTrace = this.traceId();
-      const response = await this.client.post("/music/generate_lyrics", {
-        description: prompt,
-        key_word: rest.key_word || "",
-        mood: rest.mood || null,
-        ...rest
+      console.log("[Process] Initializing Auto Auth Flow...");
+      const devId = this._devId();
+      console.log(`[Process] Logging in with device_id: ${devId}`);
+      const loginRes = await axios.post(`${this.baseUrl}/auth/login`, {
+        device_id: devId
       }, {
-        headers: {
-          "x-auth": this.xAuth,
-          "sentry-trace": sentryTrace
-        }
+        headers: this.defHdrs
       });
-      return response?.data;
-    } catch (error) {
-      console.error("Lyrics generation error:", error?.response?.data || error.message);
-      if (error?.response?.status === 401) {
-        console.log("Auth expired, re-logging in...");
-        this.xAuth = null;
-        await this.login();
-        return this.lyrics({
-          prompt: prompt,
-          ...rest
+      const authData = loginRes?.data?.data || {};
+      const stateObj = {
+        token: authData.token || "",
+        userId: authData.id || ""
+      };
+      console.log("[Process] Fetching current user profile...");
+      await axios.get(`${this.baseUrl}/users/me`, {
+        headers: this._hdrs(stateObj)
+      });
+      console.log("[Process] Fetching available task list...");
+      const taskRes = await axios.get(`${this.baseUrl}/task/list`, {
+        headers: this._hdrs(stateObj)
+      });
+      const tasks = taskRes?.data?.data || [];
+      const targetTask = tasks.find(t => (t.identifier === "free_check_in" || t.name?.toLowerCase().includes("free")) && !t.claimed);
+      if (targetTask?._id) {
+        console.log(`[Process] Claiming free task reward for ID: ${targetTask._id}`);
+        await axios.get(`${this.baseUrl}/task/claim_reward/${targetTask._id}`, {
+          headers: this._hdrs(stateObj)
         });
       }
-      throw error;
+      return {
+        status: true,
+        data: this._enc(stateObj)
+      };
+    } catch (err) {
+      console.error("[Error] InitAuth failed:", err?.response?.data || err?.message);
+      return {
+        status: false,
+        error: err?.response?.data || err?.message
+      };
     }
   }
   async generate({
+    state,
     prompt,
-    advanced = false,
+    custom = true,
+    description,
     ...rest
-  }) {
+  } = {}) {
+    const isCustom = custom === true || custom === "true";
+    const errCheck = this._val(isCustom ? {
+      prompt: prompt
+    } : {
+      description: description
+    });
+    if (errCheck) return errCheck;
+    const session = await this._autoState(state);
+    if (session.error) return {
+      status: false,
+      error: session.error
+    };
     try {
-      await this.ensureAuth();
-      const sentryTrace = this.traceId();
-      const endpoint = advanced ? "/music/advanced_custom_generate" : "/music/custom_generate";
-      const payload = advanced ? {
-        description: prompt,
-        title: rest.title || "",
-        mood: rest.mood || "Energetic",
-        key_word: rest.key_word || "",
-        gender_of_vocal: rest.gender_of_vocal || null,
-        music_style: rest.music_style || "Pop",
-        instrumental_only: rest.instrumental_only || false,
-        continue_at: rest.continue_at || null,
-        continue_clip_id: rest.continue_clip_id || null,
-        mv: rest.mv || null,
-        ...rest
-      } : {
-        prompt: prompt,
-        tags: rest.tags || "Acoustic",
-        title: rest.title || "",
-        continue_at: rest.continue_at || null,
-        continue_clip_id: rest.continue_clip_id || null,
-        mv: rest.mv || null,
-        ...rest
-      };
-      const response = await this.client.post(endpoint, payload, {
-        headers: {
-          "x-auth": this.xAuth,
-          "sentry-trace": sentryTrace
-        }
-      });
-      const task_id = await this.enc({
-        res_data: response?.data,
-        x_auth: this.xAuth,
-        sentry_trace: sentryTrace
-      });
-      return {
-        task_id: task_id
-      };
-    } catch (error) {
-      console.error("Music generation error:", error?.response?.data || error.message);
-      if (error?.response?.status === 401) {
-        console.log("Auth expired, re-logging in...");
-        this.xAuth = null;
-        await this.login();
-        return this.generate({
+      console.log("[Process] Generating music...");
+      const headers = this._hdrs(session.stateObj);
+      if (isCustom) {
+        const payload = {
+          continue_at: null,
+          continue_clip_id: null,
+          mv: null,
           prompt: prompt,
-          advanced: advanced,
+          tags: rest?.tags || "Calm, lyrical, emotional stage ballad",
+          title: rest?.title || "Crown of Sadness",
           ...rest
+        };
+        const res = await axios.post(`${this.baseUrl}/music/custom_generate`, payload, {
+          headers: headers
         });
+        return {
+          status: true,
+          state: session.tokenStr,
+          ...res?.data
+        };
+      } else {
+        let mood = rest?.mood;
+        let style = rest?.music_style;
+        let title = rest?.title;
+        if (!mood) {
+          console.log("[Process] Mood missing, picking random from dict...");
+          const moodRes = await axios.get(`${this.baseUrl}/data_dict/name/mood`, {
+            headers: headers
+          });
+          const moods = moodRes?.data?.data || [];
+          mood = moods.length > 0 ? moods[Math.floor(Math.random() * moods.length)]?.name : "Happy";
+        }
+        if (!style) {
+          console.log("[Process] Style missing, picking random from dict...");
+          const genreRes = await axios.get(`${this.baseUrl}/data_dict/name/genre`, {
+            headers: headers
+          });
+          const genres = genreRes?.data?.data || [];
+          style = genres.length > 0 ? genres[Math.floor(Math.random() * genres.length)]?.name : "Rock";
+        }
+        if (!title) {
+          console.log("[Process] Title missing, picking random from dict...");
+          const titleRes = await axios.get(`${this.baseUrl}/data_dict/name/random_title`, {
+            headers: headers
+          });
+          const titles = titleRes?.data?.data || [];
+          title = titles.length > 0 ? titles[Math.floor(Math.random() * titles.length)] : "Vivid Joy";
+        }
+        const payload = {
+          continue_at: null,
+          continue_clip_id: null,
+          mv: null,
+          description: description,
+          title: title,
+          mood: mood,
+          key_word: rest?.key_word || "sad",
+          gender_of_vocal: rest?.gender_of_vocal || "male",
+          music_style: style,
+          instrumental_only: rest?.instrumental_only || false,
+          ...rest
+        };
+        const res = await axios.post(`${this.baseUrl}/music/advanced_custom_generate`, payload, {
+          headers: headers
+        });
+        return {
+          status: true,
+          state: session.tokenStr,
+          ...res?.data
+        };
       }
-      throw error;
+    } catch (err) {
+      console.error("[Error] Generate failed:", err?.response?.data || err?.message);
+      return {
+        status: false,
+        error: err?.response?.data || err?.message
+      };
     }
   }
   async status({
-    task_id,
-    page = 1,
-    pagesize = 50,
+    state,
     ...rest
-  }) {
+  } = {}) {
+    const session = await this._autoState(state);
+    if (session.error) return {
+      status: false,
+      error: session.error
+    };
     try {
-      if (!task_id) {
-        throw new Error("task_id is required to check status.");
-      }
-      const decryptedData = await this.dec(task_id);
-      const {
-        res_data,
-        x_auth,
-        sentry_trace
-      } = decryptedData;
-      if (!res_data || !x_auth || !sentry_trace) {
-        throw new Error("Invalid task_id: Missing required data after decryption.");
-      }
-      const authToken = x_auth || this.xAuth;
-      if (!authToken) {
-        await this.ensureAuth();
-      }
-      const finalAuthToken = x_auth || this.xAuth;
-      const sentryTrace = sentry_trace || this.traceId();
-      const response = await this.client.get("/music/music_page", {
-        params: {
-          page: page,
-          pagesize: pagesize,
-          ...rest
-        },
-        headers: {
-          "x-auth": finalAuthToken,
-          "sentry-trace": sentryTrace
-        }
+      console.log("[Process] Fetching music page status...");
+      const params = {
+        page: rest?.page || "1",
+        pagesize: rest?.pagesize || "50",
+        ...rest
+      };
+      const res = await axios.get(`${this.baseUrl}/music/music_page`, {
+        headers: this._hdrs(session.stateObj),
+        params: params
       });
       return {
-        data: response?.data?.data,
-        res_data: res_data?.data
+        status: true,
+        state: session.tokenStr,
+        ...res?.data
       };
-    } catch (error) {
-      console.error("Status check error:", error?.response?.data || error.message);
-      throw error;
+    } catch (err) {
+      console.error("[Error] Status failed:", err?.response?.data || err?.message);
+      return {
+        status: false,
+        error: err?.response?.data || err?.message
+      };
     }
   }
-  isAuthenticated() {
-    return !!this.xAuth;
+  async gen_lyrics({
+    state,
+    description,
+    ...rest
+  } = {}) {
+    const errCheck = this._val({
+      description: description
+    });
+    if (errCheck) return errCheck;
+    const session = await this._autoState(state);
+    if (session.error) return {
+      status: false,
+      error: session.error
+    };
+    try {
+      console.log("[Process] Generating lyrics...");
+      const payload = {
+        description: description,
+        key_word: rest?.key_word || "sad",
+        mood: rest?.mood || "Calm",
+        ...rest
+      };
+      const res = await axios.post(`${this.baseUrl}/music/generate_lyrics`, payload, {
+        headers: this._hdrs(session.stateObj)
+      });
+      return {
+        status: true,
+        state: session.tokenStr,
+        ...res?.data
+      };
+    } catch (err) {
+      console.error("[Error] GenLyrics failed:", err?.response?.data || err?.message);
+      return {
+        status: false,
+        error: err?.response?.data || err?.message
+      };
+    }
   }
-  setAuthToken(token) {
-    this.xAuth = token;
+  async theme_list({
+    state
+  } = {}) {
+    const session = await this._autoState(state);
+    if (session.error) return {
+      status: false,
+      error: session.error
+    };
+    try {
+      console.log("[Process] Fetching theme list...");
+      const res = await axios.get(`${this.baseUrl}/theme/list`, {
+        headers: this._hdrs(session.stateObj)
+      });
+      return {
+        status: true,
+        state: session.tokenStr,
+        ...res?.data
+      };
+    } catch (err) {
+      console.error("[Error] ThemeList failed:", err?.response?.data || err?.message);
+      return {
+        status: false,
+        error: err?.response?.data || err?.message
+      };
+    }
   }
-  getDeviceId() {
-    return this.deviceId;
-  }
-  getAuthToken() {
-    return this.xAuth;
-  }
-  destroy() {
-    this.httpsAgent?.destroy();
-    this.xAuth = null;
+  async theme_gen({
+    state,
+    theme_id,
+    ...rest
+  } = {}) {
+    const errCheck = this._val({
+      theme_id: theme_id
+    });
+    if (errCheck) return errCheck;
+    const session = await this._autoState(state);
+    if (session.error) return {
+      status: false,
+      error: session.error
+    };
+    try {
+      console.log("[Process] Generating theme...");
+      const payload = {
+        theme_id: theme_id,
+        answer1: rest?.answer1 || "gooo",
+        answer2: rest?.answer2 || "poor",
+        answer3: rest?.answer3 || "nothing",
+        ...rest
+      };
+      const res = await axios.post(`${this.baseUrl}/theme/generate`, payload, {
+        headers: this._hdrs(session.stateObj)
+      });
+      return {
+        status: true,
+        state: session.tokenStr,
+        ...res?.data
+      };
+    } catch (err) {
+      console.error("[Error] ThemeGen failed:", err?.response?.data || err?.message);
+      return {
+        status: false,
+        error: err?.response?.data || err?.message
+      };
+    }
   }
 }
 export default async function handler(req, res) {
@@ -246,46 +344,111 @@ export default async function handler(req, res) {
     action,
     ...params
   } = req.method === "GET" ? req.query : req.body;
+  const validActions = ["init_auth", "generate", "status", "gen_lyrics", "theme_list", "theme_gen"];
   if (!action) {
     return res.status(400).json({
-      error: "Action (lyrics, create or status) is required."
+      status: false,
+      error: "Parameter 'action' wajib diisi.",
+      available_actions: validActions,
+      usage: {
+        method: "GET / POST",
+        examples: {
+          init_auth: "/?action=init_auth",
+          generate_custom: "/?action=generate&custom=true&prompt=lyrics_here",
+          generate_advanced: "/?action=generate&custom=false&description=lofi+beats",
+          status: "/?action=status&page=1&pagesize=50",
+          gen_lyrics: "/?action=gen_lyrics&description=song_theme",
+          theme_list: "/?action=theme_list",
+          theme_gen: "/?action=theme_gen&theme_id=ID_TEMA"
+        }
+      }
     });
   }
-  const api = new SunoraAPI();
+  if (!validActions.includes(action)) {
+    return res.status(400).json({
+      status: false,
+      error: `Action tidak valid: '${action}'.`,
+      valid_actions: validActions
+    });
+  }
+  const api = new SunoraClient();
   try {
+    let response;
     switch (action) {
-      case "lyrics":
-        if (!params.prompt) {
+      case "init_auth":
+        response = await api.initAuth();
+        break;
+      case "generate": {
+        const isCustom = params.custom === true || params.custom === "true";
+        if (isCustom && (!params.prompt || params.prompt.trim() === "")) {
           return res.status(400).json({
-            error: "Prompt is required for 'lyrics' action."
+            status: false,
+            error: "Parameter 'prompt' wajib diisi untuk mode custom generate."
           });
         }
-        const lyricsResponse = await api.lyrics(params);
-        return res.status(200).json(lyricsResponse);
-      case "create":
-        if (!params.prompt) {
+        if (!isCustom && (!params.description || params.description.trim() === "")) {
           return res.status(400).json({
-            error: "Prompt is required for 'create' action."
+            status: false,
+            error: "Parameter 'description' wajib diisi untuk mode advanced/normal generate."
           });
         }
-        const createResponse = await api.generate(params);
-        return res.status(200).json(createResponse);
+        response = await api.generate(params);
+        break;
+      }
       case "status":
-        if (!params.task_id) {
+        response = await api.status(params);
+        break;
+      case "gen_lyrics":
+        if (!params.description || params.description.trim() === "") {
           return res.status(400).json({
-            error: "task_id is required for 'status' action."
+            status: false,
+            error: "Parameter 'description' wajib diisi untuk action 'gen_lyrics'."
           });
         }
-        const statusResponse = await api.status(params);
-        return res.status(200).json(statusResponse);
+        response = await api.gen_lyrics(params);
+        break;
+      case "theme_list":
+        response = await api.theme_list(params);
+        break;
+      case "theme_gen":
+        if (!params.theme_id || params.theme_id.trim() === "") {
+          return res.status(400).json({
+            status: false,
+            error: "Parameter 'theme_id' wajib diisi untuk action 'theme_gen'."
+          });
+        }
+        response = await api.theme_gen(params);
+        break;
       default:
         return res.status(400).json({
-          error: "Invalid action. Supported actions are 'lyrics', 'create' and 'status'."
+          status: false,
+          error: `Action tidak dikenali: '${action}'.`,
+          valid_actions: validActions
         });
     }
+    if (!response) {
+      return res.status(502).json({
+        status: false,
+        action: action,
+        error: "Tidak ada respons dari server Sunora. Coba lagi nanti."
+      });
+    }
+    if (response.status === false) {
+      return res.status(400).json({
+        action: action,
+        ...response
+      });
+    }
+    return res.status(200).json({
+      action: action,
+      ...response
+    });
   } catch (error) {
-    res.status(500).json({
-      error: error.message || "Internal Server Error"
+    console.error(`[FATAL ERROR] Kegagalan pada action '${action}':`, error);
+    return res.status(500).json({
+      status: false,
+      message: "Terjadi kesalahan internal pada server api.",
+      error: error.message || "Unknown Error"
     });
   }
 }
