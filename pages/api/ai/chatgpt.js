@@ -1,396 +1,254 @@
 import axios from "axios";
-import https from "https";
 import crypto from "crypto";
-class ChatGPT {
+class ChatGPTClient {
   constructor() {
-    this.baseURL = "https://chatgpt.com";
-    this.deviceId = crypto.randomUUID();
-    this.language = "en-US";
-    this.timezone = "Europe/Berlin";
-    this.timezoneOffset = -120;
-    this.tokenCSRF = null;
-    this.tokenOaiSC = null;
-    this.conduitToken = null;
-    this.cookies = {};
-    this.isInit = false;
-    this.userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36";
-    this.platform = '"Windows"';
-    this.uaMobile = "?0";
-    this.uaFull = '"Not A(Brand";v="8", "Chromium";v="132", "Google Chrome";v="132"';
-    this.axiosInstance = axios.create({
-      baseURL: this.baseURL,
-      timeout: 3e4,
-      httpsAgent: new https.Agent({
-        rejectUnauthorized: false
-      })
-    });
-    this.setupInterceptors();
+    this.ua = "ChatGPT/1.2027.000 (Android 15; RMX3834; build 2700000)";
+    this.pkg = "com.openai.chatgpt";
   }
-  setupInterceptors() {
-    this.axiosInstance.interceptors.request.use(config => {
-      if (Object.keys(this.cookies).length > 0) {
-        config.headers.cookie = this.getCookieStr();
-      }
-      console.log(`🚀 ${config.method?.toUpperCase()} ${config.url}`);
-      return config;
-    }, error => {
-      console.error("Request interceptor error:", error);
-      return Promise.reject(error);
-    });
-    this.axiosInstance.interceptors.response.use(response => {
-      this.updateCookies(response.headers["set-cookie"]);
-      console.log(`✅ ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`);
-      return response;
-    }, error => {
-      console.error(`❌ ${error.config?.method?.toUpperCase()} ${error.config?.url} - ${error.response?.status || "Network Error"}`);
-      return Promise.reject(error);
-    });
+  _pc(arr) {
+    try {
+      return Object.fromEntries((arr || []).map(c => c.split(";")[0].split("=").map(s => s.trim())));
+    } catch (err) {
+      console.error("[EROR] Cookie parse fail:", err.message);
+      return {};
+    }
   }
-  updateCookies(cookieArr) {
-    if (cookieArr) {
-      cookieArr.forEach(cookie => {
-        const parts = cookie.split(";");
-        const keyVal = parts[0].split("=");
-        if (keyVal.length === 2) {
-          this.cookies[keyVal[0].trim()] = keyVal[1].trim();
+  _cln(text) {
+    try {
+      if (!text) return "";
+      let res = "";
+      let i = 0;
+      while (i < text.length) {
+        const start = text.indexOf("", i);
+        if (start === -1) {
+          res += text.slice(i);
+          break;
         }
-      });
-    }
-  }
-  getCookieStr() {
-    return Object.entries(this.cookies).map(([k, v]) => `${k}=${v}`).join("; ");
-  }
-  async randIp() {
-    return Array.from({
-      length: 4
-    }, () => Math.floor(Math.random() * 256)).join(".");
-  }
-  randUuid() {
-    return crypto.randomUUID().toString();
-  }
-  randFloat(min, max) {
-    return (Math.random() * (max - min) + min).toFixed(4);
-  }
-  encodeBase64(e) {
-    try {
-      return btoa(String.fromCharCode(...new TextEncoder().encode(e)));
-    } catch {
-      return btoa(unescape(encodeURIComponent(e)));
-    }
-  }
-  async buildHeaders({
-    accept,
-    spoof = true,
-    preUuid
-  }) {
-    const ip = await this.randIp();
-    const uuid = preUuid || this.randUuid();
-    const headers = {
-      accept: accept,
-      "accept-language": "en-US,en;q=0.9",
-      "content-type": "application/json",
-      "cache-control": "no-cache",
-      referer: `${this.baseURL}/`,
-      "referrer-policy": "strict-origin-when-cross-origin",
-      "oai-device-id": uuid,
-      "user-agent": this.userAgent,
-      pragma: "no-cache",
-      priority: "u=1, i",
-      "sec-ch-ua": this.uaFull,
-      "sec-ch-ua-mobile": this.uaMobile,
-      "sec-ch-ua-platform": this.platform,
-      "sec-fetch-site": "same-origin",
-      "sec-fetch-mode": "cors",
-      "sec-fetch-dest": "empty",
-      origin: this.baseURL
-    };
-    if (spoof) {
-      headers["x-forwarded-for"] = ip;
-      headers["x-originating-ip"] = ip;
-      headers["x-remote-ip"] = ip;
-      headers["x-remote-addr"] = ip;
-      headers["x-host"] = ip;
-      headers["x-forwarded-host"] = ip;
-    }
-    return headers;
-  }
-  async ensureInit() {
-    if (!this.isInit) {
-      console.log("🔄 Performing automatic initialization...");
-      await this.init();
-    }
-  }
-  async ensureSession() {
-    if (!this.tokenCSRF || !this.deviceId) {
-      console.warn("⚠️ Session data expired or missing, refreshing session...");
-      await this.rotateSession();
-    }
-  }
-  async init() {
-    try {
-      this.deviceId = crypto.randomUUID();
-      await this.fetchCookies();
-      await this.rotateSession();
-      this.isInit = true;
-      console.log("✅ Bot successfully initialized.");
-    } catch (err) {
-      console.error("❌ Failed during initialization:", err);
-      this.isInit = false;
-      throw err;
-    }
-  }
-  async fetchCookies() {
-    try {
-      const headers = {
-        "user-agent": this.userAgent,
-        accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "accept-language": "en-US,en;q=0.9",
-        "sec-ch-ua": this.uaFull,
-        "sec-ch-ua-mobile": this.uaMobile,
-        "sec-ch-ua-platform": this.platform,
-        "sec-fetch-dest": "document",
-        "sec-fetch-mode": "navigate",
-        "sec-fetch-site": "none",
-        "sec-fetch-user": "?1",
-        "upgrade-insecure-requests": "1"
-      };
-      const response = await this.axiosInstance.get("/", {
-        headers: headers
-      });
-      console.log("🍪 Initial cookies successfully fetched.");
-    } catch (err) {
-      console.error("❌ Failed to fetch initial cookies:", err);
-      throw err;
-    }
-  }
-  async solveCaptcha(seed, difficulty) {
-    const cores = [8, 12, 16, 24];
-    const screens = [3e3, 4e3, 6e3];
-    const core = cores[crypto.randomInt(0, cores.length)];
-    const screen = screens[crypto.randomInt(0, screens.length)];
-    const now = new Date(Date.now() - 8 * 3600 * 1e3);
-    const timeStr = now.toUTCString().replace("GMT", "GMT+0100 (Central European Time)");
-    const config = [core + screen, timeStr, 4294705152, 0, this.userAgent];
-    const diffLen = difficulty.length / 2;
-    for (let i = 0; i < 1e5; i++) {
-      config[3] = i;
-      const jsonData = JSON.stringify(config);
-      const base64 = Buffer.from(jsonData).toString("base64");
-      const hash = crypto.createHash("sha3-512").update(seed + base64).digest();
-      if (hash.toString("hex").substring(0, diffLen) <= difficulty) {
-        return "gAAAAAB" + base64;
+        res += text.slice(i, start);
+        const end = text.indexOf("", start);
+        if (end === -1) {
+          i = start + 1;
+          continue;
+        }
+        const content = text.slice(start + 1, end);
+        if (content.startsWith("entity")) {
+          try {
+            const arr = JSON.parse(content.split("")[1] || "[]");
+            res += arr[1] || arr[0] || "";
+          } catch {}
+        }
+        i = end + 1;
       }
-    }
-    const fallback = Buffer.from(`${seed}`).toString("base64");
-    return "gAAAAABwQ8Lk5FbGpA2NcR9dShT6gYjU7VxZ4D" + fallback;
-  }
-  async makeFakeToken() {
-    const prefix = "gAAAAAC";
-    const config = [crypto.randomInt(3e3, 6e3), new Date().toUTCString().replace("GMT", "GMT+0100 (Central European Time)"), 4294705152, 0, this.userAgent, "de", "de", 401, "mediaSession", "location", "scrollX", this.randFloat(1e3, 5e3), crypto.randomUUID(), "", 12, Date.now()];
-    const base64 = Buffer.from(JSON.stringify(config)).toString("base64");
-    return prefix + base64;
-  }
-  async rotateSession() {
-    try {
-      const uuid = this.randUuid();
-      const csrf = await this.getCSRF(uuid);
-      const sentinel = await this.getSentinel(uuid, csrf);
-      this.tokenCSRF = csrf;
-      this.tokenOaiSC = sentinel?.oaiSc;
-      this.deviceId = uuid;
-      return {
-        uuid: uuid,
-        csrf: csrf,
-        sentinel: sentinel
-      };
+      return res.trim();
     } catch (err) {
-      console.error("❌ Failed to refresh session:", err);
+      console.error("[EROR] Clean tags fail:", err.message);
+      return text || "";
+    }
+  }
+  _head(isAuth, aa) {
+    try {
+      const hdrs = {
+        "User-Agent": this.ua,
+        "OAI-Package-Name": this.pkg,
+        "OAI-Client-Type": "android",
+        "OAI-Device-Id": aa.deviceId,
+        "Accept-Language": "id-ID,in;q=0.9",
+        "X-Device-Tier": "upper_mid",
+        "X-OpenAI-Target-Path": isAuth ? "/backend-api/f/conversation" : "/backend-anon/f/conversation",
+        "ChatGPT-Account-Id": isAuth ? aa.accountId || "default" : "default",
+        "ChatGPT-Residency-Region": "no_constraint",
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        Cookie: aa.cookie,
+        "X-Sentinel-Payload": JSON.stringify({
+          bot_token: {
+            failure_reason: "-2: Standard Integrity API error (-2): The Play Store app is either not installed or not the official version.",
+            failure_detail: "[qdb0.j(SourceFile:9), g4n.a(SourceFile:85)]"
+          }
+        })
+      };
+      if (isAuth) {
+        hdrs["Authorization"] = aa.authorization || `Bearer ${aa.token}`;
+      }
+      return hdrs;
+    } catch (err) {
+      console.error("[EROR] Build headers fail:", err.message);
       throw err;
     }
   }
-  async getCSRF(uuid) {
-    if (this.tokenCSRF) {
-      console.log("🔄 Using stored CSRF token.");
-      return this.tokenCSRF;
-    }
-    const headers = await this.buildHeaders({
-      accept: "application/json",
-      spoof: true,
-      preUuid: uuid
-    });
+  async _ses() {
     try {
-      const response = await this.axiosInstance.get("/api/auth/csrf", {
-        headers: headers
-      });
-      const data = response.data;
-      if (!data?.csrfToken) {
-        console.error("❌ Failed to get CSRF token:", data);
-        throw new Error("Failed to get CSRF token.");
-      }
-      this.tokenCSRF = data.csrfToken;
-      console.log("✅ CSRF token successfully obtained.");
-      return this.tokenCSRF;
-    } catch (err) {
-      console.error("❌ Error getting CSRF token:", err);
-      throw new Error("Failed to get CSRF token.");
-    }
-  }
-  async getSentinel(uuid, csrf) {
-    const headers = await this.buildHeaders({
-      accept: "application/json",
-      spoof: true,
-      preUuid: uuid
-    });
-    const fakeToken = await this.makeFakeToken();
-    const cookieStr = `${this.getCookieStr()}; __Host-next-auth.csrf-token=${csrf}; oai-did=${uuid}; oai-nav-state=1;`;
-    try {
-      const response = await this.axiosInstance.post("/backend-anon/sentinel/chat-requirements", {
-        p: fakeToken
-      }, {
+      const devId = crypto.randomUUID();
+      const res = await axios.post("https://android.chat.openai.com/backend-anon/sentinel/chat-requirements", {}, {
         headers: {
-          ...headers,
-          cookie: cookieStr
+          "User-Agent": this.ua,
+          "OAI-Package-Name": this.pkg,
+          "OAI-Client-Type": "android",
+          "OAI-Device-Id": devId,
+          "Accept-Language": "id-ID,in;q=0.9",
+          "X-Device-Tier": "upper_mid",
+          "X-OpenAI-Target-Path": "/backend-anon/sentinel/chat-requirements",
+          "ChatGPT-Account-Id": "default",
+          "ChatGPT-Residency-Region": "no_constraint",
+          Accept: "application/json",
+          "Content-Type": "application/json"
         }
       });
-      const data = response.data;
-      if (!data?.token || !data?.proofofwork) {
-        console.error("❌ Failed to get sentinel token:", data);
-        throw new Error("Failed to get sentinel token.");
-      }
-      let oaiSc = null;
-      const cookieHeader = response.headers["set-cookie"];
-      if (cookieHeader) {
-        const oaiScCookie = cookieHeader.find(c => c.startsWith("oai-sc="));
-        if (oaiScCookie) {
-          oaiSc = oaiScCookie.split("oai-sc=")[1]?.split(";")[0] || null;
-        } else {
-          console.warn("⚠️ oai-sc token not found in cookie header.");
-        }
-      }
-      const challenge = await this.solveCaptcha(data.proofofwork.seed, data.proofofwork.difficulty);
-      console.log("✅ Sentinel token successfully obtained.");
-      if (oaiSc) console.log("✅ oai-sc token successfully obtained.");
+      const cookies = this._pc(res.headers["set-cookie"]);
+      const cStr = Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join("; ");
+      let oaiSc = cookies["oai-sc"] || (res.data?.token ? `0${res.data.token}` : null);
+      const cookie = oaiSc && !cStr.includes("oai-sc") ? `oai-sc=${oaiSc}; ${cStr}` : cStr;
       return {
-        token: data.token,
-        proof: challenge,
-        oaiSc: oaiSc
+        cookie: cookie,
+        deviceId: devId,
+        parentMessageId: crypto.randomUUID()
       };
     } catch (err) {
-      console.error("❌ Error getting sentinel token:", err);
-      throw new Error("Failed to get sentinel token.");
+      console.error("[EROR] Sentinel Handshake fail:", err?.message);
+      throw err;
     }
-  }
-  parseResponse(input) {
-    return input.split("\n").map(part => part.trim()).filter(part => part).map(part => {
-      try {
-        const json = JSON.parse(part.slice(6));
-        return json.message && json.message.status === "finished_successfully" && json.message.metadata.is_complete ? json : null;
-      } catch (error) {
-        return null;
-      }
-    }).filter(Boolean).pop()?.message.content.parts.join("") || input;
   }
   async chat({
-    prompt = "Hello, how are you?",
-    messages = [],
-    model = "auto",
-    timezone_offset_min = -120,
-    history_and_training_disabled = false,
-    conversation_mode = {
-      kind: "primary_assistant",
-      plugin_ids: null
-    },
-    force_paragen = false,
-    force_paragen_model_slug = "",
-    force_nulligen = false,
-    force_rate_limit = false,
-    reset_rate_limits = false,
-    force_use_sse = true,
+    state,
+    prompt,
+    messages,
+    auth = null,
+    chatId = null,
     ...rest
   }) {
-    if (!prompt && messages.length === 0) {
-      throw new Error("Prompt or messages are required");
-    }
     try {
-      await this.ensureInit();
-      await this.ensureSession();
-      const currentMessages = messages.length ? messages : [{
-        id: this.randUuid(),
-        author: {
-          role: "user"
-        },
-        content: {
-          content_type: "text",
-          parts: [prompt]
-        },
-        metadata: {}
-      }];
-      const parentId = messages.length ? messages[messages.length - 1].id : this.randUuid();
-      const headers = await this.buildHeaders({
-        accept: "text/plain",
-        spoof: true,
-        preUuid: this.deviceId
-      });
-      const sentinel = await this.getSentinel(this.deviceId, this.tokenCSRF);
-      const cookieStr = `${this.getCookieStr()}; __Host-next-auth.csrf-token=${this.tokenCSRF}; oai-did=${this.deviceId}; oai-nav-state=1; ${sentinel?.oaiSc ? `oai-sc=${sentinel.oaiSc};` : ""}`;
-      const requestData = {
+      let ds = {};
+      if (state && typeof state === "string") {
+        try {
+          ds = JSON.parse(Buffer.from(state, "base64").toString("utf-8")) || {};
+        } catch (e) {}
+      }
+      let aa = auth || ds.auth || await this._ses();
+      let cid = chatId || ds.chatId || null;
+      aa.deviceId = aa.deviceId || crypto.randomUUID();
+      aa.parentMessageId = aa.parentMessageId || crypto.randomUUID();
+      const isAuth = !!(aa.authorization || aa.token);
+      const bUrl = isAuth ? "https://android.chat.openai.com/backend-api" : "https://android.chat.openai.com/backend-anon";
+      const curId = crypto.randomUUID();
+      const pId = aa.parentMessageId;
+      const hdrs = this._head(isAuth, aa);
+      const msgs = Array.isArray(messages) ? [...messages] : [];
+      if (prompt) {
+        msgs.push({
+          id: curId,
+          author: {
+            role: "user"
+          },
+          content: {
+            content_type: "text",
+            parts: [prompt]
+          },
+          status: "finished_successfully",
+          recipient: "all"
+        });
+      }
+      const bdy = {
         action: "next",
-        messages: currentMessages,
-        parent_message_id: parentId,
-        model: model,
-        timezone_offset_min: timezone_offset_min,
-        suggestions: [],
-        history_and_training_disabled: history_and_training_disabled,
-        conversation_mode: conversation_mode,
-        force_paragen: force_paragen,
-        force_paragen_model_slug: force_paragen_model_slug,
-        force_nulligen: force_nulligen,
-        force_rate_limit: force_rate_limit,
-        reset_rate_limits: reset_rate_limits,
-        websocket_request_id: this.randUuid(),
-        force_use_sse: force_use_sse,
+        messages: msgs,
+        model: "auto",
+        history_and_training_disabled: false,
+        fork_from_shared_post: false,
+        enable_message_followups: true,
+        force_use_sse: true,
+        force_use_search: null,
+        force_paragen: false,
+        supported_encodings: ["v1"],
+        supports_buffering: true,
+        timezone: "Asia/Makassar",
+        timezone_offset_min: -480,
+        system_hints: [],
+        is_onboarding_conversation: false,
+        no_auth_ad_preferences: {
+          personalization_enabled: true,
+          history_enabled: true
+        },
+        client_prepare_state: "none",
+        stream: true,
         ...rest
       };
-      const response = await this.axiosInstance.post("/backend-anon/conversation", requestData, {
-        headers: {
-          ...headers,
-          cookie: cookieStr,
-          "openai-sentinel-chat-requirements-token": sentinel?.token,
-          "openai-sentinel-proof-token": sentinel?.proof
-        }
-      });
-      if (response.status !== 200) {
-        console.error("❌ HTTP Error:", response.status, response.statusText);
-        throw new Error(`HTTP Error! status: ${response.status}`);
+      if (cid) {
+        bdy.conversation_id = cid;
+        bdy.parent_message_id = pId;
       }
-      const text = response.data;
-      const parsed = this.parseResponse(text);
-      console.log("✅ Response received.");
-      return {
-        result: parsed,
-        raw: text,
-        success: true
-      };
-    } catch (error) {
-      console.error("❌ Chat error:", error);
-      throw error;
+      const rStream = await axios.post(`${bUrl}/f/conversation`, bdy, {
+        headers: hdrs,
+        responseType: "stream"
+      });
+      return new Promise((resolve, reject) => {
+        let txt = "",
+          buf = "",
+          lPath = null,
+          lOp = null,
+          fCid = cid,
+          camId = null;
+        const chks = [];
+        rStream.data.on("data", chunk => {
+          try {
+            buf += chunk.toString();
+            const lines = buf.split("\n");
+            buf = lines.pop() || "";
+            for (const line of lines) {
+              const trm = line.trim();
+              if (!trm || trm === "data: [DONE]") continue;
+              if (trm.startsWith("data: ")) {
+                try {
+                  const data = JSON.parse(trm.substring(6));
+                  chks.push(data);
+                  if (data?.conversation_id) fCid = data.conversation_id;
+                  const p = data?.p !== undefined ? data.p : lPath;
+                  const o = data?.o !== undefined ? data.o : lOp;
+                  if (data?.p !== undefined) lPath = data.p;
+                  if (data?.o !== undefined) lOp = data.o;
+                  if (o === "add" && data?.v?.message) {
+                    if (data.v.message.author?.role === "assistant") {
+                      camId = data.v.message.id;
+                      const parts = data.v.message.content?.parts;
+                      if (parts?.[0]) txt = parts[0];
+                    }
+                  } else if (o === "patch" && Array.isArray(data?.v)) {
+                    for (const op of data.v) {
+                      if (op?.o === "append" && op?.p?.startsWith("/message/content/parts/")) {
+                        txt += op.v;
+                      }
+                    }
+                  } else if (o === "append" && p?.startsWith("/message/content/parts/") && typeof data?.v === "string") {
+                    txt += data.v;
+                  }
+                } catch (e) {}
+              }
+            }
+          } catch (e) {}
+        });
+        rStream.data.on("end", () => {
+          try {
+            if (camId) aa.parentMessageId = camId;
+            const nextState = Buffer.from(JSON.stringify({
+              auth: aa,
+              chatId: fCid
+            })).toString("base64");
+            resolve({
+              status: true,
+              result: {
+                response: this._cln(txt),
+                chatId: fCid,
+                chunks: chks
+              },
+              state: nextState
+            });
+          } catch (endErr) {
+            reject(endErr);
+          }
+        });
+        rStream.data.on("error", err => reject(err));
+      });
+    } catch (err) {
+      throw err;
     }
-  }
-  setHeaders(headers) {
-    Object.assign(this.axiosInstance.defaults.headers, headers);
-  }
-  getSessionInfo() {
-    return {
-      deviceId: this.deviceId,
-      tokenCSRF: this.tokenCSRF,
-      tokenOaiSC: this.tokenOaiSC,
-      cookies: this.cookies,
-      isInit: this.isInit
-    };
-  }
-  async refreshSession() {
-    console.log("🔄 Manually refreshing session...");
-    await this.rotateSession();
   }
 }
 export default async function handler(req, res) {
@@ -400,7 +258,7 @@ export default async function handler(req, res) {
       error: "Parameter 'prompt' diperlukan"
     });
   }
-  const api = new ChatGPT();
+  const api = new ChatGPTClient();
   try {
     const data = await api.chat(params);
     return res.status(200).json(data);

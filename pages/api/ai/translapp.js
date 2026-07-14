@@ -1,182 +1,287 @@
 import axios from "axios";
-import {
-  createHash,
-  randomUUID,
-  randomBytes
-} from "crypto";
-import SpoofHead from "@/lib/spoof-head";
-class Translapp {
+import FormData from "form-data";
+import crypto from "crypto";
+class GalaxyAI {
   constructor() {
-    this.api = {
+    this.uid = null;
+    this.cfg = {
       base: "https://translapp.info",
-      endpoint: "/ai/g/ask"
+      ep: {
+        ask: "/ai/g/ask",
+        send: "/ai/g/send",
+        img: "/ai/g/ask_img"
+      },
+      mods: ["ASK", "GRAMMAR", "TRANSLATE", "REPLY", "TONE", "EXPAND", "PARAPHRASE", "SUMMARIZE"]
     };
-    this.baseUrl = "https://translapp.info";
-    this.actions = ["SUMMARIZE", "PARAPHRASE", "EXPAND", "TONE", "TRANSLATE", "REPLY", "GRAMMAR"];
-    this.tones = ["Friendly", "Romantic", "Sarcastic", "Humour", "Social", "Angry", "Sad", "Other"];
-    this.replies = ["Short", "Medium", "Long"];
+    this.api = axios.create({
+      baseURL: this.cfg.base,
+      timeout: 5e5,
+      headers: {
+        "Accept-Language": "en",
+        "User-Agent": "okhttp/4.11.0",
+        Connection: "Keep-Alive",
+        "Accept-Encoding": "gzip"
+      }
+    });
   }
-  _sh(i) {
-    return i.length >= 5 ? i.substring(0, 5) : "O".repeat(5 - i.length) + i;
-  }
-  _hs(s) {
-    return createHash("sha256").update(s, "utf8").digest("hex");
-  }
-  _rbs(l) {
-    return randomBytes(Math.ceil(l / 2)).toString("hex").slice(0, l);
-  }
-  _re(a) {
-    return a[Math.floor(Math.random() * a.length)];
-  }
-  _rgua() {
-    const os = this._re(["Windows NT 10.0", "Macintosh; Intel Mac OS X 10_15_7", "Linux; Android 10", "iPhone; CPU iPhone OS 15_4"]);
-    const browser = this._re(["Chrome", "Firefox", "Safari", "Opera"]);
-    const version = `${Math.floor(Math.random() * 100)}.${this._rbs(3)}.4896.${this._rbs(3)}`;
-    const webkit = this._re(["AppleWebKit/537.36", "AppleWebKit/605.1.15"]);
-    const gecko = this._re(["KHTML, like Gecko", "Gecko/20100101"]);
-    return `Mozilla/5.0 (${os}) ${webkit} (${gecko}) ${browser}/${version}`;
-  }
-  _rgal() {
-    const mainLang = this._re(["en-US", "id", "es", "fr", "de", "ja", "zh"]);
-    const qValue = (Math.random() * .9).toFixed(1);
-    return `${mainLang},en;q=${qValue}`;
-  }
-  _rcip() {
-    return Array.from(randomBytes(4)).map(b => b % 256).join(".");
-  }
-  _rID(l = 16) {
-    return randomBytes(l).toString("hex");
-  }
-  _bH(e = {}) {
-    return {
-      origin: this.baseUrl,
-      referer: `${this.baseUrl}/`,
-      "user-agent": this._rgua(),
-      "content-type": "application/json",
-      "accept-language": this._rgal(),
-      "x-request-id": this._rID(8),
-      ...SpoofHead(),
-      ...e
-    };
-  }
-  async translate({
-    text = "Hello",
-    action = "TRANSLATE",
-    to = "id",
-    tone = "Other"
-  }) {
-    if (!text || typeof text !== "string" || text.trim() === "") {
-      return {
-        success: false,
-        code: 400,
-        result: {
-          error: "Teks wajib diisi bree, kagak boleh kosong 🫵🏻"
-        }
-      };
-    }
-    const pA = action.toUpperCase();
-    if (!this.actions.includes(pA)) {
-      return {
-        success: false,
-        code: 400,
-        result: {
-          error: `Aksi wajib diisi bree, pilih salah satu yak: ${this.actions.join(", ")} 🗿`
-        }
-      };
-    }
-    switch (pA) {
-      case "TONE":
-        if (!this.tones.includes(to)) return {
-          success: false,
-          code: 400,
-          result: {
-            error: `Paramenter 'to' untuk TONE wajib diisi, pilih salah satu bree: ${this.tones.join(", ")} 🙈️`
-          }
-        };
-        if (to === "Other" && (!tone || tone.trim() === "")) return {
-          success: false,
-          code: 400,
-          result: {
-            error: "Kalo TONE pilih Other, 'tone' wajib diisi (contoh: 'Shy') 😳"
-          }
-        };
-        break;
-      case "TRANSLATE":
-        if (!to || typeof to !== "string" || to.trim() === "") return {
-          success: false,
-          code: 400,
-          result: {
-            error: "Paramenter 'to' untuk TRANSLATE wajib diisi, input bahasa targetnya (contoh: 'English') 🙈️"
-          }
-        };
-        break;
-      case "REPLY":
-        if (!this.replies.includes(to)) return {
-          success: false,
-          code: 400,
-          result: {
-            error: `Paramenter 'to' untuk REPLY wajib diisi, pilih salah satu bree: ${this.replies.join(", ")} 🙈️`
-          }
-        };
-        break;
-    }
+  _gKey(txt = "") {
     try {
-      const inputx = this._sh(text);
-      const prefix = `${inputx}ZERO`;
-      const key = this._hs(prefix);
-      const userId = `GALAXY_AI${randomUUID()}`;
-      const toValue = pA === "TONE" && to === "Other" ? tone : to;
-      const payload = {
-        k: key,
-        module: pA,
-        text: text,
-        to: toValue,
-        userId: userId
+      console.log("[PROCESS] Generating security signature & device key...");
+      this.uid = this.uid || crypto.randomBytes(8).toString("hex");
+      const chunk = String(txt || "").substring(0, 5).padEnd(5, "0");
+      return {
+        uid: this.uid,
+        k: crypto.createHash("sha256").update(`${chunk}ZERO`, "utf8").digest("hex")
       };
-      const headers = this._bH();
-      const response = await axios.post(`${this.api.base}${this.api.endpoint}`, payload, {
-        headers: headers
+    } catch (e) {
+      console.error("[ERROR] Failed generating key signature:", e.message);
+      throw e;
+    }
+  }
+  async _buf(inp) {
+    try {
+      console.log("[PROCESS] Processing image input into buffer structure...");
+      let b, t = "image/jpeg",
+        n = `${crypto.randomBytes(8).toString("hex")}.jpg`;
+      if (typeof inp === "string") {
+        if (inp.startsWith("http")) {
+          console.log(`[PROCESS] Fetching image from URL: ${inp}`);
+          const r = await axios.get(inp, {
+            responseType: "arraybuffer"
+          });
+          b = Buffer.from(r.data);
+          t = r.headers["content-type"] || t;
+          n = inp.split("/").pop().split("?")[0] || n;
+        } else if (inp.startsWith("data:image")) {
+          console.log("[PROCESS] Converting Base64 data URI to buffer...");
+          const m = inp.match(/^data:([^;]+);base64,(.+)$/);
+          if (!m) return null;
+          t = m[1];
+          b = Buffer.from(m[2], "base64");
+          n = `${crypto.randomBytes(8).toString("hex")}.${t.split("/")[1] || "jpg"}`;
+        } else {
+          const fs = await import("fs").catch(() => null);
+          if (fs?.existsSync?.(inp)) {
+            console.log(`[PROCESS] Reading file from local path: ${inp}`);
+            b = fs.readFileSync(inp);
+            n = (await import("path")).basename(inp);
+          } else {
+            console.log("[PROCESS] Interpreting string as raw Base64 data...");
+            b = Buffer.from(inp, "base64");
+          }
+        }
+      } else b = Buffer.isBuffer(inp) ? inp : null;
+      return b ? {
+        buf: b,
+        name: n,
+        type: t
+      } : null;
+    } catch (e) {
+      console.error("[ERROR] Buffering system failure:", e.message);
+      return null;
+    }
+  }
+  async _post(path, pld) {
+    try {
+      console.log(`[POST] Outbound Request -> JSON Endpoint: ${path}`);
+      const r = await this.api.post(path, pld, {
+        headers: {
+          "Content-Type": "application/json; charset=UTF-8"
+        }
       });
-      const {
-        data
-      } = response;
       return {
-        success: true,
-        code: 200,
-        result: {
-          action: pA,
-          input: text,
-          to: toValue,
-          output: data.message
-        }
+        status: true,
+        result: r.data
       };
-    } catch (error) {
+    } catch (e) {
+      console.error(`[POST ERROR] Failed executing text route:`, e.response?.data || e.message);
       return {
-        success: false,
-        code: error.response?.status || 500,
-        result: {
-          error: error.response?.data?.message || error.message || "Error bree.."
+        status: false,
+        result: e.response?.data || e.message
+      };
+    }
+  }
+  async _img(fd, prms, cPath) {
+    try {
+      const target = cPath || this.cfg.ep.img;
+      console.log(`[POST] Outbound Request -> Multipart Image Endpoint: ${target}`);
+      const form = new FormData();
+      form.append("k", prms.k);
+      form.append("text", prms.text || prms.query || "");
+      form.append("userId", prms.userId);
+      form.append("module", prms.module);
+      if (prms.to) form.append("to", prms.to);
+      form.append("file", fd.buf, {
+        filename: fd.name,
+        contentType: fd.type
+      });
+      Object.keys(prms).forEach(f => {
+        if (!["k", "text", "userId", "query", "to", "module"].includes(f) && prms[f] !== null && prms[f] !== undefined) {
+          form.append(f, typeof prms[f] === "string" ? prms[f] : JSON.stringify(prms[f]));
         }
+      });
+      const res = await this.api.post(target, form, {
+        headers: form.getHeaders(),
+        timeout: 5e5
+      });
+      return {
+        status: true,
+        result: res.data
+      };
+    } catch (e) {
+      console.error(`[IMAGE ERROR] Failed executing image route:`, e.response?.data || e.message);
+      return {
+        status: false,
+        result: e.response?.data || e.message
+      };
+    }
+  }
+  async generate({
+    module,
+    prompt,
+    image,
+    messages = [],
+    uid,
+    mode,
+    ...rest
+  } = {}) {
+    console.log("[PROCESS] Initializing Engine validation pipeline...");
+    let id = uid || this.uid;
+    const list = this.cfg.mods.join(", ");
+    try {
+      if (!module) {
+        console.warn("[VALIDATION FAILED] Parameter module is completely missing.");
+        return {
+          status: false,
+          uid: id,
+          result: `Parameter "module" wajib diisi. Available: [${list}]`
+        };
+      }
+      const mod = String(module).toUpperCase();
+      console.log(`[PROCESS] Validating requested module: "${mod}"`);
+      if (!this.cfg.mods.includes(mod)) {
+        console.warn(`[VALIDATION FAILED] Module "${mod}" is not listed in available modules.`);
+        return {
+          status: false,
+          uid: id,
+          result: `Modul "${mod}" tidak valid. Available: [${list}]`
+        };
+      }
+      const base = prompt || (messages.length > 0 ? messages[0].content : "") || rest.query || rest.text || "";
+      const text = rest.text || base;
+      let msg = [...messages];
+      if (msg.length === 0 && base) msg.push({
+        role: "user",
+        content: base
+      });
+      switch (mod) {
+        case "ASK":
+          if (!base && !image) {
+            console.warn("[VALIDATION FAILED] ASK module requires prompt, messages, or an image.");
+            return {
+              status: false,
+              uid: id,
+              result: 'Modul ASK butuh input "prompt", "messages", atau "image".'
+            };
+          }
+          break;
+        case "TRANSLATE":
+          if (!text) {
+            console.warn("[VALIDATION FAILED] TRANSLATE module requires prompt or text.");
+            return {
+              status: false,
+              uid: id,
+              result: 'Modul TRANSLATE butuh parameter "prompt" atau "text".'
+            };
+          }
+          break;
+        default:
+          console.log(`[PROCESS] Standard generic payload check for module: ${mod}`);
+          break;
+      }
+      const lang = rest.to || (mod === "TRANSLATE" ? "en" : "");
+      let sm = String(mode || "auto").toLowerCase();
+      let path = null;
+      switch (sm) {
+        case "ask":
+          path = this.cfg.ep.ask;
+          break;
+        case "send":
+          path = this.cfg.ep.send;
+          break;
+        case "ask_img":
+        case "image":
+          path = this.cfg.ep.img;
+          break;
+        default:
+          console.log('[PROCESS] Mode routing falling back to "auto" positioning...');
+          break;
+      }
+      if (image || sm === "ask_img" || sm === "image") {
+        console.log("[PROCESS] Executing Image routing track...");
+        const fd = await this._buf(image || "");
+        if (!fd) {
+          console.error("[PROCESS FAILED] Buffer payload creation returned empty value.");
+          return {
+            status: false,
+            uid: id,
+            result: "Gagal memproses gambar."
+          };
+        }
+        const sign = this._gKey(fd.name);
+        id = uid || sign.uid;
+        const prms = {
+          userId: id,
+          module: mod,
+          query: base || "Describe this image",
+          k: rest.k || sign.k,
+          text: text,
+          to: lang,
+          ...rest
+        };
+        return {
+          ...await this._img(fd, prms, path),
+          uid: id
+        };
+      }
+      console.log("[PROCESS] Executing Text routing track...");
+      const sign = this._gKey(base);
+      id = uid || sign.uid;
+      const pld = {
+        userId: id,
+        module: mod,
+        query: base,
+        messages: msg,
+        k: rest.k || sign.k,
+        text: text,
+        to: lang,
+        ...rest
+      };
+      const defaultPath = path || (mod === "ASK" ? this.cfg.ep.send : this.cfg.ep.ask);
+      return {
+        ...await this._post(defaultPath, pld),
+        uid: id
+      };
+    } catch (e) {
+      console.error("[FATAL EXCEPTION] Core generator pipeline crashed:", e.message);
+      return {
+        status: false,
+        uid: id || this.uid,
+        result: e.message
       };
     }
   }
 }
 export default async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
-  if (!params.text) {
-    return res.status(400).json({
-      error: "Text are required"
-    });
-  }
+  const api = new GalaxyAI();
   try {
-    const translapp = new Translapp();
-    const response = await translapp.translate(params);
-    return res.status(200).json({
-      result: response
-    });
+    const data = await api.generate(params);
+    return res.status(200).json(data);
   } catch (error) {
-    res.status(500).json({
-      error: error.message || "Internal Server Error"
+    const errorMessage = error.message || "Terjadi kesalahan saat memproses request";
+    return res.status(500).json({
+      error: errorMessage
     });
   }
 }

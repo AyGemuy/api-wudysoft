@@ -1,541 +1,535 @@
 import axios from "axios";
-import {
-  v4 as uuidv4
-} from "uuid";
-import {
-  createHmac
-} from "crypto";
-import apiConfig from "@/configs/apiConfig";
+import crypto from "crypto";
 class Soniva {
-  constructor(userId = null) {
-    this.SECRET_KEY = apiConfig.SONIVA_KEY;
-    this.deviceId = uuidv4();
-    this.userId = userId;
-    this.BASE_URL = "https://api.sonivamusic.com/musicai";
-    this.DOWNLOAD_BASE_URL = "https://d2m6kf0jl6dhrs.cloudfront.net";
+  constructor() {
+    this.userId = "";
+    this.deviceId = this.uid();
+    this.baseUrl = "https://api.sonivamusic.com/musicai/v1";
+    this.ua = "SonivaMusic/1.5.2 (build:115; Android 15; realme RMX3890)";
+    this.log = console.log;
   }
-  _sign(data) {
-    const hmac = createHmac("sha256", this.SECRET_KEY);
-    hmac.update(data, "utf8");
-    return Buffer.from(hmac.digest()).toString("base64");
+  uid() {
+    return crypto.randomUUID();
   }
-  _headers(messageId, requestTime, xRequestId) {
-    return {
-      host: "api.sonivamusic.com",
-      "x-request-id": xRequestId,
-      "x-device-id": this.deviceId,
-      "x-request-time": requestTime,
-      "x-message-id": messageId,
-      platform: "android",
-      "x-app-version": "1.2.6",
-      "x-country": "ID",
-      "accept-language": "id-ID",
-      "user-agent": "SonivaMusic/1.2.6 (build:70; Android 10; Xiaomi Redmi Note 5)",
-      "content-type": "application/json; charset=utf-8",
-      "accept-encoding": "gzip"
-    };
-  }
-  async _ensureUserId(options) {
-    const targetUserId = options.userId || this.userId;
-    if (!targetUserId) {
-      await this.reg();
-    } else {
-      if (options.userId) {
-        this.userId = options.userId;
+  _sg(deviceId, messageId, requestTime) {
+    const J_KB = [9, -68, 74, 103, -109, 76, 23, -83, -95, -36, 42, 35, 77, 77, 59, 59, 16, -117, 112, 47, -109, 65, -74, -86, 60, -100, 22, 87, 22, 46, -78, 86, -34, -5, -56, -124, 31, 57, 72, 117, -22, -50, -92, 93, 29, 125, -11, 126, -13, 40, 51, -94, -69, -79, 17, -109, 25, 33, 100, -115, 27, 127, -47, 78];
+    const DP1 = Uint8Array.from([94, 86, 68, 22, 67, 88, 1, 95, 13, 82, 30, 72, 8, 8, 91, 1]);
+    const DP2 = Uint8Array.from([94, 81, 94, 10, 92, 28, 71, 87, 78, 2, 9, 10, 72, 14, 92, 27, 92, 14, 4, 15]);
+    const EKB = J_KB.map(val => val < 0 ? 256 + val : val);
+    const xor = inputBytes => {
+      const key = Buffer.from("3a1c2ou68jox9dlj3v", "utf-8");
+      const output = Buffer.alloc(inputBytes.length);
+      for (let i = 0; i < inputBytes.length; i++) {
+        output[i] = inputBytes[i] ^ key[i % key.length];
       }
-      console.log(`🔄 Using existing User ID: ${this.userId}`);
-    }
-  }
-  async reg() {
-    console.log("🔄 Registering device...");
-    const requestTime = String(Date.now());
-    const messageId = uuidv4();
-    const dataToSign = `${this.deviceId}${messageId}${requestTime}`;
-    const signature = this._sign(dataToSign);
-    const body = {
-      device_id: this.deviceId,
-      push_token: signature,
-      message_id: messageId,
-      AuthToken: signature
+      return output;
     };
-    const headers = this._headers(messageId, requestTime, signature);
-    try {
-      const response = await axios.post(`${this.BASE_URL}/v1/register`, body, {
-        headers: headers
-      });
-      this.userId = response.data.user_id;
-      console.log(`✅ Registered! User ID: ${this.userId}`);
-      return response.data;
-    } catch (error) {
-      console.error("❌ Registration failed:", error.response?.status, error.response?.data);
-      throw error;
-    }
-  }
-  async genLyrics(options = {}) {
-    await this._ensureUserId(options);
-    console.log("🎵 Generating song from lyrics...");
-    const requestTime = String(Date.now());
-    const messageId = options.message_id || uuidv4();
-    const dataToSign = `${this.deviceId}${messageId}${requestTime}`;
-    const signature = this._sign(dataToSign);
-    const {
-      userId: _,
-      ...bodyOptions
-    } = options;
-    const body = {
-      mood: "Romantic,Motivational,Melancholic",
-      genre: "Electro Pop",
-      has_vocal: false,
-      vocal_gender: "male",
-      record_type: "live",
-      title: "cinta",
-      is_dual_song_enabled: true,
-      ...bodyOptions,
-      lyrics: options.lyrics,
-      message_id: messageId
+    const dec = encryptedBytes => {
+      const length = encryptedBytes.length;
+      const xorParam1Decrypted = xor(DP1);
+      const xorParam2Decrypted = xor(DP2);
+      const stringForHash = xorParam1Decrypted.toString("utf-8") + xorParam2Decrypted.toString("utf-8") + "com.sonivamusic.ai";
+      const hash = crypto.createHash("sha512").update(Buffer.from(stringForHash, "utf-8")).digest();
+      const hashSlice = hash.slice(0, length);
+      const result = Buffer.alloc(encryptedBytes.length);
+      for (let i = 0; i < encryptedBytes.length; i++) {
+        result[i] = encryptedBytes[i] ^ hashSlice[i];
+      }
+      return result;
     };
-    const headers = this._headers(messageId, requestTime, signature);
-    try {
-      const response = await axios.post(`${this.BASE_URL}/v1/users/${this.userId}/songs/lyrics`, body, {
-        headers: headers
-      });
-      console.log("✅ Song generation from lyrics started!");
+    const gDSP = () => {
+      const part1 = xor([112, 49, 100, 47, 2, 63, 58, 71]).toString("utf-8");
+      const part2 = xor([105, 88, 83, 59, 118, 11, 54, 80]).toString("utf-8");
+      return part1 + part2;
+    };
+    const s2s = messageId + gDSP() + deviceId + requestTime;
+    const sKey = dec(EKB);
+    const mac = crypto.createHmac("sha256", sKey);
+    return mac.update(Buffer.from(s2s, "utf-8")).digest("base64");
+  }
+  _hd(msgId, reqTime) {
+    return {
+      "User-Agent": this.ua,
+      "Accept-Encoding": "gzip",
+      "Content-Type": "application/json",
+      "x-signature-id": this._sg(this.deviceId, msgId, reqTime),
+      "x-device-id": this.deviceId,
+      "x-request-time": reqTime,
+      "x-message-id": msgId,
+      platform: "android",
+      "x-app-version": "1.5.2",
+      "x-version-code": "115",
+      "x-country": "ID",
+      "accept-language": "id-ID"
+    };
+  }
+  async _esId(userId) {
+    if (userId) {
+      this.userId = userId;
+      this.log(`✅ Using provided user ID: ${userId}`);
       return {
-        userId: this.userId,
-        ...response.data
+        success: true,
+        userId: userId
       };
-    } catch (error) {
-      console.error("❌ Generation from lyrics failed:", error.response?.status, error.response?.data);
-      throw error;
     }
-  }
-  async genPrompt(options = {}) {
-    await this._ensureUserId(options);
-    console.log("🎵 Generating song from prompt...");
-    const requestTime = String(Date.now());
-    const messageId = options.message_id || uuidv4();
-    const dataToSign = `${this.deviceId}${messageId}${requestTime}`;
-    const signature = this._sign(dataToSign);
-    const {
-      userId: _,
-      ...bodyOptions
-    } = options;
-    const body = {
-      mood: "Romantic,Motivational,Melancholic",
-      genre: "Electro Pop",
-      has_vocal: false,
-      vocal_gender: "male",
-      record_type: "live",
-      is_dual_song_enabled: true,
-      ...bodyOptions,
-      prompt: options.prompt,
-      message_id: messageId
-    };
-    const headers = this._headers(messageId, requestTime, signature);
-    try {
-      const response = await axios.post(`${this.BASE_URL}/v1/users/${this.userId}/songs/prompt`, body, {
-        headers: headers
-      });
-      console.log("✅ Song generation from prompt started!");
+    if (this.userId) {
+      this.log(`✅ Using existing user ID: ${this.userId}`);
       return {
-        userId: this.userId,
-        ...response.data
+        success: true,
+        userId: this.userId
       };
-    } catch (error) {
-      console.error("❌ Generation from prompt failed:", error.response?.status, error.response?.data);
-      throw error;
     }
+    this.log("🔑 No user ID found – attempting automatic registration...");
+    const result = await this.reg();
+    if (result.success) {
+      this.userId = result.userId;
+      this.log(`✅ Auto‑registration successful. User ID: ${this.userId}`);
+      return {
+        success: true,
+        userId: this.userId
+      };
+    }
+    return result;
   }
-  async getSongStatus(jobId) {
-    console.log(`🔎 Fetching song status for jobId: ${jobId}...`);
-    const requestTime = String(Date.now());
-    const messageId = uuidv4();
-    const dataToSign = `${this.deviceId}${messageId}${requestTime}`;
-    const signature = this._sign(dataToSign);
-    const headers = this._headers(messageId, requestTime, signature);
+  async reg(deviceId, pushToken = null) {
     try {
-      const response = await axios.get(`${this.BASE_URL}/v1/songs/${jobId}`, {
-        headers: headers
+      const msgId = this.uid();
+      const reqTime = Date.now().toString();
+      const payload = {
+        device_id: deviceId || this.deviceId,
+        push_token: pushToken,
+        message_id: msgId
+      };
+      this.log("📡 Sending registration request...");
+      const res = await axios.post(`${this.baseUrl}/register`, payload, {
+        headers: this._hd(msgId, reqTime)
       });
-      console.log(`✅ Song status fetched for jobId: ${jobId}`);
-      return response.data;
-    } catch (error) {
-      console.error("❌ Failed to fetch song status:", error.response?.status, error.response?.data);
-      throw error;
+      const userId = res?.data?.user_id || "";
+      this.log(`✅ Registration successful. User ID: ${userId}`);
+      return {
+        success: true,
+        userId: userId,
+        data: res.data
+      };
+    } catch (err) {
+      const error = err?.response?.data || err.message;
+      this.log(`❌ Registration error: ${error}`);
+      return {
+        success: false,
+        error: error
+      };
     }
   }
-  async list({
+  async lyrics({
+    prompt,
+    userId
+  }) {
+    if (!prompt) {
+      return {
+        success: false,
+        error: "Missing required field: prompt"
+      };
+    }
+    const ensure = await this._esId(userId);
+    if (!ensure.success) return ensure;
+    const id = ensure.userId;
+    try {
+      const msgId = this.uid();
+      const reqTime = Date.now().toString();
+      const payload = {
+        task: "askai",
+        content: prompt,
+        messageId: msgId
+      };
+      this.log(`🎵 Generating lyrics for prompt: "${prompt.substring(0, 30)}..."`);
+      const res = await axios.post(`${this.baseUrl}/lyrics/generate`, payload, {
+        headers: this._hd(msgId, reqTime)
+      });
+      this.log("✅ Lyrics generated.");
+      return {
+        success: true,
+        data: res.data,
+        userId: id
+      };
+    } catch (err) {
+      const error = err?.response?.data || err.message;
+      this.log(`❌ Lyrics generation failed: ${error}`);
+      return {
+        success: false,
+        error: error,
+        userId: id
+      };
+    }
+  }
+  async generate({
+    prompt,
+    lyrics,
+    userId,
+    mood,
+    genre,
+    hasVocal,
+    vocalGender,
+    recordType,
+    title,
+    isDual
+  }) {
+    if (!prompt && !lyrics) {
+      return {
+        success: false,
+        error: "Either 'prompt' or 'lyrics' must be provided."
+      };
+    }
+    const ensure = await this._esId(userId);
+    if (!ensure.success) return ensure;
+    const id = ensure.userId;
+    try {
+      const msgId = this.uid();
+      const reqTime = Date.now().toString();
+      const basePayload = {
+        mood: mood || "Happy",
+        genre: genre || "Pop",
+        has_vocal: hasVocal ?? true,
+        vocal_gender: vocalGender || "random",
+        record_type: recordType || "studio",
+        is_dual_song_enabled: isDual ?? true,
+        message_id: msgId
+      };
+      let endpoint, payload;
+      if (prompt) {
+        endpoint = `/users/${id}/songs/prompt`;
+        payload = {
+          ...basePayload,
+          prompt: prompt
+        };
+        this.log(`🎶 Creating song from prompt: "${prompt.substring(0, 30)}..."`);
+      } else {
+        endpoint = `/users/${id}/songs/lyrics`;
+        payload = {
+          ...basePayload,
+          lyrics: lyrics,
+          title: title || ""
+        };
+        this.log(`🎶 Creating song from provided lyrics (${lyrics.length} chars)...`);
+      }
+      const res = await axios.post(`${this.baseUrl}${endpoint}`, payload, {
+        headers: this._hd(msgId, reqTime)
+      });
+      this.log("✅ Song generation queued successfully.");
+      return {
+        success: true,
+        data: res.data,
+        userId: id
+      };
+    } catch (err) {
+      const error = err?.response?.data || err.message;
+      this.log(`❌ Song generation failed: ${error}`);
+      return {
+        success: false,
+        error: error,
+        userId: id
+      };
+    }
+  }
+  async status({
+    songId,
+    userId
+  }) {
+    if (!songId) {
+      return {
+        success: false,
+        error: "Missing required field: songId"
+      };
+    }
+    const ensure = await this._esId(userId);
+    if (!ensure.success) return ensure;
+    const id = ensure.userId;
+    try {
+      const msgId = this.uid();
+      const reqTime = Date.now().toString();
+      this.log(`🔍 Fetching status for song ID: ${songId}`);
+      const res = await axios.get(`${this.baseUrl}/songs/${songId}`, {
+        headers: this._hd(msgId, reqTime)
+      });
+      this.log("✅ Song status retrieved.");
+      return {
+        success: true,
+        data: res.data,
+        userId: id
+      };
+    } catch (err) {
+      const error = err?.response?.data || err.message;
+      this.log(`❌ Status fetch failed: ${error}`);
+      return {
+        success: false,
+        error: error,
+        userId: id
+      };
+    }
+  }
+  async user_info({
+    userId
+  }) {
+    const ensure = await this._esId(userId);
+    if (!ensure.success) return ensure;
+    const id = ensure.userId;
+    try {
+      const msgId = this.uid();
+      const reqTime = Date.now().toString();
+      this.log(`ℹ️ Fetching user info for: ${id}`);
+      const res = await axios.get(`${this.baseUrl}/users/${id}/info`, {
+        headers: this._hd(msgId, reqTime)
+      });
+      this.log("✅ User info retrieved.");
+      return {
+        success: true,
+        data: res.data,
+        userId: id
+      };
+    } catch (err) {
+      const error = err?.response?.data || err.message;
+      this.log(`❌ Info fetch failed: ${error}`);
+      return {
+        success: false,
+        error: error,
+        userId: id
+      };
+    }
+  }
+  async playlist({
+    userId
+  }) {
+    const ensure = await this._esId(userId);
+    if (!ensure.success) return ensure;
+    const id = ensure.userId;
+    try {
+      const msgId = this.uid();
+      const reqTime = Date.now().toString();
+      this.log(`📚 Fetching playlists for user: ${id}`);
+      const res = await axios.get(`${this.baseUrl}/users/${id}/playlists`, {
+        headers: this._hd(msgId, reqTime)
+      });
+      this.log("✅ Playlists retrieved.");
+      return {
+        success: true,
+        data: res.data,
+        userId: id
+      };
+    } catch (err) {
+      const error = err?.response?.data || err.message;
+      this.log(`❌ Playlist fetch failed: ${error}`);
+      return {
+        success: false,
+        error: error,
+        userId: id
+      };
+    }
+  }
+  async library({
     userId,
     page = 1,
     limit = 90,
     sortAsc = false
-  } = {}) {
-    console.log("📋 Fetching song list...");
-    const requestTime = String(Date.now());
-    const messageId = uuidv4();
-    const dataToSign = `${this.deviceId}${messageId}${requestTime}`;
-    const signature = this._sign(dataToSign);
-    const headers = this._headers(messageId, requestTime, signature);
-    const targetUserId = userId || this.userId;
-    if (!targetUserId) {
-      throw new Error("User ID is required to list songs.");
-    }
+  }) {
+    const ensure = await this._esId(userId);
+    if (!ensure.success) return ensure;
+    const id = ensure.userId;
     try {
-      const response = await axios.get(`${this.BASE_URL}/v1/users/${targetUserId}/library?page=${page}&limit=${limit}&sortAsc=${sortAsc}`, {
-        headers: headers
+      const msgId = this.uid();
+      const reqTime = Date.now().toString();
+      this.log(`📖 Fetching library for user: ${id} (page ${page}, limit ${limit})`);
+      const res = await axios.get(`${this.baseUrl}/users/${id}/library`, {
+        params: {
+          page: page,
+          limit: limit,
+          sortAsc: sortAsc ? "true" : "false"
+        },
+        headers: this._hd(msgId, reqTime)
       });
-      console.log(`✅ Found ${response.data.songs?.length || 0} songs`);
-      return response.data;
-    } catch (error) {
-      console.error("❌ List fetch failed:", error.response?.status, error.response?.data);
-      throw error;
+      this.log("✅ Library retrieved.");
+      return {
+        success: true,
+        data: res.data,
+        userId: id
+      };
+    } catch (err) {
+      const error = err?.response?.data || err.message;
+      this.log(`❌ Library fetch failed: ${error}`);
+      return {
+        success: false,
+        error: error,
+        userId: id
+      };
     }
   }
-  async getRecentExplore({
+  async explore({
+    type = "clips",
     page = 1,
-    limit = 90
-  } = {}) {
-    console.log(`🌍 Fetching recent explore songs (page: ${page}, limit: ${limit})...`);
-    const requestTime = String(Date.now());
-    const messageId = uuidv4();
-    const dataToSign = `${this.deviceId}${messageId}${requestTime}`;
-    const signature = this._sign(dataToSign);
-    const headers = this._headers(messageId, requestTime, signature);
+    limit = 160,
+    range
+  }) {
     try {
-      const response = await axios.get(`${this.BASE_URL}/v1/explore/recent?page=${page}&limit=${limit}`, {
-        headers: headers
+      const msgId = this.uid();
+      const reqTime = Date.now().toString();
+      const params = {
+        page: page,
+        limit: limit
+      };
+      if (type === "popular") params.range = range || "alltime";
+      if (type === "trending") params.range = range || "weekly";
+      this.log(`🌐 Exploring ${type} (page ${page}, limit ${limit})...`);
+      const res = await axios.get(`${this.baseUrl}/explore/${type}`, {
+        params: params,
+        headers: this._hd(msgId, reqTime)
       });
-      console.log(`✅ Fetched ${response.data.songs?.length || 0} recent explore songs`);
-      return response.data;
-    } catch (error) {
-      console.error("❌ Failed to fetch recent explore songs:", error.response?.status, error.response?.data);
-      throw error;
-    }
-  }
-  async getTrendingExplore({
-    page = 1,
-    limit = 90,
-    range = "daily"
-  } = {}) {
-    console.log(`🔥 Fetching trending explore songs (page: ${page}, limit: ${limit}, range: ${range})...`);
-    const requestTime = String(Date.now());
-    const messageId = uuidv4();
-    const dataToSign = `${this.deviceId}${messageId}${requestTime}`;
-    const signature = this._sign(dataToSign);
-    const headers = this._headers(messageId, requestTime, signature);
-    try {
-      const response = await axios.get(`${this.BASE_URL}/v1/explore/trending?page=${page}&limit=${limit}&range=${range}`, {
-        headers: headers
-      });
-      console.log(`✅ Fetched ${response.data.songs?.length || 0} trending explore songs`);
-      return response.data;
-    } catch (error) {
-      console.error("❌ Failed to fetch trending explore songs:", error.response?.status, error.response?.data);
-      throw error;
-    }
-  }
-  async getPopularExplore({
-    page = 1,
-    limit = 90,
-    range = "daily"
-  } = {}) {
-    console.log(`⭐ Fetching popular explore songs (page: ${page}, limit: ${limit}, range: ${range})...`);
-    const requestTime = String(Date.now());
-    const messageId = uuidv4();
-    const dataToSign = `${this.deviceId}${messageId}${requestTime}`;
-    const signature = this._sign(dataToSign);
-    const headers = this._headers(messageId, requestTime, signature);
-    try {
-      const response = await axios.get(`${this.BASE_URL}/v1/explore/popular?page=${page}&limit=${limit}&range=${range}`, {
-        headers: headers
-      });
-      console.log(`✅ Fetched ${response.data.songs?.length || 0} popular explore songs`);
-      return response.data;
-    } catch (error) {
-      console.error("❌ Failed to fetch popular explore songs:", error.response?.status, error.response?.data);
-      throw error;
-    }
-  }
-  async updateFCMToken(fcmToken) {
-    console.log("🔄 Updating FCM token...");
-    const requestTime = String(Date.now());
-    const messageId = uuidv4();
-    const dataToSign = `${this.deviceId}${messageId}${requestTime}`;
-    const signature = this._sign(dataToSign);
-    const body = {
-      fcm_token: fcmToken
-    };
-    const headers = this._headers(messageId, requestTime, signature);
-    try {
-      const response = await axios.patch(`${this.BASE_URL}/v1/register`, body, {
-        headers: headers
-      });
-      console.log("✅ FCM token updated successfully!");
-      return response.data;
-    } catch (error) {
-      console.error("❌ Failed to update FCM token:", error.response?.status, error.response?.data);
-      throw error;
-    }
-  }
-  async getUserInfo(userId = this.userId) {
-    console.log(`ℹ️ Fetching info for user ID: ${userId}...`);
-    if (!userId) {
-      throw new Error("User ID is required to get user info.");
-    }
-    const requestTime = String(Date.now());
-    const messageId = uuidv4();
-    const dataToSign = `${this.deviceId}${messageId}${requestTime}`;
-    const signature = this._sign(dataToSign);
-    const headers = this._headers(messageId, requestTime, signature);
-    try {
-      const response = await axios.get(`${this.BASE_URL}/v1/users/${userId}/info`, {
-        headers: headers
-      });
-      console.log("✅ User info fetched!");
-      return response.data;
-    } catch (error) {
-      console.error("❌ Failed to get user info:", error.response?.status, error.response?.data);
-      throw error;
-    }
-  }
-  async updateSongTitle(songId, newTitle, userId = this.userId) {
-    console.log(`📝 Updating title for song ID: ${songId} to "${newTitle}"...`);
-    if (!userId) {
-      throw new Error("User ID is required to update song title.");
-    }
-    const requestTime = String(Date.now());
-    const messageId = uuidv4();
-    const dataToSign = `${this.deviceId}${messageId}${requestTime}`;
-    const signature = this._sign(dataToSign);
-    const body = {
-      song_id: songId,
-      title: newTitle
-    };
-    const headers = this._headers(messageId, requestTime, signature);
-    try {
-      const response = await axios.patch(`${this.BASE_URL}/v1/users/${userId}/songs/title`, body, {
-        headers: headers
-      });
-      console.log("✅ Song title updated successfully!");
-      return response.data;
-    } catch (error) {
-      console.error("❌ Failed to update song title:", error.response?.status, error.response?.data);
-      throw error;
-    }
-  }
-  async deleteSongs(songIds, userId = this.userId) {
-    console.log(`🗑️ Deleting songs: ${songIds.join(", ")}...`);
-    if (!userId) {
-      throw new Error("User ID is required to delete songs.");
-    }
-    const requestTime = String(Date.now());
-    const messageId = uuidv4();
-    const dataToSign = `${this.deviceId}${messageId}${requestTime}`;
-    const signature = this._sign(dataToSign);
-    const body = {
-      song_ids: songIds
-    };
-    const headers = this._headers(messageId, requestTime, signature);
-    try {
-      const response = await axios.delete(`${this.BASE_URL}/v1/users/${userId}/library`, {
-        headers: headers,
-        data: body
-      });
-      console.log("✅ Songs deleted successfully!");
-      return response.data;
-    } catch (error) {
-      console.error("❌ Failed to delete songs:", error.response?.status, error.response?.data);
-      throw error;
-    }
-  }
-  async separateSong(songId, stems, userId = this.userId) {
-    console.log(`✂️ Initiating separation for song ID: ${songId}, stems: ${stems.join(", ")}...`);
-    if (!userId) {
-      throw new Error("User ID is required to separate songs.");
-    }
-    const requestTime = String(Date.now());
-    const messageId = uuidv4();
-    const dataToSign = `${this.deviceId}${messageId}${requestTime}`;
-    const signature = this._sign(dataToSign);
-    const body = {
-      stems: stems
-    };
-    const headers = this._headers(messageId, requestTime, signature);
-    try {
-      const response = await axios.post(`${this.BASE_URL}/v1/users/${userId}/songs/${songId}/separate`, body, {
-        headers: headers
-      });
-      console.log("✅ Song separation initiated!");
-      return response.data;
-    } catch (error) {
-      console.error("❌ Failed to initiate song separation:", error.response?.status, error.response?.data);
-      throw error;
-    }
-  }
-  async getSeparationStatus(jobId) {
-    console.log(`⏳ Checking separation status for jobId: ${jobId}...`);
-    const requestTime = String(Date.now());
-    const messageId = uuidv4();
-    const dataToSign = `${this.deviceId}${messageId}${requestTime}`;
-    const signature = this._sign(dataToSign);
-    const headers = this._headers(messageId, requestTime, signature);
-    try {
-      const response = await axios.get(`${this.BASE_URL}/v1/songs/separate/${jobId}`, {
-        headers: headers
-      });
-      console.log(`✅ Separation status for jobId ${jobId}: ${response.data.status}`);
-      return response.data;
-    } catch (error) {
-      console.error("❌ Failed to get separation status:", error.response?.status, error.response?.data);
-      throw error;
-    }
-  }
-  async dl({
-    songPath = "0a86eceb-2722-4b47-a32b-90b893160a42.mp3"
-  } = {}) {
-    console.log(`⬇️ Downloading: ${songPath}`);
-    const headers = {
-      "icy-metadata": "1",
-      "accept-encoding": "identity",
-      "user-agent": "Dalvik/2.1.0 (Linux; U; Android 10; Redmi Note 5 Build/QQ3A.200805.001)",
-      host: "d2m6kf0jl6dhrs.cloudfront.net",
-      connection: "Keep-Alive"
-    };
-    try {
-      const response = await axios.get(`${this.DOWNLOAD_BASE_URL}/song/${songPath}`, {
-        headers: headers,
-        responseType: "arraybuffer"
-      });
-      console.log(`✅ Downloaded ${(response.data.byteLength / 1024 / 1024).toFixed(2)} MB`);
-      return response.data;
-    } catch (error) {
-      console.error("❌ Download failed:", error.response?.status);
-      throw error;
+      this.log(`✅ Explore ${type} retrieved.`);
+      return {
+        success: true,
+        data: res.data
+      };
+    } catch (err) {
+      const error = err?.response?.data || err.message;
+      this.log(`❌ Explore ${type} failed: ${error}`);
+      return {
+        success: false,
+        error: error
+      };
     }
   }
 }
 export default async function handler(req, res) {
   const {
     action,
-    userId,
     ...params
   } = req.method === "GET" ? req.query : req.body;
-  const soniva = new Soniva(userId);
+  const validActions = ["register", "lyrics", "generate", "status", "user_info", "playlist", "library", "explore"];
+  if (!action) {
+    return res.status(400).json({
+      status: false,
+      error: "Parameter 'action' wajib diisi.",
+      available_actions: validActions,
+      usage: {
+        method: "GET / POST",
+        examples: {
+          register: "/?action=register",
+          lyrics: "/?action=lyrics&prompt=lirik+tentang+cinta",
+          generate: "/?action=generate&prompt=song+description",
+          status: "/?action=status&songId=SONG_ID",
+          user_info: "/?action=user_info&userId=USER_ID",
+          playlist: "/?action=playlist&userId=USER_ID",
+          library: "/?action=library&userId=USER_ID&page=1&limit=90",
+          explore: "/?action=explore&type=trending&page=1&limit=20"
+        }
+      }
+    });
+  }
+  if (!validActions.includes(action)) {
+    return res.status(400).json({
+      status: false,
+      error: `Action tidak valid: '${action}'.`,
+      valid_actions: validActions
+    });
+  }
+  const api = new Soniva();
   try {
-    let result;
+    let response;
     switch (action) {
-      case "gen":
-        if (params.lyrics) {
-          result = await soniva.genLyrics({
-            userId: userId,
-            ...params
-          });
-        } else if (params.prompt) {
-          result = await soniva.genPrompt({
-            userId: userId,
-            ...params
-          });
-        } else {
+      case "register":
+        response = await api.reg(params.deviceId, params.pushToken);
+        break;
+      case "lyrics":
+        if (!params.prompt) {
           return res.status(400).json({
-            message: "Paramenter 'lyrics' or 'prompt' must be provided for song generation."
+            status: false,
+            error: "Parameter 'prompt' wajib diisi untuk membuat lirik."
           });
         }
+        response = await api.lyrics(params);
+        break;
+      case "generate":
+        if (!params.prompt && !params.lyrics) {
+          return res.status(400).json({
+            status: false,
+            error: "Salah satu dari parameter 'prompt' atau 'lyrics' harus diisi."
+          });
+        }
+        if (params.hasVocal !== undefined) params.hasVocal = params.hasVocal === true || params.hasVocal === "true";
+        if (params.isDual !== undefined) params.isDual = params.isDual === true || params.isDual === "true";
+        response = await api.generate(params);
         break;
       case "status":
-        if (!params.jobId) {
+        if (!params.userId) {
           return res.status(400).json({
-            message: "Paramenter 'jobId' is required to get song status."
+            status: false,
+            error: "Parameter 'userId' wajib diisi."
           });
         }
-        result = await soniva.getSongStatus(params.jobId);
-        break;
-      case "list":
-        if (!userId && !soniva.userId) {
+        if (!params.songId) {
           return res.status(400).json({
-            message: "No userId provided"
+            status: false,
+            error: "Parameter 'songId' wajib diisi."
           });
         }
-        result = await soniva.list({
-          userId: userId,
-          ...params
-        });
-        break;
-      case "recent":
-        result = await soniva.getRecentExplore(params);
-        break;
-      case "trending":
-        result = await soniva.getTrendingExplore(params);
-        break;
-      case "popular":
-        result = await soniva.getPopularExplore(params);
-        break;
-      case "fcm":
-        if (!params.fcmToken) {
-          return res.status(400).json({
-            message: "Paramenter 'fcmToken' is required to update FCM token."
-          });
-        }
-        result = await soniva.updateFCMToken(params.fcmToken);
+        response = await api.status(params);
         break;
       case "user_info":
-        if (!userId) {
+        if (!params.userId) {
           return res.status(400).json({
-            message: "Paramenter 'userId' is required to get user info."
+            status: false,
+            error: "Parameter 'userId' wajib diisi."
           });
         }
-        result = await soniva.getUserInfo(userId);
+        response = await api.user_info(params);
         break;
-      case "up_title":
-        if (!params.songId || !params.newTitle) {
+      case "playlist":
+        if (!params.userId) {
           return res.status(400).json({
-            message: "Paramenters 'songId' and 'newTitle' are required to update song title."
+            status: false,
+            error: "Parameter 'userId' wajib diisi."
           });
         }
-        result = await soniva.updateSongTitle(params.songId, params.newTitle, userId);
+        response = await api.playlist(params);
         break;
-      case "del_song":
-        if (!params.songIds || !Array.isArray(params.songIds) || params.songIds.length === 0) {
-          return res.status(400).json({
-            message: "Paramenter 'songIds' (an array of song IDs) is required to delete songs."
-          });
-        }
-        result = await soniva.deleteSongs(params.songIds, userId);
+      case "library":
+        if (params.page) params.page = parseInt(params.page, 10);
+        if (params.limit) params.limit = parseInt(params.limit, 10);
+        if (params.sortAsc !== undefined) params.sortAsc = params.sortAsc === true || params.sortAsc === "true";
+        response = await api.library(params);
         break;
-      case "sp_song":
-        if (!params.songId || !params.stems || !Array.isArray(params.stems) || params.stems.length === 0) {
-          return res.status(400).json({
-            message: "Paramenters 'songId' and 'stems' (an array of stems) are required to separate a song."
-          });
-        }
-        result = await soniva.separateSong(params.songId, params.stems, userId);
-        break;
-      case "sp_status":
-        if (!params.jobId) {
-          return res.status(400).json({
-            message: "Paramenter 'jobId' is required to get separation status."
-          });
-        }
-        result = await soniva.getSeparationStatus(params.jobId);
-        break;
-      case "dl":
-        if (!params.songPath) {
-          return res.status(400).json({
-            message: "No songPath provided"
-          });
-        }
-        result = await soniva.dl(params);
+      case "explore":
+        if (params.page) params.page = parseInt(params.page, 10);
+        if (params.limit) params.limit = parseInt(params.limit, 10);
+        response = await api.explore(params);
         break;
       default:
         return res.status(400).json({
-          error: "Action tidak valid. Gunakan ?action=gen, ?action=status, ?action=list, ?action=recent, ?action=trending, ?action=popular, ?action=fcm, ?action=user_info, ?action=up_title, ?action=del_song, ?action=sp_song, ?action=sp_status, atau ?action=dl"
+          status: false,
+          error: `Action tidak dikenali: '${action}'.`,
+          valid_actions: validActions
         });
     }
-    return res.status(200).json(result);
+    if (!response) {
+      return res.status(502).json({
+        status: false,
+        action: action,
+        error: "Tidak ada respons dari server Soniva. Coba lagi nanti."
+      });
+    }
+    if (response.success === false) {
+      return res.status(400).json({
+        action: action,
+        ...response
+      });
+    }
+    return res.status(200).json({
+      action: action,
+      ...response
+    });
   } catch (error) {
-    console.error("Handler error:", error);
-    res.status(500).json({
-      error: error.message || "Internal Server Error",
-      details: error.response?.data || null
+    console.error(`[FATAL ERROR] Kegagalan pada action '${action}':`, error);
+    return res.status(500).json({
+      status: false,
+      message: "Terjadi kesalahan internal pada server api.",
+      error: error.message || "Unknown Error"
     });
   }
 }

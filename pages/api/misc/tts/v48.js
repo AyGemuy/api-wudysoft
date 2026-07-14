@@ -23,14 +23,12 @@ class Voiser {
     const auth = await this.reg();
     return auth.success ? auth.member_code : null;
   }
-  async reg({
-    platform = "android"
-  } = {}) {
+  async reg() {
     console.log("[Voiser] [POST] /members");
     try {
       const res = await this.client.post("/members", {
         mac: null,
-        platform: platform,
+        platform: "android",
         revenuecatId: this._rcId()
       });
       return {
@@ -47,8 +45,8 @@ class Voiser {
     }
   }
   async filter({
-    code = ""
-  } = {}) {
+    code = null
+  }) {
     console.log("[Voiser] [GET] /tts-filters");
     try {
       const activeCode = await this._code(code);
@@ -71,13 +69,13 @@ class Voiser {
     }
   }
   async voices({
-    code = "",
+    code = null,
     language = "en_US",
-    gender = "Female",
-    mood = "friendly",
-    limit = "999",
+    gender = "",
+    mood = "",
+    limit = "5",
     page = 0
-  } = {}) {
+  }) {
     console.log("[Voiser] [POST] /tts-voices");
     try {
       const activeCode = await this._code(code);
@@ -105,9 +103,9 @@ class Voiser {
     }
   }
   async detail({
-    code = "",
+    code = null,
     id = ""
-  } = {}) {
+  }) {
     console.log("[Voiser] [GET] /members");
     try {
       const activeCode = await this._code(code);
@@ -131,16 +129,16 @@ class Voiser {
     }
   }
   async create({
-    code = "",
+    code = null,
     text = "",
-    voiceId = "1",
+    voice_id = "125",
     pitch = 0,
     speed = 1,
     mood = "friendly",
     filter = false,
     voices = false,
     history = false
-  } = {}) {
+  }) {
     console.log("[Voiser] [POST] /tts");
     try {
       if (!text?.trim()) return {
@@ -151,7 +149,7 @@ class Voiser {
       const res = await this.client.post("/tts", {
         memberCode: activeCode,
         text: text,
-        voiceId: voiceId,
+        voiceId: voice_id,
         pitch: pitch,
         speed: speed,
         mood: mood,
@@ -194,9 +192,9 @@ class Voiser {
     }
   }
   async history({
-    code = "",
+    code = null,
     page = 0
-  } = {}) {
+  }) {
     console.log("[Voiser] [GET] /tts");
     try {
       const activeCode = await this._code(code);
@@ -274,7 +272,7 @@ export default async function handler(req, res) {
         response = await api.history(params);
         break;
       case "reg":
-        response = await api.reg(params);
+        response = await api.reg();
         break;
       case "detail":
         if (!params.code) {

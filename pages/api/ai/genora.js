@@ -1,6 +1,6 @@
 import axios from "axios";
 import crypto from "crypto";
-class ApiClient {
+class Genora {
   constructor() {
     this.cfg = {
       base: "https://generic.mindlinktechnology.com",
@@ -36,7 +36,7 @@ class ApiClient {
           return Promise.reject(err);
         }
       });
-      console.log("[ApiClient] Axios instance initialized.");
+      console.log("[Genora] Axios instance initialized.");
     } catch (err) {
       console.error("[Constructor Error]", err.message);
     }
@@ -258,7 +258,7 @@ class ApiClient {
 }
 export default async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
-  const api = new ApiClient();
+  const api = new Genora();
   try {
     const data = await api.chat(params);
     return res.status(200).json(data);
