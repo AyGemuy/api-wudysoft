@@ -2678,6 +2678,8 @@ export default function handler(req, res) {
     { path: "/api/tools/cf-token", name: "Cf-token", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/tools/web2app/v1", name: "V1", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/tools/mconverter", name: "Mconverter", params: [{ "name": "prompt", "in": "query", "required": false }], },
+    { path: "/api/tools/wiseoel", name: "Wiseoel", params: [{ "name": "prompt", "in": "query", "required": false }], },
+    { path: "/api/tools/zamzar", name: "Zamzar", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/top-up/v1", name: "V1", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/top-up/v2", name: "V2", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/top-up/v3", name: "V3", params: [{ "name": "prompt", "in": "query", "required": false }], },

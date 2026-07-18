@@ -7,6 +7,9 @@ import {
 import {
   wrapper
 } from "axios-cookiejar-support";
+import PROXY from "@/configs/proxy-cors";
+const proxy = PROXY.url;
+console.log("CORS proxy", proxy);
 class MConverter {
   constructor() {
     this.jar = new CookieJar();
@@ -84,7 +87,7 @@ class MConverter {
       console.log(`[Process] Get targets for: ${from}`);
       const fd = new FormData();
       fd.append("formats", from);
-      const res = await this.client.post("https://mconverter.eu/cf_nocache/ajax/get_targets.php", fd, {
+      const res = await this.client.post(`${proxy}https://mconverter.eu/cf_nocache/ajax/get_targets.php`, fd, {
         headers: {
           ...this.headers,
           ...fd.getHeaders(),
@@ -147,7 +150,7 @@ class MConverter {
     try {
       const fd = new FormData();
       fd.append("has_pending_uploads", "0");
-      await this.client.post(`https://mconverter.eu/cf_nocache/ajax/update_batch.php?token=${batchToken}`, fd, {
+      await this.client.post(`${proxy}https://mconverter.eu/cf_nocache/ajax/update_batch.php?token=${batchToken}`, fd, {
         headers: {
           ...this.headers,
           ...fd.getHeaders(),
@@ -162,7 +165,7 @@ class MConverter {
   }
   async _chk(token, sourceFormat) {
     try {
-      const res = await this.client.get(`https://mconverter.eu/cf_nocache/ajax/check_progress.php?token=${token}`, {
+      const res = await this.client.get(`${proxy}https://mconverter.eu/cf_nocache/ajax/check_progress.php?token=${token}`, {
         headers: {
           ...this.headers,
           referer: `https://mconverter.eu/convert/${sourceFormat}/`
@@ -218,7 +221,7 @@ class MConverter {
       };
     }
   }
-  async convert({
+  async generate({
     media,
     source = "jpg",
     target = "png",
@@ -293,7 +296,7 @@ class MConverter {
       fd1.append("file", chunk1, {
         filename: "blob"
       });
-      const uploadUrl = `https://mconverter.eu/cf_nocache/ajax/upload.php?target_format=${targetFormat}&total_size=${totalSize}&source_mime=${encodeURIComponent(sourceMime)}&filename=${encodeURIComponent(filename)}&abd=false&captcha=undefined`;
+      const uploadUrl = `${proxy}https://mconverter.eu/cf_nocache/ajax/upload.php?target_format=${targetFormat}&total_size=${totalSize}&source_mime=${encodeURIComponent(sourceMime)}&filename=${encodeURIComponent(filename)}&abd=false&captcha=undefined`;
       const upRes1 = await this.client.post(uploadUrl, fd1, {
         headers: {
           ...this.headers,
@@ -322,7 +325,7 @@ class MConverter {
       fd2.append("file", chunk2, {
         filename: "blob"
       });
-      await this.client.post(`https://mconverter.eu/cf_nocache/ajax/upload.php?token=${token}&start_byte=1`, fd2, {
+      await this.client.post(`${proxy}https://mconverter.eu/cf_nocache/ajax/upload.php?token=${token}&start_byte=1`, fd2, {
         headers: {
           ...this.headers,
           ...fd2.getHeaders(),
@@ -396,7 +399,7 @@ export default async function handler(req, res) {
   }
   const api = new MConverter();
   try {
-    const data = await api.convert(params);
+    const data = await api.generate(params);
     return res.status(200).json(data);
   } catch (error) {
     const errorMessage = error.message || "Terjadi kesalahan saat memproses request";
