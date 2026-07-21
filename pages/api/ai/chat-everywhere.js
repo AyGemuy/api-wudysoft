@@ -1,130 +1,129 @@
 import axios from "axios";
+import crypto from "crypto";
 import SpoofHead from "@/lib/spoof-head";
-class ChatApiClient {
+class EveryWhere {
   constructor() {
-    this.modelAliases = {
-      GPT_3_5: "gpt-3.5-turbo",
-      GPT_3_5_AZ: "gpt-35-turbo",
-      GPT_3_5_16K: "gpt-3.5-turbo-16k",
-      GPT_4: "gpt-4-turbo",
-      GPT_4_32K: "gpt-4-32k",
-      GPT_4O: "gpt-4o",
-      GPT_4O_MINI: "gpt-4o-mini"
-    };
-    this.modelData = {
-      "gpt-3.5-turbo": {
-        id: "gpt-3.5-turbo",
-        name: "GPT-3.5",
-        maxLength: 12e3,
-        tokenLimit: 4e3,
-        completionTokenLimit: 2500,
-        deploymentName: "gpt-35"
+    this.cfg = {
+      alias: {
+        GPT_3_5: "gpt-3.5-turbo",
+        GPT_3_5_AZ: "gpt-35-turbo",
+        GPT_3_5_16K: "gpt-3.5-turbo-16k",
+        GPT_4: "gpt-4-turbo",
+        GPT_4_32K: "gpt-4-32k",
+        GPT_4O: "gpt-4o",
+        GPT_4O_MINI: "gpt-4o-mini",
+        DEFAULT: "default",
+        LANGCHAIN_CHAT: "langchain-chat",
+        GPT4: "gpt-4",
+        GPT4O: "gpt-4o",
+        IMAGE_GEN: "image-gen",
+        IMAGE_TO_PROMPT: "image-to-prompt",
+        MQTT: "mqtt",
+        AI_PAINTER: "ai-painter",
+        GEMINI: "gemini"
       },
-      "gpt-35-turbo": {
-        id: "gpt-35-turbo",
-        name: "GPT-3.5",
-        maxLength: 12e3,
-        tokenLimit: 4e3,
-        completionTokenLimit: 2500,
-        deploymentName: "gpt-35"
-      },
-      "gpt-3.5-turbo-16k": {
-        id: "gpt-3.5-turbo-16k",
-        name: "GPT-3.5-16K",
-        maxLength: 48e3,
-        tokenLimit: 16e3,
-        completionTokenLimit: 4e3,
-        deploymentName: "gpt-35-16k"
-      },
-      "gpt-4-turbo": {
-        id: "gpt-4-turbo",
-        name: "GPT-4",
-        maxLength: 24e3,
-        tokenLimit: 7e3,
-        completionTokenLimit: 2e3,
-        deploymentName: "gpt-4"
-      },
-      "gpt-4-32k": {
-        id: "gpt-4-32k",
-        name: "GPT-4-32K",
-        maxLength: 96e3,
-        tokenLimit: 32e3,
-        completionTokenLimit: 8e3,
-        deploymentName: "gpt-4-32k"
-      },
-      "gpt-4o": {
-        id: "gpt-4o",
-        name: "GPT-4o",
-        maxLength: 128e3,
-        tokenLimit: 128e3,
-        completionTokenLimit: 4096,
-        deploymentName: "gpt-4o"
-      },
-      "gpt-4o-mini": {
-        id: "gpt-4o-mini",
-        name: "GPT-4o-mini",
-        maxLength: 128e3,
-        tokenLimit: 128e3,
-        completionTokenLimit: 16384,
-        deploymentName: "gpt-4o-mini"
-      }
-    };
-    this.pluginAliases = {
-      DEFAULT: "default",
-      LANGCHAIN_CHAT: "langchain-chat",
-      GPT4: "gpt-4",
-      GPT4O: "gpt-4o",
-      IMAGE_GEN: "image-gen",
-      IMAGE_TO_PROMPT: "image-to-prompt",
-      MQTT: "mqtt",
-      AI_PAINTER: "ai-painter",
-      GEMINI: "gemini"
-    };
-    this.pluginData = {
-      default: {
-        id: "default",
-        name: "Default",
-        requiredKeys: []
-      },
-      "langchain-chat": {
-        id: "langchain-chat",
-        name: "Enhance Mode",
-        requiredKeys: []
-      },
-      "gpt-4": {
-        id: "gpt-4",
-        name: "GPT-4 Plugin",
-        requiredKeys: []
-      },
-      "gpt-4o": {
-        id: "gpt-4o",
-        name: "GPT-4O Plugin",
-        requiredKeys: []
-      },
-      "image-gen": {
-        id: "image-gen",
-        name: "Image Generation",
-        requiredKeys: []
-      },
-      "image-to-prompt": {
-        id: "image-to-prompt",
-        name: "Image to Prompt",
-        requiredKeys: []
-      },
-      mqtt: {
-        id: "mqtt",
-        name: "MQTT",
-        requiredKeys: []
-      },
-      "ai-painter": {
-        id: "ai-painter",
-        name: "AI Painter",
-        requiredKeys: []
-      },
-      gemini: {
-        id: "gemini",
-        name: "Gemini",
-        requiredKeys: []
+      items: {
+        "gpt-3.5-turbo": {
+          id: "gpt-3.5-turbo",
+          name: "GPT-3.5",
+          maxLength: 12e3,
+          tokenLimit: 4e3,
+          completionTokenLimit: 2500,
+          deploymentName: "gpt-35"
+        },
+        "gpt-35-turbo": {
+          id: "gpt-35-turbo",
+          name: "GPT-3.5",
+          maxLength: 12e3,
+          tokenLimit: 4e3,
+          completionTokenLimit: 2500,
+          deploymentName: "gpt-35"
+        },
+        "gpt-3.5-turbo-16k": {
+          id: "gpt-3.5-turbo-16k",
+          name: "GPT-3.5-16K",
+          maxLength: 48e3,
+          tokenLimit: 16e3,
+          completionTokenLimit: 4e3,
+          deploymentName: "gpt-35-16k"
+        },
+        "gpt-4-turbo": {
+          id: "gpt-4-turbo",
+          name: "GPT-4",
+          maxLength: 24e3,
+          tokenLimit: 7e3,
+          completionTokenLimit: 2e3,
+          deploymentName: "gpt-4"
+        },
+        "gpt-4-32k": {
+          id: "gpt-4-32k",
+          name: "GPT-4-32K",
+          maxLength: 96e3,
+          tokenLimit: 32e3,
+          completionTokenLimit: 8e3,
+          deploymentName: "gpt-4-32k"
+        },
+        "gpt-4o": {
+          id: "gpt-4o",
+          name: "GPT-4o",
+          maxLength: 128e3,
+          tokenLimit: 128e3,
+          completionTokenLimit: 4096,
+          deploymentName: "gpt-4o"
+        },
+        "gpt-4o-mini": {
+          id: "gpt-4o-mini",
+          name: "GPT-4o-mini",
+          maxLength: 128e3,
+          tokenLimit: 128e3,
+          completionTokenLimit: 16384,
+          deploymentName: "gpt-4o-mini"
+        },
+        default: {
+          id: "default",
+          name: "Default",
+          isPlug: true
+        },
+        "langchain-chat": {
+          id: "langchain-chat",
+          name: "Enhance Mode",
+          isPlug: true
+        },
+        "gpt-4": {
+          id: "gpt-4",
+          name: "GPT-4 Plugin",
+          isPlug: true
+        },
+        "gpt-4o-plug": {
+          id: "gpt-4o",
+          name: "GPT-4O Plugin",
+          isPlug: true
+        },
+        "image-gen": {
+          id: "image-gen",
+          name: "Image Generation",
+          isPlug: true
+        },
+        "image-to-prompt": {
+          id: "image-to-prompt",
+          name: "Image to Prompt",
+          isPlug: true
+        },
+        mqtt: {
+          id: "mqtt",
+          name: "MQTT",
+          isPlug: true
+        },
+        "ai-painter": {
+          id: "ai-painter",
+          name: "AI Painter",
+          isPlug: true
+        },
+        gemini: {
+          id: "gemini",
+          name: "Gemini",
+          isPlug: true
+        }
       }
     };
     this.api = axios.create({
@@ -132,27 +131,66 @@ class ChatApiClient {
       headers: {
         accept: "*/*",
         "accept-language": "id-ID,id;q=0.9",
-        authorization: "",
         "cache-control": "no-cache",
         "content-type": "application/json",
         origin: "https://chateverywhere.app",
         pragma: "no-cache",
         priority: "u=1, i",
-        referer: "https://chateverywhere.app/",
-        responsetype: "stream",
-        "sec-ch-ua": '"Lemur";v="135", "", "", "Microsoft Edge Simulate";v="135"',
+        referer: "https://chateverywhere.app/id",
+        "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
         "sec-ch-ua-mobile": "?1",
         "sec-ch-ua-platform": '"Android"',
         "sec-fetch-dest": "empty",
         "sec-fetch-mode": "cors",
-        "sec-fetch-site": "cross-site",
-        "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Mobile Safari/537.36",
+        "sec-fetch-site": "same-origin",
+        "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",
+        "output-language": "",
+        "user-selected-plugin-id": "",
         ...SpoofHead()
       }
     });
   }
-  _getDefaultSystemPrompt() {
-    const basePrompt = `You are an AI language model named Chat Everywhere, designed to answer user questions as accurately and helpfully as possible. Always be aware of the current date and time, and make sure to generate responses in the exact same language as the user's query. Adapt your responses to match the user's input language and context, maintaining an informative and supportive communication style. Additionally, format all responses using Markdown syntax, regardless of the input format.If the input includes text such as [lang=xxx], the response should not include this text.If the input includes math related content, you should use LaTex syntax, and wrap them in $$ symbols. Make sure you also wrap the bracket inside if needed. e.g. $$(a^2 + b^2 = c^2)$$If you were asked to generate a diagram, you should generate a diagram using Mermaid syntax by following the instructions strictly below.
+  _id() {
+    try {
+      return crypto.randomUUID();
+    } catch (e) {
+      return e.message;
+    }
+  }
+  _dec(b64) {
+    try {
+      return JSON.parse(Buffer.from(b64, "base64").toString("utf8"));
+    } catch {
+      return {
+        browserId: this._id(),
+        sessionUuid: this._id(),
+        sessionStartMs: Date.now(),
+        gaClientId: Math.floor(Math.random() * 1e9).toString()
+      };
+    }
+  }
+  _enc(obj) {
+    try {
+      return Buffer.from(JSON.stringify(obj), "utf8").toString("base64");
+    } catch {
+      return "";
+    }
+  }
+  _hdr(state) {
+    const nowMs = Date.now();
+    const nowSec = Math.floor(nowMs / 1e3);
+    const phc = encodeURIComponent(JSON.stringify({
+      distinct_id: state.browserId,
+      $sesid: [nowMs, state.sessionUuid, state.sessionStartMs],
+      $epp: true
+    }));
+    return {
+      cookie: [`_ga=GA1.1.${state.gaClientId}.${nowSec}`, `_ga_ZYMW9SZKVK=GS2.1.s${nowSec}$o1$g0$t${nowSec}$j60$l0$h0`, `ph_phc_9n85Ky3ZOEwVZlg68f8bI3jnOJkaV8oVGGJcoKfXyn1_posthog=${phc}`].join("; "),
+      "user-browser-id": state.browserId
+    };
+  }
+  _pr() {
+    const base = `You are an AI language model named Chat Everywhere, designed to answer user questions as accurately and helpfully as possible. Always be aware of the current date and time, and make sure to generate responses in the exact same language as the user's query. Adapt your responses to match the user's input language and context, maintaining an informative and supportive communication style. Additionally, format all responses using Markdown syntax, regardless of the input format.If the input includes text such as [lang=xxx], the response should not include this text.If the input includes math related content, you should use LaTex syntax, and wrap them in $$ symbols. Make sure you also wrap the bracket inside if needed. e.g. $$(a^2 + b^2 = c^2)$$If you were asked to generate a diagram, you should generate a diagram using Mermaid syntax by following the instructions strictly below.
 Refer to the instructions below to create diagrams using Mermaid syntax if needed.
 
 ---
@@ -261,72 +299,69 @@ xychart-beta
 - Once you have outputted the Mermaid code, user can click the codeblock's top right bubble button to see the diagram directly, or copy the Mermaid code.
 - Make sure to use ("") around titles, labels, and other text. Such as ("title") or ("label").
 `;
-    return basePrompt + "The current date is ".concat(new Date().toLocaleDateString(), ".");
+    return base + "The current date is " + new Date().toLocaleDateString("en-GB") + ".";
   }
-  _findModeConfiguration(modelName) {
-    const modelId = this.modelAliases[modelName] || modelName;
-    if (this.modelData[modelId]) {
+  _get(name) {
+    const targetId = this.cfg.alias[name] || name;
+    const targetObj = this.cfg.items[targetId];
+    if (targetObj) {
       return {
-        type: "model",
-        data: this.modelData[modelId],
-        isFallback: false
-      };
-    }
-    const pluginId = this.pluginAliases[modelName] || modelName;
-    if (this.pluginData[pluginId]) {
-      return {
-        type: "plugin",
-        data: this.pluginData[pluginId],
-        isFallback: false
+        type: targetObj.isPlug ? "plugin" : "model",
+        data: targetObj
       };
     }
     return {
       type: "model",
-      data: this.modelData["gpt-3.5-turbo"],
-      isFallback: true
+      data: this.cfg.items["gpt-3.5-turbo"]
     };
   }
   async chat({
+    state,
     model = "gpt-4o",
     prompt,
-    system_prompt = this._getDefaultSystemPrompt(),
+    system_prompt = this._pr(),
     messages = [],
     ...rest
   }) {
-    const config = this._findModeConfiguration(model);
-    if (config.isFallback) {
-      console.warn(`Peringatan: Model "${model}" tidak ditemukan. Menggunakan model default.`);
-    }
-    let finalModel;
-    let finalPluginId = null;
-    if (config.type === "model") {
-      finalModel = config.data;
-    } else {
-      finalPluginId = config.data.id;
-      finalModel = this.modelData["gpt-3.5-turbo"];
-    }
+    const target = this._get(model);
+    const finalModel = target.type === "model" ? target.data : this.cfg.items["gpt-3.5-turbo"];
+    const finalPluginId = target.type === "plugin" ? target.data.id : null;
+    const payloadMessages = messages.length ? messages.map(msg => ({
+      pluginId: msg?.pluginId !== undefined ? msg.pluginId : finalPluginId,
+      content: msg?.content || "",
+      fileList: msg?.fileList || [],
+      role: msg?.role || "user"
+    })) : [{
+      pluginId: finalPluginId,
+      content: prompt,
+      fileList: [],
+      role: "user"
+    }];
     const payload = {
       model: finalModel,
-      messages: messages.length ? messages : [{
-        pluginId: finalPluginId,
-        content: prompt,
-        role: "user"
-      }],
+      messages: payloadMessages,
       prompt: system_prompt,
       temperature: .5,
       enableConversationPrompt: false,
       ...rest
     };
+    const stateObj = this._dec(state || "");
+    const hdc = this._hdr(stateObj);
     try {
-      console.log(`Mengirim request untuk model: "${model}" (Engine: ${finalModel.name}, Plugin: ${finalPluginId || "None"})`);
-      const response = await this.api.post("/chat", payload);
-      console.log("Respons API diterima:", response.data);
+      const response = await this.api.post("/chat", payload, {
+        headers: hdc
+      });
       return {
-        result: response.data
+        status: true,
+        result: response.data,
+        state: this._enc(stateObj)
       };
     } catch (error) {
-      console.error("Terjadi error saat request:", error.response ? error.response.data : error.message);
-      return null;
+      return {
+        status: false,
+        result: error.response ? error.response.data : error.message,
+        state: state || ""
+      };
     }
   }
 }
@@ -334,16 +369,17 @@ export default async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.prompt) {
     return res.status(400).json({
-      error: "Prompt are required"
+      error: "Parameter 'prompt' diperlukan"
     });
   }
+  const api = new EveryWhere();
   try {
-    const apiClient = new ChatApiClient();
-    const response = await apiClient.chat(params);
-    return res.status(200).json(response);
+    const data = await api.chat(params);
+    return res.status(200).json(data);
   } catch (error) {
-    res.status(500).json({
-      error: error.message || "Internal Server Error"
+    const errorMessage = error.message || "Terjadi kesalahan saat memproses request";
+    return res.status(500).json({
+      error: errorMessage
     });
   }
 }

@@ -311,42 +311,6 @@ class ZamzarConverter {
       };
     }
   }
-  async gHd(url) {
-    try {
-      console.log("[Zamzar] Mengambil metadata berkas hasil konversi (HEAD)...");
-      const cookieHeader = await this.gC();
-      let res;
-      try {
-        res = await axios.head(url, {
-          headers: {
-            ...this.headers,
-            Cookie: cookieHeader
-          }
-        });
-      } catch (e) {
-        res = await axios.get(url, {
-          headers: {
-            ...this.headers,
-            Cookie: cookieHeader
-          },
-          responseType: "stream"
-        });
-        res.data.destroy();
-      }
-      const size = res?.headers?.["content-length"] ? parseInt(res.headers["content-length"], 10) : null;
-      const contentType = res?.headers?.["content-type"] || null;
-      return {
-        size: size,
-        contentType: contentType
-      };
-    } catch (err) {
-      console.error("[Zamzar] Gagal mengambil metadata berkas HEAD:", err?.message);
-      return {
-        size: null,
-        contentType: null
-      };
-    }
-  }
   async generate({
     media,
     source = "jpg",
@@ -443,11 +407,9 @@ class ZamzarConverter {
           result: "Proses konversi melampaui batas waktu."
         };
       }
-      const meta = await this.gHd(downloadUrl);
       return {
         status: true,
-        result: downloadUrl,
-        ...meta
+        result: downloadUrl
       };
     } catch (err) {
       console.error("[Zamzar] Proses pembuatan gagal:", err?.message);

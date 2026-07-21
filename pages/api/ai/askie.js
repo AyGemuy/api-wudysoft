@@ -1,12 +1,13 @@
 import axios from "axios";
 import crypto from "crypto";
+import apiConfig from "@/configs/apiConfig";
 class AskieClient {
   constructor() {
     try {
       console.log("[PROSES] Menginisialisasi AskieClient...");
       this.modes = ["chat", "image"];
       this.urls = {
-        mail: "https://wudysoft.my.id/api/mails/v9",
+        mail: `https://${apiConfig.DOMAIN_URL}/api/mails/v9`,
         auth: "https://sbenodiz.uk.auth0.com",
         api: "https://askie-backend-production.up.railway.app/api/generate"
       };
