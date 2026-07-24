@@ -1,209 +1,486 @@
 import axios from "axios";
 import CryptoJS from "crypto-js";
 import SpoofHead from "@/lib/spoof-head";
-const BASE_URL = "https://aienhancer.ai/api/v1";
-const ENDPOINT = "/r/image-enhance";
-const MODEL_REGISTRY = {
-  nano: {
-    gen: 2,
-    edit: 2
-  },
-  seedream: {
-    gen: 5,
-    edit: 5
-  },
-  "seedream-45": {
-    gen: 12,
-    edit: 12
-  },
-  flux: {
-    gen: 8,
-    edit: 8
-  },
-  qwen: {
-    gen: 11,
-    edit: 9
-  }
-};
-const http = axios.create({
-  baseURL: BASE_URL,
-  timeout: 6e4
-});
-class AIEnhancer {
+class AiEnhancer {
   constructor() {
     try {
-      this.key = CryptoJS.enc.Utf8.parse("ai-enhancer-web__aes-key");
-      this.iv = CryptoJS.enc.Utf8.parse("aienhancer-aesiv");
-      this.headers = {
-        accept: "*/*",
-        "accept-language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
-        "cache-control": "no-cache",
-        "content-type": "application/json",
-        origin: "https://aienhancer.ai",
-        pragma: "no-cache",
-        referer: "https://aienhancer.ai/ai-image-editor",
-        "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
-        "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",
-        ...SpoofHead()
+      this.base_url = "https://aienhancer.ai/api/v1";
+      this.aes_key = "ai-enhancer-web__aes-key";
+      this.aes_iv = "aienhancer-aesiv";
+      this.guest_id = this._gid();
+      this.available_models = {
+        NANO_BANANA: {
+          id: 2,
+          ratios: ["match_input_image", "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
+          defaultRatio: "match_input_image",
+          ratioKey: "aspect_ratio",
+          getFn: () => ({
+            name: "nano-banana",
+            cost: 6
+          })
+        },
+        GPT_IMAGE_2: {
+          id: 14,
+          ratios: ["1:1", "3:2", "2:3"],
+          defaultRatio: "1:1",
+          ratioKey: "aspect_ratio",
+          getFn: opts => {
+            const q = String(opts.quality || "medium").toLowerCase();
+            if (q === "high") return {
+              name: "gpt-image-2-quality-high",
+              cost: 24
+            };
+            if (q === "low") return {
+              name: "gpt-image-2-quality-low",
+              cost: 6
+            };
+            return {
+              name: "gpt-image-2-quality-medium",
+              cost: 8
+            };
+          }
+        },
+        GPT_IMAGE_1_5: {
+          id: 15,
+          ratios: ["1:1", "3:2", "2:3"],
+          defaultRatio: "1:1",
+          ratioKey: "aspect_ratio",
+          getFn: opts => {
+            const q = String(opts.quality || "medium").toLowerCase();
+            if (q === "high") return {
+              name: "gpt-image-1.5-quality-high",
+              cost: 10
+            };
+            return {
+              name: "gpt-image-1.5-quality-medium",
+              cost: 6
+            };
+          }
+        },
+        NANO_BANANA_2: {
+          id: 17,
+          ratios: ["auto", "9:16", "16:9", "1:1", "4:5", "5:4", "4:3", "3:4", "3:2", "2:3", "21:9"],
+          defaultRatio: "auto",
+          ratioKey: "aspect_ratio",
+          getFn: opts => {
+            const r = String(opts.resolution || "1k").toLowerCase();
+            if (r === "4k") return {
+              name: "nano-banana-2-resolution-4k",
+              cost: 8
+            };
+            if (r === "2k") return {
+              name: "nano-banana-2-resolution-2k",
+              cost: 6
+            };
+            return {
+              name: "nano-banana-2-resolution-1k",
+              cost: 6
+            };
+          }
+        },
+        NANO_BANANA_PRO: {
+          id: 18,
+          ratios: ["auto", "9:16", "16:9", "1:1", "4:5", "5:4", "4:3", "3:4", "3:2", "2:3", "21:9"],
+          defaultRatio: "auto",
+          ratioKey: "aspect_ratio",
+          getFn: opts => {
+            const r = String(opts.resolution || "1k").toLowerCase();
+            if (r === "4k") return {
+              name: "nano-banana-pro-resolution-4k",
+              cost: 8
+            };
+            if (r === "2k") return {
+              name: "nano-banana-pro-resolution-2k",
+              cost: 6
+            };
+            return {
+              name: "nano-banana-pro-resolution-1k",
+              cost: 6
+            };
+          }
+        },
+        SEEDREAM_4: {
+          id: 5,
+          ratios: ["2K", "2048x2048", "2304x1728", "1728x2304", "2560x1440", "1440x2560", "2496x1664", "1664x2496", "3024x1296"],
+          defaultRatio: "2K",
+          ratioKey: "size",
+          getFn: () => ({
+            name: "seedream-4",
+            cost: 6
+          })
+        },
+        SEEDREAM_4_5: {
+          id: 12,
+          ratios: ["2K", "2048x2048", "2304x1728", "1728x2304", "2560x1440", "1440x2560", "2496x1664", "1664x2496", "3024x1296"],
+          defaultRatio: "2K",
+          ratioKey: "size",
+          getFn: () => ({
+            name: "seedream-4-5",
+            cost: 6
+          })
+        },
+        SEEDREAM_5_LITE: {
+          id: 19,
+          ratios: ["2K", "2048x2048", "2304x1728", "1728x2304", "2560x1440", "1440x2560", "2496x1664", "1664x2496", "3024x1296"],
+          defaultRatio: "2K",
+          ratioKey: "size",
+          getFn: () => ({
+            name: "seedream-5-lite",
+            cost: 6
+          })
+        },
+        QWEN_IMAGE_EDIT_PLUS: {
+          id: 9,
+          ratios: ["match_input_image", "1:1", "16:9", "9:16", "4:3", "3:4"],
+          defaultRatio: "match_input_image",
+          ratioKey: "aspect_ratio",
+          getFn: () => ({
+            name: "qwen-image-edit-plus",
+            cost: 6
+          })
+        },
+        QWEN_IMAGE: {
+          id: 11,
+          ratios: ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3"],
+          defaultRatio: "1:1",
+          ratioKey: "aspect_ratio",
+          getFn: () => ({
+            name: "qwen-image",
+            cost: 6
+          })
+        },
+        FLUX_KONTEXT_PRO: {
+          id: 8,
+          ratios: ["match_input_image", "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "4:5", "5:4", "21:9", "9:21", "2:1", "1:2"],
+          defaultRatio: "match_input_image",
+          ratioKey: "aspect_ratio",
+          getFn: () => ({
+            name: "flux-kontext-pro",
+            cost: 6
+          })
+        },
+        FLUX_KONTEXT_MAX: {
+          id: 21,
+          ratios: ["match_input_image", "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "4:5", "5:4", "21:9", "9:21", "2:1", "1:2"],
+          defaultRatio: "match_input_image",
+          ratioKey: "aspect_ratio",
+          getFn: () => ({
+            name: "flux-kontext-max",
+            cost: 8
+          })
+        },
+        FLUX_KONTEXT_DEV: {
+          id: 22,
+          ratios: ["match_input_image", "1:1", "16:9", "21:9", "3:2", "2:3", "4:5", "5:4", "3:4", "4:3", "9:16", "9:21"],
+          defaultRatio: "match_input_image",
+          ratioKey: "aspect_ratio",
+          getFn: () => ({
+            name: "flux-kontext-dev",
+            cost: 6
+          })
+        },
+        FLUX_2_MAX: {
+          id: 20,
+          ratios: ["match_input_image", "1:1", "16:9", "3:2", "2:3", "4:5", "5:4", "9:16", "3:4", "4:3"],
+          defaultRatio: "match_input_image",
+          ratioKey: "aspect_ratio",
+          getFn: () => ({
+            name: "flux-2-max",
+            cost: 8
+          })
+        },
+        RECRAFT_V4: {
+          id: 23,
+          ratios: ["Not set", "1:1", "4:3", "3:4", "3:2", "2:3", "16:9", "9:16", "1:2", "2:1", "14:10", "10:14", "4:5", "5:4", "6:10"],
+          defaultRatio: "Not set",
+          ratioKey: "aspect_ratio",
+          getFn: () => ({
+            name: "recraft-v4",
+            cost: 6
+          })
+        },
+        IDEOGRAM_V4: {
+          id: 24,
+          ratios: ["None", "2048x2048", "1440x2880", "2880x1440", "1664x2496", "2496x1664", "1792x2240", "2240x1792", "1440x2560", "2560x1440", "1600x2560", "2560x1600", "1728x2304", "2304x1728", "1296x3168", "3168x1296", "1152x2944", "2944x1152", "1248x3328", "3328x1248", "1280x3072", "3072x1280"],
+          defaultRatio: "None",
+          ratioKey: "resolution",
+          getFn: () => ({
+            name: "ideogram-v4-quality",
+            cost: 12
+          })
+        }
       };
-      console.log("[Init] AIEnhancer Class Ready.");
-    } catch (e) {
-      console.error("[Init] Constructor Error:", e.message);
+      this.client = axios.create({
+        baseURL: this.base_url,
+        headers: {
+          accept: "*/*",
+          "accept-language": "id-ID",
+          "cache-control": "no-cache",
+          "content-type": "application/json",
+          origin: "https://aienhancer.ai",
+          pragma: "no-cache",
+          priority: "u=1, i",
+          referer: "https://aienhancer.ai/?utm_source=vdraw-func",
+          "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
+          "sec-ch-ua-mobile": "?1",
+          "sec-ch-ua-platform": '"Android"',
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "same-origin",
+          "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",
+          "x-guest-id": this.guest_id,
+          ...SpoofHead()
+        }
+      });
+    } catch (err) {
+      this._log(`Constructor error: ${err?.message || err}`);
     }
   }
-  resolveModel(name, mode) {
+  _log(m) {
     try {
-      const key = String(name || "nano").toLowerCase().trim();
-      const entry = MODEL_REGISTRY[key] || MODEL_REGISTRY["nano"];
-      const id = entry[mode];
-      if (id === undefined || id === null) {
-        throw new Error(`Model "${key}" tidak mendukung mode "${mode.toUpperCase()}"`);
-      }
-      console.log(`[Model] Resolved: ${key} | Mode: ${mode} | ID: ${id}`);
-      return {
-        id: id,
-        name: key,
-        endpoint: ENDPOINT
-      };
-    } catch (e) {
-      console.error("[Model] Resolve Error:", e.message);
-      throw e;
+      console.log(`[AiEnhancer] ${m}`);
+    } catch {}
+  }
+  _wait(ms) {
+    try {
+      return new Promise(r => setTimeout(r, ms || 1e3));
+    } catch {
+      return Promise.resolve();
     }
   }
-  encrypt(data) {
+  _gid() {
     try {
-      const s = typeof data === "string" ? data : JSON.stringify(data);
-      const encrypted = CryptoJS.AES.encrypt(s, this.key, {
-        iv: this.iv,
+      return CryptoJS.lib.WordArray.random(16).toString();
+    } catch {
+      return "dd2a265c7dfcd90f9ea4f6ba0183ef11";
+    }
+  }
+  _enc(v) {
+    try {
+      const val = typeof v === "object" ? JSON.stringify(v) : String(v);
+      return CryptoJS.AES.encrypt(val, CryptoJS.enc.Utf8.parse(this.aes_key), {
+        iv: CryptoJS.enc.Utf8.parse(this.aes_iv),
         mode: CryptoJS.mode.CBC,
         padding: CryptoJS.pad.Pkcs7
-      });
-      return encrypted.toString();
-    } catch (e) {
-      console.error("[Crypto] Encryption Failed:", e.message);
-      throw new Error("Gagal mengenkripsi data pengaturan.");
-    }
-  }
-  async resolveImage(input) {
-    if (!input) return "";
-    console.log("[Image] Resolving input...");
-    try {
-      if (Buffer.isBuffer(input)) {
-        return `data:image/jpeg;base64,${input.toString("base64")}`;
-      }
-      if (typeof input === "string" && input.startsWith("http")) {
-        console.log(`[Image] Fetching from URL: ${input}`);
-        const res = await axios.get(input, {
-          responseType: "arraybuffer",
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
-            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-            Referer: new URL(input).origin
-          }
-        });
-        const mime = res.headers["content-type"] || "image/jpeg";
-        const base64 = Buffer.from(res.data).toString("base64");
-        return `data:${mime};base64,${base64}`;
-      }
-      if (typeof input === "string") {
-        return input.includes("base64,") ? input : `data:image/jpeg;base64,${input}`;
-      }
-      return "";
+      }).toString();
     } catch (err) {
-      console.error(`[Image] Resolve Error: ${err.message}`);
-      return "";
+      this._log(`Encryption error: ${err?.message || err}`);
+      return null;
     }
   }
-  async poll(taskId, endpoint) {
-    console.log(`[Poll] Starting for Task: ${taskId}`);
-    const pollUrl = `${endpoint}/result`;
-    while (true) {
-      try {
-        const {
-          data: res
-        } = await http.post(pollUrl, {
-          task_id: taskId
-        }, {
-          headers: this.headers
-        });
-        const status = res?.data?.status || "unknown";
-        const resultData = res?.data;
-        if (status === "succeeded") {
-          console.log("[Poll] Task Succeeded!");
-          return resultData;
-        }
-        if (status === "failed" || resultData?.error) {
-          console.error("[Poll] Task Failed:", resultData?.error);
-          throw new Error(resultData?.error || "Task processing failed on server");
-        }
-        console.log(`[Poll] Current Status: ${status}...`);
-        await new Promise(r => setTimeout(r, 3e3));
-      } catch (e) {
-        console.error("[Poll] Request Error:", e.message);
-        if (e.message.includes("failed")) throw e;
-        await new Promise(r => setTimeout(r, 5e3));
+  _normalizeModel(modelInput) {
+    if (!modelInput) return null;
+    if (typeof modelInput === "number" || !isNaN(Number(modelInput))) {
+      const numericId = Number(modelInput);
+      const match = Object.entries(this.available_models).find(([_, info]) => info.id === numericId);
+      if (match) {
+        return {
+          name: match[0],
+          ...match[1]
+        };
       }
+      return null;
+    }
+    const normalizedInput = String(modelInput).toUpperCase().replace(/[\s-.]+/g, "_");
+    if (this.available_models[normalizedInput]) {
+      return {
+        name: normalizedInput,
+        ...this.available_models[normalizedInput]
+      };
+    }
+    const fuzzyMatch = Object.entries(this.available_models).find(([name, _]) => name.replace(/_/g, "").includes(normalizedInput.replace(/_/g, "")));
+    if (fuzzyMatch) {
+      return {
+        name: fuzzyMatch[0],
+        ...fuzzyMatch[1]
+      };
+    }
+    return null;
+  }
+  async _imgs(input) {
+    try {
+      if (!input) return [];
+      const list = Array.isArray(input) ? input : [input];
+      const out = [];
+      for (const item of list) {
+        if (!item) continue;
+        if (Buffer.isBuffer(item)) {
+          out.push(`data:image/jpeg;base64,${item.toString("base64")}`);
+        } else if (typeof item === "string") {
+          if (item.startsWith("data:")) {
+            out.push(item);
+          } else if (item.startsWith("http")) {
+            this._log("Fetching remote image URL...");
+            const res = await axios.get(item, {
+              responseType: "arraybuffer"
+            });
+            const mime = res.headers?.["content-type"] || "image/jpeg";
+            out.push(`data:${mime};base64,${Buffer.from(res.data).toString("base64")}`);
+          } else {
+            out.push(`data:image/jpeg;base64,${item}`);
+          }
+        }
+      }
+      return out;
+    } catch (err) {
+      this._log(`Image conversion error: ${err?.message || err}`);
+      return [];
+    }
+  }
+  async _check(taskId) {
+    try {
+      if (!taskId) {
+        return {
+          status: "error",
+          result: {
+            error_message: "task_id is required"
+          }
+        };
+      }
+      this._log(`Checking task status for: ${taskId}`);
+      const res = await this.client.post("/r/image-enhance/result", {
+        task_id: taskId
+      });
+      const data = res?.data?.data || res?.data || {};
+      return {
+        status: "success",
+        result: data
+      };
+    } catch (err) {
+      this._log(`Status check failed: ${err?.message || err}`);
+      return {
+        status: "error",
+        result: {
+          error_message: err?.response?.data?.message || err?.message || "Check result failed"
+        }
+      };
     }
   }
   async generate({
-    prompt,
-    image,
-    model = "nano",
+    prompt = "",
+    image = null,
+    model = "NANO_BANANA",
+    aspectRatio,
     ...rest
   }) {
     try {
-      const isI2I = Array.isArray(image) ? image.length > 0 : !!image;
-      const mode = isI2I ? "edit" : "gen";
-      const modelInfo = this.resolveModel(model, mode);
-      let images = [];
-      if (isI2I) {
-        console.log("[Generate] Processing Image Input...");
-        const inputs = Array.isArray(image) ? image : [image];
-        for (const inp of inputs) {
-          const r = await this.resolveImage(inp);
-          if (r) images.push(r);
-        }
-        if (images.length === 0) throw new Error("Gagal memproses gambar. Pastikan format benar.");
+      if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
+        this._log("Validation error: Prompt is required");
+        return {
+          status: "error",
+          result: {
+            error_message: "Prompt is required and must be a non-empty string"
+          }
+        };
       }
-      const settings = {
-        prompt: prompt || (isI2I ? "Enhanced photo" : "High quality scenery"),
-        size: rest?.size || "2K",
-        aspect_ratio: rest?.aspect_ratio || (isI2I ? "match_input_image" : "1:1"),
-        output_format: rest?.output_format || "png",
-        max_images: 1,
-        ...rest
+      const modelMeta = this._normalizeModel(model);
+      if (!modelMeta) {
+        this._log(`Validation error: Model '${model}' is not supported.`);
+        return {
+          status: "error",
+          result: {
+            error_message: `Model '${model}' is not supported. Please use valid model name or ID.`
+          }
+        };
+      }
+      this._log(`Selected model: ${modelMeta.name} (ID: ${modelMeta.id})`);
+      this._log("Processing input and converting image(s)...");
+      const b64List = await this._imgs(image);
+      const isI2I = b64List.length > 0;
+      const finalRatioKey = modelMeta.ratioKey || "aspect_ratio";
+      let selectedRatio = aspectRatio;
+      if (!selectedRatio) {
+        selectedRatio = isI2I && modelMeta.ratios.includes("match_input_image") ? "match_input_image" : modelMeta.defaultRatio;
+      } else if (!modelMeta.ratios.includes(selectedRatio)) {
+        this._log(`Warning: Ratio '${selectedRatio}' may not be supported by ${modelMeta.name}. Falling back to default: ${modelMeta.defaultRatio}`);
+        selectedRatio = modelMeta.defaultRatio;
+      }
+      const advOpts = {
+        [finalRatioKey]: selectedRatio,
+        output_format: "jpeg",
+        disable_safety_checker: false
+      };
+      const settingsObj = {
+        prompt: prompt.trim(),
+        ...advOpts
+      };
+      const historyObj = {
+        type: isI2I ? "editor" : "generator",
+        settings: {
+          selectedModel: modelMeta.id,
+          prompt: prompt.trim(),
+          advancedOptions: advOpts
+        }
+      };
+      const fnResolution = modelMeta.getFn(rest);
+      const finalFnName = fnResolution.name;
+      this._log(`Resolved function endpoint: '${finalFnName}' (cost: ${fnResolution.cost} credits)`);
+      const fnEnc = this._enc(finalFnName);
+      const setEnc = this._enc(settingsObj);
+      const histEnc = this._enc(historyObj);
+      if (!fnEnc || !setEnc || !histEnc) {
+        return {
+          status: "error",
+          result: {
+            error_message: "Failed to encrypt parameters"
+          }
+        };
+      }
+      const defaultPayload = {
+        model: modelMeta.id,
+        function: fnEnc,
+        settings: setEnc,
+        history_detail: histEnc,
+        batch_size: 1,
+        batch_index: 1,
+        ...isI2I ? {
+          image: b64List
+        } : {}
       };
       const payload = {
-        model: modelInfo.id,
-        function: isI2I ? "ai-image-editor" : "ai-image-generator",
-        settings: this.encrypt(settings),
-        ...isI2I && {
-          image: images
-        }
+        ...defaultPayload,
+        ...rest
       };
-      console.log(`[Generate] Sending Create Request to ${modelInfo.endpoint}...`);
-      const {
-        data: res1
-      } = await http.post(`${modelInfo.endpoint}/create`, payload, {
-        headers: this.headers
-      });
-      const tid = res1?.data?.id;
-      if (!tid) {
-        console.error("[Generate] Server Response:", JSON.stringify(res1));
-        throw new Error(res1?.message || "Server tidak memberikan Task ID.");
+      const endpoint = isI2I ? "/r/image-enhance/create" : "/image/generator/create";
+      this._log(`Submitting ${isI2I ? "Image-to-Image" : "Text-to-Image"} task to ${endpoint}...`);
+      const resCreate = await this.client.post(endpoint, payload);
+      const taskId = resCreate?.data?.data?.id;
+      if (!taskId) {
+        return {
+          status: "error",
+          result: {
+            error_message: resCreate?.data?.message || "Failed to obtain task ID from server"
+          }
+        };
       }
-      console.log(`[Generate] Task Created: ${tid}`);
-      return await this.poll(tid, modelInfo.endpoint);
-    } catch (e) {
-      console.error("[Generate] Fatal Error:", e.message);
+      this._log(`Task created successfully with ID: ${taskId}`);
+      this._log("Starting polling loop for completion...");
+      while (true) {
+        await this._wait(3e3);
+        const checkRes = await this._check(taskId);
+        const taskStatus = checkRes?.result?.status || "starting";
+        this._log(`Polling status: ${taskStatus}`);
+        if (taskStatus === "succeeded") {
+          this._log("Task completed successfully!");
+          return checkRes;
+        }
+        if (taskStatus === "failed") {
+          return {
+            status: "error",
+            result: {
+              task_id: taskId,
+              error_message: checkRes?.result?.error || "Task processing failed on server"
+            }
+          };
+        }
+      }
+    } catch (err) {
+      this._log(`Generation error: ${err?.response?.data?.message || err?.message || err}`);
       return {
-        error: true,
-        message: e.message || "Internal Service Error",
-        status: "failed"
+        status: "error",
+        result: {
+          error_message: err?.response?.data?.message || err?.message || String(err)
+        }
       };
     }
   }
@@ -215,12 +492,12 @@ export default async function handler(req, res) {
       error: "Parameter 'prompt' diperlukan"
     });
   }
-  const api = new AIEnhancer();
+  const api = new AiEnhancer();
   try {
     const data = await api.generate(params);
     return res.status(200).json(data);
   } catch (error) {
-    const errorMessage = error.message || "Terjadi kesalahan saat memproses URL";
+    const errorMessage = error.message || "Terjadi kesalahan saat memproses request";
     return res.status(500).json({
       error: errorMessage
     });
