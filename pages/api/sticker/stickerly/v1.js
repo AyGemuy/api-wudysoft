@@ -1,246 +1,386 @@
 import axios from "axios";
+import crypto from "crypto";
 class StickerLy {
   constructor() {
-    this.base = "http://api.sticker.ly/v4";
-    this.headers = {
-      "User-Agent": "androidapp.stickerly/2.16.0 (G011A; U; Android 22; pt-BR; br;)",
-      "Content-Type": "application/json"
-    };
-  }
-  async req(method, path, payload = {}) {
-    console.log(`[REQ] ${method} ${path}`);
     try {
-      const is_get = method === "GET";
-      const conf = {
-        method: method,
-        url: `${this.base}${path}`,
-        headers: this.headers,
-        params: is_get ? payload : undefined,
-        data: !is_get ? payload : undefined
+      this.base = "https://api.sticker.ly/v4";
+      this.duid = crypto.randomBytes(8).toString("hex");
+      this.headers = {
+        "User-Agent": "androidapp.stickerly/3.35.0 (RMX3890; U; Android 35; id-ID; id;)",
+        "Accept-Encoding": "gzip",
+        "Content-Type": "application/json",
+        "x-duid": this.duid
       };
-      const {
-        data
-      } = await axios(conf);
-      console.log(`[LOG] Status: ${data?.meta?.status || 200}`);
-      return data?.result || data;
+      this.client = axios.create({
+        baseURL: this.base,
+        headers: this.headers,
+        timeout: 6e4
+      });
+      this.endpoint = {
+        ai_play: {
+          method: "GET",
+          path: "/ai-play/templates",
+          req: [],
+          def: {}
+        },
+        user_oid: {
+          method: "GET",
+          path: "/user/oid/:oid",
+          req: ["oid"],
+          def: {
+            socialLink: false,
+            simple: true
+          }
+        },
+        sticker_rel: {
+          method: "GET",
+          path: "/sticker/related",
+          req: ["sid"],
+          def: {}
+        },
+        feeds: {
+          method: "POST",
+          path: "/user/feeds",
+          req: [],
+          def: {}
+        },
+        pack_smart: {
+          method: "POST",
+          path: "/stickerPack/smartSearch",
+          req: ["keyword"],
+          def: {
+            enabledKeywordSearch: true,
+            filter: {
+              extendSearchResult: true,
+              sortBy: "RECOMMENDED",
+              languages: ["ALL"],
+              minStickerCount: 5,
+              searchBy: "ALL",
+              stickerType: "ALL"
+            }
+          }
+        },
+        banner: {
+          method: "GET",
+          path: "/banner/overview",
+          req: [],
+          def: {}
+        },
+        pack_det: {
+          method: "GET",
+          path: "/stickerPack/:id",
+          req: ["id"],
+          def: {
+            needRelation: false
+          }
+        },
+        interact: {
+          method: "POST",
+          path: "/user/interactions",
+          req: ["type", "packId", "timestamp"],
+          def: {
+            deviceId: this.duid
+          }
+        },
+        pack_rel: {
+          method: "GET",
+          path: "/stickerPack/:id/recommendedCategories",
+          req: ["id"],
+          def: {
+            group: 3
+          }
+        },
+        stick_search: {
+          method: "POST",
+          path: "/sticker/searchV2",
+          req: ["keyword"],
+          def: {
+            size: 400,
+            enabledKeywordSearch: true
+          }
+        },
+        tab_packs: {
+          method: "GET",
+          path: "/hometab/:id/packs",
+          req: ["id"],
+          def: {}
+        },
+        trending: {
+          method: "POST",
+          path: "/trending/search",
+          req: [],
+          def: {}
+        },
+        artist_rec: {
+          method: "POST",
+          path: "/artist/recommend",
+          req: [],
+          def: {}
+        },
+        user_rec: {
+          method: "POST",
+          path: "/user/recommend",
+          req: [],
+          def: {}
+        },
+        stick_rec: {
+          method: "GET",
+          path: "/sticker/recommend",
+          req: [],
+          def: {}
+        },
+        pack_pers: {
+          method: "GET",
+          path: "/stickerPack/personalized",
+          req: [],
+          def: {
+            group: 3
+          }
+        },
+        pack_view: {
+          method: "POST",
+          path: "/stickerPack/:id/view",
+          req: ["id"],
+          def: {}
+        },
+        usr_coll: {
+          method: "POST",
+          path: "/user/:id/userCollection/detailList",
+          req: ["id"],
+          def: {
+            size: 30
+          }
+        },
+        usr_packs: {
+          method: "POST",
+          path: "/user/:id/stickerPacks",
+          req: ["id"],
+          def: {
+            isPrivate: false
+          }
+        },
+        pack_search: {
+          method: "POST",
+          path: "/stickerPack/searchV2",
+          req: ["keyword"],
+          def: {
+            size: 10,
+            cursor: 1,
+            limit: 20
+          }
+        },
+        home: {
+          method: "GET",
+          path: "/hometab/overview",
+          req: [],
+          def: {}
+        },
+        tab_sticks: {
+          method: "GET",
+          path: "/hometab/:id/stickers",
+          req: ["id"],
+          def: {}
+        },
+        tag_search: {
+          method: "POST",
+          path: "/stickerTag/search",
+          req: ["keyword"],
+          def: {
+            size: 10,
+            cursor: 1,
+            limit: 99
+          }
+        },
+        tag_rec: {
+          method: "GET",
+          path: "/sticker/tag/recommend",
+          req: [],
+          def: {}
+        }
+      };
+      console.log(`[INIT] StickerLy berhasil diinisialisasi dengan DUID: ${this.duid}`);
     } catch (e) {
-      const msg = e?.response?.data?.meta?.message || e?.message;
-      console.error(`[ERR] ${msg || "Unknown Error"}`);
+      console.error(`[INIT_ERROR] Gagal menginisialisasi constructor: ${e.message}`);
+    }
+  }
+  async execute(key, userParams = {}) {
+    const config = this.endpoint?.[key];
+    if (!config) {
+      const msg = `Endpoint key '${key}' tidak terdaftar pada konfigurasi req_def.`;
+      console.error(`[CONFIG ERROR] ${msg}`);
       return {
         error: true,
         msg: msg
       };
     }
+    console.log(`[REQ] Memproses aksi: ${key}`);
+    try {
+      let customHeaders = {};
+      if (userParams.headers) {
+        customHeaders = userParams.headers;
+        delete userParams.headers;
+      }
+      for (const reqParam of config.req) {
+        if (userParams[reqParam] === undefined || userParams[reqParam] === null || userParams[reqParam] === "") {
+          const msg = `Parameter '${reqParam}' wajib diisi untuk aksi '${key}'.`;
+          console.error(`[VALIDATION_ERR] ${msg}`);
+          return {
+            error: true,
+            msg: msg
+          };
+        }
+      }
+      const mergedParams = {
+        ...config.def,
+        ...userParams
+      };
+      let resolvedPath = config.path;
+      const placeholders = resolvedPath.match(/:[a-zA-Z0-9]+/g) || [];
+      for (const placeholder of placeholders) {
+        const paramName = placeholder.slice(1);
+        if (mergedParams[paramName] === undefined) {
+          const msg = `Path parameter '${paramName}' tidak terdeteksi pada input data.`;
+          console.error(`[PATH_ERR] ${msg}`);
+          return {
+            error: true,
+            msg: msg
+          };
+        }
+        resolvedPath = resolvedPath.replace(placeholder, encodeURIComponent(mergedParams[paramName]));
+        delete mergedParams[paramName];
+      }
+      const isGet = config.method === "GET";
+      const requestOptions = {
+        method: config.method,
+        url: resolvedPath,
+        headers: {
+          ...this.headers,
+          ...customHeaders
+        },
+        params: isGet ? mergedParams : undefined,
+        data: !isGet ? mergedParams : undefined
+      };
+      console.log(`[REQ_SEND] ${requestOptions.method} -> ${resolvedPath}`);
+      const response = await this.client(requestOptions);
+      const data = response.data;
+      console.log(`[LOG_RESP] Status: ${data?.meta?.status || response.status || 200}`);
+      return data?.result || data;
+    } catch (error) {
+      const responseData = error?.response?.data;
+      const errorMessage = responseData?.meta?.message || responseData?.message || error.message;
+      console.error(`[ERR_EXECUTE] Gagal memproses ${key}: ${errorMessage}`);
+      return {
+        error: true,
+        msg: errorMessage,
+        details: responseData || null
+      };
+    }
   }
-  async sticker_recommend() {
-    return await this.req("GET", "/sticker/recommend");
+  async ai_play() {
+    return await this.execute("ai_play");
   }
-  async sticker_search({
-    ...rest
-  }) {
-    const body = {
-      keyword: "",
-      size: 10,
-      cursor: 1,
-      limit: 99,
-      ...rest
-    };
-    return await this.req("POST", "/sticker/searchV2", body);
+  async user_oid(p) {
+    return await this.execute("user_oid", p);
   }
-  async sticker_related({
-    sid,
-    ...rest
-  }) {
-    if (!sid) return {
-      error: true,
-      msg: "sid required"
-    };
-    return await this.req("GET", "/sticker/related", {
-      sid: sid,
-      ...rest
-    });
+  async sticker_rel(p) {
+    return await this.execute("sticker_rel", p);
   }
-  async pack_detail({
-    id
-  }) {
-    if (!id) return {
-      error: true,
-      msg: "id required"
-    };
-    return await this.req("GET", `/stickerPack/${id}`);
+  async feeds() {
+    return await this.execute("feeds");
   }
-  async pack_search({
-    ...rest
-  }) {
-    const body = {
-      keyword: "",
-      size: 10,
-      cursor: 1,
-      limit: 20,
-      ...rest
-    };
-    return await this.req("POST", "/stickerPack/searchV2", body);
+  async pack_smart(p) {
+    return await this.execute("pack_smart", p);
   }
-  async pack_recommend() {
-    return await this.req("GET", "/stickerPack/recommend");
+  async banner() {
+    return await this.execute("banner");
   }
-  async pack_related({
-    id
-  }) {
-    if (!id) return {
-      error: true,
-      msg: "id required"
-    };
-    return await this.req("GET", `/stickerPack/${id}/recommendedCategories`);
+  async pack_det(p) {
+    return await this.execute("pack_det", p);
+  }
+  async interact(p) {
+    return await this.execute("interact", p);
+  }
+  async pack_rel(p) {
+    return await this.execute("pack_rel", p);
+  }
+  async stick_search(p) {
+    return await this.execute("stick_search", p);
+  }
+  async tab_packs(p) {
+    return await this.execute("tab_packs", p);
+  }
+  async trending(p) {
+    return await this.execute("trending", p);
+  }
+  async artist_rec(p) {
+    return await this.execute("artist_rec", p);
+  }
+  async user_rec() {
+    return await this.execute("user_rec");
+  }
+  async stick_rec() {
+    return await this.execute("stick_rec");
+  }
+  async pack_pers(p) {
+    return await this.execute("pack_pers", p);
+  }
+  async pack_view(p) {
+    return await this.execute("pack_view", p);
+  }
+  async usr_coll(p) {
+    return await this.execute("usr_coll", p);
+  }
+  async usr_packs(p) {
+    return await this.execute("usr_packs", p);
+  }
+  async pack_search(p) {
+    return await this.execute("pack_search", p);
   }
   async home() {
-    return await this.req("GET", "/hometab/overview");
+    return await this.execute("home");
   }
-  async tab_packs({
-    id,
-    ...rest
-  }) {
-    return await this.req("GET", `/hometab/${id}/packs`, rest);
+  async tab_sticks(p) {
+    return await this.execute("tab_sticks", p);
   }
-  async tab_stickers({
-    id,
-    ...rest
-  }) {
-    return await this.req("GET", `/hometab/${id}/stickers`, rest);
+  async tag_search(p) {
+    return await this.execute("tag_search", p);
   }
-  async trending({
-    ...rest
-  }) {
-    return await this.req("POST", "/trending/search", rest);
-  }
-  async artist_recommend({
-    ...rest
-  }) {
-    return await this.req("POST", "/artist/recommend", rest);
-  }
-  async tag_search({
-    ...rest
-  }) {
-    const body = {
-      keyword: "",
-      size: 10,
-      cursor: 1,
-      limit: 99,
-      ...rest
-    };
-    return await this.req("POST", "/stickerTag/search", body);
-  }
-  async tag_recommend() {
-    return await this.req("GET", "/sticker/tag/recommend");
+  async tag_rec() {
+    return await this.execute("tag_rec");
   }
 }
 export default async function handler(req, res) {
-  const {
-    action,
-    ...params
-  } = req.method === "GET" ? req.query : req.body;
-  const validActions = ["home", "sticker_search", "sticker_recommend", "sticker_related", "pack_search", "pack_detail", "pack_recommend", "pack_related", "tab_packs", "tab_stickers", "trending", "artist_recommend", "tag_search", "tag_recommend"];
-  if (!action) {
-    return res.status(400).json({
-      error: "Parameter 'action' wajib diisi.",
-      actions: validActions
-    });
-  }
-  const api = new StickerLy();
   try {
-    let response;
-    switch (action) {
-      case "home":
-        response = await api.home();
-        break;
-      case "sticker_search":
-        if (!params.keyword) {
-          return res.status(400).json({
-            error: "Parameter 'keyword' wajib diisi."
-          });
-        }
-        response = await api.sticker_search(params);
-        break;
-      case "sticker_recommend":
-        response = await api.sticker_recommend();
-        break;
-      case "sticker_related":
-        if (!params.sid) {
-          return res.status(400).json({
-            error: "Parameter 'sid' wajib diisi."
-          });
-        }
-        response = await api.sticker_related(params);
-        break;
-      case "pack_search":
-        if (!params.keyword) {
-          return res.status(400).json({
-            error: "Parameter 'keyword' wajib diisi."
-          });
-        }
-        response = await api.pack_search(params);
-        break;
-      case "pack_detail":
-        if (!params.id) {
-          return res.status(400).json({
-            error: "Parameter 'id' (Pack Code) wajib diisi."
-          });
-        }
-        response = await api.pack_detail(params);
-        break;
-      case "pack_recommend":
-        response = await api.pack_recommend();
-        break;
-      case "pack_related":
-        if (!params.id) {
-          return res.status(400).json({
-            error: "Parameter 'id' wajib diisi."
-          });
-        }
-        response = await api.pack_related(params);
-        break;
-      case "tab_packs":
-        if (!params.id) {
-          return res.status(400).json({
-            error: "Parameter 'id' (Tab ID) wajib diisi."
-          });
-        }
-        response = await api.tab_packs(params);
-        break;
-      case "tab_stickers":
-        if (!params.id) {
-          return res.status(400).json({
-            error: "Parameter 'id' (Tab ID) wajib diisi."
-          });
-        }
-        response = await api.tab_stickers(params);
-        break;
-      case "trending":
-        response = await api.trending(params);
-        break;
-      case "artist_recommend":
-        response = await api.artist_recommend(params);
-        break;
-      case "tag_search":
-        if (!params.keyword) {
-          return res.status(400).json({
-            error: "Parameter 'keyword' wajib diisi."
-          });
-        }
-        response = await api.tag_search(params);
-        break;
-      case "tag_recommend":
-        response = await api.tag_recommend();
-        break;
-      default:
-        return res.status(400).json({
-          error: `Action tidak valid: ${action}.`,
-          valid_actions: validActions
-        });
+    const params = req.method === "GET" ? req.query : req.body;
+    const {
+      action,
+      ...restParams
+    } = params;
+    const api = new StickerLy();
+    const validActions = Object.keys(api.req_def);
+    if (!action) {
+      console.warn("[HANDLER_WARN] Request masuk tanpa menyertakan parameter 'action'");
+      return res.status(400).json({
+        error: "Parameter 'action' wajib diisi.",
+        actions: validActions
+      });
+    }
+    const actionLower = action.toLowerCase();
+    if (typeof api[actionLower] !== "function") {
+      console.warn(`[HANDLER_WARN] Aksi '${actionLower}' tidak dikenali sebagai method internal`);
+      return res.status(400).json({
+        error: `Action tidak valid atau belum didukung: ${action}.`,
+        valid_actions: validActions
+      });
+    }
+    console.log(`[HANDLER_START] Menjalankan rute aksi: ${actionLower}`);
+    const response = await api[actionLower](restParams);
+    if (response?.error) {
+      return res.status(400).json(response);
     }
     return res.status(200).json(response);
   } catch (error) {
-    console.error(`[FATAL ERROR] Kegagalan pada action '${action}':`, error);
+    console.error(`[FATAL_ERROR] Kegagalan kritis pada handler rute:`, error);
     return res.status(500).json({
       status: false,
       error: error.message || "Terjadi kesalahan internal pada server."
