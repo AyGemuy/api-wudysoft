@@ -2,13 +2,13 @@ import fetch from "node-fetch";
 import crypto from "crypto";
 class UndressAI {
   constructor() {
-    this.apiKey = "AIzaSyD_omM03MyUQdBNAQ3lW0RzjRS5x29GDnM";
+    this.apiKey = process.env.UNDRESS_FIREBASE_API_KEY;
     this.backendHosts = ["https://awh5tmpjds.us-east-1.awsapprunner.com"];
     this.activeBackend = null;
     this.maskHost = "https://mkv2.undressaitools.net";
     this.genHost = "https://igv2.undressaitools.net";
     this.authUrl = "https://identitytoolkit.googleapis.com/v1/accounts";
-    this.basicAuth = "Basic cG9ybmdlbjpwb3JuZ2Vu";
+    this.basicAuth = process.env.UNDRESS_BASIC_AUTH;
     this.commonHeaders = {
       "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",
       Accept: "application/json, text/plain, */*",
@@ -223,8 +223,10 @@ class UndressAI {
       if (Buffer.isBuffer(input)) return input.toString("base64");
       if (typeof input === "string") {
         if (input.startsWith("http")) {
+          const parsedUrl = new URL(input);
+          if (!["http:", "https:"].includes(parsedUrl.protocol)) throw new Error("Invalid URL protocol");
           this.log("Fetching image...");
-          const r = await fetch(input);
+          const r = await fetch(parsedUrl.toString());
           if (!r.ok) throw new Error("Failed to fetch image");
           const ab = await r.arrayBuffer();
           return Buffer.from(ab).toString("base64");
