@@ -2,179 +2,255 @@ import axios from "axios";
 import crypto from "crypto";
 class ChatDay {
   constructor() {
-    this.base = "https://www.chatday.ai";
-    this.cookies = {};
-    this.isAuthed = false;
-    this.modelList = null;
-    this.visitorId = this.genHex(32);
-    this.convId = this.genHex(16);
-    this.api = axios.create({
-      baseURL: this.base,
-      headers: {
-        accept: "*/*",
-        "accept-language": "id-ID",
-        "cache-control": "no-cache",
-        pragma: "no-cache",
-        referer: `${this.base}/chat`,
-        "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
-        "sec-ch-ua-mobile": "?1",
-        "sec-ch-ua-platform": '"Android"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
-        "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36"
-      },
-      withCredentials: false
-    });
-    this.api.interceptors.request.use(config => {
-      const cookieStr = Object.entries(this.cookies).map(([k, v]) => `${k}=${v}`).join("; ");
-      if (cookieStr) config.headers["cookie"] = cookieStr;
-      return config;
-    });
-    this.api.interceptors.response.use(res => {
-      const setCookie = res.headers["set-cookie"];
-      if (setCookie) {
-        const cookiesArr = Array.isArray(setCookie) ? setCookie : [setCookie];
-        cookiesArr.forEach(c => {
-          const match = c.match(/^([^=]+)=([^;]+)/);
-          if (match) this.cookies[match[1]] = match[2];
-        });
-      }
-      return res;
-    });
+    try {
+      this.jar = {};
+      this.isAuthed = false;
+      this.modelList = null;
+      this.visitorId = this.genHex(32);
+      this.convId = this.genAlphaNum(16);
+      this.jar["chatday_device_id"] = `O-${this.genAlphaNum(19)}`;
+      this.cli = axios.create({
+        baseURL: "https://www.chatday.ai",
+        headers: {
+          accept: "*/*",
+          "accept-language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
+          "cache-control": "no-cache",
+          "content-type": "application/json",
+          origin: "https://www.chatday.ai",
+          pragma: "no-cache",
+          priority: "u=1, i",
+          referer: "https://www.chatday.ai/chat",
+          "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
+          "sec-ch-ua-mobile": "?1",
+          "sec-ch-ua-platform": '"Android"',
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "same-origin",
+          "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36"
+        }
+      });
+      this.cli.interceptors.request.use(cfg => {
+        try {
+          const c = Object.entries(this.jar).map(([k, v]) => `${k}=${v}`).join("; ");
+          if (c) cfg.headers.Cookie = c;
+        } catch (e) {
+          this._log(`Req Interceptor Error: ${e?.message}`);
+        }
+        return cfg;
+      });
+      this.cli.interceptors.response.use(res => {
+        try {
+          const sc = res.headers["set-cookie"] || res.headers["Set-Cookie"];
+          if (sc) {
+            const arr = Array.isArray(sc) ? sc : [sc];
+            arr.forEach(item => {
+              const [kv] = item.split(";");
+              const [k, ...v] = kv.split("=");
+              if (k) this.jar[k.trim()] = v.join("=").trim();
+            });
+          }
+        } catch (e) {
+          this._log(`Res Interceptor Error: ${e?.message}`);
+        }
+        return res;
+      });
+    } catch (err) {
+      console.error("[ChatDay] Init Class Error:", err?.message);
+    }
+  }
+  _log(m) {
+    try {
+      console.log(`[ChatDay] ${m}`);
+    } catch {
+      return null;
+    }
+  }
+  _sd(s) {
+    try {
+      return typeof s === "string" ? JSON.parse(Buffer.from(s, "base64").toString("utf-8")) : s || {};
+    } catch {
+      return {};
+    }
+  }
+  _se(d) {
+    try {
+      return Buffer.from(JSON.stringify(d || {})).toString("base64");
+    } catch {
+      return "";
+    }
   }
   genHex(len) {
     return crypto.randomBytes(Math.ceil(len / 2)).toString("hex").slice(0, len);
   }
-  async auth() {
-    if (this.isAuthed) return {
-      success: true
-    };
+  genAlphaNum(len) {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    return Array.from({
+      length: len
+    }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  }
+  async _init() {
     try {
-      await this.api.post("/api/auth/sign-in/anonymous", {}, {
+      this._log("Initializing session & authentication...");
+      await this.cli.post("/api/auth/sign-in/anonymous", {}, {
         headers: {
           "content-type": "application/json"
         }
       });
       this.isAuthed = true;
-      return {
-        success: true
-      };
-    } catch (err) {
-      return {
-        success: false,
-        error: `Initialization failed: ${err.message}`
-      };
-    }
-  }
-  async models() {
-    try {
-      const authCheck = await this.auth();
-      if (!authCheck.success) return authCheck;
-      console.log("[PROCESS] Fetching available models...");
-      const res = await this.api.get("/api/v2/models");
+      this._log("Fetching available models...");
+      const res = await this.cli.get("/api/v2/models");
       this.modelList = res.data?.models || [];
-      console.log(`[SUCCESS] Loaded ${this.modelList.length} models.`);
-      return {
-        success: true,
-        data: this.modelList
-      };
-    } catch (err) {
-      console.error("[ERROR] Fetch Models Gagal:", err.message);
-      return {
-        success: false,
-        error: err.message
-      };
+      this._log(`Loaded ${this.modelList.length} models.`);
+      return true;
+    } catch (e) {
+      this._log(`Init error: ${e?.message}`);
+      return false;
     }
   }
   async chat({
+    state,
+    prompt,
     model,
-    content,
     conversation_id,
     visitor_id,
-    on_delta,
     ...rest
   }) {
     try {
-      if (!this.modelList) {
-        const fetchRes = await this.models();
-        if (!fetchRes.success) {
+      this._log("Preparing chat request...");
+      const savedState = this._sd(state);
+      this.jar = savedState?.cookies ? {
+        ...savedState.cookies
+      } : this.jar;
+      if (!this.isAuthed || !this.modelList) {
+        const initSuccess = await this._init();
+        if (!initSuccess) {
           return {
-            success: false,
-            error: `Gagal inisialisasi session/model: ${fetchRes.error}`
+            status: false,
+            result: null,
+            chunks: [],
+            models: [],
+            state: this._se({
+              cookies: this.jar
+            })
           };
         }
       }
-      let selectedModel = model;
-      const modelExists = this.modelList.some(m => m.id === model);
-      if (!modelExists) {
-        const defaultModel = this.modelList[0]?.id || "openai/gpt-5.5";
-        console.warn(`[WARN] Model "${model}" tidak valid. Menggunakan default: "${defaultModel}"`);
-        selectedModel = defaultModel;
+      const activeContent = prompt || rest.content || rest.query;
+      if (!activeContent) {
+        this._log("Error: Prompt/Content is empty");
+        return {
+          status: false,
+          result: "Parameter 'prompt' atau 'content' tidak boleh kosong.",
+          chunks: [],
+          models: this.modelList || [],
+          state: this._se({
+            cookies: this.jar
+          })
+        };
       }
-      console.log("[PROCESS] Initiating chat stream...");
+      let selectedModel = model || "openai/gpt-5.5";
+      const modelExists = this.modelList.some(m => m.id === selectedModel);
+      if (!modelExists && this.modelList.length > 0) {
+        selectedModel = this.modelList[0].id;
+      }
       this.convId = conversation_id || this.convId;
       this.visitorId = visitor_id || this.visitorId;
       const payload = {
-        content: content,
+        content: activeContent,
         model: selectedModel,
         visitorId: this.visitorId,
-        conversationId: this.convId,
-        ...rest
+        conversationId: this.convId
       };
-      console.log(`[INFO] Session Active - ConvID: ${this.convId} | VisitorID: ${this.visitorId}`);
-      const res = await this.api.post("/api/v2/chat/anonymous", payload, {
-        headers: {
-          "content-type": "application/json"
-        },
+      this._log("Posting request to /api/v2/chat/anonymous stream...");
+      const response = await this.cli.post("/api/v2/chat/anonymous", payload, {
         responseType: "stream"
       });
       return new Promise(resolve => {
-        const stream = res.data;
-        let buffer = "";
-        let fullResponse = "";
-        stream.on("data", chunk => {
-          buffer += chunk.toString();
-          const lines = buffer.split("\n");
-          buffer = lines.pop();
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            if (line.startsWith("data: ")) {
-              const data = line.slice(6);
-              if (data === "[DONE]") return;
-              try {
-                const parsed = JSON.parse(data);
-                if (parsed.type === "text-delta" && parsed.delta) {
-                  fullResponse += parsed.delta;
-                  if (on_delta) on_delta(parsed.delta);
-                }
-              } catch (e) {}
+        try {
+          let result = "";
+          const chunks = [];
+          let bufferStr = "";
+          response.data.on("data", chunk => {
+            try {
+              bufferStr += chunk.toString("utf-8");
+              const lines = bufferStr.split("\n");
+              bufferStr = lines.pop() || "";
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || !trimmed.startsWith("data:")) continue;
+                const rawData = trimmed.startsWith("data: ") ? trimmed.slice(6) : trimmed.slice(5).trim();
+                if (rawData === "[DONE]") continue;
+                try {
+                  const json = JSON.parse(rawData);
+                  chunks.push(json);
+                  if (json?.type === "text-delta" && json?.delta) {
+                    result += json.delta;
+                  }
+                } catch {}
+              }
+            } catch (e) {
+              this._log(`Stream chunk error: ${e?.message}`);
             }
-          }
-        });
-        stream.on("end", () => {
-          console.log("\n[SUCCESS] Stream selesai.");
-          resolve({
-            success: true,
-            result: fullResponse,
-            conversation_id: this.convId,
-            visitor_id: this.visitorId,
-            available_models: this.modelList
           });
-        });
-        stream.on("error", err => {
-          console.error("[STREAM ERROR]:", err.message);
-          resolve({
-            success: false,
-            error: err.message
+          response.data.on("end", () => {
+            try {
+              this._log("Stream processing completed.");
+              resolve({
+                status: true,
+                result: result,
+                chunks: chunks,
+                models: this.modelList || [],
+                state: this._se({
+                  cookies: this.jar
+                })
+              });
+            } catch (e) {
+              resolve({
+                status: false,
+                result: null,
+                chunks: [],
+                models: this.modelList || [],
+                state: this._se({
+                  cookies: this.jar
+                })
+              });
+            }
           });
-        });
+          response.data.on("error", err => {
+            this._log(`Stream error event: ${err?.message}`);
+            resolve({
+              status: false,
+              result: null,
+              chunks: [],
+              models: this.modelList || [],
+              state: this._se({
+                cookies: this.jar
+              })
+            });
+          });
+        } catch (e) {
+          this._log(`Stream listener error: ${e?.message}`);
+          resolve({
+            status: false,
+            result: null,
+            chunks: [],
+            models: this.modelList || [],
+            state: this._se({
+              cookies: this.jar
+            })
+          });
+        }
       });
     } catch (err) {
-      console.error("[ERROR] Chat Request Gagal:", err.message);
+      this._log(`Chat execution error: ${err?.message || "Unknown Error"}`);
       return {
-        success: false,
-        error: err.message
+        status: false,
+        result: null,
+        chunks: [],
+        models: this.modelList || [],
+        state: this._se({
+          cookies: this.jar
+        })
       };
     }
   }
