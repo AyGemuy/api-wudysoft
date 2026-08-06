@@ -4,8 +4,8 @@ import FormData from "form-data";
 import PROXY from "@/configs/proxy-url";
 class TextEffectGenerator {
   constructor() {
-    this.corsProxy = PROXY.url;
-    console.log("CORS proxy", PROXY.url);
+    this.corsProxy = PROXY.url();
+    console.log("CORS proxy", this.corsProxy);
     this.urlMap = {
       textpro: `${this.corsProxy}https://textpro.me/search?q=`,
       ephoto: `${this.corsProxy}https://en.ephoto360.com/index/search?q=`,

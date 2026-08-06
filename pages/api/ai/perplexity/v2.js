@@ -3,7 +3,7 @@ import {
   v4 as uuidv4
 } from "uuid";
 import PROXY from "@/configs/proxy-cors";
-const proxy = PROXY.url;
+const proxy = PROXY.url();
 console.log("CORS proxy", proxy);
 class Perplexity {
   constructor() {

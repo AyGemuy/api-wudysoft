@@ -324,9 +324,9 @@ export default async function handler(req, res) {
       usage: {
         method: "GET / POST",
         examples: {
-          list: "/api/tokusatsu?action=list&page=1",
-          detail: "/api/tokusatsu?action=detail&url=https://www.tokusatsuindo.com/forticus-stream-the-heirs-to-their-favorite-hero-sub-indonesia/",
-          search: "/api/tokusatsu?action=search&query=kamen"
+          list: "/?action=list&page=1",
+          detail: "/?action=detail&url=https://www.tokusatsuindo.com/forticus-stream-the-heirs-to-their-favorite-hero-sub-indonesia/",
+          search: "/?action=search&query=kamen"
         }
       }
     });

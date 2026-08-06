@@ -3,48 +3,68 @@ import crypto from "crypto";
 class TempMail {
   constructor() {
     this.email = null;
-    this.base = "https://tempmailget.com";
-    this.ua = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36";
-  }
-  _api() {
-    return axios.create({
+    this.base = "https://api.ragnarop.tech";
+    this.secret = "LV5WwBJD2ird3ykP1koxLob6M6rYI3wLXvRjUgiPoMyTOo0QlNrkn7n5ykhT5FXD";
+    this.ua = "Dart/3.3 (dart:io)";
+    this.client = axios.create({
       baseURL: this.base,
       headers: {
-        accept: "*/*",
-        "accept-language": "id-ID",
-        "cache-control": "no-cache",
-        pragma: "no-cache",
-        priority: "u=1, i",
-        referer: this.base + "/",
-        "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
-        "sec-ch-ua-mobile": "?1",
-        "sec-ch-ua-platform": '"Android"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
-        "user-agent": this.ua
+        Accept: "application/json",
+        "Content-Type": "application/json; charset=utf-8",
+        "User-Agent": this.ua,
+        "Accept-Encoding": "gzip",
+        "x-app-secret": this.secret
       }
     });
   }
-  _rand(name) {
-    if (name) return name;
-    const pfx = ["luckyshark", "boldlion", "fasttiger", "cleverfox"];
-    const rPfx = pfx[Math.floor(Math.random() * pfx.length)];
-    return `${rPfx}${crypto.randomInt(1e3, 1e4)}`;
-  }
-  async getDomains() {
+  _sig(path) {
     try {
-      console.log("[TempMail] domain: fetch daftar domain aktif …");
-      const res = await this._api().get("/api/domains");
+      const message = `${path}|${this.secret}`;
+      return crypto.createHmac("sha256", this.secret).update(message).digest("hex");
+    } catch (e) {
+      console.error("[TempMail][ERR] _sig:", e.message);
+      throw e;
+    }
+  }
+  _hdrs(path) {
+    try {
+      return {
+        "x-signature": this._sig(path)
+      };
+    } catch (e) {
+      console.error("[TempMail][ERR] _hdrs:", e.message);
+      throw e;
+    }
+  }
+  _rnd(name) {
+    try {
+      const pfx = ["luckyshark", "boldlion", "fasttiger", "cleverfox"];
+      const base = name || pfx[Math.floor(Math.random() * pfx.length)];
+      const hex8 = crypto.randomBytes(4).toString("hex");
+      const num4 = crypto.randomInt(1e3, 1e4).toString();
+      return `${base}${hex8}${num4}`;
+    } catch (e) {
+      console.error("[TempMail][ERR] _rnd:", e.message);
+      throw e;
+    }
+  }
+  async doms() {
+    try {
+      console.log("[TempMail] doms: Mengambil daftar domain...");
+      const path = "/api/domains";
+      const res = await this.client.get(path, {
+        headers: this._hdrs(path)
+      });
+      console.log("[TempMail] doms res:", res.data);
       return {
         status: true,
         result: res.data
       };
     } catch (e) {
-      console.error("[TempMail][ERR] domain:", e.message);
+      console.error("[TempMail][ERR] doms:", e.response?.data || e.message);
       return {
         status: false,
-        result: e.message
+        result: e.response?.data || e.message
       };
     }
   }
@@ -53,30 +73,44 @@ class TempMail {
     name
   } = {}) {
     try {
-      console.log("[TempMail] create: generate email baru …");
+      console.log("[TempMail] create: Memulai pembuatan email...");
       let dom = domain;
       if (!dom) {
-        const domData = await this.getDomains();
+        const domData = await this.doms();
         if (domData.status && domData.result?.domains?.length > 0) {
-          dom = domData.result.domains[0];
+          const domains = domData.result.domains;
+          dom = domains[Math.floor(Math.random() * domains.length)];
         } else {
           dom = "codelearnfast.com";
         }
       }
-      const user = this._rand(name);
+      const user = this._rnd(name);
+      if (user.length < 3) {
+        throw new Error("Prefix minimal harus memiliki 3 karakter");
+      }
+      const regexValidasi = /^[a-zA-Z0-9._-]+$/;
+      if (!regexValidasi.test(user)) {
+        throw new Error("Prefix hanya boleh berisi huruf, angka, titik, garis bawah, dan tanda hubung");
+      }
+      const path = "/api/emails";
+      const res = await this.client.get(`${path}?prefix=${user}&domain=${dom}`, {
+        headers: this._hdrs(path)
+      });
+      console.log("[TempMail] create res:", res.data);
       this.email = `${user}@${dom}`;
-      console.log("[TempMail] create: email berhasil dibuat ->", this.email);
+      console.log("[TempMail] create: Email berhasil dibuat ->", this.email);
       return {
         status: true,
         result: {
-          email: this.email
+          email: this.email,
+          data: res.data
         }
       };
     } catch (e) {
-      console.error("[TempMail][ERR] create:", e.message);
+      console.error("[TempMail][ERR] create:", e.response?.data || e.message);
       return {
         status: false,
-        result: e.message
+        result: e.response?.data || e.message
       };
     }
   }
@@ -85,15 +119,13 @@ class TempMail {
   } = {}) {
     try {
       const addr = email || this.email;
-      if (!addr) throw new Error("email kosong");
-      console.log("[TempMail] message: hit POST refresh inbox ->", addr);
-      const res = await this._api().post(`/api/emails/refresh?address=${encodeURIComponent(addr)}`, null, {
-        headers: {
-          "content-length": "0",
-          origin: this.base
-        }
+      if (!addr) throw new Error("Alamat email kosong");
+      console.log("[TempMail] message: Memeriksa inbox untuk ->", addr);
+      const path = "/api/emails";
+      const res = await this.client.get(`${path}?address=${encodeURIComponent(addr)}`, {
+        headers: this._hdrs(path)
       });
-      console.log("[TempMail] message: sukses fetch,", Array.isArray(res.data) ? res.data.length : 0, "pesan.");
+      console.log("[TempMail] message res:", res.data);
       return {
         status: true,
         result: {
@@ -101,10 +133,10 @@ class TempMail {
         }
       };
     } catch (e) {
-      console.error("[TempMail][ERR] message:", e.message);
+      console.error("[TempMail][ERR] message:", e.response?.data || e.message);
       return {
         status: false,
-        result: e.message
+        result: e.response?.data || e.message
       };
     }
   }
@@ -128,7 +160,7 @@ export default async function handler(req, res) {
     let response;
     switch (action) {
       case "domain":
-        response = await api.getDomains();
+        response = await api.doms();
         break;
       case "create":
         response = await api.create(params);

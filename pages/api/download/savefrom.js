@@ -2,7 +2,7 @@ import axios from "axios";
 import crypto from "crypto";
 import vm from "vm";
 import PROXY from "@/configs/proxy-cors";
-const proxy = PROXY.url;
+const proxy = PROXY.url();
 console.log("CORS proxy untuk SaveFromNet:", proxy);
 class SaveFromNet {
   constructor() {

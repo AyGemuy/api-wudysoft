@@ -8,20 +8,11 @@ class TempMail {
       this.password = "";
       this.baseUrl = "https://api.mail.tm";
       this.headers = {
-        accept: "application/json",
-        "accept-language": "id-ID",
-        "cache-control": "no-cache",
-        origin: "https://internxt.com",
-        pragma: "no-cache",
-        priority: "u=1, i",
-        referer: "https://internxt.com/",
-        "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
-        "sec-ch-ua-mobile": "?1",
-        "sec-ch-ua-platform": '"Android"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "cross-site",
-        "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36"
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 15; RMX3890 Build/AQ3A.240812.002)",
+        Connection: "Keep-Alive",
+        "Accept-Encoding": "gzip"
       };
       console.log("[MailTm] Client structural entry point initialized.");
     } catch (err) {
@@ -72,7 +63,7 @@ class TempMail {
       const hdrs = {
         ...this.headers
       };
-      if (act) hdrs["authorization"] = `Bearer ${act}`;
+      if (act) hdrs["Authorization"] = `Bearer ${act}`;
       const res = await axios({
         method: method || "GET",
         url: `${this.baseUrl}${path}`,
@@ -98,36 +89,44 @@ class TempMail {
   async domain({
     token,
     ...rest
-  }) {
+  } = {}) {
+    const act = token || this.token;
     try {
       console.log("[MailTm] Pulling accessible network domains...");
-      const act = token || this.token;
       const p = rest?.page || 1;
       const raw = await this._q("GET", `/domains?page=${p}`, null, act);
       return {
+        status: true,
         result: this._s(raw),
         token: act
       };
     } catch (err) {
       return {
-        result: null,
-        token: token || this.token
+        status: false,
+        result: err.message || null,
+        token: act
       };
     }
   }
   async create({
     token,
     ...rest
-  }) {
+  } = {}) {
+    const act = token || this.token;
     try {
       console.log("[MailTm] Initializing identity constructor routine...");
       let addr = rest?.address || this.address;
       let pass = rest?.password || this.password;
       if (!addr) {
         const doms = await this.domain({
-          token: token || this.token
+          token: act
         });
-        const selected = doms?.result?.[0]?.domain || "wshu.net";
+        const domainsList = doms?.result?.["hydra:member"];
+        let selected = "web-library.net";
+        if (Array.isArray(domainsList) && domainsList.length > 0) {
+          const randomIndex = Math.floor(Math.random() * domainsList.length);
+          selected = domainsList[randomIndex]?.domain || selected;
+        }
         addr = `${this._r("user")}@${selected}`;
       }
       if (!pass) pass = this._r("pass");
@@ -138,11 +137,12 @@ class TempMail {
         address: addr,
         password: pass
       };
-      const accRaw = await this._q("POST", "/accounts", body, token);
+      const accRaw = await this._q("POST", "/accounts", body, act);
       console.log("[MailTm] Exchanging credentials for identity token signature...");
-      const tokRaw = await this._q("POST", "/token", body, token);
+      const tokRaw = await this._q("POST", "/token", body, act);
       this.token = tokRaw?.token || this.token;
       return {
+        status: true,
         result: this._s({
           ...accRaw,
           account_password: pass
@@ -151,50 +151,102 @@ class TempMail {
       };
     } catch (err) {
       return {
-        result: null,
-        token: token || this.token
+        status: false,
+        result: err.message || null,
+        token: act
       };
     }
   }
   async message({
     token,
+    download,
+    source,
     ...rest
-  }) {
+  } = {}) {
+    const act = await this._t(token);
     try {
-      const act = await this._t(token);
       const msgId = rest?.id || rest?.msg_id || null;
+      const isDownloadTrue = download === true || download === "true";
+      const isSourceTrue = source === true || source === "true";
       if (msgId) {
         console.log(`[MailTm] Deep pulling targeted single node package message: ${msgId}`);
         const single = await this._q("GET", `/messages/${msgId}`, null, act);
+        const detail = {
+          ...single
+        };
+        if (isDownloadTrue && single?.downloadUrl) {
+          try {
+            detail.download = await this._q("GET", single.downloadUrl, null, act);
+          } catch (dlErr) {
+            console.error(`[MailTm] Fail to download raw from dynamic path: ${single.downloadUrl}`);
+          }
+        }
+        if (isSourceTrue && single?.sourceUrl) {
+          try {
+            detail.source = await this._q("GET", single.sourceUrl, null, act);
+          } catch (srcErr) {
+            console.error(`[MailTm] Fail to get source from dynamic path: ${single.sourceUrl}`);
+          }
+        }
         return {
-          result: this._s(single),
+          status: true,
+          result: this._s({
+            ...single,
+            detail: detail
+          }),
           token: act
         };
       }
       console.log("[MailTm] Syncing current mailbox message queue registry...");
       const p = rest?.page || 1;
-      const shallow = await this._q("GET", `/messages?page=${p}`, null, act) || [];
+      const raw = await this._q("GET", `/messages?page=${p}`, null, act);
+      const isArray = Array.isArray(raw);
+      const shallow = isArray ? raw : raw?.["hydra:member"] || [];
       const detailed = [];
-      console.log(`[MailTm] Parsing sequence buffer for ${shallow.length} mail packages via loop matrix...`);
+      console.log(`[MailTm] Parsing sequence buffer for ${shallow.length} mail packages via sequential for...of loop...`);
       for (const item of shallow) {
+        let mappedItem = {
+          ...item
+        };
         try {
           const id = item?.id;
           if (id) {
             const content = await this._q("GET", `/messages/${id}`, null, act);
-            if (content) detailed.push(content);
+            if (content) {
+              const detail = {
+                ...content
+              };
+              if (isDownloadTrue && content?.downloadUrl) {
+                try {
+                  detail.download = await this._q("GET", content.downloadUrl, null, act);
+                } catch (dlErr) {}
+              }
+              if (isSourceTrue && content?.sourceUrl) {
+                try {
+                  detail.source = await this._q("GET", content.sourceUrl, null, act);
+                } catch (srcErr) {}
+              }
+              mappedItem = {
+                ...item,
+                detail: detail
+              };
+            }
           }
         } catch (subErr) {
-          detailed.push(item);
+          mappedItem.detail = null;
         }
+        detailed.push(mappedItem);
       }
       return {
+        status: true,
         result: this._s(detailed),
         token: act
       };
     } catch (err) {
       return {
-        result: null,
-        token: token || this.token
+        status: false,
+        result: err.message || null,
+        token: act
       };
     }
   }
@@ -208,12 +260,15 @@ export default async function handler(req, res) {
   if (!action) {
     return res.status(400).json({
       status: false,
-      error: "Parameter 'action' wajib diisi.",
-      available_actions: validActions,
-      usage: {
-        method: "GET / POST",
-        example: "/?action=create"
-      }
+      result: {
+        error: "Parameter 'action' wajib diisi.",
+        available_actions: validActions,
+        usage: {
+          method: "GET / POST",
+          example: "/?action=create"
+        }
+      },
+      token: params.token || null
     });
   }
   const api = new TempMail();
@@ -230,7 +285,8 @@ export default async function handler(req, res) {
         if (!params.token) {
           return res.status(400).json({
             status: false,
-            error: "Parameter 'token' wajib diisi untuk action 'message'."
+            result: "Parameter 'token' wajib diisi untuk action 'message'.",
+            token: null
           });
         }
         response = await api.message(params);
@@ -238,21 +294,27 @@ export default async function handler(req, res) {
       default:
         return res.status(400).json({
           status: false,
-          error: `Action tidak valid: ${action}.`,
-          valid_actions: validActions
+          result: {
+            error: `Action tidak valid: ${action}.`,
+            valid_actions: validActions
+          },
+          token: params.token || null
         });
     }
     return res.status(200).json({
-      action: action,
-      status: true,
-      ...response
+      status: response.status,
+      result: response.result,
+      token: response.token
     });
   } catch (error) {
     console.error(`[FATAL ERROR] Kegagalan pada action '${action}':`, error);
     return res.status(500).json({
       status: false,
-      message: "Terjadi kesalahan internal pada server atau target website.",
-      error: error.message || "Unknown Error"
+      result: {
+        message: "Terjadi kesalahan internal pada server atau target website.",
+        error: error.message || "Unknown Error"
+      },
+      token: params.token || null
     });
   }
 }

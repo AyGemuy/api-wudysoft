@@ -8,7 +8,7 @@ import {
   wrapper
 } from "axios-cookiejar-support";
 import PROXY from "@/configs/proxy-cors";
-const proxy = PROXY.url;
+const proxy = PROXY.url();
 console.log("CORS proxy", proxy);
 class MConverter {
   constructor() {

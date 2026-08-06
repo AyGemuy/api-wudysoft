@@ -4,35 +4,115 @@ class CaptchaSolver {
     this.api = axios.create({
       timeout: 6e4
     });
-    this.keys = {
-      solvium: ["jyXRGmOUPPy0f09lPu9cFNTK7mNIkR8m", "Bsf82Mjt5NE8E6jzOQ3rdxJxPZ1l07U0", "nMVr1OXFgO77YVtlUwHFZPELEg6kEWFc", "Z0AGIJkNHQG55BLEpihJsaApVZzc41t8"],
-      "anti-captcha": ["98c5510fb5661c0511a3371de51c6e35"]
-    };
-    this.keyIndex = {
-      solvium: 0,
-      "anti-captcha": 0
-    };
-    this.cfg = {
-      solvium: {
-        base: "https://captcha.solvium.io/api/v1/task",
-        add: "/turnstile",
-        get: id => `/status/${id}`,
-        ok: "completed",
-        parse: d => d?.result?.solution
+    this.providers = [{
+      name: "solvium",
+      keys: ["jyXRGmOUPPy0f09lPu9cFNTK7mNIkR8m", "Bsf82Mjt5NE8E6jzOQ3rdxJxPZ1l07U0", "nMVr1OXFgO77YVtlUwHFZPELEg6kEWFc", "Z0AGIJkNHQG55BLEpihJsaApVZzc41t8"],
+      keyIndex: 0,
+      add: {
+        url: "https://captcha.solvium.io/api/v1/task",
+        endpoint: "/turnstile",
+        method: "GET",
+        header: key => ({
+          Authorization: `Bearer ${key}`
+        }),
+        params: (url, sitekey, rest) => ({
+          url: url,
+          sitekey: sitekey,
+          ...rest
+        }),
+        body: null,
+        response: data => data?.task_id
       },
-      "anti-captcha": {
-        base: "https://api.anti-captcha.com",
-        add: "/createTask",
-        get: () => "/getTaskResult",
-        ok: "ready",
-        parse: d => d?.solution?.token
+      poll: {
+        url: "https://captcha.solvium.io/api/v1/task",
+        endpoint: tid => `/status/${tid}`,
+        method: "GET",
+        header: key => ({
+          Authorization: `Bearer ${key}`
+        }),
+        body: null,
+        ok: "completed",
+        response: data => data?.result?.solution
       }
-    };
+    }, {
+      name: "anti-captcha",
+      keys: ["98c5510fb5661c0511a3371de51c6e35"],
+      keyIndex: 0,
+      add: {
+        url: "https://api.anti-captcha.com",
+        endpoint: "/createTask",
+        method: "POST",
+        header: () => ({
+          "Content-Type": "application/json"
+        }),
+        body: (key, url, sitekey, rest) => ({
+          clientKey: key,
+          task: {
+            type: "TurnstileTaskProxyless",
+            websiteURL: url,
+            websiteKey: sitekey,
+            ...rest
+          }
+        }),
+        response: data => data?.errorId === 0 ? data?.taskId : null
+      },
+      poll: {
+        url: "https://api.anti-captcha.com",
+        endpoint: "/getTaskResult",
+        method: "POST",
+        header: () => ({
+          "Content-Type": "application/json"
+        }),
+        body: (key, tid) => ({
+          clientKey: key,
+          taskId: tid
+        }),
+        ok: "ready",
+        response: data => data?.solution?.token
+      }
+    }, {
+      name: "2captcha",
+      keys: ["e6dc1ba7300343def65a3e7c03e19bc2"],
+      keyIndex: 0,
+      add: {
+        url: "https://api.2captcha.com",
+        endpoint: "/createTask",
+        method: "POST",
+        header: () => ({
+          "Content-Type": "application/json"
+        }),
+        body: (key, url, sitekey, rest) => ({
+          clientKey: key,
+          task: {
+            type: "TurnstileTaskProxyless",
+            websiteURL: url,
+            websiteKey: sitekey,
+            ...rest
+          }
+        }),
+        response: data => data?.errorId === 0 ? data?.taskId : null
+      },
+      poll: {
+        url: "https://api.2captcha.com",
+        endpoint: "/getTaskResult",
+        method: "POST",
+        header: () => ({
+          "Content-Type": "application/json"
+        }),
+        body: (key, tid) => ({
+          clientKey: key,
+          taskId: tid
+        }),
+        ok: "ready",
+        response: data => data?.solution?.token
+      }
+    }];
   }
   getNextKey(provider) {
-    const keys = this.keys[provider];
-    const key = keys[this.keyIndex[provider]];
-    this.keyIndex[provider] = (this.keyIndex[provider] + 1) % keys.length;
+    const keys = provider.keys;
+    if (!keys || keys.length === 0) return null;
+    const key = keys[provider.keyIndex];
+    provider.keyIndex = (provider.keyIndex + 1) % keys.length;
     return key;
   }
   log(m) {
@@ -47,81 +127,100 @@ class CaptchaSolver {
     sitekey,
     ...rest
   }) {
-    const provs = Object.keys(this.cfg);
-    for (const p of provs) {
-      if (provider && p !== provider) continue;
-      const c = this.cfg[p];
-      const k = rest?.key || rest?.apiKey || this.getNextKey(p);
+    for (const p of this.providers) {
+      if (provider && p.name !== provider) continue;
+      const key = rest?.key || rest?.apiKey || this.getNextKey(p);
+      if (!key) {
+        this.log(`Key tidak tersedia untuk provider: ${p.name}`);
+        continue;
+      }
       try {
-        this.log(`Mencoba provider: ${p} dengan key index ${this.keyIndex[p]}...`);
-        const tid = await this.addTask(p, c, k, url, sitekey, rest);
+        this.log(`Mencoba provider: ${p.name} dengan key index ${p.keyIndex}...`);
+        const tid = await this.addTask(p, key, url, sitekey, rest);
         if (!tid) {
-          this.log(`Gagal membuat task di ${p}, mencoba provider lain...`);
+          this.log(`Gagal membuat task di ${p.name}, beralih ke provider lain...`);
           continue;
         }
-        this.log(`ID: ${tid}. Memulai polling...`);
-        const res = await this.poll(p, c, k, tid);
+        this.log(`ID Task: ${tid}. Memulai polling status...`);
+        const res = await this.poll(p, key, tid);
         if (res?.token) return res;
       } catch (e) {
-        this.log(`Error pada ${p}: ${e.message}`);
+        this.log(`Error pada ${p.name}: ${e.message}`);
         continue;
       }
     }
     return null;
   }
-  async addTask(p, c, k, url, sitekey, rest) {
+  async addTask(provider, key, url, sitekey, rest) {
+    const config = provider.add;
+    const requestUrl = `${config.url}${config.endpoint}`;
+    const headers = config.header ? config.header(key) : {};
+    const body = config.body ? config.body(key, url, sitekey, rest) : null;
+    const params = config.params ? config.params(url, sitekey, rest) : null;
     try {
-      const res = p === "solvium" ? await this.api.get(`${c.base}${c.add}`, {
-        params: {
-          url: url,
-          sitekey: sitekey,
-          ...rest
-        },
-        headers: {
-          Authorization: `Bearer ${k}`
-        }
-      }) : await this.api.post(`${c.base}${c.add}`, {
-        clientKey: k,
-        task: {
-          type: "TurnstileTaskProxyless",
-          websiteURL: url,
-          websiteKey: sitekey,
-          ...rest
-        }
-      });
-      return p === "solvium" ? res?.data?.task_id : res?.data?.errorId === 0 ? res?.data?.taskId : null;
-    } catch {
+      let res;
+      switch (config.method.toUpperCase()) {
+        case "GET":
+          res = await this.api.get(requestUrl, {
+            headers: headers,
+            params: params
+          });
+          break;
+        case "POST":
+          res = await this.api.post(requestUrl, body, {
+            headers: headers
+          });
+          break;
+        default:
+          this.log(`Metode ${config.method} tidak didukung.`);
+          return null;
+      }
+      return config.response(res?.data);
+    } catch (e) {
+      this.log(`Gagal addTask pada ${provider.name}: ${e.message}`);
       return null;
     }
   }
-  async poll(p, c, k, tid) {
+  async poll(provider, key, tid) {
+    const config = provider.poll;
+    const endpoint = typeof config.endpoint === "function" ? config.endpoint(tid) : config.endpoint;
+    const requestUrl = `${config.url}${endpoint}`;
+    const headers = config.header ? config.header(key) : {};
+    const body = config.body ? config.body(key, tid) : null;
     let loop = 0;
     while (loop < 60) {
       loop++;
       await this.wait(3e3);
       try {
-        const res = p === "solvium" ? await this.api.get(`${c.base}${c.get(tid)}`, {
-          headers: {
-            Authorization: `Bearer ${k}`
-          }
-        }) : await this.api.post(`${c.base}${c.get()}`, {
-          clientKey: k,
-          taskId: tid
-        });
+        let res;
+        switch (config.method.toUpperCase()) {
+          case "GET":
+            res = await this.api.get(requestUrl, {
+              headers: headers
+            });
+            break;
+          case "POST":
+            res = await this.api.post(requestUrl, body, {
+              headers: headers
+            });
+            break;
+          default:
+            return null;
+        }
         const data = res?.data || {};
         const status = data?.status || "processing";
-        if (status === c.ok) {
-          this.log(`[${p}] Berhasil diselesaikan!`);
+        if (status === config.ok) {
+          this.log(`[${provider.name}] Berhasil diselesaikan!`);
           return {
-            token: c.parse(data),
+            token: config.response(data),
             status: status,
             loop: loop,
-            provider: p
+            provider: provider.name
           };
         }
-        this.log(`[${p}] Polling ${loop}: ${status}`);
+        this.log(`[${provider.name}] Polling ke-${loop}: ${status}`);
       } catch (e) {
-        this.log(`Polling warn: ${e.message}`);
+        this.log(`Polling warn pada ${provider.name}: ${e.message}`);
       }
     }
     return null;
@@ -139,9 +238,8 @@ export default async function handler(req, res) {
     const data = await api.solve(params);
     return res.status(200).json(data);
   } catch (error) {
-    const errorMessage = error.message || "Terjadi kesalahan saat memproses URL";
     return res.status(500).json({
-      error: errorMessage
+      error: error.message || "Terjadi kesalahan sistem"
     });
   }
 }

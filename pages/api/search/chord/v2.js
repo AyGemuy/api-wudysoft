@@ -1,8 +1,8 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import PROXY from "@/configs/proxy-url";
-const proxy = PROXY.url;
-console.log("CORS proxy", PROXY.url);
+const proxy = PROXY.url();
+console.log("CORS proxy", proxy);
 class JRChord {
   constructor() {
     this.corsProxy = proxy;

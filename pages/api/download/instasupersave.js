@@ -1,7 +1,7 @@
 import axios from "axios";
 import crypto from "crypto";
 import PROXY from "@/configs/proxy-cors";
-const proxy = PROXY.url;
+const proxy = PROXY.url();
 console.log("CORS proxy untuk InstaSuperSave:", proxy);
 class InstaSuperSave {
   constructor() {

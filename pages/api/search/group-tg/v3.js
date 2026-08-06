@@ -1,7 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import PROXY from "@/configs/proxy-url";
-const proxy = PROXY.url;
+const proxy = PROXY.url();
 console.log("CORS proxy", proxy);
 const BASE_URL_TGSTAT = "https://tgstat.com";
 const BASE_URL_SEARCH = "https://tgstat.com/en/channels/global-search";

@@ -1,113 +1,115 @@
 import axios from "axios";
 import apiConfig from "@/configs/apiConfig";
 const BASE_CONFIGS = [{
+  name: "kanaa",
+  supports: ["turnstile", "turnstile-min", "turnstile-max", "waf-session", "source"],
+  method: "POST",
+  url: "https://cf.kanaa.eu.cc/solve",
+  payload: (url, sitekey, act) => ({
+    url: url,
+    siteKey: sitekey,
+    mode: act === "turnstile" ? "turnstile-min" : act
+  }),
+  extract: d => d?.token
+}, {
+  name: "shannz",
+  supports: ["turnstile", "turnstile-min"],
+  method: "POST",
+  url: "https://shannz.zone.id/api/solve-turnstile-min",
+  headers: {
+    "User-Agent": "node",
+    "x-bycf-version": "1.0.5",
+    "x-bycf-secret": "shannz-secret-key-123"
+  },
+  payload: (url, sitekey) => ({
+    url: url,
+    siteKey: sitekey,
+    proxy: null
+  }),
+  extract: d => d?.data
+}, {
   name: "zelapi",
   supports: ["turnstile", "cloudflare", "captchav3", "recaptchav2", "cloudflare-managed"],
-  getUrl: (url, sitekey, act) => {
-    const paths = {
-      turnstile: "/api/turnstile",
-      cloudflare: "/api/cloudflare",
-      captchav3: "/api/captchav3",
-      recaptchav2: "/api/recaptchav2",
-      "cloudflare-managed": "/api/cloudflare-managed"
-    };
-    return paths[act] ? `https://cf.zelapi.eu.cc${paths[act]}` : null;
-  },
   method: "POST",
-  headers: {},
-  getPayload: (url, sitekey, act) => {
-    if (act === "cloudflare" || act === "cloudflare-managed") {
-      return {
-        url: url,
-        headless: true
-      };
-    }
-    return {
-      sitekey: sitekey,
-      siteurl: url
-    };
+  url: (url, sitekey, act) => `https://cf.zelapi.eu.cc/api/${act}`,
+  payload: (url, sitekey, act) => ["cloudflare", "cloudflare-managed"].includes(act) ? {
+    url: url,
+    headless: true
+  } : {
+    sitekey: sitekey,
+    siteurl: url
   },
-  extract: data => data?.token || data?.data?.token
+  extract: d => d?.token || d?.data?.token
 }, {
   name: "fgsi",
   supports: ["turnstile", "turnstile-min", "turnstile-max"],
-  getUrl: (url, sitekey, act) => {
-    return act === "turnstile-max" ? "https://fgsi.dpdns.org/api/tools/cfclearance/turnstile-max" : "https://fgsi.dpdns.org/api/tools/cfclearance/turnstile-min";
-  },
   method: "GET",
   headers: {
     apikey: "CircleNBTeam"
   },
-  getPayload: (url, sitekey) => ({
+  url: (url, sitekey, act) => `https://fgsi.dpdns.org/api/tools/cfclearance/${act === "turnstile-max" ? "turnstile-max" : "turnstile-min"}`,
+  payload: (url, sitekey) => ({
     sitekey: sitekey,
     url: url
   }),
-  extract: data => data?.data?.token
+  extract: d => d?.data?.token
 }, {
   name: "zenzxz",
   supports: ["turnstile", "turnstile-min", "turnstile-max"],
-  getUrl: () => "https://cf.zenzxz.web.id/solve",
   method: "POST",
-  headers: {},
-  getPayload: (url, sitekey, act) => ({
+  url: "https://cf.zenzxz.web.id/solve",
+  payload: (url, sitekey, act) => ({
     url: url,
     siteKey: sitekey,
     mode: act === "turnstile-max" ? "turnstile-max" : "turnstile-min"
   }),
-  extract: data => data?.data?.token
+  extract: d => d?.data?.token
 }, {
   name: "pitucode",
   supports: ["turnstile", "turnstile-min", "turnstile-max"],
-  getUrl: (url, sitekey, act) => {
-    return act === "turnstile-max" ? "https://cf.pitucode.com/solve-turnstile-max" : "https://cf.pitucode.com/solve-turnstile-min";
-  },
   method: "POST",
-  headers: {},
-  getPayload: (url, sitekey, act) => {
-    if (act === "turnstile-max") {
-      return {
-        url: url
-      };
-    }
-    return {
-      url: url,
-      siteKey: sitekey
-    };
+  url: (url, sitekey, act) => `https://cf.pitucode.com/${act === "turnstile-max" ? "solve-turnstile-max" : "solve-turnstile-min"}`,
+  payload: (url, sitekey, act) => act === "turnstile-max" ? {
+    url: url
+  } : {
+    url: url,
+    siteKey: sitekey
   },
-  extract: data => data?.token || data?.data?.token
+  extract: d => d?.token || d?.data?.token
 }, {
   name: "local-domain",
   supports: ["turnstile", "turnstile-min", "turnstile-max"],
-  getUrl: (url, sitekey, act) => {
-    const path = act === "turnstile-max" ? "captcha-solver" : "captcha-solver";
-    return `https://${apiConfig.DOMAIN_URL}/api/tools/${path}`;
-  },
   method: "GET",
-  headers: {},
-  getPayload: (url, sitekey) => ({
+  url: `https://${apiConfig.DOMAIN_URL}/api/tools/captcha-solver`,
+  payload: (url, sitekey) => ({
     url: url,
     sitekey: sitekey
   }),
-  extract: data => data?.token
+  extract: d => d?.token
 }];
 class CaptchaSolver {
   constructor() {
     this.bases = BASE_CONFIGS;
+    this.client = axios.create({
+      timeout: 6e4,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36"
+      }
+    });
   }
-  gen(url, sitekey, act) {
+  gen(url, sitekey, act, overrides = {}) {
     try {
-      const activeBases = this.bases.filter(b => {
-        const hasSupport = b.supports.includes(act);
-        const resolvedUrl = b.getUrl(url, sitekey, act);
-        return hasSupport && resolvedUrl !== null;
-      });
+      const activeBases = this.bases.filter(b => b.supports.includes(act));
       console.log(`[GENERATE] Menyusun ${activeBases.length} generator untuk target mode: ${act}.`);
       return activeBases.map(b => ({
         name: b.name,
-        endpoint: b.getUrl(url, sitekey, act),
+        endpoint: typeof b.url === "function" ? b.url(url, sitekey, act) : b.url,
         method: b.method,
         headers: b.headers || {},
-        payload: b.getPayload(url, sitekey, act),
+        payload: {
+          ...b.payload(url, sitekey, act),
+          ...overrides
+        },
         extract: b.extract
       }));
     } catch (err) {
@@ -122,9 +124,7 @@ class CaptchaSolver {
       const cfg = {
         method: gen.method,
         url: gen.endpoint,
-        timeout: 45e3,
         headers: {
-          "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36",
           ...gen.headers
         }
       };
@@ -135,7 +135,7 @@ class CaptchaSolver {
         cfg.headers["Content-Type"] = "application/json";
       }
       console.log(`[REQUEST] Mengirim payload ke ${gen.endpoint}`);
-      const res = await axios(cfg);
+      const res = await this.client(cfg);
       const elapsed = ((Date.now() - t) / 1e3).toFixed(2);
       console.log(`[RESPONSE] Menerima balasan dengan status: ${res.status}`);
       const token = gen.extract(res.data);
@@ -164,12 +164,33 @@ class CaptchaSolver {
   async solve({
     url,
     sitekey,
+    act,
     ...rest
-  }) {
-    const modeAct = rest.act || "turnstile";
-    console.log(`[INFO] Memulai proses eksekusi. Target URL: ${url} | Mode: ${modeAct}`);
+  } = {}) {
+    const modeAct = act || "turnstile";
+    console.log(`[INFO] Memulai proses eksekusi. Target URL: ${url || "undefined"} | Mode: ${modeAct}`);
+    const allSupportedActs = [...new Set(this.bases.flatMap(b => b.supports))];
+    if (!allSupportedActs.includes(modeAct)) {
+      console.warn(`[VALIDATION] Aksi '${modeAct}' tidak didukung.`);
+      return {
+        error: `Aksi '${modeAct}' tidak valid. Pilihan yang didukung: ${allSupportedActs.join(", ")}`
+      };
+    }
+    if (!url) {
+      console.warn("[VALIDATION] Parameter 'url' kosong.");
+      return {
+        error: "Parameter 'url' diperlukan"
+      };
+    }
+    const needsSitekey = ["turnstile", "turnstile-min", "turnstile-max", "captchav3", "recaptchav2"].includes(modeAct);
+    if (needsSitekey && !sitekey) {
+      console.warn(`[VALIDATION] Parameter 'sitekey' kosong untuk aksi '${modeAct}'.`);
+      return {
+        error: `Parameter 'sitekey' wajib diisi untuk mode aksi '${modeAct}'`
+      };
+    }
     try {
-      const gens = this.gen(url, sitekey, modeAct);
+      const gens = this.gen(url, sitekey, modeAct, rest);
       if (gens.length === 0) {
         return {
           error: `Tidak ada provider solver yang mendukung aksi '${modeAct}'.`
@@ -207,42 +228,15 @@ class CaptchaSolver {
   }
 }
 export default async function handler(req, res) {
-  console.log(`[HANDLER] Inbound request terdeteksi via metode: ${req.method}`);
+  const params = req.method === "GET" ? req.query : req.body;
+  const api = new CaptchaSolver();
   try {
-    const params = req.method === "GET" ? req.query : req.body;
-    const act = params.act || "turnstile";
-    const allSupportedActs = [...new Set(BASE_CONFIGS.flatMap(b => b.supports))];
-    if (!allSupportedActs.includes(act)) {
-      return res.status(400).json({
-        error: `Aksi '${act}' tidak valid. Pilihan: ${allSupportedActs.join(", ")}`
-      });
-    }
-    const needsSitekey = ["turnstile", "turnstile-min", "turnstile-max", "captchav3", "recaptchav2"].includes(act);
-    if (!params.url) {
-      return res.status(400).json({
-        error: "Parameter 'url' diperlukan"
-      });
-    }
-    if (needsSitekey && !params.sitekey) {
-      return res.status(400).json({
-        error: `Parameter 'sitekey' wajib diisi untuk mode aksi '${act}'`
-      });
-    }
-    const api = new CaptchaSolver();
-    const data = await api.solve({
-      ...params,
-      act: act
-    });
-    if (data && data.error) {
-      return res.status(500).json({
-        error: data.error
-      });
-    }
+    const data = await api.solve(params);
     return res.status(200).json(data);
-  } catch (handlerErr) {
-    console.error(`[HANDLER-CRITICAL] Kegagalan total pada sistem routing API: ${handlerErr.message}`);
+  } catch (error) {
+    const errorMessage = error.message || "Terjadi kesalahan saat memproses request";
     return res.status(500).json({
-      error: `Server Internal Error: ${handlerErr.message}`
+      error: errorMessage
     });
   }
 }

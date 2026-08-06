@@ -3,7 +3,7 @@ import crypto from "crypto";
 import axios from "axios";
 import apiConfig from "@/configs/apiConfig";
 import PROXY from "@/configs/proxy-cors";
-const proxy = PROXY.url;
+const proxy = PROXY.url();
 console.log("CORS proxy", proxy);
 class APKPure {
   constructor() {

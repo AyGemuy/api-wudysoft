@@ -1,7 +1,7 @@
 import axios from "axios";
 import PROXY from "@/configs/proxy-url";
-const proxy = PROXY.url;
-console.log("CORS proxy", PROXY.url);
+const proxy = PROXY.url();
+console.log("CORS proxy", proxy);
 class GlobalPrayerTime {
   constructor() {
     this.headers = {

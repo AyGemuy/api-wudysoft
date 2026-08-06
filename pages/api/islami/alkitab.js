@@ -162,23 +162,21 @@ class AlkitabClient {
           verse_id = (url.split("#")[1] || "").replace("verse-", "");
         } catch {}
         return {
-          passage_reference: title,
-          passage_url: url,
-          passage_text: contentText,
-          passage_components: {
+          reference: title,
+          url: url,
+          text: contentText,
+          components: {
             version_code: version || null,
             book_name: decodeURIComponent(book) || null,
             chapter_number: parseInt(chapter, 10) || chapter || null,
-            verse_id: verse_id || null
+            id: verse_id || null
           }
         };
       }).get();
       console.log(`[Sukses] Pencarian selesai, memperoleh ${results.length} baris data`);
       return {
         status: true,
-        result: {
-          search_results: results
-        }
+        result: results
       };
     } catch (err) {
       console.log(`[Error] Gagal pada fungsi search(): ${err?.message || err}`);
@@ -258,9 +256,9 @@ class AlkitabClient {
         const text_content = paragraphs.join(" ") || "";
         const xrefs = item.find("span.xref").map((i, xr) => _(xr).attr("id") || "").get().filter(Boolean);
         return {
-          verse_id: verse_id || null,
-          verse_number: verse_num || null,
-          verse_text: text_content,
+          id: verse_id || null,
+          number: verse_num || null,
+          text: text_content,
           cross_references: xrefs || []
         };
       }).get();

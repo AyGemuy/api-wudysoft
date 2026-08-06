@@ -2,7 +2,7 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import qs from "qs";
 import PROXY from "@/configs/proxy-url";
-const proxy = PROXY.url;
+const proxy = PROXY.url();
 console.log("CORS proxy", proxy);
 class SakuraNovel {
   constructor() {

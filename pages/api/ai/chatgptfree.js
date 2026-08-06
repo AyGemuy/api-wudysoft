@@ -11,8 +11,8 @@ import {
   v4 as uuidv4
 } from "uuid";
 import PROXY from "@/configs/proxy-url";
-const proxy = PROXY.url;
-console.log("CORS proxy", PROXY.url);
+const proxy = PROXY.url();
+console.log("CORS proxy", proxy);
 class AiChat {
   constructor() {
     this.jar = new CookieJar();

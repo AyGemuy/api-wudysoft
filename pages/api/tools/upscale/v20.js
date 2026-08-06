@@ -2,8 +2,8 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import FormData from "form-data";
 import PROXY from "@/configs/proxy-url";
-const proxy = PROXY.url;
-console.log("CORS proxy", PROXY.url);
+const proxy = PROXY.url();
+console.log("CORS proxy", proxy);
 class Flatai {
   constructor() {
     console.log("Proses: Flatai class diinisialisasi");

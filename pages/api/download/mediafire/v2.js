@@ -1,7 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import PROXY from "@/configs/proxy-url";
-const proxy = PROXY.url;
+const proxy = PROXY.url();
 class MFetcher {
   constructor() {
     this.config = {

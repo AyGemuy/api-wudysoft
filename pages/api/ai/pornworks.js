@@ -1,9 +1,6 @@
 import axios from "axios";
 import FormData from "form-data";
 import crypto from "crypto";
-import PROXY from "@/configs/proxy-cors";
-const proxy = PROXY.url;
-console.log("CORS proxy", proxy);
 class Generator {
   constructor() {
     this.client = null;
@@ -49,7 +46,7 @@ class Generator {
         throw new Error("Token tidak tersedia.");
       }
       this.client = axios.create({
-        baseURL: `${proxy}https://pornworks.com/api/v2`,
+        baseURL: "https://pornworks.com/api/v2",
         headers: {
           "cf-auth-token": this.token,
           "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",

@@ -9,8 +9,8 @@ import * as cheerio from "cheerio";
 const httpsAgent = new Agent({
   keepAlive: true
 });
-const proxy = PROXY.url;
-console.log("CORS proxy", PROXY.url);
+const proxy = PROXY.url();
+console.log("CORS proxy", proxy);
 class Akinator {
   constructor(sessionId, region = "id") {
     this.sessionId = sessionId;

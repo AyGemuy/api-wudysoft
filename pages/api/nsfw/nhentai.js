@@ -1,300 +1,344 @@
 import axios from "axios";
-import * as cheerio from "cheerio";
-import apiConfig from "@/configs/apiConfig";
-const proxy = `https://${apiConfig.DOMAIN_URL}/api/tools/web/html/v19?url=`;
+import PROXY from "@/configs/proxy-url";
+const proxy = PROXY.url();
 console.log("CORS proxy", proxy);
-class NHentaiScraper {
+class NHentai {
   constructor() {
     this.baseUrl = "https://nhentai.net";
-    this.proxy = url => `${proxy}${url.startsWith("http") ? "" : this.baseUrl}${url}`;
+    this.proxy = url => `${proxy}${this.baseUrl}${url}`;
+    this.client = axios.create({
+      timeout: 6e4,
+      headers: {
+        accept: "*/*",
+        "accept-language": "id-ID",
+        "cache-control": "no-cache",
+        pragma: "no-cache",
+        priority: "u=1, i",
+        referer: "https://nhentai.net/",
+        "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
+        "sec-ch-ua-arch": '""',
+        "sec-ch-ua-bitness": '""',
+        "sec-ch-ua-full-version": '"127.0.6533.144"',
+        "sec-ch-ua-full-version-list": '"Chromium";v="127.0.6533.144", "Not)A;Brand";v="99.0.0.0", "Microsoft Edge Simulate";v="127.0.6533.144", "Lemur";v="127.0.6533.144"',
+        "sec-ch-ua-mobile": "?1",
+        "sec-ch-ua-model": '"RMX3890"',
+        "sec-ch-ua-platform": '"Android"',
+        "sec-ch-ua-platform-version": '"15.0.0"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
+        "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36"
+      }
+    });
   }
-  async request(url) {
-    const proxied = this.proxy(url);
+  _id(input) {
     try {
-      const {
-        data
-      } = await axios.get(proxied, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-          Referer: this.baseUrl,
-          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-        },
-        timeout: 2e4
-      });
-      return data;
+      if (!input) return "";
+      if (typeof input === "string") {
+        const match = input.match(/\/g\/(\d+)/) || input.match(/^(\d+)$/);
+        return match ? match[1] : input;
+      }
+      return String(input);
     } catch (err) {
-      throw new Error(`Request failed: ${err.message}`);
+      console.error(`[NHentai] _id error: ${err.message}`);
+      return input;
     }
   }
-  async home() {
-    try {
-      const data = await this.request("/");
-      const $ = cheerio.load(data);
-      const galleries = [];
-      $(".index-container .gallery").each((_, el) => {
-        const $el = $(el);
-        const $link = $el.find("a.cover");
-        const url = $link.attr("href") || "";
-        if (!url) return;
-        const galleryId = url.match(/\/g\/(\d+)\//)?.[1] || "";
-        const title = $el.find(".caption").text().trim() || "No title";
-        const $img = $link.find("img");
-        let thumbnail = $img.attr("data-src") || $img.attr("src") || "";
-        if (!thumbnail) {
-          thumbnail = $link.find("noscript img").attr("src") || "";
-        }
-        const dataTags = $el.attr("data-tags") || "";
-        const tagIds = dataTags ? dataTags.split(" ").map(id => id.trim()).filter(Boolean) : [];
-        const padding = $link.attr("style")?.match(/padding:0 0 ([\d.]+)%/)?.[1] || "0";
-        const aspectRatio = padding ? parseFloat(padding) : 0;
-        galleries.push({
-          galleryId: galleryId,
-          title: title.length > 120 ? title.substring(0, 117) + "..." : title,
-          url: this.baseUrl + url,
-          thumbnail: thumbnail.startsWith("//") ? "https:" + thumbnail : thumbnail,
-          tagIds: tagIds,
-          aspectRatio: aspectRatio
-        });
-      });
-      const sectionTitle = $(".index-container h2").first().text().trim() || "Popular Now";
+  async req({
+    url,
+    method = "GET",
+    headers = {},
+    data = null,
+    params = null,
+    ...rest
+  } = {}) {
+    if (!url) {
       return {
-        galleries: galleries,
-        total: galleries.length,
-        sectionTitle: sectionTitle
+        error: "Parameter 'url' is required for requests."
       };
-    } catch (error) {
-      console.error("Home error:", error.message);
+    }
+    const proxied = this.proxy(url);
+    console.log(`[NHentai] Dispatching [${method}] request to: ${proxied}`);
+    try {
+      const response = await this.client({
+        url: proxied,
+        method: method,
+        headers: headers,
+        data: data,
+        params: params,
+        ...rest
+      });
+      return response.data;
+    } catch (err) {
+      console.error(`[NHentai] Request [${method}] failed for ${url}: ${err.message}`);
       return {
-        galleries: [],
-        total: 0,
-        sectionTitle: "Error"
+        error: err.message
+      };
+    }
+  }
+  async cdn({
+    ...rest
+  } = {}) {
+    console.log("[NHentai] Fetching CDN config...");
+    try {
+      return await this.req({
+        url: "/api/v2/cdn",
+        method: "GET",
+        ...rest
+      });
+    } catch (err) {
+      console.error(`[NHentai] cdn error: ${err.message}`);
+      return {
+        error: err.message
+      };
+    }
+  }
+  async config({
+    ...rest
+  } = {}) {
+    console.log("[NHentai] Fetching site configuration...");
+    try {
+      return await this.req({
+        url: "/api/v2/config",
+        method: "GET",
+        ...rest
+      });
+    } catch (err) {
+      console.error(`[NHentai] conf error: ${err.message}`);
+      return {
+        error: err.message
+      };
+    }
+  }
+  async zones({
+    ...rest
+  } = {}) {
+    console.log("[NHentai] Fetching zones...");
+    try {
+      return await this.req({
+        url: "/api/v2/zones",
+        method: "GET",
+        ...rest
+      });
+    } catch (err) {
+      console.error(`[NHentai] zones error: ${err.message}`);
+      return {
+        error: err.message
+      };
+    }
+  }
+  async galleries({
+    page = 1,
+    ...rest
+  } = {}) {
+    console.log(`[NHentai] Fetching galleries (Page: ${page})...`);
+    try {
+      return await this.req({
+        url: "/api/v2/galleries",
+        method: "GET",
+        params: {
+          page: page
+        },
+        ...rest
+      });
+    } catch (err) {
+      console.error(`[NHentai] galls error: ${err.message}`);
+      return {
+        error: err.message
+      };
+    }
+  }
+  async popular({
+    ...rest
+  } = {}) {
+    console.log("[NHentai] Fetching popular galleries...");
+    try {
+      return await this.req({
+        url: "/api/v2/galleries/popular",
+        method: "GET",
+        ...rest
+      });
+    } catch (err) {
+      console.error(`[NHentai] pop_galls error: ${err.message}`);
+      return {
+        error: err.message
+      };
+    }
+  }
+  async tagged({
+    tag_id,
+    sort = "recent",
+    page = 1,
+    ...rest
+  } = {}) {
+    if (!tag_id) {
+      return {
+        error: "Parameter 'tag_id' is required."
+      };
+    }
+    console.log(`[NHentai] Fetching galleries for Tag ID: ${tag_id}...`);
+    try {
+      return await this.req({
+        url: "/api/v2/galleries/tagged",
+        method: "GET",
+        params: {
+          tag_id: tag_id,
+          sort: sort,
+          page: page
+        },
+        ...rest
+      });
+    } catch (err) {
+      console.error(`[NHentai] galls_by_tag error: ${err.message}`);
+      return {
+        error: err.message
+      };
+    }
+  }
+  async random({
+    ...rest
+  } = {}) {
+    console.log("[NHentai] Fetching random gallery...");
+    try {
+      return await this.req({
+        url: "/api/v2/galleries/random",
+        method: "GET",
+        ...rest
+      });
+    } catch (err) {
+      console.error(`[NHentai] rand_gall error: ${err.message}`);
+      return {
+        error: err.message
       };
     }
   }
   async search({
-    query = "",
-    page = 1
-  }) {
-    try {
-      const path = `/search/?q=${encodeURIComponent(query)}&page=${page}`;
-      const data = await this.request(path);
-      const $ = cheerio.load(data);
-      const galleries = [];
-      $(".index-container .gallery").each((_, el) => {
-        const $el = $(el);
-        const $link = $el.find("a.cover");
-        const url = $link.attr("href") || "";
-        if (!url) return;
-        const galleryId = url.match(/\/g\/(\d+)\//)?.[1] || "";
-        const title = $el.find(".caption").text().trim() || "No title";
-        const $img = $link.find("img");
-        let thumbnail = $img.attr("data-src") || $img.attr("src") || "";
-        if (!thumbnail) {
-          thumbnail = $link.find("noscript img").attr("src") || "";
-        }
-        const dataTags = $el.attr("data-tags") || "";
-        const tagIds = dataTags ? dataTags.split(" ").map(id => id.trim()).filter(Boolean) : [];
-        const padding = $link.attr("style")?.match(/padding:0 0 ([\d.]+)%/)?.[1] || "0";
-        const aspectRatio = padding ? parseFloat(padding) : 0;
-        galleries.push({
-          galleryId: galleryId,
-          title: title.length > 120 ? title.substring(0, 117) + "..." : title,
-          url: this.baseUrl + url,
-          thumbnail: thumbnail.startsWith("//") ? "https:" + thumbnail : thumbnail,
-          tagIds: tagIds,
-          aspectRatio: aspectRatio
-        });
-      });
-      const hasMore = !!$(".pagination .next").length;
-      const resultText = $("h1").text();
-      const totalMatch = resultText.match(/(\d+)\s+results/i);
-      const totalResults = totalMatch ? parseInt(totalMatch[1]) : galleries.length;
+    query,
+    page = 1,
+    sort = "recent",
+    ...rest
+  } = {}) {
+    if (!query) {
       return {
-        galleries: galleries,
-        total: galleries.length,
-        totalResults: totalResults,
-        searchQuery: query,
-        page: Number(page),
-        hasMore: hasMore
+        error: "Parameter 'query' is required."
       };
-    } catch (error) {
-      console.error("Search error:", error.message);
+    }
+    console.log(`[NHentai] Searching for "${query}" (Page: ${page})...`);
+    try {
+      return await this.req({
+        url: "/api/v2/search",
+        method: "GET",
+        params: {
+          query: query,
+          page: page,
+          sort: sort
+        },
+        ...rest
+      });
+    } catch (err) {
+      console.error(`[NHentai] search error: ${err.message}`);
       return {
-        galleries: [],
-        total: 0,
-        totalResults: 0,
-        searchQuery: query,
-        page: page,
-        hasMore: false
+        error: err.message
       };
     }
   }
   async detail({
-    url = ""
-  }) {
-    try {
-      const path = url.includes(this.baseUrl) ? url.replace(this.baseUrl, "") : url;
-      const data = await this.request(path);
-      const $ = cheerio.load(data);
-      const titleBefore = $("#info h1 .before").text().trim();
-      const titleMain = $("#info h1 .pretty").text().trim() || "No title";
-      const titleAfter = $("#info h1 .after").text().trim();
-      const fullTitle = `${titleBefore}${titleMain}${titleAfter}`.trim();
-      const galleryId = $("#info h3").text().replace("#", "").trim() || "";
-      const parodies = [];
-      const characters = [];
-      const tags = [];
-      const artists = [];
-      const groups = [];
-      const languages = [];
-      const categories = [];
-      $("#tags .tag-container").each((_, container) => {
-        const $container = $(container);
-        const fieldName = $container.find(".field-name").text().replace(":", "").trim().toLowerCase();
-        const isHidden = $container.hasClass("hidden");
-        $container.find(".tag").each((_, tag) => {
-          const $tag = $(tag);
-          const tagName = $tag.find(".name").text().trim();
-          const tagCount = $tag.find(".count").text().trim();
-          const tagUrl = $tag.attr("href") || "";
-          const tagClass = $tag.attr("class") || "";
-          const tagId = tagClass.match(/tag-(\d+)/)?.[1] || "";
-          const tagData = {
-            name: tagName,
-            count: tagCount,
-            url: tagUrl,
-            id: tagId
-          };
-          if (fieldName.includes("parodies")) parodies.push(tagData);
-          else if (fieldName.includes("characters")) characters.push(tagData);
-          else if (fieldName.includes("tags")) tags.push(tagData);
-          else if (fieldName.includes("artists")) artists.push(tagData);
-          else if (fieldName.includes("groups")) groups.push(tagData);
-          else if (fieldName.includes("languages")) languages.push(tagData);
-          else if (fieldName.includes("categories")) categories.push(tagData);
-        });
-      });
-      const pagesText = $(".tag-container:contains('Pages') .tag .name").text().trim() || "0";
-      const pagesLink = $(".tag-container:contains('Pages') .tag").attr("href") || "";
-      const pages = parseInt(pagesText) || 0;
-      const $uploadTime = $(".tag-container:contains('Uploaded') time");
-      const uploaded = $uploadTime.attr("datetime") || "";
-      const uploadedTitle = $uploadTime.attr("title") || "";
-      const uploadedDisplay = $uploadTime.text().trim();
-      const $favBtn = $(".buttons .btn-primary");
-      const favorites = $favBtn.find("span").text().match(/\((\d+)\)/)?.[1] || "0";
-      const isFavoriteDisabled = $favBtn.hasClass("btn-disabled");
-      const $downloadBtn = $("#download");
-      const isDownloadDisabled = $downloadBtn.hasClass("btn-disabled");
-      const $coverImg = $("#cover img");
-      let cover = $coverImg.attr("data-src") || $coverImg.attr("src") || "";
-      if (!cover) {
-        cover = $("#cover noscript img").attr("src") || "";
-      }
-      const pageImages = [];
-      $("#thumbnail-container .thumb-container").each((idx, el) => {
-        const $el = $(el);
-        const $link = $el.find("a");
-        const pageUrl = $link.attr("href") || "";
-        const pageNum = pageUrl.match(/\/(\d+)\/$/)?.[1] || (idx + 1).toString();
-        const $img = $link.find("img");
-        let thumbImg = $img.attr("data-src") || $img.attr("src") || "";
-        if (!thumbImg) {
-          thumbImg = $link.find("noscript img").attr("src") || "";
-        }
-        const width = $img.attr("width") || "";
-        const height = $img.attr("height") || "";
-        pageImages.push({
-          page: pageNum,
-          thumbnail: thumbImg.startsWith("//") ? "https:" + thumbImg : thumbImg,
-          url: this.baseUrl + pageUrl,
-          width: width ? parseInt(width) : null,
-          height: height ? parseInt(height) : null
-        });
-      });
-      const relatedGalleries = [];
-      $("#related-container .gallery").each((_, el) => {
-        const $el = $(el);
-        const $link = $el.find("a.cover");
-        const relUrl = $link.attr("href") || "";
-        const relId = relUrl.match(/\/g\/(\d+)\//)?.[1] || "";
-        const relTitle = $el.find(".caption").text().trim();
-        const $img = $link.find("img");
-        let relThumb = $img.attr("data-src") || $img.attr("src") || "";
-        if (!relThumb) {
-          relThumb = $link.find("noscript img").attr("src") || "";
-        }
-        const dataTags = $el.attr("data-tags") || "";
-        const relTagIds = dataTags ? dataTags.split(" ").filter(Boolean) : [];
-        if (relId) {
-          relatedGalleries.push({
-            galleryId: relId,
-            title: relTitle,
-            url: this.baseUrl + relUrl,
-            thumbnail: relThumb.startsWith("//") ? "https:" + relThumb : relThumb,
-            tagIds: relTagIds
-          });
-        }
-      });
+    id,
+    ...rest
+  } = {}) {
+    if (!id) {
       return {
-        galleryId: galleryId,
-        title: titleMain,
-        fullTitle: fullTitle,
-        titleBefore: titleBefore,
-        titleAfter: titleAfter,
-        url: this.baseUrl + path,
-        cover: cover.startsWith("//") ? "https:" + cover : cover,
-        pages: pages,
-        pagesLink: pagesLink,
-        uploaded: {
-          datetime: uploaded,
-          title: uploadedTitle,
-          display: uploadedDisplay
-        },
-        favorites: Number(favorites),
-        isFavoriteDisabled: isFavoriteDisabled,
-        isDownloadDisabled: isDownloadDisabled,
-        parodies: parodies,
-        characters: characters,
-        tags: tags,
-        artists: artists,
-        groups: groups,
-        languages: languages,
-        categories: categories,
-        pageImages: pageImages,
-        relatedGalleries: relatedGalleries,
-        totalRelated: relatedGalleries.length
+        error: "Parameter 'id' is required."
       };
-    } catch (error) {
-      console.error("Detail error:", error.message);
+    }
+    console.log(`[NHentai] Fetching gallery detail: ${id}...`);
+    try {
+      const galleryId = this._id(id);
+      return await this.req({
+        url: `/api/v2/galleries/${galleryId}`,
+        method: "GET",
+        ...rest
+      });
+    } catch (err) {
+      console.error(`[NHentai] detail error: ${err.message}`);
       return {
-        galleryId: "",
-        title: "Error",
-        fullTitle: "Error",
-        titleBefore: "",
-        titleAfter: "",
-        url: url,
-        cover: "",
-        pages: 0,
-        pagesLink: "",
-        uploaded: {
-          datetime: "",
-          title: "",
-          display: ""
+        error: err.message
+      };
+    }
+  }
+  async related({
+    id,
+    ...rest
+  } = {}) {
+    if (!id) {
+      return {
+        error: "Parameter 'id' is required."
+      };
+    }
+    console.log(`[NHentai] Fetching related galleries for: ${id}...`);
+    try {
+      const galleryId = this._id(id);
+      return await this.req({
+        url: `/api/v2/galleries/${galleryId}/related`,
+        method: "GET",
+        ...rest
+      });
+    } catch (err) {
+      console.error(`[NHentai] related error: ${err.message}`);
+      return {
+        error: err.message
+      };
+    }
+  }
+  async comments({
+    id,
+    page = 1,
+    per_page = 25,
+    ...rest
+  } = {}) {
+    if (!id) {
+      return {
+        error: "Parameter 'id' is required."
+      };
+    }
+    console.log(`[NHentai] Fetching comments for gallery: ${id}...`);
+    try {
+      const galleryId = this._id(id);
+      return await this.req({
+        url: `/api/v2/galleries/${galleryId}/comments`,
+        method: "GET",
+        params: {
+          page: page,
+          per_page: per_page
         },
-        favorites: 0,
-        isFavoriteDisabled: true,
-        isDownloadDisabled: true,
-        parodies: [],
-        characters: [],
-        tags: [],
-        artists: [],
-        groups: [],
-        languages: [],
-        categories: [],
-        pageImages: [],
-        relatedGalleries: [],
-        totalRelated: 0
+        ...rest
+      });
+    } catch (err) {
+      console.error(`[NHentai] comments error: ${err.message}`);
+      return {
+        error: err.message
+      };
+    }
+  }
+  async tags({
+    body = {},
+    ...rest
+  } = {}) {
+    console.log("[NHentai] Requesting autocomplete tags...");
+    try {
+      return await this.req({
+        url: "/api/v2/tags/search",
+        method: "POST",
+        data: {
+          limit: 10,
+          ...body
+        },
+        ...rest
+      });
+    } catch (err) {
+      console.error(`[NHentai] ac error: ${err.message}`);
+      return {
+        error: err.message
       };
     }
   }
@@ -304,44 +348,118 @@ export default async function handler(req, res) {
     action,
     ...params
   } = req.method === "GET" ? req.query : req.body;
+  const validActions = ["cdn", "config", "zones", "galleries", "popular", "tagged", "random", "search", "detail", "related", "comments", "tags"];
   if (!action) {
     return res.status(400).json({
-      error: "Paramenter 'action' wajib diisi."
+      status: false,
+      error: "Parameter 'action' wajib diisi.",
+      available_actions: validActions,
+      usage: {
+        method: "GET / POST",
+        example: "/api/nhentai?action=search&query=english"
+      }
     });
   }
-  const scraper = new NHentaiScraper();
+  const api = new NHentai();
   try {
-    let result;
+    let response;
     switch (action) {
-      case "home":
-        result = await scraper.home();
+      case "cdn":
+        response = await api.cdn(params);
+        break;
+      case "config":
+        response = await api.config(params);
+        break;
+      case "zones":
+        response = await api.zones(params);
+        break;
+      case "galleries":
+        response = await api.galleries(params);
+        break;
+      case "popular":
+        response = await api.popular(params);
+        break;
+      case "tagged":
+        if (!params.tag_id) {
+          return res.status(400).json({
+            status: false,
+            error: "Parameter 'tag_id' wajib diisi untuk action 'tagged'."
+          });
+        }
+        response = await api.tagged(params);
+        break;
+      case "random":
+        response = await api.random(params);
         break;
       case "search":
         if (!params.query) {
           return res.status(400).json({
-            error: "Paramenter 'query' wajib."
+            status: false,
+            error: "Parameter 'query' wajib diisi untuk action 'search'."
           });
         }
-        result = await scraper.search(params);
+        response = await api.search(params);
         break;
       case "detail":
-        if (!params.url) {
+        if (!params.id) {
           return res.status(400).json({
-            error: "Paramenter 'url' wajib."
+            status: false,
+            error: "Parameter 'id' wajib diisi untuk action 'detail'.",
+            example: "123456"
           });
         }
-        result = await scraper.detail(params);
+        response = await api.detail(params);
+        break;
+      case "related":
+        if (!params.id) {
+          return res.status(400).json({
+            status: false,
+            error: "Parameter 'id' wajib diisi untuk action 'related'.",
+            example: "123456"
+          });
+        }
+        response = await api.related(params);
+        break;
+      case "comments":
+        if (!params.id) {
+          return res.status(400).json({
+            status: false,
+            error: "Parameter 'id' wajib diisi untuk action 'comments'.",
+            example: "123456"
+          });
+        }
+        response = await api.comments(params);
+        break;
+      case "tags":
+        response = await api.tags({
+          body: params
+        });
         break;
       default:
         return res.status(400).json({
-          error: `Action tidak valid: ${action}`
+          status: false,
+          error: `Action tidak valid: ${action}.`,
+          valid_actions: validActions
         });
     }
-    return res.status(200).json(result);
-  } catch (err) {
-    console.error("Handler error:", err);
-    res.status(500).json({
-      error: err.message || "Server error"
+    if (response && response.error) {
+      return res.status(400).json({
+        status: false,
+        action: action,
+        error: response.error
+      });
+    }
+    return res.status(200).json({
+      status: true,
+      action: action,
+      ...response
+    });
+  } catch (error) {
+    console.error(`[FATAL ERROR] Kegagalan pada action '${action}':`, error);
+    return res.status(500).json({
+      status: false,
+      message: "Terjadi kesalahan internal pada server atau target website.",
+      error: error.message || "Unknown Error"
     });
   }
 }
