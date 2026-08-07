@@ -1,12 +1,15 @@
 import axios from "axios";
 import crypto from "crypto";
+import PROXY from "@/configs/proxy-cors";
+const proxy = PROXY.url();
+console.log("CORS proxy", proxy);
 class TempMail {
   constructor() {
     try {
       this.token = "";
       this.address = "";
       this.password = "";
-      this.baseUrl = "https://api.mail.tm";
+      this.baseUrl = `${proxy}https://api.mail.tm`;
       this.headers = {
         Accept: "application/json",
         "Content-Type": "application/json",

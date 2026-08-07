@@ -8,9 +8,7 @@ class DescribeMusic {
     this.key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzbWdyb2V5dHNidXJsZ21veGNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzUwMjQsImV4cCI6MjA3MzUxMTAyNH0.z6T4B5HtUuLoQD-hmSNJEWCmoXCM0_pNoy5MlaC49ok";
     this.ua = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36";
     this.agt = new https.Agent({
-      rejectUnauthorized: false,
-      ciphers: "ALL:@SECLEVEL=0",
-      secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT
+      rejectUnauthorized: false
     });
     this.bHeaders = {
       accept: "application/json",

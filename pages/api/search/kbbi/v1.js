@@ -1,140 +1,170 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-class KbbiClean {
+class KbbiScraper {
   constructor() {
-    this.base = "https://kbbi.web.id";
-    this.heads = {
-      Accept: "*/*",
-      "Accept-Language": "id-ID",
-      Referer: this.base,
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
-      "X-Requested-With": "XMLHttpRequest"
-    };
+    try {
+      this.cookies = "";
+      this.client = axios.create({
+        baseURL: "https://kbbi.web.id",
+        headers: {
+          accept: "*/*",
+          "accept-language": "id-ID",
+          "cache-control": "no-cache",
+          pragma: "no-cache",
+          priority: "u=1, i",
+          referer: "https://kbbi.web.id/",
+          "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
+          "sec-ch-ua-mobile": "?1",
+          "sec-ch-ua-platform": '"Android"',
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "same-origin",
+          "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",
+          "x-requested-with": "XMLHttpRequest"
+        },
+        timeout: 6e4
+      });
+      this.client.interceptors.request.use(config => {
+        try {
+          console.log("[Process] Menyiapkan request header...");
+          if (this.cookies) {
+            config.headers["Cookie"] = this.cookies;
+            console.log("[Process] Cookie disematkan pada request");
+          }
+          return config;
+        } catch (err) {
+          console.log(`[Process] Gagal menyematkan cookie: ${err?.message || err}`);
+          return config;
+        }
+      }, error => {
+        try {
+          console.log("[Process] Error terdeteksi pada request interceptor");
+          return Promise.reject(error);
+        } catch (err) {
+          return Promise.reject(error);
+        }
+      });
+      this.client.interceptors.response.use(response => {
+        try {
+          console.log("[Process] Memproses response interceptor...");
+          const setCookie = response.headers?.["set-cookie"];
+          if (setCookie) {
+            this.cookies = setCookie.map(c => c.split(";")[0]).join("; ");
+            console.log("[Process] Cookie disimpan untuk request berikutnya");
+          }
+          return response;
+        } catch (err) {
+          console.log(`[Process] Gagal menyimpan cookie dari response: ${err?.message || err}`);
+          return response;
+        }
+      }, error => {
+        try {
+          console.log("[Process] Error terdeteksi pada response interceptor");
+          return Promise.reject(error);
+        } catch (err) {
+          return Promise.reject(error);
+        }
+      });
+    } catch (error) {
+      console.log(`[Process] Gagal menginisialisasi instansi kelas: ${error?.message || error}`);
+    }
   }
-  clean(str) {
-    if (!str) return "";
-    return str.replace(/<br\s*\/?>/gi, " ").replace(/<[^>]*>/g, "").replace(/&#183;/g, "").replace(/&nbsp;/g, " ").replace(/[^\w\s\-,.;:()?!'"\/]/g, "").replace(/\s+/g, " ").trim();
+  rnd() {
+    try {
+      console.log("[Process] Menghasilkan kode random untuk endpoint AJAX...");
+      const randomStr = Math.random().toString(36).substring(2, 7);
+      return randomStr || "abcde";
+    } catch (error) {
+      console.log(`[Process] Gagal membuat kode random: ${error?.message || error}`);
+      return "abcde";
+    }
   }
   async req(path) {
-    const url = `${this.base}/${path}`;
-    console.log(`[LOG] Mengambil data: ${url}`);
-    return await axios.get(url, {
-      headers: this.heads,
-      validateStatus: () => true
-    });
+    try {
+      console.log(`[Process] Mengirim request HTTP GET AJAX ke path: ${path}`);
+      const response = await this.client.get(path, {
+        headers: {
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      });
+      return response?.data || null;
+    } catch (error) {
+      console.log(`[Process] Error pada HTTP request ke path ${path}: ${error?.message || error}`);
+      throw error;
+    }
   }
-  proc(htmlRaw, rootWord) {
-    if (!htmlRaw) return null;
-    const $ = cheerio.load(htmlRaw, null, false);
-    const nodes = $.root().contents();
-    let currentEjaan = rootWord;
-    let definitions = [];
-    let buffer = {
-      jenis: "induk",
-      sub_lema: null,
-      kelas_kata: [],
-      teks_parts: []
-    };
-    const flush = () => {
-      const rawDesc = buffer.teks_parts.join(" ");
-      const cleanDesc = this.clean(rawDesc);
-      const cleanSub = buffer.sub_lema ? this.clean(buffer.sub_lema) : null;
-      if (cleanDesc && cleanDesc.length > 1) {
-        definitions.push({
-          jenis: buffer.jenis,
-          sub_lema: cleanSub,
-          kelas_kata: buffer.kelas_kata.join(", ") || "umum",
-          deskripsi: cleanDesc
-        });
-      }
-      buffer.teks_parts = [];
-      buffer.kelas_kata = [];
-    };
-    nodes.each((i, el) => {
-      const $el = $(el);
-      const tagName = el.tagName;
-      const type = el.type;
-      if (tagName === "br") {
-        flush();
-        return;
-      }
-      if (tagName === "b") {
-        const txt = $el.text();
-        if (i === 0) {
-          currentEjaan = this.clean(txt);
-          return;
-        }
-        if (txt.includes("--")) {
-          flush();
-          buffer.jenis = "turunan";
-          buffer.sub_lema = txt.replace(/--/g, "");
-          return;
-        }
-        if (/^\d+$/.test(txt.trim())) {
-          flush();
-          return;
-        }
-        buffer.teks_parts.push(txt);
-        return;
-      }
-      if (tagName === "em") {
-        const k = $el.text().trim();
-        if (buffer.teks_parts.length === 0) {
-          buffer.kelas_kata.push(k);
-        } else {
-          buffer.teks_parts.push(k);
-        }
-        return;
-      }
-      const content = $el.text();
-      if (content && content.trim()) {
-        buffer.teks_parts.push(content);
-      }
-    });
-    flush();
-    return {
-      ejaan: currentEjaan,
-      daftar_arti: definitions
-    };
+  prs(html) {
+    try {
+      console.log("[Process] Mengurai (parsing) fragmen HTML hasil AJAX...");
+      const $ = cheerio.load(html || "");
+      const plainText = $.text()?.trim() || "";
+      const wordClass = $("em").first().text()?.trim() || "";
+      const boldTerms = $("b").map((_, element) => $(element).text()?.trim()).get().filter(Boolean) || [];
+      return {
+        html_konten: html,
+        teks_polos: plainText,
+        kelas_kata: wordClass,
+        istilah_tebal: boldTerms
+      };
+    } catch (error) {
+      console.log(`[Process] Gagal mengurai elemen HTML: ${error?.message || error}`);
+      return null;
+    }
   }
   async search({
     query,
     ...rest
   }) {
-    const q = query?.trim();
-    const safeQ = encodeURIComponent(q || "");
-    console.log(`[LOG] Memproses kata kunci: "${q || "-"}"`);
+    console.log("[Process] Memulai pencarian kata...");
     try {
-      if (!q) throw new Error("Query kosong.");
-      const res = await this.req(`${safeQ}/ajax_submit`);
-      const rawData = res?.data;
-      if (!Array.isArray(rawData)) {
+      const targetQuery = query ? query.trim() : "enteng";
+      const formattedQuery = targetQuery.replace(/\s+atau\s+/gi, "-atau-");
+      const encodedQuery = encodeURIComponent(formattedQuery);
+      const randValue = this.rnd();
+      const ajaxPath = `/${encodedQuery}/ajax_${randValue}`;
+      const responseData = await this.req(ajaxPath);
+      const rawItem = responseData?.[0] || null;
+      if (!rawItem || !rawItem.d) {
+        console.log(`[Process] Hasil pencarian untuk kata "${targetQuery}" kosong`);
         return {
           status: false,
-          pesan: "Tidak ditemukan",
-          data: []
+          result: {
+            kata_kunci: targetQuery,
+            pesan: "Kata tidak ditemukan di dalam database KBBI"
+          }
         };
       }
-      const results = rawData.map(item => {
-        const parsed = this.proc(item.d, item.w);
+      const parsedData = this.prs(rawItem.d);
+      if (!parsedData) {
+        console.log("[Process] Gagal memperoleh data hasil penguraian HTML");
         return {
-          lema: item.w,
-          info_tambahan: this.clean(item.msg || ""),
-          ejaan_tampil: parsed?.ejaan || item.w,
-          arti: parsed?.daftar_arti || []
+          status: false,
+          result: {
+            kata_kunci: targetQuery,
+            pesan: "Terjadi kegagalan saat membaca respon dari server"
+          }
         };
-      });
+      }
+      console.log("[Process] Seluruh proses pencarian selesai dijalankan");
       return {
         status: true,
-        total: results.length,
-        data: results
+        result: {
+          kata_kunci: targetQuery,
+          kata_asli: rawItem.w || targetQuery,
+          tipe_entri: rawItem.x || 0,
+          html_definisi: parsedData.html_konten,
+          teks_definisi: parsedData.teks_polos,
+          kelas_kata: parsedData.kelas_kata,
+          istilah_terkait: parsedData.istilah_tebal
+        }
       };
-    } catch (err) {
-      console.error(`[ERROR] ${err?.message}`);
+    } catch (error) {
+      console.log(`[Process] Error pada metode search: ${error?.message || error}`);
       return {
         status: false,
-        pesan: err?.message || "Internal Server Error",
-        data: []
+        result: {
+          pesan_error: error?.message || "Gagal memproses pencarian karena gangguan teknis"
+        }
       };
     }
   }
@@ -146,12 +176,12 @@ export default async function handler(req, res) {
       error: "Parameter 'query' diperlukan"
     });
   }
-  const api = new KbbiClean();
+  const api = new KbbiScraper();
   try {
     const data = await api.search(params);
     return res.status(200).json(data);
   } catch (error) {
-    const errorMessage = error.message || "Terjadi kesalahan saat memproses URL";
+    const errorMessage = error.message || "Terjadi kesalahan saat memproses.";
     return res.status(500).json({
       error: errorMessage
     });

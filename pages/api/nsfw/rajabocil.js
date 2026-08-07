@@ -1,6 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import PROXY from "@/configs/proxy-cors";
+import PROXY from "@/configs/proxy-url";
 const proxy = PROXY.url();
 console.log("CORS proxy", proxy);
 class Rajabocil {
@@ -14,7 +14,7 @@ class Rajabocil {
       console.log(`[REQ] ${cleanUrl}`);
       const {
         data
-      } = await axios.get(`${this.proxy}${encodeURIComponent(cleanUrl)}`, {
+      } = await axios.get(`${this.proxy}${cleanUrl}`, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         },

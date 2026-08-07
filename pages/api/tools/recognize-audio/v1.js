@@ -79,9 +79,7 @@ class SoundMatch {
   constructor() {
     this.agentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Shazam/15.0.0";
     this.customAgent = new https.Agent({
-      rejectUnauthorized: false,
-      ciphers: "ALL:@SECLEVEL=0",
-      secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT
+      rejectUnauthorized: false
     });
     this.settings = {
       locale: "en-US",

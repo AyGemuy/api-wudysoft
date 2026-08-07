@@ -1,145 +1,172 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-class KbbiCoId {
+class KbbiScraper {
   constructor() {
-    this.base = "https://kbbi.co.id/cari";
-    this.heads = {
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-      "Accept-Language": "id-ID",
-      Referer: "https://kbbi.co.id/",
-      "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",
-      Priority: "u=0, i"
-    };
+    try {
+      this.client = axios.create({
+        baseURL: "https://kbbi.co.id",
+        headers: {
+          accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+          "accept-language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
+          "cache-control": "no-cache",
+          pragma: "no-cache",
+          referer: "https://kbbi.co.id/",
+          "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36"
+        },
+        timeout: 6e4
+      });
+    } catch (error) {
+      console.log(`[Process] Gagal menginisialisasi instansi kelas: ${error?.message || error}`);
+    }
   }
-  clean(str) {
-    if (!str) return "";
-    return str.replace(/<[^>]*>/g, "").replace(/&quot;/g, '"').replace(/&middot;/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
-  }
-  async req(query) {
-    const url = `${this.base}?kata=${encodeURIComponent(query)}`;
-    console.log(`[LOG] Mengakses: ${url}`);
-    return await axios.get(url, {
-      headers: this.heads,
-      validateStatus: () => true
-    });
-  }
-  parseContent(htmlString) {
-    if (!htmlString) return [];
-    const $ = cheerio.load(htmlString, null, false);
-    const nodes = $.root().contents();
-    let defs = [];
-    let buffer = {
-      nomor: null,
-      kelas: [],
-      teks: [],
-      contoh: []
-    };
-    const flush = () => {
-      const desc = this.clean(buffer.teks.join(" "));
-      if (desc) {
-        defs.push({
-          nomor: buffer.nomor,
-          kelas_kata: buffer.kelas.join(", ") || "umum",
-          deskripsi: desc,
-          contoh: buffer.contoh.join("; ") || null
-        });
-      }
-      buffer.teks = [];
-      buffer.contoh = [];
-    };
-    nodes.each((i, el) => {
-      const $el = $(el);
-      const tag = el.tagName;
-      const txt = $el.text();
-      if (tag === "body") {
-        const innerResult = this.parseContent($el.html());
-        defs = defs.concat(innerResult);
-        return false;
-      }
-      if (tag === "b") {
-        if (/^\d+$/.test(txt.trim())) {
-          flush();
-          buffer.nomor = txt.trim();
-          buffer.kelas = [];
-          return;
+  parseSidebar($) {
+    try {
+      const kosakataPopuler = $(".panel:contains('Kosakata Populer'), .panel-primary:contains('Kosakata Populer')").find(".list-kata a").map((_, el) => ({
+        kata: $(el).text().trim(),
+        link: $(el).attr("href") || "",
+        definisi_singkat: $(el).attr("title") || ""
+      })).get();
+      const sedangDilihat = $(".panel:contains('Sedang Dilihat'), .panel-primary:contains('Sedang Dilihat')").find(".list-kata a").map((_, el) => ({
+        kata: $(el).text().trim(),
+        link: $(el).attr("href") || "",
+        definisi_singkat: $(el).attr("title") || ""
+      })).get();
+      const statistik = {};
+      $(".kbbi-stat-item").each((_, el) => {
+        const number = $(el).find(".kbbi-stat-number").text().trim();
+        const label = $(el).find(".kbbi-stat-label").text().trim().toLowerCase().replace(/\s+/g, "_");
+        if (label && number) {
+          statistik[label] = number;
         }
-        if (txt.includes("·") || txt.includes("--")) {
-          return;
-        }
-        buffer.teks.push(txt);
-      } else if (tag === "i") {
-        const cleanI = txt.trim().replace(/[.;,]+$/, "");
-        if (cleanI.length <= 5 && /^[a-z]+$/.test(cleanI)) {
-          buffer.kelas.push(cleanI);
-        } else {
-          buffer.contoh.push(this.clean(txt));
-        }
-      } else if (el.type === "text") {
-        const t = txt.trim();
-        if (t.startsWith("/") && t.endsWith("/")) return;
-        if (!t) return;
-        buffer.teks.push(t);
-      } else if (tag === "br") {}
-    });
-    flush();
-    return defs;
+      });
+      return {
+        kosakata_populer: kosakataPopuler,
+        sedang_dilihat: sedangDilihat,
+        statistik_kbbi: statistik
+      };
+    } catch (error) {
+      console.log(`[Process] Gagal mengurai sidebar: ${error?.message || error}`);
+      return {
+        kosakata_populer: [],
+        sedang_dilihat: [],
+        statistik_kbbi: {}
+      };
+    }
   }
-  proc(htmlRaw) {
-    if (!htmlRaw) return null;
-    const $ = cheerio.load(htmlRaw);
-    const results = [];
-    $(".col-sm-9 h2").each((i, el) => {
-      const $h2 = $(el);
-      const title = this.clean($h2.text());
-      const $p = $h2.next("p");
-      if ($p.length > 0) {
-        const rawDefHtml = $p.html();
-        const parsedDefs = this.parseContent(rawDefHtml);
-        results.push({
-          lema: title,
-          arti: parsedDefs
-        });
+  prs(html) {
+    try {
+      const $ = cheerio.load(html || "");
+      const mainContent = $(".col-md-8");
+      if (!mainContent.length) return null;
+      const h2Arti = mainContent.find("h2.arti").first();
+      if (!h2Arti.length) return null;
+      const cleanHeader = h2Arti.clone();
+      cleanHeader.find("button").remove();
+      const kataAsli = cleanHeader.text().trim();
+      const audioBtn = h2Arti.find("button.audio-btn-small");
+      let audioData = null;
+      if (audioBtn.length) {
+        const onClickAttr = audioBtn.attr("onclick") || "";
+        const match = onClickAttr.match(/playAudio\('(.*?)'\)/);
+        if (match && match[1]) {
+          const textSpeech = match[1];
+          audioData = {
+            kata: textSpeech,
+            url_alternatif_tts: `https://translate.google.com/translate_tts?ie=UTF-8&tl=id&client=tw-ob&q=${encodeURIComponent(textSpeech)}`
+          };
+        }
       }
-    });
-    return results;
+      const artiDiv = mainContent.find("div.arti").first();
+      const htmlDefinisi = artiDiv.html()?.trim() || "";
+      const teksDefinisi = artiDiv.text()?.trim() || "";
+      const lafalMatch = teksDefinisi.match(/\/([^/]+)\//);
+      const lafal = lafalMatch ? `/${lafalMatch[1]}/` : "";
+      const kelasKata = artiDiv.find("i, em").map((_, el) => $(el).text().trim()).get().filter(val => val && val.length <= 5);
+      const contohKalimat = $("#contoh-kalimat-section .contoh-item").map((_, el) => $(el).find(".contoh-text").text().trim()).get().filter(Boolean);
+      let artikel = null;
+      const artikelSec = $("#artikel-content");
+      if (artikelSec.length) {
+        artikel = {
+          judul: artikelSec.find("h4").first().text().trim() || "",
+          konten: artikelSec.find(".artikel-text").text().trim() || artikelSec.text().trim()
+        };
+      }
+      return {
+        kata_asli: kataAsli,
+        lafal: lafal,
+        html_definisi: htmlDefinisi,
+        teks_definisi: teksDefinisi,
+        kelas_kata: [...new Set(kelasKata)],
+        contoh_penggunaan: contohKalimat,
+        artikel_terkait: artikel,
+        audio: audioData
+      };
+    } catch (error) {
+      console.log(`[Process] Gagal mengurai elemen detail HTML: ${error?.message || error}`);
+      return null;
+    }
   }
   async search({
     query,
-    ...rest
+    limit
   }) {
-    const q = query?.trim();
-    console.log(`[LOG] Mencari kata: "${q || "-"}"`);
+    console.log("[Process] Memulai pencarian indeks kata...");
     try {
-      if (!q) throw new Error("Query wajib diisi");
-      const res = await this.req(q);
-      const html = res?.data;
-      if (!html || !html.includes("KBBI.co.id")) {
+      const targetQuery = query ? query.trim() : "enteng";
+      const maxLimit = limit ? parseInt(limit, 10) : 5;
+      const encodedQuery = encodeURIComponent(targetQuery.toLowerCase());
+      const searchPath = `/cari?kata=${encodedQuery}`;
+      console.log(`[Process] Request ke halaman pencarian: ${searchPath}`);
+      const searchResponse = await this.client.get(searchPath);
+      const $ = cheerio.load(searchResponse.data);
+      const metadataSidebar = this.parseSidebar($);
+      if ($(".col-md-8 h2.arti").length) {
+        console.log("[Process] Dialihkan langsung ke halaman detail.");
+        const parsed = this.prs(searchResponse.data);
         return {
-          status: false,
-          pesan: "Halaman tidak valid",
-          data: []
+          status: true,
+          query: targetQuery,
+          total_hasil: 1,
+          results: parsed ? [parsed] : [],
+          metadata: metadataSidebar
         };
       }
-      const parsedData = this.proc(html);
-      if (parsedData.length === 0) {
-        return {
-          status: false,
-          pesan: "Kata tidak ditemukan",
-          data: []
-        };
+      const detailLinks = $(".col-sm-9 h2 a").map((_, el) => {
+        const href = $(el).attr("href");
+        if (href) {
+          return href.startsWith("http") ? href : `https://kbbi.co.id${href}`;
+        }
+        return null;
+      }).get().filter(Boolean);
+      const limitedLinks = detailLinks.slice(0, maxLimit);
+      console.log(`[Process] Ditemukan ${detailLinks.length} tautan detail kata. Memproses ${limitedLinks.length} kata.`);
+      const results = [];
+      for (const link of limitedLinks) {
+        try {
+          console.log(`[Process] Mengakses detail: ${link}`);
+          const detailResponse = await this.client.get(link);
+          const parsedDetail = this.prs(detailResponse.data);
+          if (parsedDetail) {
+            results.push(parsedDetail);
+          }
+        } catch (err) {
+          console.log(`[Process] Gagal memproses link ${link}: ${err?.message || err}`);
+        }
       }
       return {
-        status: true,
-        total: parsedData.length,
-        sumber: "KBBI.co.id",
-        data: parsedData
+        status: results.length > 0,
+        query: targetQuery,
+        total_hasil: results.length,
+        results: results,
+        metadata: metadataSidebar
       };
-    } catch (err) {
-      console.error(`[ERROR] ${err?.message}`);
+    } catch (error) {
+      console.log(`[Process] Error pada metode search: ${error?.message || error}`);
       return {
         status: false,
-        pesan: err?.message || "Internal Error",
-        data: []
+        result: {
+          pesan_error: error?.message || "Gagal memproses pencarian karena gangguan teknis"
+        }
       };
     }
   }
@@ -151,14 +178,13 @@ export default async function handler(req, res) {
       error: "Parameter 'query' diperlukan"
     });
   }
-  const api = new KbbiCoId();
+  const api = new KbbiScraper();
   try {
     const data = await api.search(params);
     return res.status(200).json(data);
   } catch (error) {
-    const errorMessage = error.message || "Terjadi kesalahan saat memproses URL";
     return res.status(500).json({
-      error: errorMessage
+      error: error.message || "Terjadi kesalahan saat memproses."
     });
   }
 }

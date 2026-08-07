@@ -1,12 +1,10 @@
 import axios from "axios";
-import crypto from "node:crypto";
-import https from "node:https";
+import crypto from "crypto";
+import https from "https";
 class VocunoClient {
   constructor() {
     this.agt = new https.Agent({
-      rejectUnauthorized: false,
-      ciphers: "ALL:@SECLEVEL=0",
-      secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT
+      rejectUnauthorized: false
     });
     this.ua = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36";
     this.apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlxdm9ldmN4eGlpYmh5eGhtb3RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxNjA3MTIsImV4cCI6MjA2NzczNjcxMn0.svm9CJZBmUYU02ozG6G-zA-pre0sarsVHPpc2SayR0g";

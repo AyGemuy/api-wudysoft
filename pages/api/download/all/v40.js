@@ -1,10 +1,15 @@
 import axios from "axios";
+import https from "https";
 class VideoDownloader {
   constructor() {
     try {
       console.log("[LOG: INIT] Mengonfigurasi client downloader...");
+      this.agt = new https.Agent({
+        rejectUnauthorized: false
+      });
       this.client = axios.create({
         baseURL: "http://209.38.122.53:3000",
+        httpsAgent: this.agt,
         headers: {
           "User-Agent": "okhttp/5.2.1",
           Connection: "Keep-Alive",

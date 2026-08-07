@@ -5,9 +5,7 @@ import FormData from "form-data";
 class SongFinder {
   constructor() {
     this.agt = new https.Agent({
-      rejectUnauthorized: false,
-      ciphers: "ALL:@SECLEVEL=0",
-      secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT
+      rejectUnauthorized: false
     });
     this.acrHost = "identify-eu-west-1.acrcloud.com";
     this.acrKey = "3138199725df57d391c9ac556bef6321";

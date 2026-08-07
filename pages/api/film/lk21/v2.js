@@ -4,60 +4,82 @@ import * as cheerio from "cheerio";
 const proxyUrls = [`https://${apiConfig.DOMAIN_URL}/api/tools/web/html/v12?url=`];
 const randomProxyUrl = proxyUrls[Math.floor(Math.random() * proxyUrls.length)];
 class LK21 {
-  constructor(baseUrl) {
-    this.baseUrl = baseUrl;
+  constructor() {
+    this.baseUrl = "https://tv4.lk21official.life/search.php";
+    this.proxy = randomProxyUrl;
+    this.api = axios.create();
   }
-  async fetchData(url) {
+  async init() {
+    return true;
+  }
+  async req({
+    url,
+    ...rest
+  }) {
     try {
-      const response = await axios.get(randomProxyUrl + url);
-      if (response.status === 200 && typeof response.data === "string") {
-        return response.data;
+      console.log(`[PROC] GET -> ${url}`);
+      const targetUrl = this.proxy + url;
+      const res = await this.api.get(targetUrl, {
+        ...rest
+      });
+      if (res.status === 200 && typeof res.data === "string") {
+        const isHtml = res.data.includes("<html") || res.data.includes("<!DOCTYPE");
+        const result = isHtml ? cheerio.load(res.data) : res.data;
+        console.log(`[DONE] ${url} | Status: ${res.status}`);
+        return result;
       }
       return null;
-    } catch (error) {
-      console.error(`Error fetching data from ${url}:`, error.message);
+    } catch (err) {
+      console.log(`[FAIL] ${url} | ${err.message}`);
       return null;
     }
   }
-  async searchData(query = "") {
-    return await this.fetchData(`${this.baseUrl}?s=${encodeURIComponent(query)}`);
-  }
-  async search(query = "Hulk") {
-    const html = await this.searchData(query);
-    if (!html) {
+  async search({
+    query = "Hulk",
+    ...rest
+  } = {}) {
+    const url = `${this.baseUrl}?s=${encodeURIComponent(query)}`;
+    const $ = await this.req({
+      url: url,
+      ...rest
+    });
+    if (!$) {
       return [{
         message: "Tidak ada hasil yang ditemukan atau gagal memuat halaman."
       }];
     }
-    const $ = cheerio.load(html);
-    const results = [];
-    $(".search-item").each((_, el) => {
+    const results = $(".search-item").map((_, el) => {
       const title = $(el).find(".search-content h3 a").text().trim();
       const link = $(el).find(".search-content h3 a").attr("href")?.trim();
       const director = $(el).find(".search-content p:contains('Sutradara')").text().replace("Sutradara:", "").trim();
       const stars = $(el).find(".search-content p:contains('Bintang')").text().replace("Bintang:", "").trim();
       const image = $(el).find(".search-poster a img").attr("src")?.trim();
-      results.push({
+      return {
         title: title,
         link: link,
         director: director,
         stars: stars,
         image: image
-      });
-    });
+      };
+    }).get();
     return results.length ? results : [{
       message: "Tidak ada hasil yang ditemukan untuk pencarian ini."
     }];
   }
-  async download(url) {
-    const html = await this.fetchData(url);
-    if (!html) {
+  async download({
+    url,
+    ...rest
+  } = {}) {
+    const $ = await this.req({
+      url: url,
+      ...rest
+    });
+    if (!$) {
       return {
         video: "Failed to retrieve video source.",
         providers: ["Failed to retrieve providers."]
       };
     }
-    const $ = cheerio.load(html);
     const video = $("#player video").attr("src") || "No video source found.";
     const providers = $("#loadProviders a").map((_, el) => ({
       name: $(el).text().trim(),
@@ -69,14 +91,19 @@ class LK21 {
       download: providers.length ? providers : ["No providers found."]
     };
   }
-  async detail(url) {
-    const html = await this.fetchData(url);
-    if (!html) {
+  async detail({
+    url,
+    ...rest
+  } = {}) {
+    const $ = await this.req({
+      url: url,
+      ...rest
+    });
+    if (!$) {
       return {
         message: "Failed to retrieve movie details."
       };
     }
-    const $ = cheerio.load(html);
     const title = $(".post-header h2").eq(0).text().trim() || "No title";
     const poster = $(".content-wrapper .content-poster img").attr("src") || "No poster";
     const quality = $(".content-wrapper h2").eq(0).next().text().trim() || "N/A";
@@ -88,7 +115,10 @@ class LK21 {
     const releaseDate = $(".content-wrapper h2").eq(6).next().text().trim() || "N/A";
     const duration = $(".content-wrapper h2").eq(10).next().text().trim() || "N/A";
     const synopsis = $("blockquote").eq(0).text().trim() || "No synopsis";
-    const downloadInfo = await this.download(url);
+    const downloadInfo = await this.download({
+      url: url,
+      ...rest
+    });
     return {
       title: title,
       poster: poster,
@@ -109,40 +139,79 @@ class LK21 {
 export default async function handler(req, res) {
   const {
     action,
-    query,
-    url
+    ...params
   } = req.method === "GET" ? req.query : req.body;
-  const scraper = new LK21("https://tv4.lk21official.life/search.php");
+  const validActions = ["search", "detail", "download"];
+  if (!action) {
+    return res.status(400).json({
+      status: false,
+      error: "Parameter 'action' wajib diisi.",
+      available_actions: validActions,
+      usage: {
+        method: "GET / POST",
+        examples: {
+          search: "/api?action=search&query=Hulk",
+          detail: "/api?action=detail&url=https://tv4.lk21official.life/some-movie-url",
+          download: "/api?action=download&url=https://tv4.lk21official.life/some-movie-url"
+        }
+      }
+    });
+  }
+  if (!validActions.includes(action)) {
+    return res.status(400).json({
+      status: false,
+      error: `Action tidak valid: '${action}'.`,
+      valid_actions: validActions
+    });
+  }
+  const scraper = new LK21();
   try {
-    let result;
+    let response;
     switch (action) {
       case "search":
-        result = await scraper.search(query || "Hulk");
+        response = await scraper.search(params);
         break;
       case "detail":
-        if (!url) return res.status(400).json({
-          error: "URL is required for details"
-        });
-        result = await scraper.detail(url);
+        if (!params.url) {
+          return res.status(400).json({
+            status: false,
+            error: "Parameter 'url' wajib diisi."
+          });
+        }
+        response = await scraper.detail(params);
         break;
       case "download":
-        if (!url) return res.status(400).json({
-          error: "URL is required for download"
-        });
-        result = await scraper.download(url);
+        if (!params.url) {
+          return res.status(400).json({
+            status: false,
+            error: "Parameter 'url' wajib diisi."
+          });
+        }
+        response = await scraper.download(params);
         break;
       default:
         return res.status(400).json({
-          error: "Invalid action"
+          status: false,
+          error: "Action tidak dikenali."
         });
     }
+    if (!response) {
+      return res.status(502).json({
+        status: false,
+        error: "Server target tidak memberikan respon atau data kosong."
+      });
+    }
     return res.status(200).json({
-      result: result
+      status: true,
+      action: action,
+      result: response
     });
   } catch (error) {
+    console.error(`[API ERROR] Exception on '${action}':`, error);
     return res.status(500).json({
-      error: "An error occurred",
-      details: error.message
+      status: false,
+      message: "Terjadi kesalahan pada internal server API.",
+      error: error.message || "Unknown Error"
     });
   }
 }

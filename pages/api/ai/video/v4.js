@@ -1,14 +1,14 @@
 import axios from "axios";
 import FormData from "form-data";
 import https from "https";
-class AritekVideoGen {
+import crypto from "crypto";
+class AritekVG {
   constructor() {
     this.cfg = {
-      base: "https://text2video.aritek.app",
-      auth: "eyJzdWIiwsdeOiIyMzQyZmczNHJ0MzR0weMzQiLCJuYW1lIjorwiSm9objJif4md3kbnG",
-      sign: "61ed377e85d386a8dfee6b864bd85b0bfaa5af81",
-      token: "skdjf20nx84D9KJf92fjdkJFslloqnxzmqt07",
-      ver: "71",
+      base: "https://t2v.aritek.app",
+      auth: "",
+      sign: "68d6165b72a7f2d8d17b0dc6fe9691abdf77c583",
+      ver: "84",
       def: {
         style_code: 33,
         isPremium: 1,
@@ -16,187 +16,367 @@ class AritekVideoGen {
       }
     };
     this.deviceId = this.genId();
+    this.initialized = false;
     this.httpsAgent = new https.Agent({
       keepAlive: true,
       rejectUnauthorized: false
     });
   }
-  genHeaders(isJson = false) {
-    const headers = {
-      "User-Agent": "okhttp/5.1.0",
-      Accept: "application/json",
-      authorization: this.cfg.auth,
-      sign: this.cfg.sign,
-      pt: "",
-      v: this.cfg.ver,
-      deviceid: this.deviceId,
-      Connection: "Keep-Alive"
-    };
-    if (isJson) headers["Content-Type"] = "application/json";
-    return headers;
+  genId() {
+    try {
+      return crypto.randomBytes(8).toString("hex");
+    } catch (err) {
+      console.error(`[CRYPTO ERR] Failed to generate Device ID: ${err.message}`);
+      return "0666b2e8da418dfa";
+    }
   }
-  async pollVideoStatus(videoKey) {
-    console.log(`[POLL START] Key: ${videoKey.substring(0, 30)}...`);
-    const maxAttempts = 60;
+  getH(isJson = false) {
+    try {
+      let formattedAuth = "Bearer";
+      if (this.cfg.auth) {
+        const trimmedAuth = this.cfg.auth.trim();
+        if (trimmedAuth.toLowerCase().startsWith("bearer")) {
+          formattedAuth = trimmedAuth;
+        } else {
+          formattedAuth = `Bearer ${trimmedAuth}`;
+        }
+      }
+      const headers = {
+        "User-Agent": "okhttp/4.12.0",
+        "Accept-Encoding": "gzip",
+        sign: this.cfg.sign,
+        pt: "",
+        "ctry-target": this.cfg.def.ctry_target,
+        versioncode: this.cfg.ver,
+        authorization: formattedAuth,
+        "device-id": this.deviceId
+      };
+      if (isJson) headers["Content-Type"] = "application/json";
+      return headers;
+    } catch (err) {
+      console.error(`[HEADER ERR] Failed to compose headers: ${err.message}`);
+      return {};
+    }
+  }
+  async req(config) {
+    try {
+      config.httpsAgent = this.httpsAgent;
+      if (!config.headers) {
+        config.headers = this.getH(config.data && typeof config.data === "string");
+      }
+      return await axios(config);
+    } catch (error) {
+      if (error.response && error.response.status === 401 && !config._isRetry) {
+        console.warn("[AUTH] 401 Unauthorized. refreshing active token session...");
+        config._isRetry = true;
+        try {
+          await this.getUsr();
+          config.headers = this.getH(config.data && typeof config.data === "string");
+          console.log("[AUTH] Token refresh complete, retrying previous execution...");
+          return await axios(config);
+        } catch (refreshError) {
+          console.error(`[AUTH ERR] Request retry failed: ${refreshError.message}`);
+          return {
+            status: "failed",
+            result: refreshError.message
+          };
+        }
+      }
+      return {
+        status: "failed",
+        result: error.message
+      };
+    }
+  }
+  async getUsr() {
+    console.log("[USER] Launching session token handshake...");
+    try {
+      const res = await axios.get(`${this.cfg.base}/api/v1/user/info`, {
+        headers: this.getH(),
+        httpsAgent: this.httpsAgent
+      });
+      if (res.data && res.data.success && res.data.data?.token) {
+        this.cfg.auth = res.data.data.token;
+        this.cfg.def.isPremium = 1;
+        this.initialized = true;
+        console.log(`[USER] JWT Token bound. Client session is configured with Force Premium.`);
+      }
+      return res.data;
+    } catch (error) {
+      console.error(`[USER ERR] Failed to establish connection handshake: ${error.message}`);
+      return {
+        status: "failed",
+        result: error.message
+      };
+    }
+  }
+  async poll(jobId) {
+    console.log(`[POLL START] Tracking queued Job ID: ${jobId}`);
+    const max = 60;
     let attempts = 0;
-    while (attempts < maxAttempts) {
+    while (attempts < max) {
       try {
-        const payload = {
-          keys: [videoKey]
-        };
-        console.log(`[POLL] Attempt ${attempts + 1}/${maxAttempts}`);
-        const response = await axios.post(`${this.cfg.base}/video`, JSON.stringify(payload), {
-          headers: this.genHeaders(true),
-          httpsAgent: this.httpsAgent
+        console.log(`[POLL] Loop ${attempts + 1}/${max}`);
+        const res = await this.req({
+          method: "POST",
+          url: `${this.cfg.base}/api/v1/generate/status`,
+          data: JSON.stringify({
+            ids: [jobId]
+          })
         });
-        if (response.data.datas && response.data.datas.length > 0) {
-          const videoData = response.data.datas[0];
-          if (videoData.url && videoData.url.length > 0) {
-            console.log(`[POLL SUCCESS] URL: ${videoData.url}`);
+        if (res.status === "failed") {
+          return res;
+        }
+        if (res.data && res.data.success && res.data.data?.length > 0) {
+          const job = res.data.data[0];
+          if (job.status === "succeeded" && job.url) {
+            console.log(`[POLL SUCCESS] Resolved URL: ${job.url}`);
             return {
-              status: "success",
-              url: videoData.url,
-              safe: videoData.safe,
-              key: videoData.key
+              url: job.url,
+              jobId: job.jobId
+            };
+          } else if (job.status === "failed") {
+            return {
+              status: "failed",
+              result: "Task execution reported as failed on backend"
             };
           }
         }
         attempts++;
         await new Promise(r => setTimeout(r, 3e3));
       } catch (error) {
-        console.error(`[POLL ERROR] ${error.message}`);
-        if (error.response) {
-          console.error(`[POLL ERROR] Status: ${error.response.status}`);
-          console.error(`[POLL ERROR] Data:`, error.response.data);
-        }
+        console.error(`[POLL ERR] Error during polling iteration: ${error.message}`);
         attempts++;
-        if (attempts >= maxAttempts) {
-          throw new Error(`Polling failed after ${maxAttempts} attempts: ${error.message}`);
-        }
-        await new Promise(r => setTimeout(r, 5e3));
+        await new Promise(r => setTimeout(r, 3e3));
       }
     }
-    throw new Error("Timeout: Video generation exceeded 150 seconds");
-  }
-  async generate(options = {}) {
-    const {
-      mode = "video",
-        prompt,
-        media,
-        style_code = this.cfg.def.style_code,
-        aspect_ratio = "auto",
-        ai_sound = 1
-    } = options;
-    if (!prompt) {
-      throw new Error("Prompt is required");
-    }
-    const hasMedia = !!media;
-    console.log(`[GENERATE] Mode: ${mode}, Media: ${hasMedia}, Prompt: "${prompt}"`);
-    try {
-      if (mode === "image") {
-        return await this.generateImage(prompt, media, style_code, hasMedia);
-      } else {
-        return await this.generateVideo(prompt, media, style_code, aspect_ratio, ai_sound, hasMedia);
-      }
-    } catch (error) {
-      console.error(`[GENERATE ERROR] ${error.message}`);
-      if (error.response) {
-        console.error(`[GENERATE ERROR] Status: ${error.response.status}`);
-        console.error(`[GENERATE ERROR] Data:`, error.response.data);
-      }
-      throw error;
-    }
-  }
-  async generateImage(prompt, media, style_code, hasMedia) {
-    const endpoint = hasMedia ? "img2img" : "text2img";
-    console.log(`[IMAGE] Endpoint: ${endpoint}`);
-    const form = new FormData();
-    form.append("prompt", prompt);
-    form.append("style_code", style_code.toString());
-    form.append("ctry_target", this.cfg.def.ctry_target);
-    form.append("ver", this.cfg.ver);
-    form.append("deviceID", this.deviceId);
-    form.append("isPremium", this.cfg.def.isPremium.toString());
-    form.append("verify_token", this.cfg.token);
-    form.append("token", this.cfg.auth);
-    if (hasMedia) {
-      console.log(`[IMAGE] Processing input media...`);
-      const buffer = await this.solveMedia(media);
-      form.append("image", buffer, {
-        filename: "input.jpg",
-        contentType: "image/jpeg"
-      });
-    }
-    const res = await axios.post(`${this.cfg.base}/${endpoint}`, form, {
-      headers: {
-        ...this.genHeaders(),
-        ...form.getHeaders()
-      },
-      httpsAgent: this.httpsAgent
-    });
-    console.log(`[IMAGE SUCCESS] Response:`, res.data);
-    return res.data;
-  }
-  async generateVideo(prompt, media, style_code, aspect_ratio, ai_sound, hasMedia) {
-    const endpoint = hasMedia ? "img2video" : "txt2videov3";
-    console.log(`[VIDEO] Endpoint: ${endpoint}`);
-    const payload = {
-      prompt: prompt,
-      ver: parseInt(this.cfg.ver),
-      deviceID: this.deviceId,
-      isPremium: this.cfg.def.isPremium,
-      ctry_target: this.cfg.def.ctry_target,
-      used: [],
-      aspect_ratio: aspect_ratio,
-      ai_sound: ai_sound
+    return {
+      status: "failed",
+      result: "Polling execution expired, task exceeded limit"
     };
-    if (hasMedia) {
-      console.log(`[VIDEO] Processing input media...`);
-      const buffer = await this.solveMedia(media);
-      const mimeType = "image/png";
-      payload.imageUri = `data:${mimeType};base64,${buffer.toString("base64")}`;
-    }
-    const res = await axios.post(`${this.cfg.base}/${endpoint}`, JSON.stringify(payload), {
-      headers: this.genHeaders(true),
-      httpsAgent: this.httpsAgent
-    });
-    console.log(`[VIDEO] Initial response:`, res.data);
-    if (res.data.key) {
-      return await this.pollVideoStatus(res.data.key);
-    }
-    return res.data;
   }
-  async solveMedia(media) {
+  async genT2I(prompt, overrides = {}) {
+    console.log(`[T2I] Sending prompt data payload...`);
+    try {
+      const payload = {
+        prompt: Array.isArray(prompt) ? prompt : [prompt],
+        ...overrides
+      };
+      const res = await this.req({
+        method: "POST",
+        url: `${this.cfg.base}/api/v3/image/t2i`,
+        data: JSON.stringify(payload)
+      });
+      return res.status === "failed" ? res : res.data;
+    } catch (error) {
+      console.error(`[T2I ERR] Text-to-Image request failed: ${error.message}`);
+      return {
+        status: "failed",
+        result: error.message
+      };
+    }
+  }
+  async genI2I(prompt, media, overrides = {}) {
+    console.log(`[I2I] Processing form-data media payload...`);
+    try {
+      const form = new FormData();
+      const buffer = await this.slvM(media);
+      if (buffer && buffer.status === "failed") {
+        return buffer;
+      }
+      const fields = {
+        prompt: prompt,
+        versionCode: this.cfg.ver,
+        deviceID: this.deviceId,
+        isPremium: "1",
+        ctry_target: this.cfg.def.ctry_target,
+        style_code: this.cfg.def.style_code.toString(),
+        ...overrides
+      };
+      form.append("image", buffer, {
+        filename: "input.png",
+        contentType: "image/png"
+      });
+      for (const [key, value] of Object.entries(fields)) {
+        form.append(key, value.toString());
+      }
+      const res = await this.req({
+        method: "POST",
+        url: `${this.cfg.base}/api/v3/image/i2i`,
+        data: form,
+        headers: {
+          ...this.getH(),
+          ...form.getHeaders()
+        }
+      });
+      return res.status === "failed" ? res : res.data;
+    } catch (error) {
+      console.error(`[I2I ERR] Image-to-Image request failed: ${error.message}`);
+      return {
+        status: "failed",
+        result: error.message
+      };
+    }
+  }
+  async genT2V(prompt, overrides = {}) {
+    console.log(`[T2V] Sending prompt video payload...`);
+    try {
+      const payload = {
+        ai_sound: 0,
+        aspect_ratio: "auto",
+        ctry_target: this.cfg.def.ctry_target,
+        deviceID: this.deviceId,
+        isPremium: 1,
+        prompt: prompt,
+        used: [],
+        versionCode: parseInt(this.cfg.ver),
+        ...overrides
+      };
+      const res = await this.req({
+        method: "POST",
+        url: `${this.cfg.base}/api/v3/video/t2v`,
+        data: JSON.stringify(payload)
+      });
+      return res.status === "failed" ? res : res.data;
+    } catch (error) {
+      console.error(`[T2V ERR] Text-to-Video request failed: ${error.message}`);
+      return {
+        status: "failed",
+        result: error.message
+      };
+    }
+  }
+  async genI2V(prompt, media, overrides = {}) {
+    console.log(`[I2V] Processing video form-data payload...`);
+    try {
+      const form = new FormData();
+      const buffer = await this.slvM(media);
+      if (buffer && buffer.status === "failed") {
+        return buffer;
+      }
+      const fields = {
+        prompt: prompt,
+        versionCode: this.cfg.ver,
+        deviceID: this.deviceId,
+        isPremium: "1",
+        ctry_target: this.cfg.def.ctry_target,
+        aspect_ratio: "auto",
+        ai_sound: "0",
+        ...overrides
+      };
+      form.append("image", buffer, {
+        filename: "input.png",
+        contentType: "image/png"
+      });
+      for (const [key, value] of Object.entries(fields)) {
+        form.append(key, value.toString());
+      }
+      const res = await axios.post(`${this.cfg.base}/api/v3/video/i2v`, form, {
+        headers: {
+          ...this.getH(),
+          ...form.getHeaders()
+        },
+        httpsAgent: this.httpsAgent
+      });
+      return res.status === "failed" ? res : res.data;
+    } catch (error) {
+      console.error(`[I2V ERR] Image-to-Video request failed: ${error.message}`);
+      return {
+        status: "failed",
+        result: error.message
+      };
+    }
+  }
+  async slvM(media) {
     try {
       if (Buffer.isBuffer(media)) {
-        console.log(`[MEDIA] Input is Buffer (${media.length} bytes)`);
         return media;
       }
       if (typeof media === "string") {
         if (media.startsWith("http")) {
-          console.log(`[MEDIA] Downloading from URL: ${media}`);
           const res = await axios.get(media, {
             responseType: "arraybuffer"
           });
-          console.log(`[MEDIA] Downloaded ${res.data.byteLength} bytes`);
           return Buffer.from(res.data);
         }
-        console.log(`[MEDIA] Decoding base64 string`);
         return Buffer.from(media.replace(/^data:image\/\w+;base64,/, ""), "base64");
       }
-      throw new Error("Invalid media format");
+      return {
+        status: "failed",
+        result: "Format media tidak didukung"
+      };
     } catch (error) {
-      console.error(`[MEDIA ERROR] ${error.message}`);
-      throw error;
+      console.error(`[MEDIA ERR] Error resolving buffer: ${error.message}`);
+      return {
+        status: "failed",
+        result: error.message
+      };
     }
   }
-  genId() {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let result = "";
-    for (let i = 0; i < 15; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
+  async generate({
+    mode = "video",
+    prompt,
+    media,
+    ...rest
+  }) {
+    try {
+      if (!prompt) {
+        return {
+          status: "failed",
+          result: "Prompt is required"
+        };
+      }
+      if (!this.cfg.auth) {
+        const authRes = await this.getUsr();
+        if (authRes && authRes.status === "failed") {
+          return authRes;
+        }
+      }
+      const hasMedia = !!media;
+      let response;
+      switch (mode) {
+        case "image":
+          if (hasMedia) {
+            response = await this.genI2I(prompt, media, rest);
+          } else {
+            response = await this.genT2I(prompt, rest);
+          }
+          break;
+        case "video":
+          if (hasMedia) {
+            response = await this.genI2V(prompt, media, rest);
+          } else {
+            response = await this.genT2V(prompt, rest);
+          }
+          break;
+        default:
+          return {
+            status: "failed",
+              result: `Unsupported mode: ${mode}`
+          };
+      }
+      if (response && response.status === "failed") {
+        return response;
+      }
+      const jobId = response?.data?.jobId || response?.jobId;
+      if (jobId) {
+        const pollResult = await this.poll(jobId);
+        if (pollResult.status === "failed") {
+          return pollResult;
+        }
+        response = pollResult;
+      }
+      return {
+        status: "success",
+        result: response
+      };
+    } catch (error) {
+      console.error(`[GEN CONTROL ERR] General execution crashed: ${error.message}`);
+      return {
+        status: "failed",
+        result: error.message
+      };
     }
-    return result;
   }
 }
 export default async function handler(req, res) {
@@ -206,12 +386,12 @@ export default async function handler(req, res) {
       error: "Parameter 'prompt' diperlukan"
     });
   }
-  const api = new AritekVideoGen();
+  const api = new AritekVG();
   try {
     const data = await api.generate(params);
     return res.status(200).json(data);
   } catch (error) {
-    const errorMessage = error.message || "Terjadi kesalahan saat memproses.";
+    const errorMessage = error.message || "Terjadi kesalahan saat memproses URL";
     return res.status(500).json({
       error: errorMessage
     });
