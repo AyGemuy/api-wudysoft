@@ -2,16 +2,14 @@ import axios from "axios";
 import FormData from "form-data";
 import https from "https";
 import crypto from "crypto";
-class AritekVG {
+class FlixGen {
   constructor() {
     this.cfg = {
-      base: "https://t2v.aritek.app",
+      base: "https://flixgen.aritek.app",
       auth: "",
-      sign: "68d6165b72a7f2d8d17b0dc6fe9691abdf77c583",
+      sign: "ba9789bafe8c67e42bba0a7c40fbc39d3830ab75",
       ver: "85",
       def: {
-        style_code: 33,
-        isPremium: 1,
         ctry_target: "others"
       }
     };
@@ -42,12 +40,11 @@ class AritekVG {
         }
       }
       const headers = {
-        "User-Agent": "okhttp/4.12.0",
+        "User-Agent": "okhttp/5.3.0",
         "Accept-Encoding": "gzip",
         sign: this.cfg.sign,
         pt: "",
         "ctry-target": this.cfg.def.ctry_target,
-        versioncode: this.cfg.ver,
         authorization: formattedAuth,
         "device-id": this.deviceId
       };
@@ -97,9 +94,8 @@ class AritekVG {
       });
       if (res.data && res.data.success && res.data.data?.token) {
         this.cfg.auth = res.data.data.token;
-        this.cfg.def.isPremium = 1;
         this.initialized = true;
-        console.log(`[USER] JWT Token bound. Client session is configured with Force Premium.`);
+        console.log(`[USER] JWT Token bound. Client session is configured.`);
       }
       return res.data;
     } catch (error) {
@@ -117,7 +113,7 @@ class AritekVG {
     try {
       const res = await this.req({
         method: "GET",
-        url: `${this.cfg.base}/api/v2/t2v/home?v=${this.cfg.ver}`
+        url: `${this.cfg.base}/api/v1/flixgen/home`
       });
       if (res.status === "failed") {
         return res;
@@ -237,8 +233,8 @@ class AritekVG {
       };
     }
   }
-  async genI2I(prompt, media, overrides = {}) {
-    console.log(`[I2I] Processing form-data media payload...`);
+  async genI2I(code, media, overrides = {}) {
+    console.log(`[I2I] Processing form-data media payload for code: ${code}...`);
     try {
       const form = new FormData();
       const buffer = await this.slvM(media);
@@ -246,16 +242,11 @@ class AritekVG {
         return buffer;
       }
       const fields = {
-        versionCode: this.cfg.ver,
-        deviceID: this.deviceId,
-        isPremium: "1",
-        ctry_target: this.cfg.def.ctry_target,
-        style_code: this.cfg.def.style_code.toString(),
+        code: code,
+        ai_sound: "0",
+        resolution: "360p",
         ...overrides
       };
-      if (prompt) {
-        fields.prompt = prompt;
-      }
       form.append("image", buffer, {
         filename: "input.png",
         contentType: "image/png"
@@ -287,13 +278,10 @@ class AritekVG {
     console.log(`[T2V] Sending prompt video payload...`);
     try {
       const payload = {
-        ai_sound: 0,
-        aspect_ratio: "auto",
-        ctry_target: this.cfg.def.ctry_target,
-        deviceID: this.deviceId,
-        isPremium: 1,
-        used: [],
-        versionCode: parseInt(this.cfg.ver),
+        ratio: "auto",
+        resolution: "360p",
+        timestamp: Date.now(),
+        used: [""],
         ...overrides
       };
       if (prompt) {
@@ -313,8 +301,8 @@ class AritekVG {
       };
     }
   }
-  async genI2V(prompt, media, overrides = {}) {
-    console.log(`[I2V] Processing video form-data payload...`);
+  async genI2V(code, media, overrides = {}) {
+    console.log(`[I2V] Processing video form-data payload for code: ${code}...`);
     try {
       const form = new FormData();
       const buffer = await this.slvM(media);
@@ -322,17 +310,11 @@ class AritekVG {
         return buffer;
       }
       const fields = {
-        versionCode: this.cfg.ver,
-        deviceID: this.deviceId,
-        isPremium: "1",
-        ctry_target: this.cfg.def.ctry_target,
-        aspect_ratio: "auto",
+        code: code,
         ai_sound: "0",
+        resolution: "360p",
         ...overrides
       };
-      if (prompt) {
-        fields.prompt = prompt;
-      }
       form.append("image", buffer, {
         filename: "input.png",
         contentType: "image/png"
@@ -390,37 +372,50 @@ class AritekVG {
     mode = "video",
     prompt,
     media,
+    code,
     ...rest
   }) {
     try {
-      if (!prompt && !rest.code) {
-        return {
-          status: "failed",
-          result: "Parameter 'prompt' atau 'code' wajib disediakan"
-        };
-      }
       if (!this.cfg.auth) {
         const authRes = await this.getUsr();
         if (authRes && authRes.status === "failed") {
           return authRes;
         }
       }
-      const hasMedia = !!media;
       let response;
       switch (mode) {
-        case "image":
-          if (hasMedia) {
-            response = await this.genI2I(prompt, media, rest);
+        case "template":
+          const templateCode = code || rest.code;
+          if (!media || !templateCode) {
+            return {
+              status: "failed",
+              result: "Parameter 'media' (image input) dan 'code' (template code) wajib disediakan untuk mode template"
+            };
+          }
+          const isImageTemplate = rest.template_type === "image";
+          if (isImageTemplate) {
+            response = await this.genI2I(templateCode, media, rest);
           } else {
-            response = await this.genT2I(prompt, rest);
+            response = await this.genI2V(templateCode, media, rest);
           }
           break;
-        case "video":
-          if (hasMedia) {
-            response = await this.genI2V(prompt, media, rest);
-          } else {
-            response = await this.genT2V(prompt, rest);
+        case "image":
+          if (!prompt) {
+            return {
+              status: "failed",
+              result: "Parameter 'prompt' wajib disediakan untuk mode image"
+            };
           }
+          response = await this.genT2I(prompt, rest);
+          break;
+        case "video":
+          if (!prompt) {
+            return {
+              status: "failed",
+              result: "Parameter 'prompt' wajib disediakan untuk mode video"
+            };
+          }
+          response = await this.genT2V(prompt, rest);
           break;
         default:
           return {
@@ -430,6 +425,14 @@ class AritekVG {
       }
       if (response && response.status === "failed") {
         return response;
+      }
+      if (response?.data?.url) {
+        return {
+          status: "success",
+          result: {
+            url: response.data.url
+          }
+        };
       }
       const jobId = response?.data?.jobId || response?.jobId;
       if (jobId) {
@@ -467,7 +470,7 @@ export default async function handler(req, res) {
         method: "GET / POST",
         examples: {
           template: "/api?action=template&filter=all",
-          generate: "/api?action=generate&code=01KT1A2KYZZJQB4XT2WHCK62R1&mode=image"
+          generate: "/api?action=generate&code=FSMB001&mode=template"
         }
       }
     });
@@ -479,7 +482,7 @@ export default async function handler(req, res) {
       valid_actions: validActions
     });
   }
-  const scraper = new AritekVG();
+  const scraper = new FlixGen();
   try {
     let response;
     switch (action) {
@@ -487,7 +490,9 @@ export default async function handler(req, res) {
         response = await scraper.template(params);
         break;
       case "generate":
-        if (!params.prompt && !params.code) {
+        const hasPrompt = !!params.prompt;
+        const hasCode = !!params.code;
+        if (!hasPrompt && !hasCode) {
           return res.status(400).json({
             status: false,
             error: "Parameter 'prompt' atau 'code' wajib diisi untuk generate."

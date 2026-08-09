@@ -2,16 +2,12 @@ import axios from "axios";
 import FormData from "form-data";
 import https from "https";
 import crypto from "crypto";
-class AritekVG {
+class AdrFlixAIPro {
   constructor() {
     this.cfg = {
-      base: "https://t2v.aritek.app",
+      base: "https://adrflixaipro.aritek.app",
       auth: "",
-      sign: "68d6165b72a7f2d8d17b0dc6fe9691abdf77c583",
-      ver: "85",
       def: {
-        style_code: 33,
-        isPremium: 1,
         ctry_target: "others"
       }
     };
@@ -42,12 +38,11 @@ class AritekVG {
         }
       }
       const headers = {
-        "User-Agent": "okhttp/4.12.0",
+        "User-Agent": "okhttp/5.1.0",
         "Accept-Encoding": "gzip",
-        sign: this.cfg.sign,
         pt: "",
+        "redeem-code": "",
         "ctry-target": this.cfg.def.ctry_target,
-        versioncode: this.cfg.ver,
         authorization: formattedAuth,
         "device-id": this.deviceId
       };
@@ -67,7 +62,7 @@ class AritekVG {
       return await axios(config);
     } catch (error) {
       if (error.response && error.response.status === 401 && !config._isRetry) {
-        console.warn("[AUTH] 401 Unauthorized. refreshing active token session...");
+        console.warn("[AUTH] 401 Unauthorized. Refreshing active token session...");
         config._isRetry = true;
         try {
           await this.getUsr();
@@ -97,72 +92,12 @@ class AritekVG {
       });
       if (res.data && res.data.success && res.data.data?.token) {
         this.cfg.auth = res.data.data.token;
-        this.cfg.def.isPremium = 1;
         this.initialized = true;
-        console.log(`[USER] JWT Token bound. Client session is configured with Force Premium.`);
+        console.log(`[USER] JWT Token bound successfully.`);
       }
       return res.data;
     } catch (error) {
       console.error(`[USER ERR] Failed to establish connection handshake: ${error.message}`);
-      return {
-        status: "failed",
-        result: error.message
-      };
-    }
-  }
-  async template({
-    filter = "all"
-  } = {}) {
-    console.log(`[TEMPLATE] Fetching and parsing template lists with filter: ${filter}`);
-    try {
-      const res = await this.req({
-        method: "GET",
-        url: `${this.cfg.base}/api/v2/t2v/home?v=${this.cfg.ver}`
-      });
-      if (res.status === "failed") {
-        return res;
-      }
-      const rawData = res.data?.data || {};
-      const items = [];
-      const findItemsRecursive = obj => {
-        if (!obj || typeof obj !== "object") return;
-        if (Array.isArray(obj)) {
-          for (const item of obj) {
-            if (item && typeof item === "object" && item.code) {
-              items.push(item);
-            } else {
-              findItemsRecursive(item);
-            }
-          }
-        } else {
-          for (const key of Object.keys(obj)) {
-            if (key === "items" && Array.isArray(obj[key])) {
-              for (const item of obj[key]) {
-                if (item && typeof item === "object" && item.code) {
-                  items.push(item);
-                }
-              }
-            } else {
-              findItemsRecursive(obj[key]);
-            }
-          }
-        }
-      };
-      findItemsRecursive(rawData);
-      let result = items;
-      if (filter && filter !== "all") {
-        const queryFilter = filter.toLowerCase();
-        result = items.filter(item => {
-          const type = (item.type || "").toLowerCase();
-          return type.includes(queryFilter);
-        });
-      }
-      return {
-        status: "success",
-        result: result
-      };
-    } catch (error) {
-      console.error(`[TEMPLATE ERR] Failed to resolve templates: ${error.message}`);
       return {
         status: "failed",
         result: error.message
@@ -178,7 +113,7 @@ class AritekVG {
         console.log(`[POLL] Loop ${attempts + 1}/${max}`);
         const res = await this.req({
           method: "POST",
-          url: `${this.cfg.base}/api/v1/generate/status`,
+          url: `${this.cfg.base}/api/v1/video/batch`,
           data: JSON.stringify({
             ids: [jobId]
           })
@@ -214,94 +149,20 @@ class AritekVG {
       result: "Polling execution expired, task exceeded limit"
     };
   }
-  async genT2I(prompt, overrides = {}) {
-    console.log(`[T2I] Sending prompt data payload...`);
-    try {
-      const payload = {
-        ...overrides
-      };
-      if (prompt) {
-        payload.prompt = Array.isArray(prompt) ? prompt : [prompt];
-      }
-      const res = await this.req({
-        method: "POST",
-        url: `${this.cfg.base}/api/v3/image/t2i`,
-        data: JSON.stringify(payload)
-      });
-      return res.status === "failed" ? res : res.data;
-    } catch (error) {
-      console.error(`[T2I ERR] Text-to-Image request failed: ${error.message}`);
-      return {
-        status: "failed",
-        result: error.message
-      };
-    }
-  }
-  async genI2I(prompt, media, overrides = {}) {
-    console.log(`[I2I] Processing form-data media payload...`);
-    try {
-      const form = new FormData();
-      const buffer = await this.slvM(media);
-      if (buffer && buffer.status === "failed") {
-        return buffer;
-      }
-      const fields = {
-        versionCode: this.cfg.ver,
-        deviceID: this.deviceId,
-        isPremium: "1",
-        ctry_target: this.cfg.def.ctry_target,
-        style_code: this.cfg.def.style_code.toString(),
-        ...overrides
-      };
-      if (prompt) {
-        fields.prompt = prompt;
-      }
-      form.append("image", buffer, {
-        filename: "input.png",
-        contentType: "image/png"
-      });
-      for (const [key, value] of Object.entries(fields)) {
-        if (value !== undefined && value !== null) {
-          form.append(key, value.toString());
-        }
-      }
-      const res = await this.req({
-        method: "POST",
-        url: `${this.cfg.base}/api/v3/image/i2i`,
-        data: form,
-        headers: {
-          ...this.getH(),
-          ...form.getHeaders()
-        }
-      });
-      return res.status === "failed" ? res : res.data;
-    } catch (error) {
-      console.error(`[I2I ERR] Image-to-Image request failed: ${error.message}`);
-      return {
-        status: "failed",
-        result: error.message
-      };
-    }
-  }
   async genT2V(prompt, overrides = {}) {
     console.log(`[T2V] Sending prompt video payload...`);
     try {
       const payload = {
-        ai_sound: 0,
-        aspect_ratio: "auto",
-        ctry_target: this.cfg.def.ctry_target,
-        deviceID: this.deviceId,
-        isPremium: 1,
-        used: [],
-        versionCode: parseInt(this.cfg.ver),
+        prompt: prompt,
+        ratio: "auto",
+        resolution: "360p",
+        timestamp: Date.now(),
+        used: [""],
         ...overrides
       };
-      if (prompt) {
-        payload.prompt = prompt;
-      }
       const res = await this.req({
         method: "POST",
-        url: `${this.cfg.base}/api/v3/video/t2v`,
+        url: `${this.cfg.base}/api/v1/video/text2video`,
         data: JSON.stringify(payload)
       });
       return res.status === "failed" ? res : res.data;
@@ -322,12 +183,9 @@ class AritekVG {
         return buffer;
       }
       const fields = {
-        versionCode: this.cfg.ver,
-        deviceID: this.deviceId,
-        isPremium: "1",
-        ctry_target: this.cfg.def.ctry_target,
-        aspect_ratio: "auto",
-        ai_sound: "0",
+        ratio: "auto",
+        resolution: "360p",
+        timestamp: Date.now().toString(),
         ...overrides
       };
       if (prompt) {
@@ -344,7 +202,7 @@ class AritekVG {
       }
       const res = await this.req({
         method: "POST",
-        url: `${this.cfg.base}/api/v3/video/i2v`,
+        url: `${this.cfg.base}/api/v1/video/image2video`,
         data: form,
         headers: {
           ...this.getH(),
@@ -387,16 +245,15 @@ class AritekVG {
     }
   }
   async generate({
-    mode = "video",
     prompt,
     media,
     ...rest
   }) {
     try {
-      if (!prompt && !rest.code) {
+      if (!prompt) {
         return {
           status: "failed",
-          result: "Parameter 'prompt' atau 'code' wajib disediakan"
+          result: "Parameter 'prompt' wajib disediakan"
         };
       }
       if (!this.cfg.auth) {
@@ -407,29 +264,21 @@ class AritekVG {
       }
       const hasMedia = !!media;
       let response;
-      switch (mode) {
-        case "image":
-          if (hasMedia) {
-            response = await this.genI2I(prompt, media, rest);
-          } else {
-            response = await this.genT2I(prompt, rest);
-          }
-          break;
-        case "video":
-          if (hasMedia) {
-            response = await this.genI2V(prompt, media, rest);
-          } else {
-            response = await this.genT2V(prompt, rest);
-          }
-          break;
-        default:
-          return {
-            status: "failed",
-              result: `Unsupported mode: ${mode}`
-          };
+      if (hasMedia) {
+        response = await this.genI2V(prompt, media, rest);
+      } else {
+        response = await this.genT2V(prompt, rest);
       }
       if (response && response.status === "failed") {
         return response;
+      }
+      if (response?.data?.url) {
+        return {
+          status: "success",
+          result: {
+            url: response.data.url
+          }
+        };
       }
       const jobId = response?.data?.jobId || response?.jobId;
       if (jobId) {
@@ -457,7 +306,7 @@ export default async function handler(req, res) {
     action,
     ...params
   } = req.method === "GET" ? req.query : req.body;
-  const validActions = ["template", "generate"];
+  const validActions = ["generate"];
   if (!action) {
     return res.status(400).json({
       status: false,
@@ -466,8 +315,7 @@ export default async function handler(req, res) {
       usage: {
         method: "GET / POST",
         examples: {
-          template: "/api?action=template&filter=all",
-          generate: "/api?action=generate&code=01KT1A2KYZZJQB4XT2WHCK62R1&mode=image"
+          generate: "/api?action=generate&prompt=A futuristic flying car&mode=video"
         }
       }
     });
@@ -479,18 +327,15 @@ export default async function handler(req, res) {
       valid_actions: validActions
     });
   }
-  const scraper = new AritekVG();
+  const scraper = new AdrFlixAIPro();
   try {
     let response;
     switch (action) {
-      case "template":
-        response = await scraper.template(params);
-        break;
       case "generate":
-        if (!params.prompt && !params.code) {
+        if (!params.prompt) {
           return res.status(400).json({
             status: false,
-            error: "Parameter 'prompt' atau 'code' wajib diisi untuk generate."
+            error: "Parameter 'prompt' wajib diisi untuk generate."
           });
         }
         response = await scraper.generate(params);

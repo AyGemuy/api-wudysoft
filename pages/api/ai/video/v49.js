@@ -2,16 +2,15 @@ import axios from "axios";
 import FormData from "form-data";
 import https from "https";
 import crypto from "crypto";
-class AritekVG {
+class AritekT2P {
   constructor() {
     this.cfg = {
-      base: "https://t2v.aritek.app",
+      base: "https://t2p.aritek.app",
       auth: "",
-      sign: "68d6165b72a7f2d8d17b0dc6fe9691abdf77c583",
-      ver: "85",
+      sign: "7259cb222a66496242650023583742fe40ea0a80",
+      ver: "23",
       def: {
-        style_code: 33,
-        isPremium: 1,
+        isPremium: 0,
         ctry_target: "others"
       }
     };
@@ -42,7 +41,7 @@ class AritekVG {
         }
       }
       const headers = {
-        "User-Agent": "okhttp/4.12.0",
+        "User-Agent": "okhttp/5.1.0",
         "Accept-Encoding": "gzip",
         sign: this.cfg.sign,
         pt: "",
@@ -97,72 +96,13 @@ class AritekVG {
       });
       if (res.data && res.data.success && res.data.data?.token) {
         this.cfg.auth = res.data.data.token;
-        this.cfg.def.isPremium = 1;
+        this.cfg.def.isPremium = res.data.data.is_premium ? 1 : 0;
         this.initialized = true;
-        console.log(`[USER] JWT Token bound. Client session is configured with Force Premium.`);
+        console.log(`[USER] JWT Token bound.`);
       }
       return res.data;
     } catch (error) {
       console.error(`[USER ERR] Failed to establish connection handshake: ${error.message}`);
-      return {
-        status: "failed",
-        result: error.message
-      };
-    }
-  }
-  async template({
-    filter = "all"
-  } = {}) {
-    console.log(`[TEMPLATE] Fetching and parsing template lists with filter: ${filter}`);
-    try {
-      const res = await this.req({
-        method: "GET",
-        url: `${this.cfg.base}/api/v2/t2v/home?v=${this.cfg.ver}`
-      });
-      if (res.status === "failed") {
-        return res;
-      }
-      const rawData = res.data?.data || {};
-      const items = [];
-      const findItemsRecursive = obj => {
-        if (!obj || typeof obj !== "object") return;
-        if (Array.isArray(obj)) {
-          for (const item of obj) {
-            if (item && typeof item === "object" && item.code) {
-              items.push(item);
-            } else {
-              findItemsRecursive(item);
-            }
-          }
-        } else {
-          for (const key of Object.keys(obj)) {
-            if (key === "items" && Array.isArray(obj[key])) {
-              for (const item of obj[key]) {
-                if (item && typeof item === "object" && item.code) {
-                  items.push(item);
-                }
-              }
-            } else {
-              findItemsRecursive(obj[key]);
-            }
-          }
-        }
-      };
-      findItemsRecursive(rawData);
-      let result = items;
-      if (filter && filter !== "all") {
-        const queryFilter = filter.toLowerCase();
-        result = items.filter(item => {
-          const type = (item.type || "").toLowerCase();
-          return type.includes(queryFilter);
-        });
-      }
-      return {
-        status: "success",
-        result: result
-      };
-    } catch (error) {
-      console.error(`[TEMPLATE ERR] Failed to resolve templates: ${error.message}`);
       return {
         status: "failed",
         result: error.message
@@ -218,65 +158,18 @@ class AritekVG {
     console.log(`[T2I] Sending prompt data payload...`);
     try {
       const payload = {
+        ctry_target: this.cfg.def.ctry_target,
+        prompt: prompt,
         ...overrides
       };
-      if (prompt) {
-        payload.prompt = Array.isArray(prompt) ? prompt : [prompt];
-      }
       const res = await this.req({
         method: "POST",
-        url: `${this.cfg.base}/api/v3/image/t2i`,
+        url: `${this.cfg.base}/api/v1/image/t2i`,
         data: JSON.stringify(payload)
       });
       return res.status === "failed" ? res : res.data;
     } catch (error) {
       console.error(`[T2I ERR] Text-to-Image request failed: ${error.message}`);
-      return {
-        status: "failed",
-        result: error.message
-      };
-    }
-  }
-  async genI2I(prompt, media, overrides = {}) {
-    console.log(`[I2I] Processing form-data media payload...`);
-    try {
-      const form = new FormData();
-      const buffer = await this.slvM(media);
-      if (buffer && buffer.status === "failed") {
-        return buffer;
-      }
-      const fields = {
-        versionCode: this.cfg.ver,
-        deviceID: this.deviceId,
-        isPremium: "1",
-        ctry_target: this.cfg.def.ctry_target,
-        style_code: this.cfg.def.style_code.toString(),
-        ...overrides
-      };
-      if (prompt) {
-        fields.prompt = prompt;
-      }
-      form.append("image", buffer, {
-        filename: "input.png",
-        contentType: "image/png"
-      });
-      for (const [key, value] of Object.entries(fields)) {
-        if (value !== undefined && value !== null) {
-          form.append(key, value.toString());
-        }
-      }
-      const res = await this.req({
-        method: "POST",
-        url: `${this.cfg.base}/api/v3/image/i2i`,
-        data: form,
-        headers: {
-          ...this.getH(),
-          ...form.getHeaders()
-        }
-      });
-      return res.status === "failed" ? res : res.data;
-    } catch (error) {
-      console.error(`[I2I ERR] Image-to-Image request failed: ${error.message}`);
       return {
         status: "failed",
         result: error.message
@@ -291,17 +184,15 @@ class AritekVG {
         aspect_ratio: "auto",
         ctry_target: this.cfg.def.ctry_target,
         deviceID: this.deviceId,
-        isPremium: 1,
+        isPremium: this.cfg.def.isPremium,
         used: [],
         versionCode: parseInt(this.cfg.ver),
+        prompt: prompt,
         ...overrides
       };
-      if (prompt) {
-        payload.prompt = prompt;
-      }
       const res = await this.req({
         method: "POST",
-        url: `${this.cfg.base}/api/v3/video/t2v`,
+        url: `${this.cfg.base}/api/v1/video/t2v`,
         data: JSON.stringify(payload)
       });
       return res.status === "failed" ? res : res.data;
@@ -324,7 +215,7 @@ class AritekVG {
       const fields = {
         versionCode: this.cfg.ver,
         deviceID: this.deviceId,
-        isPremium: "1",
+        isPremium: this.cfg.def.isPremium.toString(),
         ctry_target: this.cfg.def.ctry_target,
         aspect_ratio: "auto",
         ai_sound: "0",
@@ -344,7 +235,7 @@ class AritekVG {
       }
       const res = await this.req({
         method: "POST",
-        url: `${this.cfg.base}/api/v3/video/i2v`,
+        url: `${this.cfg.base}/api/v1/video/i2v`,
         data: form,
         headers: {
           ...this.getH(),
@@ -387,45 +278,51 @@ class AritekVG {
     }
   }
   async generate({
-    mode = "video",
+    mode = "t2v",
     prompt,
     media,
     ...rest
   }) {
     try {
-      if (!prompt && !rest.code) {
-        return {
-          status: "failed",
-          result: "Parameter 'prompt' atau 'code' wajib disediakan"
-        };
-      }
       if (!this.cfg.auth) {
         const authRes = await this.getUsr();
         if (authRes && authRes.status === "failed") {
           return authRes;
         }
       }
-      const hasMedia = !!media;
       let response;
       switch (mode) {
-        case "image":
-          if (hasMedia) {
-            response = await this.genI2I(prompt, media, rest);
-          } else {
-            response = await this.genT2I(prompt, rest);
+        case "t2i":
+          if (!prompt) {
+            return {
+              status: "failed",
+              result: "Parameter 'prompt' wajib diisi untuk t2i"
+            };
           }
+          response = await this.genT2I(prompt, rest);
           break;
-        case "video":
-          if (hasMedia) {
-            response = await this.genI2V(prompt, media, rest);
-          } else {
-            response = await this.genT2V(prompt, rest);
+        case "t2v":
+          if (!prompt) {
+            return {
+              status: "failed",
+              result: "Parameter 'prompt' wajib diisi untuk t2v"
+            };
           }
+          response = await this.genT2V(prompt, rest);
+          break;
+        case "i2v":
+          if (!media) {
+            return {
+              status: "failed",
+              result: "Parameter 'media' (gambar) wajib disediakan untuk i2v"
+            };
+          }
+          response = await this.genI2V(prompt, media, rest);
           break;
         default:
           return {
             status: "failed",
-              result: `Unsupported mode: ${mode}`
+              result: `Unsupported mode: ${mode}. Gunakan 't2i', 't2v', atau 'i2v'.`
           };
       }
       if (response && response.status === "failed") {
@@ -453,70 +350,42 @@ class AritekVG {
   }
 }
 export default async function handler(req, res) {
+  const params = req.method === "GET" ? req.query : req.body;
   const {
-    action,
-    ...params
-  } = req.method === "GET" ? req.query : req.body;
-  const validActions = ["template", "generate"];
-  if (!action) {
+    mode
+  } = params;
+  if (!mode) {
     return res.status(400).json({
       status: false,
-      error: "Parameter 'action' wajib diisi.",
-      available_actions: validActions,
+      error: "Parameter 'mode' wajib diisi.",
+      valid_modes: ["t2i", "t2v", "i2v"],
       usage: {
-        method: "GET / POST",
         examples: {
-          template: "/api?action=template&filter=all",
-          generate: "/api?action=generate&code=01KT1A2KYZZJQB4XT2WHCK62R1&mode=image"
+          t2i: "/api?mode=t2i&prompt=cute+car",
+          t2v: "/api?mode=t2v&prompt=beavers+dressed+as+construction+workers",
+          i2v: "/api?mode=i2v&media=URL_GAMBAR&prompt=make+it+move"
         }
       }
     });
   }
-  if (!validActions.includes(action)) {
-    return res.status(400).json({
-      status: false,
-      error: `Action tidak valid: '${action}'.`,
-      valid_actions: validActions
-    });
-  }
-  const scraper = new AritekVG();
+  const scraper = new AritekT2P();
   try {
-    let response;
-    switch (action) {
-      case "template":
-        response = await scraper.template(params);
-        break;
-      case "generate":
-        if (!params.prompt && !params.code) {
-          return res.status(400).json({
-            status: false,
-            error: "Parameter 'prompt' atau 'code' wajib diisi untuk generate."
-          });
-        }
-        response = await scraper.generate(params);
-        break;
-      default:
-        return res.status(400).json({
-          status: false,
-          error: "Action tidak dikenali."
-        });
-    }
+    const response = await scraper.generate(params);
     if (!response) {
       return res.status(502).json({
         status: false,
-        error: "Server target tidak memberikan respon atau data kosong."
+        error: "Server target tidak memberikan respons."
       });
     }
     return res.status(200).json({
       status: response.status === "success" || response.success ? true : false,
-      action: action,
       ...response
     });
   } catch (error) {
-    console.error(`[API ERROR] Exception on '${action}':`, error);
+    console.error(`[API ERROR] Exception on generation:`, error);
     return res.status(500).json({
       status: false,
-      message: "Terjadi kesalahan pada internal server API.",
+      message: "Terjadi kesalahan internal.",
       error: error.message || "Unknown Error"
     });
   }
