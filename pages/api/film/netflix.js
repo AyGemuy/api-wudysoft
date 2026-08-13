@@ -44,6 +44,14 @@ class NetflixApi {
       throw error;
     }
   }
+   parseGQL(d) {
+  if (!d || typeof d !== 'object') return d;
+  if (Array.isArray(d)) return d.map(this.parseGQL);
+  if (d.edges) return d.edges.map(function(e) { return this.parseGQL(e.node || e); });
+  const r = {};
+  for (const k in d) if (k !== '__typename') r[k] = this.parseGQL(d[k]);
+  return r;
+}
   async search({
     query = "",
     cursor = null,
@@ -192,7 +200,7 @@ class NetflixApi {
         }
       };
       const response = await this.request(payload);
-      return response?.data?.page?.sections || {};
+      return this.parseGQL(response?.data?.page?.sections) || {};
     } catch (error) {
       console.log(`❌ Search failed: ${error.message}`);
       return {
@@ -230,7 +238,7 @@ class NetflixApi {
         }
       };
       const response = await this.request(payload);
-      return response?.data?.unifiedEntities || {};
+      return this.parseGQL(response?.data?.unifiedEntities) || {};
     } catch (error) {
       console.log(`❌ Detail failed: ${error.message}`);
       return {
@@ -277,7 +285,7 @@ class NetflixApi {
         }
       };
       const response = await this.request(payload);
-      return response?.data || {};
+      return this.parseGQL(response?.data) || {};
     } catch (error) {
       console.log(`❌ Season failed: ${error.message}`);
       return {
@@ -326,7 +334,7 @@ class NetflixApi {
         }
       };
       const response = await this.request(payload);
-      return response?.data || {};
+      return this.parseGQL(response?.data) || {};
     } catch (error) {
       console.log(`❌ Episode failed: ${error.message}`);
       return {
@@ -474,7 +482,7 @@ class NetflixApi {
       console.log(`✅ Successfully extracted metadata for "${title || id}"`);
       console.log(`   Found ${videoSources.length} video source(s)`);
       console.log(`   Has JSON-LD: ${!!jsonLd}`);
-      return result;
+      return this.parseGQL(result);
     } catch (error) {
       console.log(`❌ Download failed: ${error.message}`);
       return {

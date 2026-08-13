@@ -32,6 +32,24 @@ class TurnstileSolver {
         mode: mode === "turnstile" ? "turnstile-min" : mode,
         ...rest
       }).then(res => res.data?.token)
+    }, {
+      name: "ikyyxd",
+      sup: ["turnstile", "turnstile-min"],
+      run: (url, siteKey) => this.cli.get("https://api.ikyyxd.my.id/bypass/turnstile-cf-min", {
+        params: {
+          url: url,
+          sitekey: siteKey
+        }
+      }).then(res => res.data?.result?.token)
+    }, {
+      name: "nbteam",
+      sup: ["turnstile", "turnstile-min"],
+      run: (url, siteKey) => this.cli.get("https://nbteam.dev/turnstilemin", {
+        params: {
+          url: url,
+          sitekey: siteKey
+        }
+      }).then(res => res.data?.token)
     }];
   }
   async solve({
