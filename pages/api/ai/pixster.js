@@ -10,9 +10,14 @@ class PixsterAI {
     this.CONSTANTS = {
       APP_NAME: "AI Chat(Android)3.8",
       OS_TYPE: "Android",
-      DEFAULT_MODEL: "gpt-4o-mini",
+      DEFAULT_MODEL: "gpt-5-nano",
       VISION_MODEL: "gemini-2.5-flash",
-      AVAILABLE_MODES: ["chat", "vision", "generate"]
+      AVAILABLE_MODES: ["chat", "vision", "generate"],
+      AVAILABLE_MODELS: {
+        chat: ["gpt-5-nano", "gpt-4o-mini", "gpt-4o", "gpt-4", "gpt-3.5-turbo", "gemini-2.5-flash", "gemini-1.5-flash", "claude-3-5-sonnet"],
+        vision: ["gemini-2.5-flash", "gemini-1.5-flash", "gpt-4o-mini", "gpt-4o"],
+        generate: ["gemini-imagen", "imagen-3"]
+      }
     };
     this.SERVICES = {
       MULTI_MODEL: "https://multimodelhandler-746036526161.us-central1.run.app",
@@ -84,7 +89,7 @@ class PixsterAI {
     const fakeFid = this._generateFid();
     try {
       console.log(`[Auth] Generated FID: ${fakeFid}`);
-      const installRes = await this.request.post(this.SERVICES.FIREBASE_INSTALL, JSON.stringify({
+      await this.request.post(this.SERVICES.FIREBASE_INSTALL, JSON.stringify({
         fid: fakeFid,
         appId: "1:146345438954:android:0c0a80569e990f3844f193",
         authVersion: "FIS_v2",
@@ -121,9 +126,10 @@ class PixsterAI {
       status: false,
       message: msg,
       available_modes: this.CONSTANTS.AVAILABLE_MODES,
+      available_models: this.CONSTANTS.AVAILABLE_MODELS,
       guide: {
-        chat: "Requires 'prompt'",
-        vision: "Requires 'prompt' and 'image'",
+        chat: "Requires 'prompt' (Optional: 'model')",
+        vision: "Requires 'prompt' and 'image' (Optional: 'model')",
         generate: "Requires 'prompt'"
       }
     });
@@ -207,6 +213,7 @@ class PixsterAI {
         status: true,
         mode: mode,
         timestamp: new Date().toISOString(),
+        available_models: this.CONSTANTS.AVAILABLE_MODELS,
         data: response.data
       };
     } catch (error) {

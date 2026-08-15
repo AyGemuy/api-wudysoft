@@ -1,7 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import PROXY from "@/configs/proxy-url";
-const proxy = PROXY.url();
+import apiConfig from "@/configs/apiConfig";
+const proxy = `https://${apiConfig.DOMAIN_URL}/api/tools/web/html/v1?url=`;
 console.log("CORS proxy", proxy);
 class NekoPoi {
   constructor() {
@@ -10,7 +10,7 @@ class NekoPoi {
     this.source = "nekopoi";
   }
   proxyUrl(url) {
-    return `${this.proxy}${url}`;
+    return `${this.proxy}${encodeURIComponent(url)}`;
   }
   extractId(url) {
     return url.replace(this.host, "").replace(/^\/|\/$/g, "");
@@ -61,14 +61,51 @@ class NekoPoi {
         timeout: 6e4
       });
       const $ = cheerio.load(data);
+      const extractBgImage = style => {
+        const match = style.match(/url\(['"]?(.*?)['"]?\)/);
+        return match ? match[1] : "";
+      };
+      const parseTooltip = el => {
+        const tooltipHtml = $(el).attr("original-title") || "";
+        if (!tooltipHtml) return {
+          image: "",
+          info: {}
+        };
+        const $tooltip = cheerio.load(tooltipHtml);
+        const image = $tooltip("img").attr("src") || "";
+        const info = {};
+        $tooltip("p").each((_, p) => {
+          const text = $tooltip(p).text().trim();
+          if (text.includes("Nama Jepang")) info.japanName = text.replace(/Nama Jepang\s*:\s*/i, "").trim();
+          if (text.includes("Produser")) info.producers = text.replace(/Produser\s*:\s*/i, "").trim();
+          if (text.includes("Tipe")) info.type = text.replace(/Tipe\s*:\s*/i, "").trim();
+          if (text.includes("Status")) info.status = text.replace(/Status\s*:\s*/i, "").trim();
+          if (text.includes("Durasi")) info.duration = text.replace(/Durasi\s*:\s*/i, "").trim();
+          if (text.includes("Skor")) {
+            const score = text.replace(/Skor\s*:\s*/i, "").trim();
+            info.score = parseFloat(score) || 0;
+          }
+        });
+        const genres = [];
+        $tooltip("a[href*='/genres/']").each((_, a) => {
+          genres.push($tooltip(a).text().trim());
+        });
+        if (genres.length > 0) info.genres = genres;
+        return {
+          image: image,
+          info: info
+        };
+      };
       const recommended = [];
-      $(".rekomendasi .showticker ul li a.series").each((_, el) => {
+      $(".nk-recommended .nk-ticker ul li a.nk-series-link").each((_, el) => {
         const $el = $(el);
         const link = $el.attr("href") || "";
         const id = this.extractId(link);
         const title = $el.text().trim();
-        const tooltipInfo = this.extractTooltipInfo($el);
-        const image = $tooltip("img").attr("src") || "";
+        const {
+          image,
+          info
+        } = parseTooltip(el);
         if (id && title) {
           recommended.push({
             id: id,
@@ -76,20 +113,23 @@ class NekoPoi {
             title: title,
             coverImage: image,
             link: link,
-            ...tooltipInfo
+            ...info
           });
         }
       });
       const episodes = [];
-      $("#boxid .eropost").each((_, el) => {
+      $("#nk-episode-grid .nk-post-card").each((_, el) => {
         const $el = $(el);
-        const link = $el.find(".eroinfo h2 a").attr("href") || "";
+        const linkEl = $el.find(".nk-post-meta h2 a");
+        const link = linkEl.attr("href") || "";
         const id = this.extractId(link);
-        const title = $el.find(".eroinfo h2 a").text().trim() || "Untitled";
-        const image = $el.find(".eroimg img").attr("src") || "";
-        const date = $el.find(".eroinfo span").first().text().trim() || "";
-        const seriesLink = $el.find(".eroinfo span a").attr("href") || "";
-        const series = $el.find(".eroinfo span a").text().trim() || "";
+        const title = linkEl.text().trim() || "Untitled";
+        const thumbStyle = $el.find(".nk-post-thumb .nk-thumb-crop").attr("style") || "";
+        const image = extractBgImage(thumbStyle);
+        const dateSpan = $el.find(".nk-post-meta span:has(.dashicons-calendar-alt)");
+        const date = dateSpan.text().trim() || "";
+        const seriesLink = $el.find(".nk-post-meta span a").attr("href") || "";
+        const seriesTitle = $el.find(".nk-post-meta span a").text().trim() || "";
         const seriesId = seriesLink ? this.extractId(seriesLink) : "";
         if (id) {
           episodes.push({
@@ -98,9 +138,9 @@ class NekoPoi {
             title: title,
             coverImage: image,
             date: date,
-            series: series ? {
+            series: seriesTitle ? {
               id: seriesId,
-              title: series,
+              title: seriesTitle,
               link: seriesLink
             } : null,
             link: link
@@ -108,14 +148,17 @@ class NekoPoi {
         }
       });
       const latestHentai = [];
-      $(".animeseries ul li").each((_, el) => {
+      $(".nk-hentai-grid ul li").each((_, el) => {
         const $el = $(el);
-        const $link = $el.find("a.series");
+        const $link = $el.find("a.nk-series-link");
         const link = $link.attr("href") || "";
         const id = this.extractId(link);
         const title = $el.find(".title").text().trim();
-        const image = $el.find("img").attr("src") || "";
-        const tooltipInfo = this.extractTooltipInfo($link);
+        const thumbStyle = $el.find(".nk-hentai-thumb").attr("style") || "";
+        const image = extractBgImage(thumbStyle);
+        const {
+          info
+        } = parseTooltip($link[0]);
         if (id && title) {
           latestHentai.push({
             id: id,
@@ -123,24 +166,29 @@ class NekoPoi {
             title: title,
             coverImage: image,
             link: link,
-            ...tooltipInfo
+            ...info
           });
         }
       });
       const jav = [];
-      $(".videoarea ul li").each((_, el) => {
+      $(".nk-jav-grid ul li").each((_, el) => {
         const $el = $(el);
-        const link = $el.find("a").first().attr("href") || "";
+        const $metaLink = $el.find(".nk-jav-meta a");
+        const link = $metaLink.attr("href") || "";
         const id = this.extractId(link);
-        const title = $el.find("h2").text().trim();
-        const image = $el.find("img").attr("src") || "";
+        const title = $metaLink.find("h2").text().trim() || "Untitled";
+        const thumbStyle = $el.find(".nk-grid-thumb").attr("style") || "";
+        const image = extractBgImage(thumbStyle);
+        const dateSpan = $el.find(".nk-jav-meta span:has(.dashicons-calendar-alt)");
+        const date = dateSpan.text().trim() || "";
         if (id && title) {
           jav.push({
             id: id,
             source: this.source,
             title: title,
             coverImage: image,
-            link: link
+            link: link,
+            date: date
           });
         }
       });
@@ -177,10 +225,48 @@ class NekoPoi {
       };
     }
   }
+  async getCategories() {
+    try {
+      const {
+        data
+      } = await axios.get(this.proxyUrl(this.host), {
+        timeout: 6e4
+      });
+      const $ = cheerio.load(data);
+      const categories = [];
+      $("#menu-menu-1 li").each((_, li) => {
+        const $li = $(li);
+        const link = $li.find("a").attr("href") || "";
+        const title = $li.find("a").text().trim();
+        if (link && title && link.includes("/category/")) {
+          const slugMatch = link.match(/\/category\/([^\/]+)/);
+          const slug = slugMatch ? slugMatch[1] : "";
+          if (slug) {
+            categories.push({
+              title: title,
+              link: link,
+              slug: slug
+            });
+          }
+        }
+      });
+      return categories;
+    } catch (err) {
+      console.error("Error fetching category list:", err.message);
+      return [];
+    }
+  }
   async category({
-    slug = "hentai",
+    slug = "",
     page = 1
   } = {}) {
+    if (!slug) {
+      const categories = await this.getCategories();
+      return {
+        categories: categories,
+        message: "List of available categories. Use 'slug' parameter to browse a specific category."
+      };
+    }
     try {
       console.log(`Fetching category: ${slug}, page: ${page}`);
       const url = page === 1 ? `${this.host}/category/${slug}/` : `${this.host}/category/${slug}/page/${page}/`;
@@ -190,51 +276,49 @@ class NekoPoi {
         timeout: 6e4
       });
       const $ = cheerio.load(data);
+      const extractBgImage = style => {
+        const match = style.match(/url\(['"]?(.*?)['"]?\)/);
+        return match ? match[1] : "";
+      };
       const items = [];
-      $(".animeseries ul li").each((_, el) => {
-        const $el = $(el);
-        const $link = $el.find("a.series");
+      $(".nk-search-results ul li").each((_, el) => {
+        const $li = $(el);
+        const $link = $li.find("a.nk-search-item");
         const link = $link.attr("href") || "";
         const id = this.extractId(link);
-        const title = $el.find(".title").text().trim() || "Untitled";
-        const image = $el.find("img").attr("src") || "";
-        const tooltipInfo = this.extractTooltipInfo($link);
-        if (id) {
+        const thumbStyle = $link.find(".nk-search-thumb").attr("style") || "";
+        const coverImage = extractBgImage(thumbStyle);
+        const title = $link.find(".nk-search-info h2").text().trim() || "Untitled";
+        const genreText = $link.find(".nk-search-info .nk-search-genres").text().trim() || "";
+        const desc = $link.find(".nk-search-info .nk-search-desc").text().trim() || "";
+        const info = {};
+        const descLines = desc.split(/\s*[;,]\s*/);
+        descLines.forEach(line => {
+          const trimmed = line.trim();
+          if (trimmed.startsWith("Original Title")) {
+            info.originalTitle = trimmed.replace(/Original Title\s*:\s*/i, "").trim();
+          } else if (trimmed.startsWith("Parody")) {
+            info.parody = trimmed.replace(/Parody\s*:\s*/i, "").trim();
+          } else if (trimmed.startsWith("Producers")) {
+            info.producers = trimmed.replace(/Producers?\s*:\s*/i, "").trim();
+          } else if (trimmed.startsWith("Duration")) {
+            info.duration = trimmed.replace(/Duration\s*:\s*/i, "").trim();
+          } else if (trimmed.startsWith("Genre")) {
+            info.genres = trimmed.replace(/Genre\s*:\s*/i, "").trim();
+          }
+        });
+        const genre = genreText || (info.genres ? info.genres : "");
+        if (id && title) {
           items.push({
             id: id,
             source: this.source,
             title: title,
-            coverImage: image,
+            coverImage: coverImage,
+            genre: genre,
+            description: desc,
+            info: info,
             link: link,
-            type: "series",
-            ...tooltipInfo
-          });
-        }
-      });
-      $("#boxid .eropost").each((_, el) => {
-        const $el = $(el);
-        const link = $el.find(".eroinfo h2 a").attr("href") || "";
-        const id = this.extractId(link);
-        const title = $el.find(".eroinfo h2 a").text().trim() || "Untitled";
-        const image = $el.find(".eroimg img").attr("src") || "";
-        const date = $el.find(".eroinfo span").first().text().trim() || "";
-        const seriesLink = $el.find(".eroinfo span a").attr("href") || "";
-        const series = $el.find(".eroinfo span a").text().trim() || "";
-        const seriesId = seriesLink ? this.extractId(seriesLink) : "";
-        if (id) {
-          items.push({
-            id: id,
-            source: this.source,
-            title: title,
-            coverImage: image,
-            date: date,
-            series: series ? {
-              id: seriesId,
-              title: series,
-              link: seriesLink
-            } : null,
-            link: link,
-            type: "episode"
+            type: "post"
           });
         }
       });
@@ -281,43 +365,46 @@ class NekoPoi {
         timeout: 6e4
       });
       const $ = cheerio.load(data);
+      const extractBgImage = style => {
+        const match = style.match(/url\(['"]?(.*?)['"]?\)/);
+        return match ? match[1] : "";
+      };
       const items = [];
-      $(".result ul li").each((_, el) => {
-        const $el = $(el);
-        const link = $el.find("h2 a").attr("href") || "";
+      $(".nk-search-results ul li").each((_, el) => {
+        const $li = $(el);
+        const $link = $li.find("a.nk-search-item");
+        const link = $link.attr("href") || "";
         const id = this.extractId(link);
-        const title = $el.find("h2 a").text().trim() || "Untitled";
-        const image = $el.find("img").attr("src") || "";
-        const genre = $el.find(".genre").text().trim() || "";
+        const thumbStyle = $link.find(".nk-search-thumb").attr("style") || "";
+        const coverImage = extractBgImage(thumbStyle);
+        const title = $link.find(".nk-search-info h2").text().trim() || "Untitled";
+        const genreText = $link.find(".nk-search-info .nk-search-genres").text().trim() || "";
+        const desc = $link.find(".nk-search-info .nk-search-desc").text().trim() || "";
         const info = {};
-        $el.find(".desc p").each((_, p) => {
-          const text = $(p).text().trim();
-          if (text.includes("Parody")) {
-            info.parody = text.replace(/Parody\s*:\s*/i, "").trim();
-          }
-          if (text.includes("Producers")) {
-            info.producers = text.replace(/Producers\s*:\s*/i, "").trim();
-          }
-          if (text.includes("Artist")) {
-            info.artist = text.replace(/Artist\s*:\s*/i, "").trim();
-          }
-          if (text.includes("Genre")) {
-            info.genre = text.replace(/Genre\s*:\s*/i, "").trim();
-          }
-          if (text.includes("Duration")) {
-            info.duration = text.replace(/Duration\s*:\s*/i, "").trim();
-          }
-          if (text.includes("Size")) {
-            info.size = text.replace(/Size\s*:\s*/i, "").trim();
+        const descLines = desc.split(/\s*[;,]\s*/);
+        descLines.forEach(line => {
+          const trimmed = line.trim();
+          if (trimmed.startsWith("Original Title")) {
+            info.originalTitle = trimmed.replace(/Original Title\s*:\s*/i, "").trim();
+          } else if (trimmed.startsWith("Parody")) {
+            info.parody = trimmed.replace(/Parody\s*:\s*/i, "").trim();
+          } else if (trimmed.startsWith("Producers")) {
+            info.producers = trimmed.replace(/Producers?\s*:\s*/i, "").trim();
+          } else if (trimmed.startsWith("Duration")) {
+            info.duration = trimmed.replace(/Duration\s*:\s*/i, "").trim();
+          } else if (trimmed.startsWith("Genre")) {
+            info.genres = trimmed.replace(/Genre\s*:\s*/i, "").trim();
           }
         });
-        if (id) {
+        const genre = genreText || (info.genres ? info.genres : "");
+        if (id && title) {
           items.push({
             id: id,
             source: this.source,
             title: title,
-            coverImage: image,
+            coverImage: coverImage,
             genre: genre,
+            description: desc,
             info: info,
             link: link
           });
@@ -364,95 +451,118 @@ class NekoPoi {
         timeout: 6e4
       });
       const $ = cheerio.load(data);
-      const title = $(".headpost h1").text().trim() || "Untitled";
-      const image = $(".thm img").attr("src") || "";
-      const dateText = $(".headpost .eroinfo p").first().text().trim() || "";
-      const viewsMatch = dateText.match(/Dilihat\s+(\d+)/i);
-      const views = viewsMatch ? parseInt(viewsMatch[1]) : 0;
-      const date = dateText.replace(/Dilihat.*$/i, "").trim();
+      const extractBgImage = style => {
+        const match = style.match(/url\(['"]?(.*?)['"]?\)/);
+        return match ? match[1] : "";
+      };
+      const title = $(".nk-post-header h1").text().trim() || "Untitled";
+      const image = $(".nk-featured-img img").attr("src") || "";
+      const metaSpans = $(".nk-post-header-meta span");
+      let views = 0;
+      let date = "";
+      metaSpans.each((_, span) => {
+        const text = $(span).text().trim();
+        if (text.includes("kali")) {
+          const match = text.match(/(\d+)\s*kali/i);
+          if (match) views = parseInt(match[1]) || 0;
+        } else {
+          date = text;
+        }
+      });
       const info = {};
       $(".konten p").each((_, el) => {
         const text = $(el).text().trim();
         const patterns = [{
+          key: "originalTitle",
+          label: "Original Title"
+        }, {
           key: "parody",
-          regex: /(?:Parody|Anime)\s*:\s*(.+)/i
+          label: "Parody"
         }, {
           key: "producers",
-          regex: /Producers?\s*:\s*(.+)/i
+          label: "Producers"
         }, {
           key: "artist",
-          regex: /Artist\s*:\s*(.+)/i
+          label: "Artist"
         }, {
           key: "genre",
-          regex: /Genre\s*:\s*(.+)/i
+          label: "Genre"
         }, {
           key: "duration",
-          regex: /Duration\s*:\s*(.+)/i
+          label: "Duration"
         }, {
           key: "size",
-          regex: /Size\s*:\s*(.+)/i
+          label: "Size"
         }];
         patterns.forEach(({
           key,
-          regex
+          label
         }) => {
-          const match = text.match(regex);
-          if (match) {
-            info[key] = match[1].trim();
+          const strong = $(el).find(`strong:contains("${label}:")`);
+          if (strong.length) {
+            const value = strong.parent().contents().filter((_, node) => node.type === "text").text().trim();
+            if (value) info[key] = value;
+          } else {
+            const regex = new RegExp(`${label}\\s*:\\s*(.+)`, "i");
+            const match = text.match(regex);
+            if (match) info[key] = match[1].trim();
           }
         });
       });
       const notes = $(".konten h3").text().trim() || "";
-      const resolutions = [];
-      if (notes) {
-        const resMatches = notes.match(/‘(\d+[pP](?:\/\d+[pP])?|Alternatif|Unknown)’/g) || [];
-        resMatches.forEach(match => {
-          resolutions.push(match.replace(/‘|’/g, "").trim());
-        });
-      }
-      if (resolutions.length === 0) {
-        resolutions.push("360p/480p", "720p", "Alternative");
-      }
       const streams = [];
-      $("#show-stream .openstream").each((index, el) => {
-        const $el = $(el);
-        const iframe = $el.find("iframe");
-        const src = iframe.attr("src");
-        const streamId = $el.attr("id");
+      const streamIds = [];
+      $("[id^='nk-stream-']").each((_, el) => {
+        const idAttr = $(el).attr("id");
+        if (idAttr) streamIds.push(idAttr);
+      });
+      streamIds.sort((a, b) => parseInt(a.split("-")[2]) - parseInt(b.split("-")[2]));
+      streamIds.forEach((sid, idx) => {
+        const $container = $(`#${sid}`);
+        const iframe = $container.find("iframe");
+        const src = iframe.attr("src") || "";
+        const tabLink = $(`#nk-player-tabs a[href="#${sid}"]`);
+        let label = tabLink.text().trim() || `Server ${idx + 1}`;
+        let resolution = "Unknown";
+        if (notes) {
+          if (sid === "nk-stream-1") resolution = "360p/480p";
+          else if (sid === "nk-stream-2") resolution = "720p";
+          else if (sid === "nk-stream-3") resolution = "Alternatif";
+        } else {
+          const resMap = ["360p/480p", "720p", "Alternatif"];
+          resolution = resMap[idx] || "Unknown";
+        }
         if (src) {
           streams.push({
-            index: index + 1,
-            id: streamId || `stream${index + 1}`,
+            index: idx + 1,
+            id: sid,
             url: src,
-            label: `Stream ${index + 1}`,
-            resolution: resolutions[index] || "Unknown"
+            label: label,
+            resolution: resolution
           });
         }
       });
       const downloads = [];
-      $(".boxdownload .liner").each((_, el) => {
-        const $el = $(el);
-        const qualityText = $el.find(".name").text().trim();
+      $(".nk-download-box .nk-download-row").each((_, row) => {
+        const $row = $(row);
+        const qualityText = $row.find(".nk-download-name").text().trim();
         const resMatch = qualityText.match(/\[(\d+p)\]/i);
         const resolution = resMatch ? resMatch[1] : "";
         const links = [];
-        $el.find(".listlink p").each((_, pEl) => {
-          const $p = $(pEl);
-          const category = $p.find("b").text().trim();
-          $p.find("a").each((_, linkEl) => {
-            const $link = $(linkEl);
-            const href = $link.attr("href");
-            const text = $link.text().trim();
-            if (href) {
-              const isShortened = href.includes("ouo.io") || href.includes("linkpoi.me") || href.includes("bit.ly") || href.includes("short");
-              links.push({
-                label: text,
-                url: href,
-                category: category || "Direct",
-                shortened: isShortened
-              });
-            }
-          });
+        $row.find(".nk-download-links p a").each((_, linkEl) => {
+          const $link = $(linkEl);
+          const href = $link.attr("href") || "";
+          const text = $link.text().trim();
+          if (href) {
+            const isShortened = href.includes("ouo.io") || href.includes("linkpoi.me") || href.includes("bit.ly") || href.includes("short");
+            const category = text || "Direct";
+            links.push({
+              label: text,
+              url: href,
+              category: category,
+              shortened: isShortened
+            });
+          }
         });
         if (qualityText && links.length > 0) {
           downloads.push({
@@ -463,36 +573,38 @@ class NekoPoi {
         }
       });
       const related = [];
-      $("ul.related1 li").each((_, el) => {
-        const $el = $(el);
-        const link = $el.find(".nf h2 a").attr("href") || "";
+      $(".nk-related-list--info li").each((_, el) => {
+        const $li = $(el);
+        const link = $li.find(".nf h2 a").attr("href") || "";
         const relatedId = this.extractId(link);
-        const relatedTitle = $el.find(".nf h2 a").text().trim();
-        const relatedImage = $el.find(".img img").attr("src") || "";
+        const relatedTitle = $li.find(".nf h2 a").text().trim() || "";
+        const bgStyle = $li.find(".img .ltd").attr("style") || "";
+        const coverImage = extractBgImage(bgStyle);
         if (relatedId && relatedTitle) {
           related.push({
             id: relatedId,
             title: relatedTitle,
-            coverImage: relatedImage,
+            coverImage: coverImage,
             link: link,
             type: "related"
           });
         }
       });
       const similarSeries = [];
-      $("ul.related li").each((_, el) => {
-        const $el = $(el);
-        const $link = $el.find(".rights .title a");
+      $(".nk-related-section .nk-related-list li").each((_, el) => {
+        const $li = $(el);
+        const $link = $li.find(".nk-related-info .nk-related-title a.nk-series-link");
         const link = $link.attr("href") || "";
         const seriesId = this.extractId(link);
-        const seriesTitle = $link.text().trim();
-        const seriesImage = $el.find(".border img").attr("src") || "";
+        const seriesTitle = $link.text().trim() || "";
+        const bgStyle = $li.find(".nk-related-thumb-crop").attr("style") || "";
+        const coverImage = extractBgImage(bgStyle);
         const tooltipInfo = this.extractTooltipInfo($link);
         if (seriesId && seriesTitle) {
           similarSeries.push({
             id: seriesId,
             title: seriesTitle,
-            coverImage: seriesImage,
+            coverImage: coverImage,
             link: link,
             type: "series",
             ...tooltipInfo
@@ -500,56 +612,11 @@ class NekoPoi {
         }
       });
       const recommended = [];
-      $(".rekomendasi .showticker ul li a.series").each((_, el) => {
-        const $el = $(el);
-        const link = $el.attr("href") || "";
-        const recId = this.extractId(link);
-        const recTitle = $el.text().trim();
-        const tooltipInfo = this.extractTooltipInfo($el);
-        if (recId && recTitle) {
-          recommended.push({
-            id: recId,
-            title: recTitle,
-            link: link,
-            ...tooltipInfo
-          });
-        }
-      });
       const navigation = {
         prev: null,
         next: null
       };
-      $(".pagineps a").each((_, el) => {
-        const $el = $(el);
-        const href = $el.attr("href");
-        const text = $el.text().trim();
-        const navId = this.extractId(href);
-        if (text.includes("«") || $el.hasClass("pagileft")) {
-          navigation.prev = {
-            id: navId,
-            title: text.replace(/«\s*/g, "").trim(),
-            link: href
-          };
-        } else if (text.includes("»") || $el.hasClass("pagiright")) {
-          navigation.next = {
-            id: navId,
-            title: text.replace(/\s*»/g, "").trim(),
-            link: href
-          };
-        }
-      });
       const categories = [];
-      $("#menu-menu-1 li").each((_, li) => {
-        const $li = $(li);
-        const catLink = $li.find("a").attr("href") || "";
-        const catTitle = $li.find("a").text().trim();
-        if (catLink && catTitle && catLink.includes("/category/")) {
-          categories.push({
-            title: catTitle,
-            link: catLink
-          });
-        }
-      });
       console.log(`Fetched detail for: ${title}`);
       return {
         id: id,
@@ -612,12 +679,6 @@ export default async function handler(req, res) {
         response = await api.home(params);
         break;
       case "category":
-        if (!params.slug) {
-          return res.status(400).json({
-            error: "Paramenter 'slug' wajib diisi untuk action 'category'.",
-            examples: ["hentai", "2d-animation", "3d-hentai", "jav", "jav-cosplay"]
-          });
-        }
         response = await api.category(params);
         break;
       case "search":

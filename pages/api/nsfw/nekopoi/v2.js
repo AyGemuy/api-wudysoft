@@ -1,6 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import PROXY from "@/configs/proxy-url";
+import PROXY from "@/configs/proxy-cors";
 const proxy = PROXY.url();
 console.log("CORS proxy", proxy);
 class NekoPoi {

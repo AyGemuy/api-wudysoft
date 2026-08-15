@@ -1,5 +1,8 @@
 import axios from "axios";
 import apiConfig from "@/configs/apiConfig";
+import PROXY from "@/configs/proxy-cors";
+const proxy = PROXY.url();
+console.log("CORS proxy", proxy);
 class DeepNudes {
   constructor() {
     try {
@@ -97,7 +100,7 @@ class DeepNudes {
   async send(email) {
     try {
       console.log(`[Proses] Mengirim magic link ke ${email}...`);
-      await this.client.post("https://api.deep-nudes.com/auth/magic-link", {
+      await this.client.post(`${proxy}https://api.deep-nudes.com/auth/magic-link`, {
         email: email
       }, {
         headers: {
@@ -151,7 +154,7 @@ class DeepNudes {
   async login(token) {
     try {
       console.log("[Proses] Memproses masuk menggunakan token...");
-      await this.client.get(`https://api.deep-nudes.com/auth/magic-login?token=${token}`, {
+      await this.client.get(`${proxy}https://api.deep-nudes.com/auth/magic-login?token=${token}`, {
         maxRedirects: 0,
         validateStatus: status => status >= 200 && status < 400,
         headers: {
@@ -175,7 +178,7 @@ class DeepNudes {
   async me() {
     try {
       console.log("[Proses] Mengambil profil akun aktif...");
-      const res = await this.client.get("https://api.deep-nudes.com/users/me", {
+      const res = await this.client.get(`${proxy}https://api.deep-nudes.com/users/me`, {
         headers: {
           ...this.baseHeaders,
           accept: "*/*",
@@ -218,7 +221,7 @@ class DeepNudes {
         mask: rest.mask !== undefined ? rest.mask : null
       };
       console.log("[Proses] Mengirim request generasi gambar...");
-      const res = await this.client.post("https://api.deep-nudes.com/generation", payload, {
+      const res = await this.client.post(`${proxy}https://api.deep-nudes.com/generation`, payload, {
         headers: {
           ...this.baseHeaders,
           accept: "*/*",
@@ -263,11 +266,6 @@ export default async function handler(req, res) {
   const api = new DeepNudes();
   try {
     const data = await api.generate(params);
-    if (!data.buffer || typeof data.status === "string" && data.status.startsWith("error")) {
-      return res.status(500).json({
-        error: data.status || "Gagal memproses gambar"
-      });
-    }
     res.setHeader("Content-Type", data.contentType || "image/png");
     return res.status(200).send(data.buffer);
   } catch (error) {

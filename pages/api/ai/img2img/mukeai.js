@@ -1,6 +1,7 @@
 import axios from "axios";
 import FormData from "form-data";
 import crypto from "crypto";
+import PROMPT from "@/configs/ai-prompt";
 class MukeAI {
   constructor() {
     try {
@@ -222,7 +223,7 @@ class MukeAI {
         filename: resolved.name,
         contentType: resolved.mime
       });
-      form.append("prompt", prompt || "");
+      form.append("prompt", prompt || PROMPT.text);
       form.append("negative_prompt", rest?.negative_prompt || "");
       form.append("model_type", validation.model);
       form.append("aspect_ratio", validation.ratio);

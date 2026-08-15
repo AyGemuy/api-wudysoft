@@ -18,6 +18,10 @@ class UseAi {
       try {
         const ck = this._ckStr();
         if (ck) cfg.headers["Cookie"] = ck;
+        if (this.uid) {
+          cfg.headers["x-guest-user-id"] = `guest:${this.uid}`;
+          cfg.headers["x-user-id"] = `guest:${this.uid}`;
+        }
       } catch (err) {
         this._log("Interceptor-Req-Error", err.message);
       }
@@ -73,26 +77,25 @@ class UseAi {
   }
   async init() {
     try {
-      this._log("Auto-Init", "Mengunjungi https://use.ai/id untuk mendapatkan cookie session...");
-      await this.ax.get("/id", {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36",
-          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-          "Accept-Language": "id,ms;q=0.9,en;q=0.8",
-          "sec-ch-ua": '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
-          "sec-ch-ua-mobile": "?1",
-          "sec-ch-ua-platform": '"Android"',
-          "upgrade-insecure-requests": "1",
-          "sec-fetch-site": "none",
-          "sec-fetch-mode": "navigate",
-          "sec-fetch-user": "?1",
-          "sec-fetch-dest": "document",
-          dnt: "1"
-        }
+      this._log("Auto-Init", "Mendapatkan cookie session & landing info...");
+      const commonHeaders = {
+        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",
+        Accept: "*/*",
+        "Accept-Language": "id-ID,id;q=0.9,en;q=0.8",
+        "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
+        "sec-ch-ua-mobile": "?1",
+        "sec-ch-ua-platform": '"Android"',
+        referer: "https://use.ai/id"
+      };
+      await this.ax.get("/v1/auth/get-session?disableCookieCache=true", {
+        headers: commonHeaders
+      });
+      await this.ax.get("/v1/landing-deferred?locale=id", {
+        headers: commonHeaders
       });
       this.uid = this.cookies["guest_user_id"] || this._uuid();
       this.mxId = this.cookies["guest_mixpanel_id"] || this._uuid();
-      this.devId = this._uuid();
+      this.devId = this.cookies["mp_device_id"] || this._uuid();
       this.chId = this._uuid();
       this.ready = true;
       this._log("Auto-Init", `Sukses membuat session. GuestID: ${this.uid}`);
@@ -100,6 +103,22 @@ class UseAi {
     } catch (err) {
       this._log("Auto-Init-Error", err.message);
       throw err;
+    }
+  }
+  async getAppToken() {
+    try {
+      this._log("App-Attestation", "Meminta app attestation token...");
+      const res = await this.ax.post("/v1/auth/app-attestation", {}, {
+        headers: {
+          "Content-Type": "application/json",
+          origin: "https://use.ai",
+          referer: `https://use.ai/id/${this.chId}`
+        }
+      });
+      return res.data?.token || "";
+    } catch (err) {
+      this._log("App-Attestation-Error", err.message);
+      return "";
     }
   }
   async chat({
@@ -133,26 +152,26 @@ class UseAi {
             isImageGenerationMode: false,
             needsBlurPreview: false,
             deepResearchProcessor: "pro-fast",
+            userId: `guest:${this.uid}`,
+            createdAt: new Date().toISOString(),
             ...rest.metadata || {}
           }
         });
       }
-      const q = `userId=guest%3A${this.uid}&userType=guest&planType=free&isTestUser=false`;
+      const appToken = await this.getAppToken();
+      const wsUrl = `wss://use.ai/agent/agents/budget-agent/${this.chId}?app_token=${encodeURIComponent(appToken)}&userId=guest%3A${this.uid}&userType=guest&planType=free&isTestUser=false&botd_verdict=clean`;
       const chunks = [];
       let done = false;
-      this._log("WebSocket", "Membuka jabat tangan WebSocket ke subdomain agents...");
+      this._log("WebSocket", "Membuka jabat tangan WebSocket...");
       await new Promise((res, rej) => {
         try {
-          const ws = new WebSocket(`wss://agents.use.ai/agents/budget-agent/${this.chId}?${q}`, {
+          const ws = new WebSocket(wsUrl, {
             headers: {
-              Host: "agents.use.ai",
-              Upgrade: "websocket",
-              Connection: "Upgrade",
               Pragma: "no-cache",
               "Cache-Control": "no-cache",
-              "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36",
+              "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",
               Origin: "https://use.ai",
-              "Accept-Language": "id,ms;q=0.9,en;q=0.8",
+              "Accept-Language": "id-ID",
               Cookie: this._ckStr()
             }
           });
@@ -167,10 +186,33 @@ class UseAi {
           }, 45e3);
           ws.on("open", () => {
             try {
-              this._log("WebSocket", "Terhubung. Mengirim parameter prewarm...");
+              this._log("WebSocket", "Terhubung. Mengirim paket submit-message...");
               ws.send(JSON.stringify({
-                type: "prewarm",
-                chatId: this.chId
+                chatId: this.chId,
+                userId: `guest:${this.uid}`,
+                userType: "guest",
+                planType: "free",
+                isFreemium: false,
+                isTestUser: false,
+                cfModelsVariant: "OFF",
+                mixpanelUserId: this.mxId,
+                deviceId: this.devId,
+                isMobile: true,
+                isWebSearchMode: false,
+                isDeepResearchMode: false,
+                isImageGenerationMode: false,
+                agenticMode: false,
+                isStandaloneImageMode: false,
+                needsBlurPreview: false,
+                deepResearchProcessor: "pro-fast",
+                selectedModel: "gateway-gpt-5-4",
+                locale: "id",
+                userTimezone: "Asia/Makassar",
+                userCountry: "Indonesia (ID)",
+                messages: history,
+                trigger: "submit-message",
+                source: "chat_page",
+                ...rest
               }));
             } catch (err) {
               this._log("WebSocket-Open-Error", err.message);
@@ -179,40 +221,10 @@ class UseAi {
           ws.on("message", data => {
             if (done) return;
             try {
-              let str = data.toString().trim();
-              if (!str || ["p", "h", "s", "o"].includes(str)) return;
-              if (str.startsWith("s ") || str.startsWith("o ")) str = str.substring(2).trim();
-              if (!str.startsWith("{") && str.includes("{")) str = str.substring(str.indexOf("{")).trim();
+              const str = data.toString().trim();
+              if (!str) return;
               const p = JSON.parse(str);
-              if (p.type === "cf_agent_identity" || p.name === this.chId) {
-                this._log("WebSocket", "Identitas terverifikasi. Mengirim paket submit-message...");
-                ws.send(JSON.stringify({
-                  chatId: this.chId,
-                  userId: `guest:${this.uid}`,
-                  userType: "guest",
-                  planType: "free",
-                  cfModelsVariant: "OFF",
-                  mixpanelUserId: this.mxId,
-                  deviceId: this.devId,
-                  isMobile: true,
-                  isWebSearchMode: false,
-                  isDeepResearchMode: false,
-                  isImageGenerationMode: false,
-                  agenticMode: false,
-                  connectorsEnabled: false,
-                  selectedModel: "gateway-gpt-5",
-                  locale: "id",
-                  userTimezone: "Asia/Jakarta",
-                  userCountry: "Indonesia (ID)",
-                  messages: history,
-                  trigger: "submit-message",
-                  source: "chat_page",
-                  ...rest
-                }));
-              }
-              if (p.chunk?.text || p.chunk?.content) {
-                chunks.push(p.chunk.text || p.chunk.content);
-              }
+              chunks.push(p);
               if (p.type === "stream-complete" || p.chunk?.type === "finish") {
                 this._log("WebSocket", "Menerima frame penutup stream-complete. Auto-closing...");
                 done = true;
@@ -245,36 +257,8 @@ class UseAi {
           rej(err);
         }
       });
-      this._log("Chat", "Mengeksekusi pengambilan data hasil final (GET Chat)...");
-      const r = await this.ax.get(`https://agents.use.ai/chat?id=${this.chId}`, {
-        headers: {
-          accept: "*/*",
-          "accept-language": "id,ms;q=0.9,en;q=0.8",
-          origin: "https://use.ai",
-          referer: "https://use.ai/id",
-          "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Mobile Safari/537.36",
-          "x-guest-user-id": `guest:${this.uid}`,
-          "sec-ch-ua": '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
-          "sec-ch-ua-mobile": "?1",
-          "sec-ch-ua-platform": '"Android"',
-          "sec-fetch-dest": "empty",
-          "sec-fetch-mode": "cors",
-          "sec-fetch-site": "same-site"
-        }
-      });
-      let reply = "";
-      const fetched = r.data?.messages || [];
-      if (fetched.length > 0) {
-        const last = fetched[fetched.length - 1];
-        if (last.role === "assistant") {
-          reply = last.parts?.[0]?.text || "";
-          history = fetched;
-          this._log("Chat", "Berhasil melakukan sinkronisasi data dari router HTTP.");
-        }
-      }
-      if (!reply && chunks.length > 0) {
-        this._log("Chat", "HTTP data kosong, menggunakan rekonstruksi data dari chunks WebSocket.");
-        reply = chunks.join("");
+      const reply = chunks.map(p => p.chunk?.delta || p.chunk?.text || p.chunk?.content || "").join("");
+      if (reply) {
         history.push({
           id: this._msgId(),
           role: "assistant",
@@ -287,7 +271,7 @@ class UseAi {
       return {
         status: true,
         result: reply || "Gagal menangkap respon.",
-        chunks: chunks.length > 0 ? chunks : [reply],
+        chunks: chunks,
         state: this._save(history)
       };
     } catch (err) {

@@ -1,6 +1,9 @@
 import axios from "axios";
 import crypto from "crypto";
 import FormData from "form-data";
+import PROXY from "@/configs/proxy-cors";
+const proxy = PROXY.url();
+console.log("CORS proxy", proxy);
 class ClothOff {
   constructor() {
     try {
@@ -168,7 +171,7 @@ class ClothOff {
       console.log("[Proses] Menyusun payload FormData...");
       const formData = await this.form(fileBuffer, filename, mimeType, options);
       console.log("[Proses] Mengunggah gambar ke GraphQL ClothOff...");
-      const res = await this.client.post("https://app.clothoff.info/graphql", formData, {
+      const res = await this.client.post(`${proxy}https://app.clothoff.info/graphql`, formData, {
         headers: {
           ...this.baseHeaders,
           ...formData.getHeaders(),
@@ -212,7 +215,7 @@ class ClothOff {
         },
         query: query
       };
-      const res = await this.client.post("https://app.clothoff.info/graphql", payload, {
+      const res = await this.client.post(`${proxy}https://app.clothoff.info/graphql`, payload, {
         headers: {
           ...this.baseHeaders,
           "content-type": "application/json",
@@ -297,11 +300,6 @@ export default async function handler(req, res) {
   const api = new ClothOff();
   try {
     const data = await api.generate(params);
-    if (!data.buffer || typeof data.status === "string" && data.status.startsWith("error")) {
-      return res.status(500).json({
-        error: data.status || "Gagal memproses gambar"
-      });
-    }
     res.setHeader("Content-Type", data.contentType || "image/png");
     return res.status(200).send(data.buffer);
   } catch (error) {

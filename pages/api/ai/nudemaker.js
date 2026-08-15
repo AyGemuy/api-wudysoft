@@ -3,6 +3,9 @@ import {
   randomBytes
 } from "crypto";
 import sizeOf from "image-size";
+import PROXY from "@/configs/proxy-cors";
+const proxy = PROXY.url();
+console.log("CORS proxy", proxy);
 class NudeMaker {
   constructor() {
     try {
@@ -33,7 +36,7 @@ class NudeMaker {
   _genCreds() {
     try {
       const r = randomBytes(8).toString("hex");
-      const email = `user_${r}@example.com`;
+      const email = `user_${r}@mail.com`;
       const pass = randomBytes(12).toString("hex");
       return {
         email: email,
@@ -69,7 +72,7 @@ class NudeMaker {
         password: pass,
         secondPassword: pass
       };
-      const res = await this._client.post("https://nudemaker.app/api/register", payload);
+      const res = await this._client.post(`${proxy}https://nudemaker.app/api/register`, payload);
       this._saveCookie(res);
       console.log("✅ Registration successful.", res.data?.data || "");
       return {
@@ -88,7 +91,7 @@ class NudeMaker {
         console.warn("⚠️ No session cookie, skipping check.");
         return false;
       }
-      const res = await this._client.get("https://nudemaker.app/api/check-authentication", {
+      const res = await this._client.get(`${proxy}https://nudemaker.app/api/check-authentication`, {
         headers: {
           Cookie: this._cookie
         }
@@ -162,7 +165,7 @@ class NudeMaker {
         customModePrompt: customModePrompt,
         boobsSize: boobsSize
       };
-      const res = await this._client.post("https://large.nudemaker.app/api/undress", payload, {
+      const res = await this._client.post(`${proxy}https://large.nudemaker.app/api/undress`, payload, {
         headers: {
           Cookie: this._cookie,
           referer: "https://nudemaker.app/"
@@ -221,11 +224,6 @@ export default async function handler(req, res) {
   const api = new NudeMaker();
   try {
     const data = await api.generate(params);
-    if (!data.buffer || typeof data.status === "string" && data.status.startsWith("error")) {
-      return res.status(500).json({
-        error: data.status || "Gagal memproses gambar"
-      });
-    }
     res.setHeader("Content-Type", data.contentType || "image/png");
     return res.status(200).send(data.buffer);
   } catch (error) {
