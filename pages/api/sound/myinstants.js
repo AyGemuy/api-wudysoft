@@ -1,8 +1,11 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import PROXY from "@/configs/proxy-url";
+const proxy = PROXY.url();
+console.log("CORS proxy", proxy);
 class MyInstants {
   constructor() {
-    this.baseUrl = "https://www.myinstants.com";
+    this.baseUrl = `${proxy}https://www.myinstants.com`;
     this.cli = axios.create({
       baseURL: this.baseUrl,
       timeout: 3e4,
