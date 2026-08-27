@@ -14,8 +14,9 @@ class BoomplayClient {
     this.selectedApiBase = null;
     this.selectedSourceBase = null;
     this.selectedSignSourceBase = null;
-    this.aesKey = Buffer.from("boomplayUNmn3IbI", "utf-8");
-    this.aesIv = Buffer.from("boomplayuvEJOzIK", "utf-8");
+    this.resAesKey = Buffer.from("boomplayuvEJOzIK", "utf-8");
+    this.mediaAesKey = Buffer.from("boomplayUNmn3IbI", "utf-8");
+    this.mediaAesIv = Buffer.from("boomplayuvEJOzIK", "utf-8");
     this.defaultState = this._genState();
   }
   async _checkHost(host, pingCount = 2) {
@@ -110,6 +111,68 @@ class BoomplayClient {
       return `https://${this.hosts.sign_source[0]}`;
     }
   }
+  _encryptParam(plainText) {
+    try {
+      if (!plainText || typeof plainText !== "string") return plainText;
+      const cipher = crypto.createCipheriv("aes-128-cbc", this.mediaAesKey, this.mediaAesIv);
+      cipher.setAutoPadding(true);
+      let encrypted = cipher.update(plainText, "utf8", "base64");
+      encrypted += cipher.final("base64");
+      return encrypted;
+    } catch (err) {
+      console.error("[_encryptParam Error]:", err?.message);
+      return plainText;
+    }
+  }
+  _decryptResponseBody(encryptedBase64) {
+    try {
+      if (!encryptedBase64 || typeof encryptedBase64 !== "string") return null;
+      const cleanStr = encryptedBase64.trim();
+      const cipherBuffer = Buffer.from(cleanStr, "base64");
+      if (cipherBuffer.length === 0 || cipherBuffer.length % 16 !== 0) return null;
+      try {
+        const decipher = crypto.createDecipheriv("aes-128-ecb", this.resAesKey, null);
+        decipher.setAutoPadding(true);
+        let decrypted = decipher.update(cipherBuffer, null, "utf8");
+        decrypted += decipher.final("utf8");
+        if (decrypted && (decrypted.startsWith("{") || decrypted.startsWith("[") || decrypted.includes('"musics"') || decrypted.includes('"data"') || decrypted.includes('"code"'))) {
+          return decrypted;
+        }
+      } catch {}
+      try {
+        const decipher = crypto.createDecipheriv("aes-128-cbc", this.mediaAesKey, this.mediaAesIv);
+        decipher.setAutoPadding(true);
+        let decrypted = decipher.update(cipherBuffer, null, "utf8");
+        decrypted += decipher.final("utf8");
+        if (decrypted && (decrypted.startsWith("{") || decrypted.startsWith("["))) {
+          return decrypted;
+        }
+      } catch {}
+      return null;
+    } catch {
+      return null;
+    }
+  }
+  _decryptResource(encryptedBase64, customBaseUrl = null) {
+    try {
+      if (!encryptedBase64 || typeof encryptedBase64 !== "string") return encryptedBase64;
+      if (encryptedBase64.startsWith("http://") || encryptedBase64.startsWith("https://")) {
+        return encryptedBase64;
+      }
+      const cipherBuffer = Buffer.from(encryptedBase64.trim(), "base64");
+      const decipher = crypto.createDecipheriv("aes-128-cbc", this.mediaAesKey, this.mediaAesIv);
+      decipher.setAutoPadding(true);
+      let path = decipher.update(cipherBuffer, null, "utf8");
+      path += decipher.final("utf8");
+      if (!path) return encryptedBase64;
+      const base = customBaseUrl ? customBaseUrl : this.selectedSignSourceBase || `https://${this.hosts.sign_source[0]}`;
+      const cleanPath = path.startsWith("/") ? path : `/${path}`;
+      return `${base}${cleanPath}`;
+    } catch (err) {
+      console.error("[_decryptResource Error]:", err?.message);
+      return encryptedBase64;
+    }
+  }
   _md516(str) {
     try {
       const full = crypto.createHash("md5").update(String(str || "")).digest("hex");
@@ -138,33 +201,15 @@ class BoomplayClient {
       return str || "";
     }
   }
-  _decryptResource(encryptedBase64, customBaseUrl = null) {
-    try {
-      if (!encryptedBase64 || typeof encryptedBase64 !== "string") return encryptedBase64;
-      if (encryptedBase64.startsWith("http://") || encryptedBase64.startsWith("https://")) {
-        return encryptedBase64;
-      }
-      const base = customBaseUrl ? customBaseUrl : this.selectedSignSourceBase || `https://${this.hosts.sign_source[0]}`;
-      const cipherBuffer = Buffer.from(encryptedBase64, "base64");
-      const decipher = crypto.createDecipheriv("aes-128-cbc", this.aesKey, this.aesIv);
-      decipher.setAutoPadding(true);
-      let path = decipher.update(cipherBuffer, null, "utf8");
-      path += decipher.final("utf8");
-      return `${base}${path}`;
-    } catch (err) {
-      console.error("[_decryptResource Error]:", err?.message);
-      return encryptedBase64;
-    }
-  }
   _formatMediaUrl(val) {
     try {
       if (!val || typeof val !== "string") return val;
       if (val.startsWith("http://") || val.startsWith("https://") || val.startsWith("data:")) {
         return val;
       }
-      const isImage = /\.(webp|jpg|jpeg|png|gif|svg|bmp)(\?.*)?$/i.test(val);
+      const isAssetExt = /\.(webp|jpg|jpeg|png|gif|svg|bmp|lrc)(\?.*)?$/i.test(val);
       const isGroupPath = val.startsWith("group") || val.startsWith("/group");
-      if (isImage || isGroupPath) {
+      if (isAssetExt || isGroupPath) {
         const base = this.selectedSourceBase || `https://${this.hosts.source[0]}`;
         const cleanPath = val.startsWith("/") ? val.slice(1) : val;
         return `${base}/${cleanPath}`;
@@ -187,6 +232,15 @@ class BoomplayClient {
             return this._formatMediaUrl(data);
           }
         } else {
+          const decrypted = this._decryptResponseBody(trimmed);
+          if (decrypted) {
+            try {
+              const decryptedJson = JSON.parse(decrypted);
+              return this._formatRes(decryptedJson);
+            } catch {
+              return this._formatMediaUrl(decrypted);
+            }
+          }
           return this._formatMediaUrl(data);
         }
       }
@@ -196,7 +250,7 @@ class BoomplayClient {
       if (parsed !== null && typeof parsed === "object") {
         return Object.fromEntries(Object.entries(parsed).map(([key, val]) => {
           const snakeKey = this._toSnake(key);
-          if ((key === "downloadResource" || snakeKey === "download_resource") && typeof val === "string") {
+          if ((key === "downloadResource" || snakeKey === "download_resource" || key === "source" || snakeKey === "source") && typeof val === "string" && val.length > 32) {
             const decryptedUrl = this._decryptResource(val);
             return [snakeKey, decryptedUrl];
           }
@@ -373,6 +427,73 @@ class BoomplayClient {
       };
     } catch (err) {
       console.error("[FAILED] download:", err?.message);
+      return {
+        status: false,
+        state: state || this.defaultState,
+        error: err?.message
+      };
+    }
+  }
+  async getResourceAddr({
+    state,
+    param,
+    itemID,
+    musicID,
+    itemType = "MUSIC",
+    q = "md",
+    quality = "md",
+    s = "",
+    channel = "and_google",
+    ...rest
+  } = {}) {
+    console.log("[CALL] getResourceAddr...");
+    try {
+      const activeState = state ? state : this.defaultState;
+      let finalParam = param;
+      if (!finalParam) {
+        const activeItemId = itemID || musicID;
+        if (!activeItemId) {
+          return {
+            status: false,
+            state: activeState,
+            error: "Parameter 'itemID' atau 'musicID' wajib diisi."
+          };
+        }
+        const stateObj = this._decState(activeState);
+        const payload = {
+          itemType: itemType || "MUSIC",
+          bppl: stateObj.bppl || "3",
+          gaid: stateObj.gaid || "",
+          imsi: stateObj.imsi || "",
+          systemVersionCode: stateObj.systemVersionCode || "35",
+          ua: stateObj.ua || "realmeRMX3890",
+          mcc: stateObj.mcc || "510",
+          deviceID: stateObj.deviceID || "",
+          itemID: String(activeItemId),
+          q: q || quality || "md",
+          curClientVersionCode: stateObj.curClientVersionCode || this.versionCode,
+          s: s || stateObj.sessionID || "",
+          lan: stateObj.lan || "id_ID",
+          imei: stateObj.imei || "",
+          ...rest
+        };
+        finalParam = this._encryptParam(JSON.stringify(payload));
+      }
+      const postData = qs.stringify({
+        param: finalParam,
+        channel: channel || "and_google"
+      });
+      return await this._req({
+        method: "POST",
+        path: "/content/resource/encrypt/getResourceAddr",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        data: postData,
+        state: activeState
+      });
+    } catch (err) {
+      console.error("[FAILED] getResourceAddr:", err?.message);
       return {
         status: false,
         state: state || this.defaultState,
@@ -1210,7 +1331,7 @@ export default async function handler(req, res) {
     action,
     ...params
   } = req.method === "GET" ? req.query : req.body || {};
-  const validActions = ["download", "items", "gen_playlist", "musics", "music_home", "rec_cols", "slides", "trend_home", "lyric", "position_list", "detail", "sync_music", "down_success", "pre_download", "artist", "comments", "search", "search_associate", "more_explore", "clip_flows", "clip_musics", "artist_home1", "artist_home2", "artist_op_playlists", "video", "recommend_videos"];
+  const validActions = ["download", "resource_addr", "items", "gen_playlist", "musics", "music_home", "rec_cols", "slides", "trend_home", "lyric", "position_list", "detail", "sync_music", "down_success", "pre_download", "artist", "comments", "search", "search_associate", "more_explore", "clip_flows", "clip_musics", "artist_home1", "artist_home2", "artist_op_playlists", "video", "recommend_videos"];
   if (!action) {
     return res.status(400).json({
       status: false,
@@ -1219,6 +1340,8 @@ export default async function handler(req, res) {
       usage: {
         method: "GET / POST",
         examples: {
+          resource_addr: "/?action=resource_addr&itemID=186466601&q=md",
+          musics: "/?action=musics&colID=17995900",
           download: "/?action=download&url=ehJFdlmhwBbyvud1JG3V5hsZVfkOUJYysR0PZF8D...",
           pre_download: "/?action=pre_download&itemID=263959054",
           search: "/?action=search&content=Alan+Walker&itemType=MUSIC",
@@ -1258,6 +1381,15 @@ export default async function handler(req, res) {
     }
     let response;
     switch (action) {
+      case "resource_addr":
+        if (!params.itemID && !params.musicID && !params.param) {
+          return res.status(400).json({
+            status: false,
+            error: "Parameter 'itemID', 'musicID', atau 'param' wajib diisi untuk action 'resource_addr'."
+          });
+        }
+        response = await api.getResourceAddr(params);
+        break;
       case "items":
         response = await api.getItems(params);
         break;

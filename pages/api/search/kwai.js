@@ -47,6 +47,23 @@ class KwaiScraper {
       return [];
     }
   }
+  toSnakeCase(obj) {
+    try {
+      if (Array.isArray(obj)) {
+        return obj.map(v => this.toSnakeCase(v));
+      } else if (obj !== null && typeof obj === "object") {
+        return Object.keys(obj).reduce((acc, key) => {
+          const cleanKey = key.replace(/^@/, "");
+          const snakeKey = cleanKey.replace(/([A-Z]+)/g, "_$1").replace(/^_/, "").toLowerCase();
+          acc[snakeKey] = this.toSnakeCase(obj[key]);
+          return acc;
+        }, {});
+      }
+      return obj;
+    } catch (err) {
+      return obj;
+    }
+  }
   parseUrl(input) {
     try {
       const str = String(input || "").trim();
@@ -64,25 +81,30 @@ class KwaiScraper {
       };
     }
   }
-  parseFeed(_) {
+  parseFeed(html, $) {
     try {
-      const json_ld_text = _('script#ItemList[type="application/ld+json"]').html();
-      if (json_ld_text) {
-        try {
-          const json_data = JSON.parse(json_ld_text);
-          const raw_items = json_data?.itemListElement || [];
-          if (Array.isArray(raw_items) && raw_items.length > 0) {
-            return raw_items.map(item => {
-              const video_url = item?.url || "";
-              const video_id = video_url.split("/").pop() || null;
+      const _ = $ || cheerio.load(html || "");
+      const rawHtml = typeof html === "string" ? html : $.html() || "";
+      try {
+        const jsonLdScripts = _('script[type="application/ld+json"]').map((_, el) => _(el).html() || "").get();
+        for (const jsonStr of jsonLdScripts) {
+          if (!jsonStr.includes("ItemList")) continue;
+          const jsonData = JSON.parse(jsonStr);
+          const rawItems = jsonData?.itemListElement || [];
+          if (Array.isArray(rawItems) && rawItems.length > 0) {
+            return rawItems.map(item => {
+              const videoUrl = item?.url || "";
+              const videoId = videoUrl.split("/").pop() || null;
               const caption = item?.description === "..." ? "" : item?.description || item?.name || "";
               const interactions = item?.interactionStatistic || [];
-              const watch_stat = interactions.find(s => s?.interactionType?.["@type"]?.includes("WatchAction"));
-              const like_stat = interactions.find(s => s?.interactionType?.["@type"]?.includes("LikeAction"));
-              const share_stat = interactions.find(s => s?.interactionType?.["@type"]?.includes("ShareAction"));
+              const watchStat = interactions.find(s => s?.interactionType?.["@type"]?.includes("WatchAction"));
+              const likeStat = interactions.find(s => s?.interactionType?.["@type"]?.includes("LikeAction"));
+              const shareStat = interactions.find(s => s?.interactionType?.["@type"]?.includes("ShareAction"));
+              const converted = this.toSnakeCase(item);
               return {
-                video_id: video_id,
-                url: video_url || null,
+                ...converted,
+                video_id: videoId,
+                url: videoUrl || null,
                 caption: caption || null,
                 hashtags: this.tags(caption || item?.name || ""),
                 video_url: item?.contentUrl || null,
@@ -94,30 +116,108 @@ class KwaiScraper {
                 } : null,
                 transcript: item?.transcript || null,
                 is_ai_generated: false,
-                author: {
-                  name: item?.creator?.mainEntity?.name || null,
-                  username: item?.creator?.mainEntity?.alternateName || null,
-                  url: item?.creator?.mainEntity?.url || null,
-                  avatar: item?.creator?.mainEntity?.image || null,
-                  bio: item?.creator?.mainEntity?.description || null
-                },
+                author: item?.creator?.mainEntity ? {
+                  name: item.creator.mainEntity.name || null,
+                  username: item.creator.mainEntity.alternateName || null,
+                  url: item.creator.mainEntity.url || null,
+                  avatar: item.creator.mainEntity.image || null,
+                  bio: item.creator.mainEntity.description || null
+                } : null,
                 audio: item?.audio ? {
-                  name: item?.audio?.name || null,
-                  author: item?.audio?.author || null
+                  name: item.audio.name || null,
+                  author: item.audio.author || null
                 } : null,
                 stats: {
-                  views: String(watch_stat?.userInteractionCount || "0"),
-                  likes: String(like_stat?.userInteractionCount || "0"),
-                  shares: String(share_stat?.userInteractionCount || "0"),
+                  views: String(watchStat?.userInteractionCount || "0"),
+                  likes: String(likeStat?.userInteractionCount || "0"),
+                  shares: String(shareStat?.userInteractionCount || "0"),
                   comments: String(item?.commentCount || "0")
                 },
                 uploaded_at: item?.uploadDate || null
               };
             });
           }
-        } catch (e) {
-          console.warn(`[PARSE JSON-LD WARN] ${e?.message || e}, fallback ke DOM parser.`);
         }
+      } catch (e) {
+        console.warn(`[PARSE JSON-LD WARN] ${e?.message || e}`);
+      }
+      try {
+        const rawMatches = rawHtml.match(/self\.__next_f\.push\(\[\s*\d+\s*,\s*("[\s\S]*?")\s*\]\)/g) || [];
+        for (const fullScript of rawMatches) {
+          if (!fullScript.includes('\\"feeds\\"') && !fullScript.includes('"feeds"')) continue;
+          const jsonStringMatch = fullScript.match(/self\.__next_f\.push\(\[\s*\d+\s*,\s*("[\s\S]*")\s*\]\)/);
+          if (!jsonStringMatch || !jsonStringMatch[1]) continue;
+          let rawPayload = "";
+          try {
+            rawPayload = JSON.parse(jsonStringMatch[1]);
+          } catch {
+            rawPayload = jsonStringMatch[1];
+          }
+          const feedsIdx = rawPayload.indexOf('"feeds":[');
+          if (feedsIdx === -1) continue;
+          const startIdx = rawPayload.indexOf("[", feedsIdx);
+          let openBrackets = 0;
+          let endIdx = -1;
+          for (let i = startIdx; i < rawPayload.length; i++) {
+            if (rawPayload[i] === "[") openBrackets++;
+            else if (rawPayload[i] === "]") {
+              openBrackets--;
+              if (openBrackets === 0) {
+                endIdx = i + 1;
+                break;
+              }
+            }
+          }
+          if (endIdx !== -1) {
+            const feedsJsonStr = rawPayload.slice(startIdx, endIdx);
+            const feedsData = JSON.parse(feedsJsonStr);
+            if (Array.isArray(feedsData) && feedsData.length > 0) {
+              return feedsData.map(f => {
+                const photoId = f.photo_id_str || String(f.photo_id || "");
+                const authorUsername = f.kwai_id || f.user_id_str || "";
+                const videoUrl = f.main_mv_urls?.[0]?.url || f.transcode_manifest_info?.adaptationSet?.[0]?.representation?.[0]?.url || f.transcode_manifest_info?.adaptationSet?.[0]?.representation?.[1]?.url || null;
+                const thumb = f.cover_first_frame_urls?.[0]?.url || f.cover_thumbnail_urls?.[0]?.url || null;
+                const rawCaption = f.caption === "..." ? "" : f.caption || "";
+                const transcript = f.transcript || f.transcription || f.photo_text || f.voice_text || null;
+                const convertedFeed = this.toSnakeCase(f);
+                return {
+                  ...convertedFeed,
+                  video_id: photoId || null,
+                  url: photoId ? `${this.base_url}/@${authorUsername}/video/${photoId}` : null,
+                  caption: rawCaption || null,
+                  hashtags: this.tags(rawCaption),
+                  is_ai_generated: Boolean(f.is_ai_generated || f.is_ai_content),
+                  video_url: videoUrl,
+                  thumbnail: thumb,
+                  duration: f.ext_params?.video ? Math.round(f.ext_params.video / 1e3) : null,
+                  dimensions: f.ext_params?.w && f.ext_params?.h ? {
+                    width: f.ext_params.w,
+                    height: f.ext_params.h
+                  } : null,
+                  transcript: transcript,
+                  is_muted: false,
+                  author: {
+                    name: f.user_name || null,
+                    username: authorUsername || null,
+                    url: authorUsername ? `${this.base_url}/@${authorUsername}` : null,
+                    avatar: f.headurls?.[0]?.url || null,
+                    bio: f.user_text || null
+                  },
+                  audio: null,
+                  stats: {
+                    views: String(f.view_count || "0"),
+                    likes: String(f.like_count || "0"),
+                    shares: String(f.forward_count || "0"),
+                    comments: String(f.comment_count || "0")
+                  },
+                  uploaded_at: f.time || null
+                };
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.warn(`[PARSE RSC WARN] ${e?.message || e}`);
       }
       return _("article.VideoCard_video-card__pW8vI").map((idx, el) => {
         const card = _(el);
@@ -187,10 +287,10 @@ class KwaiScraper {
       if (!query) throw new Error('Parameter "query" wajib diisi.');
       const target_url = `${this.base_url}/discover/${encodeURIComponent(query)}`;
       const html = await this.req(target_url, rest);
-      const _ = cheerio.load(html);
-      const input_query = _(".adm-input-element").val() || query;
-      const meta_desc = _('meta[name="description"]').attr("content") || "";
-      const items = this.parseFeed(_);
+      const $ = cheerio.load(html);
+      const input_query = $(".adm-input-element").val() || query;
+      const meta_desc = $('meta[name="description"]').attr("content") || "";
+      const items = this.parseFeed(html, $);
       console.log(`[SEARCH] Ditemukan ${items.length} hasil untuk "${input_query}".`);
       return {
         status: true,
@@ -207,6 +307,34 @@ class KwaiScraper {
         status: false,
         result: {
           message: err?.message || "Terjadi kesalahan saat mencari video.",
+          items: []
+        }
+      };
+    }
+  }
+  async home({
+    ...rest
+  } = {}) {
+    try {
+      console.log("[HOME] Mengambil feed home/discover...");
+      const target_url = `${this.base_url}/discover`;
+      const html = await this.req(target_url, rest);
+      const $ = cheerio.load(html);
+      const items = this.parseFeed(html, $);
+      console.log(`[HOME] Ditemukan ${items.length} item.`);
+      return {
+        status: true,
+        result: {
+          total: items.length,
+          items: items
+        }
+      };
+    } catch (err) {
+      console.error(`[HOME ERROR] ${err?.message || err}`);
+      return {
+        status: false,
+        result: {
+          message: err?.message || "Terjadi kesalahan saat memuat feed home.",
           items: []
         }
       };
@@ -288,34 +416,6 @@ class KwaiScraper {
         status: false,
         result: {
           message: err?.message || "Terjadi kesalahan saat memuat profil."
-        }
-      };
-    }
-  }
-  async home({
-    ...rest
-  } = {}) {
-    try {
-      console.log("[HOME] Mengambil feed home/discover...");
-      const target_url = `${this.base_url}/discover`;
-      const html = await this.req(target_url, rest);
-      const _ = cheerio.load(html);
-      const items = this.parseFeed(_);
-      console.log(`[HOME] Ditemukan ${items.length} item.`);
-      return {
-        status: true,
-        result: {
-          total: items.length,
-          items: items
-        }
-      };
-    } catch (err) {
-      console.error(`[HOME ERROR] ${err?.message || err}`);
-      return {
-        status: false,
-        result: {
-          message: err?.message || "Terjadi kesalahan saat memuat feed home.",
-          items: []
         }
       };
     }

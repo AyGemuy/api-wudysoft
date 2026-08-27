@@ -1,188 +1,430 @@
 import axios from "axios";
+import crypto from "crypto";
 class GptAnon {
   constructor() {
-    this.ax = axios.create({
-      baseURL: "https://gptanon.com",
-      timeout: 6e4
+    this.base = "https://gptanon.com";
+    this.to = 6e4;
+    this.ck = {};
+    this.mdls = [];
+    this.cfgFreeId = null;
+    this.sessionId = null;
+    this.init = false;
+    this.did = this._uuid();
+    this.sid = this._uuid();
+    this.wid = this._uuid();
+    const phPayload = encodeURIComponent(JSON.stringify({
+      $device_id: this.did,
+      distinct_id: this.did,
+      $sesid: [Date.now(), this.sid, Date.now()],
+      $epp: true,
+      $initial_person_info: {
+        r: "$direct",
+        u: "https://gptanon.com/"
+      },
+      $user_state: "anonymous"
+    }));
+    this.ck["ph_phc_oiDt6uXiBiEA2aT43SMzMAFE9D4gMVkRP3BtvYRsmHqe_posthog"] = phPayload;
+    this.http = axios.create({
+      baseURL: this.base,
+      timeout: this.to,
+      validateStatus: () => true
     });
-  }
-  _init() {
-    if (this._initialized) return;
-    this.ax.interceptors.response.use(res => {
-      const sc = res.headers?.["set-cookie"];
-      if (sc) {
-        const cookies = Array.isArray(sc) ? sc : [sc];
-        const parsed = cookies.map(c => c.split(";")[0].trim()).filter(Boolean).join("; ");
-        if (parsed) {
-          this.ck = this.ck ? `${this.ck}; ${parsed}` : parsed;
-          this.ck = [...new Map(this.ck.split(";").map(v => v.split("=").map(s => s.trim()))).entries()].map(([k, v]) => `${k}=${v}`).join("; ");
-          this._log("Full cookie diperbarui:", this.ck);
-        }
+    this.http.interceptors.request.use(req => {
+      const cookieStr = Object.entries(this.ck).map(([k, v]) => `${k}=${v}`).join("; ");
+      if (cookieStr) req.headers["cookie"] = cookieStr;
+      return req;
+    });
+    this.http.interceptors.response.use(res => {
+      const rawCookies = res?.headers?.["set-cookie"];
+      if (rawCookies && Array.isArray(rawCookies)) {
+        rawCookies.forEach(item => {
+          const [pair] = item.split(";");
+          const [k, ...v] = (pair || "").split("=");
+          if (k) this.ck[k.trim()] = v.join("=").trim();
+        });
       }
       return res;
-    }, err => Promise.reject(err));
-    this._initialized = true;
+    });
   }
-  _log(m, d = "") {
-    console.log(`[${new Date().toISOString()}] [GptAnon] ${m}`, d);
-  }
-  _load(st) {
+  _uuid() {
     try {
-      if (!st) return;
-      const dec = JSON.parse(Buffer.from(st, "base64").toString("utf-8"));
-      this.ck = dec?.cookie || this.ck;
-      this.sid = dec?.sessionId || this.sid;
-      this._log("State loaded (Full Cookie & SessionId).");
+      return crypto.randomUUID();
     } catch {
-      this._log("Gagal memuat state Base64.");
+      return "01a02822-" + Math.random().toString(16).slice(2, 6) + "-71ad-84dc-" + Math.random().toString(16).slice(2, 14);
     }
   }
-  _save() {
-    return Buffer.from(JSON.stringify({
-      cookie: this.ck || "",
-      sessionId: this.sid || ""
-    })).toString("base64");
+  _hdr(opt = {}) {
+    return {
+      "accept-language": "id-ID",
+      "cache-control": "no-cache",
+      pragma: "no-cache",
+      "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": '"Linux"',
+      "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+      ...opt?.extra || {}
+    };
   }
-  _img(im) {
-    if (!im) return null;
-    if (typeof im === "string") {
-      if (im.startsWith("http")) return {
-        type: "url",
-        url: im
-      };
-      if (im.startsWith("data:")) return {
-        type: "base64",
-        data: im
-      };
-      return {
-        type: "base64",
-        data: `data:image/jpeg;base64,${im}`
-      };
-    }
-    if (Buffer.isBuffer(im)) {
-      return {
-        type: "base64",
-        data: `data:image/jpeg;base64,${im.toString("base64")}`
-      };
-    }
-    return null;
-  }
-  async init() {
+  _encState() {
     try {
-      this._init();
-      this._log("Melakukan inisialisasi session cookie dari halaman utama...");
-      await this.ax.get("/chat", {
-        headers: {
-          accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-          "accept-language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
-          "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
-        }
-      });
-      return this._save();
+      const obj = {
+        sessionId: this.sessionId,
+        ck: this.ck,
+        did: this.did,
+        sid: this.sid,
+        wid: this.wid
+      };
+      return Buffer.from(JSON.stringify(obj)).toString("base64");
     } catch (err) {
-      this._log("Gagal inisialisasi cookie awal:", err.message);
-      throw err;
+      console.log("[GptAnon] Gagal encode state:", err?.message);
+      return null;
+    }
+  }
+  _decState(b64) {
+    try {
+      if (!b64 || typeof b64 !== "string") return;
+      console.log("[GptAnon] Memulihkan state sesi dari Base64...");
+      const parsed = JSON.parse(Buffer.from(b64, "base64").toString("utf-8"));
+      if (parsed?.sessionId) this.sessionId = parsed.sessionId;
+      if (parsed?.ck) this.ck = {
+        ...this.ck,
+        ...parsed.ck
+      };
+      if (parsed?.did) this.did = parsed.did;
+      if (parsed?.sid) this.sid = parsed.sid;
+      if (parsed?.wid) this.wid = parsed.wid;
+      this.init = true;
+      console.log("[GptAnon] State sesi berhasil dipulihkan. SessionId:", this.sessionId);
+    } catch (err) {
+      console.log("[GptAnon] Gagal decode state:", err?.message);
+    }
+  }
+  async _readStream(stream) {
+    try {
+      if (!stream || typeof stream.on !== "function") return stream;
+      return await new Promise(resolve => {
+        let data = "";
+        stream.on("data", chunk => {
+          data += chunk.toString();
+        });
+        stream.on("end", () => {
+          try {
+            resolve(JSON.parse(data));
+          } catch {
+            resolve(data);
+          }
+        });
+        stream.on("error", () => resolve(data));
+      });
+    } catch {
+      return null;
+    }
+  }
+  async _media(mediaInput) {
+    try {
+      if (!mediaInput) return null;
+      console.log("[GptAnon] Memproses attachment media...");
+      const items = Array.isArray(mediaInput) ? mediaInput : [mediaInput];
+      const attachments = [];
+      for (const item of items) {
+        let dataUrl = "";
+        let mime = "image/jpeg";
+        let size = 0;
+        if (Buffer.isBuffer(item)) {
+          size = item.length;
+          dataUrl = `data:${mime};base64,${item.toString("base64")}`;
+        } else if (typeof item === "string") {
+          if (/^https?:\/\//i.test(item)) {
+            console.log("[GptAnon] Mengunduh media dari URL...");
+            const res = await axios.get(item, {
+              responseType: "arraybuffer",
+              timeout: 15e3
+            });
+            mime = res?.headers?.["content-type"] || "image/jpeg";
+            const buf = Buffer.from(res?.data || "");
+            size = buf.length;
+            dataUrl = `data:${mime};base64,${buf.toString("base64")}`;
+          } else if (item.startsWith("data:")) {
+            dataUrl = item;
+            const mimeMatch = item.match(/^data:([^;]+);base64,/);
+            mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+            const rawB64 = item.split(";base64,")[1] || "";
+            size = Buffer.byteLength(rawB64, "base64");
+          } else {
+            dataUrl = `data:${mime};base64,${item}`;
+            size = Buffer.byteLength(item, "base64");
+          }
+        }
+        if (dataUrl) {
+          attachments.push({
+            id: this._uuid(),
+            name: `file_${Date.now()}.${mime.split("/")[1] || "jpg"}`,
+            type: mime,
+            size: size,
+            url: dataUrl
+          });
+        }
+      }
+      return attachments.length > 0 ? attachments : null;
+    } catch (err) {
+      console.log("[GptAnon] Gagal memproses media:", err?.message);
+      return null;
+    }
+  }
+  async _init() {
+    try {
+      if (this.init) return true;
+      console.log("[GptAnon] Menginisialisasi session awal & cookie...");
+      await this.http.get("/", {
+        headers: this._hdr({
+          extra: {
+            accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "sec-fetch-dest": "document",
+            "sec-fetch-mode": "navigate",
+            "sec-fetch-site": "none",
+            "sec-fetch-user": "?1",
+            "upgrade-insecure-requests": "1"
+          }
+        })
+      });
+      await this.http.post("/api/track/visit", null, {
+        headers: this._hdr({
+          extra: {
+            accept: "*/*",
+            "content-length": "0",
+            origin: "https://gptanon.com",
+            referer: "https://gptanon.com/",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin"
+          }
+        })
+      });
+      this.init = true;
+      console.log("[GptAnon] Inisialisasi session berhasil.");
+      return true;
+    } catch (err) {
+      console.log("[GptAnon] Gagal inisialisasi session:", err?.message);
+      return false;
+    }
+  }
+  async _fetchFree() {
+    try {
+      if (this.mdls?.length > 0) return this.mdls;
+      console.log("[GptAnon] Mengambil model FREE...");
+      const [resCfg, resList] = await Promise.all([this.http.get("/api/config/free-model", {
+        headers: this._hdr({
+          extra: {
+            accept: "*/*",
+            referer: "https://gptanon.com/chat",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin"
+          }
+        })
+      }), this.http.get("/api/models", {
+        headers: this._hdr({
+          extra: {
+            accept: "*/*",
+            referer: "https://gptanon.com/chat",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+            "x-posthog-distinct-id": this.did,
+            "x-posthog-session-id": this.sid,
+            "x-posthog-window-id": this.wid
+          }
+        })
+      })]);
+      this.cfgFreeId = resCfg?.data?.freeModelId || "google/gemma-4-31b-it";
+      const allModels = Array.isArray(resList?.data) ? resList.data : [];
+      const filtered = allModels.filter(m => m?.isActive && (m?.isFree === true || m?.modelId === this.cfgFreeId));
+      this.mdls = filtered.length > 0 ? filtered : [{
+        modelId: this.cfgFreeId,
+        name: this.cfgFreeId,
+        isFree: true
+      }];
+      console.log(`[GptAnon] Berhasil memuat model FREE:`, this.mdls.map(m => m.modelId));
+      return this.mdls;
+    } catch (err) {
+      console.log("[GptAnon] Gagal memuat model:", err?.message);
+      return [{
+        modelId: "google/gemma-4-31b-it",
+        name: "Google: Gemma 4 31B",
+        isFree: true
+      }];
+    }
+  }
+  async _val(selectedModel) {
+    try {
+      console.log("[GptAnon] Memvalidasi model:", selectedModel || "default");
+      const freeList = await this._fetchFree();
+      if (selectedModel) {
+        const found = freeList.find(m => m?.modelId === selectedModel || m?.name?.toLowerCase() === selectedModel.toLowerCase());
+        if (found) return found.modelId;
+        console.log(`[GptAnon] Model "${selectedModel}" tidak masuk list free. Dialihkan ke default.`);
+      }
+      const def = freeList.find(m => m?.modelId === this.cfgFreeId) || freeList[0];
+      return def?.modelId ? def.modelId : "google/gemma-4-31b-it";
+    } catch (err) {
+      console.log("[GptAnon] Gagal validasi model:", err?.message);
+      return "google/gemma-4-31b-it";
+    }
+  }
+  _msg(prompt, messages) {
+    try {
+      let history = Array.isArray(messages) ? [...messages] : [];
+      if (prompt) {
+        history.push({
+          role: "user",
+          content: String(prompt)
+        });
+      }
+      if (!history.length) return null;
+      const lastMsg = history[history.length - 1]?.content;
+      const text = typeof lastMsg === "string" ? lastMsg : JSON.stringify(lastMsg);
+      return {
+        text: text,
+        history: history
+      };
+    } catch (err) {
+      console.log("[GptAnon] Gagal format messages:", err?.message);
+      return null;
     }
   }
   async chat({
     state,
     prompt,
-    image,
     messages,
+    media,
+    model,
     ...rest
   }) {
     try {
-      this._init();
-      this._load(state);
-      if (!this.ck) {
-        this._log("Cookie kosong, menjalankan auto-init...");
-        await this.init();
+      console.log("[GptAnon] Memulai request chat...");
+      if (state) {
+        this._decState(state);
       }
-      const models = rest?.modelIds || rest?.models || ["google/gemma-3-27b-it"];
-      const chatHistory = messages || [];
-      const attachments = [];
-      if (image) {
-        const imagesToProcess = Array.isArray(image) ? image : [image];
-        for (const img of imagesToProcess) {
-          const parsedImg = this._img(img);
-          if (parsedImg) {
-            attachments.push({
-              id: Math.random().toString(36).substring(7),
-              name: "attachment.jpg",
-              type: "image/jpeg",
-              url: parsedImg.type === "url" ? parsedImg.url : parsedImg.data
-            });
-          }
-        }
+      const attachments = await this._media(media);
+      const msgData = this._msg(prompt, messages);
+      let finalMessage = msgData?.text?.trim() || "";
+      if (!finalMessage && attachments?.length > 0) {
+        finalMessage = "What do you see in this image?";
       }
-      const currentSessionId = rest?.sessionId || this.sid || null;
+      if (!finalMessage && !attachments) {
+        console.log("[GptAnon] Validasi gagal: prompt, messages, atau media wajib diisi.");
+        return {
+          status: false,
+          result: null,
+          chunks: [],
+          state: this._encState(),
+          error: 'Input required: "prompt", "messages", or "media" must be provided.'
+        };
+      }
+      await this._init();
+      const validModel = await this._val(model);
+      console.log("[GptAnon] Menggunakan model:", validModel);
       const payload = {
-        message: prompt || "",
-        modelIds: Array.isArray(models) ? models : [models],
-        deepSearchEnabled: rest?.deepSearchEnabled || false,
-        ...attachments.length ? {
-          attachments: attachments
+        message: finalMessage,
+        modelIds: [validModel],
+        deepSearchEnabled: rest?.deepSearchEnabled ? true : false,
+        attachments: attachments ? attachments : undefined,
+        ...this.sessionId ? {
+          sessionId: this.sessionId
         } : {},
-        ...currentSessionId ? {
-          sessionId: currentSessionId
-        } : {}
+        ...rest
       };
-      this._log("Mengirim request payload stream...");
-      const res = await this.ax.post("/api/chat/stream", payload, {
-        headers: {
+      const streamHeaders = this._hdr({
+        extra: {
           accept: "*/*",
           "content-type": "application/json",
-          cookie: this.ck || "",
           origin: "https://gptanon.com",
+          priority: "u=1, i",
           referer: "https://gptanon.com/chat",
-          "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
-        },
-        responseType: "stream"
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "same-origin",
+          "x-posthog-distinct-id": this.did,
+          "x-posthog-session-id": this.sid,
+          "x-posthog-window-id": this.wid
+        }
       });
-      let fullText = "";
-      const tokenChunks = [];
-      await new Promise((resolve, reject) => {
+      console.log("[GptAnon] Mengirim pesan ke stream endpoint...");
+      const res = await this.http.post("/api/chat/stream", payload, {
+        responseType: "stream",
+        headers: streamHeaders
+      });
+      if (res?.status < 200 || res?.status >= 300) {
+        const errPayload = await this._readStream(res?.data);
+        console.log(`[GptAnon] Stream HTTP Error (${res?.status}):`, errPayload);
+        return {
+          status: false,
+          result: null,
+          chunks: [],
+          state: this._encState(),
+          error: errPayload || `HTTP ${res?.status}`
+        };
+      }
+      console.log("[GptAnon] Membaca stream respon...");
+      const chunks = [];
+      let completeText = "";
+      let collectedTokens = "";
+      const streamResult = await new Promise(resolve => {
         let buffer = "";
-        res.data.on("data", chunk => {
-          buffer += chunk.toString();
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed || !trimmed.startsWith("data: ")) continue;
-            const rawJson = trimmed.slice(6);
-            try {
-              const parsed = JSON.parse(rawJson);
-              if (parsed?.type === "session" && parsed?.sessionId) {
-                this.sid = parsed.sessionId;
-                this._log("Session ID baru berhasil dikunci:", this.sid);
+        res?.data?.on("data", chunk => {
+          try {
+            buffer += chunk.toString();
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                const rawJson = line.slice(6).trim();
+                if (!rawJson || rawJson === "[DONE]") continue;
+                const parsed = JSON.parse(rawJson);
+                chunks.push(parsed);
+                if (parsed?.type === "session" && parsed?.sessionId) {
+                  this.sessionId = parsed.sessionId;
+                } else if (parsed?.type === "token" && parsed?.token) {
+                  collectedTokens += parsed.token;
+                } else if (parsed?.type === "complete" && parsed?.content) {
+                  completeText = parsed.content;
+                }
               }
-              if (parsed?.type === "token" && parsed?.token) {
-                fullText += parsed.token;
-                tokenChunks.push(parsed.token);
-              }
-              if (parsed?.type === "complete" && parsed?.content) {
-                fullText = parsed.content;
-              }
-            } catch {}
-          }
+            }
+          } catch {}
         });
-        res.data.on("end", () => resolve());
-        res.data.on("error", err => reject(err));
+        res?.data?.on("end", () => {
+          const finalResult = completeText || collectedTokens;
+          resolve({
+            ok: true,
+            result: finalResult
+          });
+        });
+        res?.data?.on("error", err => {
+          console.log("[GptAnon] Stream error:", err?.message);
+          resolve({
+            ok: false,
+            error: err?.message
+          });
+        });
       });
+      const isOk = streamResult?.ok ? true : false;
+      const currentState = this._encState();
+      console.log("[GptAnon] Selesai memproses stream. Total chunks:", chunks.length);
       return {
-        status: true,
-        result: fullText,
-        chunks: tokenChunks,
-        state: this._save()
+        status: isOk,
+        result: streamResult?.result || null,
+        chunks: chunks,
+        state: currentState
       };
     } catch (err) {
-      this._log("Error pada proses chat:", err?.response?.data || err?.message);
+      console.log("[GptAnon] Error saat eksekusi chat:", err?.message);
       return {
         status: false,
-        result: err?.response?.data || err?.message,
+        result: null,
         chunks: [],
-        state: this._save()
+        state: this._encState(),
+        error: err?.message
       };
     }
   }

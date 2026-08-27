@@ -125,7 +125,7 @@ class LupinAI {
       }
       if (!this.user) await this.profile();
       const allModels = await this.models();
-      const selectedModelName = model || "fal-ai/sora-2/text-to-video/pro";
+      const selectedModelName = model || "fal-ai/nano-banana";
       const modelSpec = allModels.find(m => m?.aiName?.toLowerCase() === selectedModelName?.toLowerCase() || m?.id === selectedModelName);
       const validRatios = modelSpec?.ratios ? modelSpec.ratios.split(",").map(r => r.trim()) : ["16:9", "9:16"];
       const validDurations = modelSpec?.durations ? modelSpec.durations.split(",").map(d => d.trim()) : ["4"];
