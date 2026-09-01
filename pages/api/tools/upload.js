@@ -1,1223 +1,1524 @@
-import fetch from "node-fetch";
-import {
-  v4 as uuidv4
-} from "uuid";
 import crypto from "crypto";
-import {
-  FormData,
-  Blob
-} from "formdata-node";
-import {
-  fileTypeFromBuffer
-} from "file-type";
+import FormData from "form-data";
+import pkg from "file-type";
+const {
+  fromBuffer: fileTypeFromBuffer
+} = pkg;
 import axios from "axios";
-import fakeUa from "fake-useragent";
 import * as cheerio from "cheerio";
-import chalk from "chalk";
-import _ from "lodash";
 import multer from "multer";
-const referer = "https://krakenfiles.com";
-const uloadUrlRegexStr = /url: "([^"]+)"/;
-const generateSlug = crypto.createHash("md5").update(`${Date.now()}-${uuidv4()}`).digest("hex").substring(0, 8);
-const createFormData = async (content, fieldName) => {
-  const {
-    ext,
-    mime
-  } = await fileTypeFromBuffer(content) || {
-    ext: "bin",
-    mime: "application/octet-stream"
-  };
-  const blob = new Blob([content], {
-    type: mime || "application/octet-stream"
-  });
-  const formData = new FormData();
-  formData.append(fieldName, blob, `${generateSlug}.${ext || "bin"}`);
-  return {
-    formData: formData,
-    ext: ext
-  };
-};
-const handleError = (error, spinner) => {
-  spinner.fail(chalk.red("Failed"));
-  console.error(chalk.red("Error:"), error.message);
-  throw error;
-};
-const createSpinner = text => {
-  const frames = ["-", "\\", "|", "/"];
-  let i = 0,
-    timer;
-  const spinner = {
-    start: msg => {
-      text = msg || text;
-      process.stdout.write("[?25l");
-      timer = setInterval(() => {
-        process.stdout.write(`\r${frames[i++ % 4]} ${text}`);
-      }, 100);
-      return spinner;
-    },
-    stop: (s, msg) => {
-      clearInterval(timer);
-      process.stdout.write(`\r${s} ${msg || text}\n\x1B[?25h`);
-      return spinner;
-    },
-    succeed: m => spinner.stop("v", m),
-    fail: m => spinner.stop("x", m)
-  };
-  return spinner;
-};
-const Provider = ["Catbox", "Litterbox", "Doodstream", "Fexnet", "DOffice", "Bash", "FileDitch", "Filebin", "Fileio", "Filezone", "FreeImage", "Gofile", "Gozic", "Hostfile", "Imgbb", "Kitc", "Kraken", "Leopard", "Poners", "Kappa", "Shz", "MediaUpload", "Eax", "Nullbyte", "Vello", "Lusia", "Pomf2", "Sazumi", "Sohu", "Gizai", "PhoTo", "Sojib", "Instantiated", "Exonity", "Zcy", "BltokProject", "Maricon", "Nauval", "Supa", "Knowee", "Puticu", "Stylar", "Telegraph", "Tmpfiles", "Cloudmini", "Babup", "Transfersh", "Ucarecdn", "Uguu", "UploadEE", "Uploadify", "Videy", "Uplider", "ZippyShare", "Quax", "Aceimg"];
+const Provider = ["Catbox", "Litterbox", "Doodstream", "Fexnet", "DOffice", "Bash", "FileDitch", "Filebin", "Fileio", "Filezone", "FreeImage", "Gofile", "Gozic", "Hostfile", "Imgbb", "Kitc", "Kraken", "Leopard", "Poners", "Kappa", "Shz", "MediaUpload", "Eax", "Nullbyte", "Vello", "Lusia", "Pomf2", "Sazumi", "Sohu", "Gizai", "PhoTo", "Sojib", "Instantiated", "Exonity", "Zcy", "BltokProject", "Maricon", "Nauval", "PhotoToUrl", "TmpfileLink", "DropMeAFile", "ImageUrlGen", "Knowee", "Puticu", "Stylar", "Telegraph", "Tmpfiles", "Cloudmini", "Babup", "Transfersh", "Ucarecdn", "Uguu", "UploadEE", "Uploadify", "Videy", "Uplider", "ZippyShare", "Quax", "Aceimg"];
 class Uploader {
   constructor() {
     this.Provider = Provider;
+    this._referer = "https://krakenfiles.com";
+    this._uloadUrlRegexStr = /url: "([^"]+)"/;
+    this._http = axios.create({
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
+      },
+      timeout: 6e4
+    });
+  }
+  _generateSlug() {
+    return crypto.createHash("md5").update(`${Date.now()}-${crypto.randomUUID()}`).digest("hex").substring(0, 8);
+  }
+  async _createFormData(content, fieldName) {
+    const fileInfo = await fileTypeFromBuffer(content);
+    const ext = fileInfo?.ext || "bin";
+    const mime = fileInfo?.mime || "application/octet-stream";
+    const filename = `${this._generateSlug()}.${ext}`;
+    const formData = new FormData();
+    formData.append(fieldName, content, {
+      filename: filename,
+      contentType: mime
+    });
+    return {
+      formData: formData,
+      ext: ext,
+      mime: mime,
+      filename: filename
+    };
+  }
+  _formatBytes(bytes) {
+    if (bytes === 0) return "0 B";
+    const units = ["B", "KB", "MB", "GB", "TB", "PB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${units[i]}`;
+  }
+  async _getBufferInfo(buffer) {
+    try {
+      if (!Buffer.isBuffer(buffer)) {
+        return {
+          valid: false,
+          error: "Input bukan Buffer"
+        };
+      }
+      const info = await fileTypeFromBuffer(buffer);
+      const length = buffer.length;
+      return {
+        valid: true,
+        length: length,
+        formatted: this._formatBytes(length),
+        mime: info?.mime || "unknown",
+        ext: info?.ext || "unknown",
+        preview: buffer.slice(0, 16).toString("hex").toUpperCase()
+      };
+    } catch (e) {
+      return {
+        valid: false,
+        error: e.message
+      };
+    }
   }
   async Puticu(content) {
-    const spinner = createSpinner("Uploading to Puticu").start();
+    console.log("[Puticu] Mengunggah file...");
     try {
-      const response = await fetch("https://put.icu/upload/", {
-        method: "PUT",
-        body: content,
+      const response = await this._http.put("https://put.icu/upload/", content, {
         headers: {
-          "User-Agent": fakeUa(),
           Accept: "application/json"
         }
       });
-      spinner.succeed(chalk.green("Uploaded to Puticu"));
-      const result = await response.json();
-      return result.direct_url;
+      console.log("[Puticu] Berhasil diunggah.");
+      return response.data?.direct_url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Puticu] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Sohu(content) {
-    const spinner = createSpinner("Uploading to Sohu").start();
+    console.log("[Sohu] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://changyan.sohu.com/api/2/comment/attachment", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://changyan.sohu.com/api/2/comment/attachment", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Sohu"));
-      const result = await response.json();
-      return result.url;
+      console.log("[Sohu] Berhasil diunggah.");
+      return response.data?.url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Sohu] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Pomf2(content) {
-    const spinner = createSpinner("Uploading to Pomf2").start();
+    console.log("[Pomf2] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "files[]"), res = await fetch("https://pomf2.lain.la/upload.php", {
-        method: "POST",
-        body: formData
-      }), json = await res.json();
-      if (!json.success) throw json;
-      return spinner.succeed(chalk.green("Uploaded to Pomf2")), json.files[0]?.url;
+      } = await this._createFormData(content, "files[]");
+      const response = await this._http.post("https://pomf2.lain.la/upload.php", formData, {
+        headers: formData.getHeaders()
+      });
+      if (!response.data?.success) {
+        return {
+          status: false,
+          message: "Upload failed on Pomf2"
+        };
+      }
+      console.log("[Pomf2] Berhasil diunggah.");
+      return response.data?.files[0]?.url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Pomf2] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Gizai(content) {
-    const spinner = createSpinner("Uploading to Giz.ai").start();
+    console.log("[Gizai] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://app.giz.ai/api/tempFiles", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://app.giz.ai/api/tempFiles", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Giz.ai"));
-      const result = await response.text();
-      return result;
+      console.log("[Gizai] Berhasil diunggah.");
+      return response.data;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Gizai] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async PhoTo(content) {
-    const spinner = createSpinner("Uploading to pho.to").start();
+    console.log("[PhoTo] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://temp.ws.pho.to/upload.php", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://temp.ws.pho.to/upload.php", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to pho.to"));
-      const result = await response.text();
-      return result;
+      console.log("[PhoTo] Berhasil diunggah.");
+      return response.data;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[PhoTo] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Catbox(content) {
-    const spinner = createSpinner("Uploading to Catbox.moe").start();
+    console.log("[Catbox] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "fileToUpload");
+      } = await this._createFormData(content, "fileToUpload");
       formData.append("reqtype", "fileupload");
-      const response = await fetch("https://catbox.moe/user/api.php", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      const response = await this._http.post("https://catbox.moe/user/api.php", formData, {
+        headers: formData.getHeaders()
       });
-      return spinner.succeed(chalk.green("Uploaded to Catbox.moe")), await response.text();
+      console.log("[Catbox] Berhasil diunggah.");
+      return response.data;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Catbox] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Litterbox(content) {
-    const spinner = createSpinner("Uploading to Litterbox").start();
+    console.log("[Litterbox] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "fileToUpload");
+      } = await this._createFormData(content, "fileToUpload");
       formData.append("reqtype", "fileupload");
       formData.append("time", "72h");
-      const response = await fetch("https://litterbox.catbox.moe/resources/internals/api.php", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      const response = await this._http.post("https://litterbox.catbox.moe/resources/internals/api.php", formData, {
+        headers: formData.getHeaders()
       });
-      return spinner.succeed(chalk.green("Uploaded to Litterbox")), await response.text();
+      console.log("[Litterbox] Berhasil diunggah.");
+      return response.data;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Litterbox] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Telegraph(content) {
-    const spinner = createSpinner("Uploading to Telegra.ph").start();
+    console.log("[Telegraph] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), res = await fetch("https://telegra.ph/upload", {
-        method: "POST",
-        body: formData
-      }), img = await res.json();
-      if (img.error) throw img.error;
-      return spinner.succeed(chalk.green("Uploaded to Telegra.ph")), `https://telegra.ph${img[0]?.src}`;
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://telegra.ph/upload", formData, {
+        headers: formData.getHeaders()
+      });
+      if (response.data?.error) {
+        return {
+          status: false,
+          message: response.data.error
+        };
+      }
+      console.log("[Telegraph] Berhasil diunggah.");
+      return `https://telegra.ph${response.data[0]?.src}`;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Telegraph] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Ucarecdn(content) {
-    const spinner = createSpinner("Uploading to Ucarecdn").start();
+    console.log("[Ucarecdn] Mengunggah file...");
     try {
       const {
         formData,
         ext
-      } = await createFormData(content, "file");
-      formData.append("UPLOADCARE_PUB_KEY", "demopublickey"), formData.append("UPLOADCARE_STORE", "1");
-      const response = await fetch("https://upload.uploadcare.com/base/", {
-          method: "POST",
-          body: formData,
-          headers: {
-            "User-Agent": fakeUa()
-          }
-        }),
-        {
-          file
-        } = await response.json();
-      return spinner.succeed(chalk.green("Uploaded to Ucarecdn")), `https://ucarecdn.com/${file}/${generateSlug}.${ext || "bin"}`;
+      } = await this._createFormData(content, "file");
+      formData.append("UPLOADCARE_PUB_KEY", "demopublickey");
+      formData.append("UPLOADCARE_STORE", "1");
+      const response = await this._http.post("https://upload.uploadcare.com/base/", formData, {
+        headers: formData.getHeaders()
+      });
+      const {
+        file
+      } = response.data;
+      console.log("[Ucarecdn] Berhasil diunggah.");
+      return `https://ucarecdn.com/${file}/${this._generateSlug()}.${ext || "bin"}`;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Ucarecdn] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Transfersh(content) {
-    const spinner = createSpinner("Uploading to Transfer.sh").start();
+    console.log("[Transfersh] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://transfer.sh/", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://transfer.sh/", formData, {
+        headers: formData.getHeaders()
       });
-      return spinner.succeed(chalk.green("Uploaded to Transfer.sh")), await response.text();
+      console.log("[Transfersh] Berhasil diunggah.");
+      return response.data;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Transfersh] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async FreeImage(content) {
-    const spinner = createSpinner("Uploading to FreeImage.host").start();
+    console.log("[FreeImage] Mengunggah file...");
     try {
-      const apiKey = "6d207e02198a847aa98d0a2a901485a5",
-        uploadUrl = "https://freeimage.host/api/1/upload",
-        {
-          formData
-        } = new FormData();
-      formData.append("key", apiKey), formData.append("action", "upload"), formData.append("source", content.toString("base64"));
-      const response = await axios.post(uploadUrl, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data"
-        }
+      const apiKey = "6d207e02198a847aa98d0a2a901485a5";
+      const formData = new FormData();
+      formData.append("key", apiKey);
+      formData.append("action", "upload");
+      formData.append("source", content.toString("base64"));
+      const response = await this._http.post("https://freeimage.host/api/1/upload", formData, {
+        headers: formData.getHeaders()
       });
-      return spinner.succeed(chalk.green("Uploaded to FreeImage.host")), response.data?.image.url || response.data?.image?.image.url;
+      console.log("[FreeImage] Berhasil diunggah.");
+      return response.data?.image?.url || response.data?.image?.image?.url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[FreeImage] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Babup(content) {
-    const spinner = createSpinner("Uploading to Babup").start();
+    console.log("[Babup] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file_1_");
+      } = await this._createFormData(content, "file_1_");
       formData.append("submitr", "رفع");
-      const uploadResponse = await fetch("https://www.babup.com/", {
-        method: "POST",
-        body: formData
+      const uploadResponse = await this._http.post("https://www.babup.com/", formData, {
+        headers: formData.getHeaders()
       });
-      const output = await uploadResponse.text();
+      const output = uploadResponse.data;
       const regex = /do\.php\?.*?=(\d+)/g;
       const id = [...output.matchAll(regex)].map(match => match[1])[0];
-      const downloadUrl = `https://www.babup.com/do.php?down=${id}`;
-      const referer = `https://www.babup.com/do.php?id=${id}`;
-      const result = (await fetch(downloadUrl, {
-        headers: {
-          Referer: referer
-        }
-      }))?.url;
-      return spinner.succeed(chalk.green("Uploaded to Babup")), id ? result : output;
+      if (id) {
+        const downloadUrl = `https://www.babup.com/do.php?down=${id}`;
+        const refererUrl = `https://www.babup.com/do.php?id=${id}`;
+        const res = await this._http.get(downloadUrl, {
+          headers: {
+            Referer: refererUrl
+          }
+        });
+        console.log("[Babup] Berhasil diunggah.");
+        return res.request?.res?.responseUrl || downloadUrl;
+      }
+      console.log("[Babup] Berhasil diunggah.");
+      return output;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Babup] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Tmpfiles(content) {
-    const spinner = createSpinner("Uploading to Tmpfiles.org").start();
+    console.log("[Tmpfiles] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://tmpfiles.org/api/v1/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://tmpfiles.org/api/v1/upload", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Tmpfiles.org"));
-      const result = await response.json(),
-        originalURL = result?.data?.url;
-      return originalURL ? `https://tmpfiles.org/dl/${originalURL.split("/").slice(-2).join("/")}` : null;
+      const originalURL = response.data?.data?.url;
+      if (!originalURL) {
+        return {
+          status: false,
+          message: "Gagal mendapatkan URL dari respons Tmpfiles"
+        };
+      }
+      const pageRes = await this._http.get(originalURL);
+      const $ = cheerio.load(pageRes.data);
+      const directURL = $("a.download").attr("href") || $("#img_preview").attr("src");
+      if (!directURL) {
+        const fallbackURL = `https://tmpfiles.org/dl/${originalURL.split("/").slice(-2).join("/")}`;
+        console.log("[Tmpfiles] Berhasil diunggah (fallback url).");
+        return fallbackURL;
+      }
+      console.log("[Tmpfiles] Berhasil diunggah.");
+      return directURL;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Tmpfiles] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Cloudmini(content) {
-    const spinner = createSpinner("Uploading to Cloudmini").start();
+    console.log("[Cloudmini] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://files.cloudmini.net/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://files.cloudmini.net/upload", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Cloudmini"));
-      const result = await response.json(),
-        originalURL = result?.filename;
-      return originalURL ? `https://files.cloudmini.net/download/${filename}` : null;
+      const filename = response.data?.filename;
+      console.log("[Cloudmini] Berhasil diunggah.");
+      return filename ? `https://files.cloudmini.net/download/${filename}` : null;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Cloudmini] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Vello(content) {
-    const spinner = createSpinner("Uploading to Vello").start();
+    console.log("[Vello] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file");
-      const response = await fetch("https://api.vello.ai/upload", {
-          method: "POST",
-          body: formData,
-          headers: {
-            "User-Agent": fakeUa()
-          }
-        }),
-        {
-          sid
-        } = JSON.parse(await response.text());
-      return spinner.succeed(chalk.green("Uploaded to Vello")), `https://d3cflkbt5y83mw.cloudfront.net/files/${sid}`;
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://api.vello.ai/upload", formData, {
+        headers: formData.getHeaders()
+      });
+      const sid = typeof response.data === "string" ? JSON.parse(response.data).sid : response.data.sid;
+      console.log("[Vello] Berhasil diunggah.");
+      return `https://d3cflkbt5y83mw.cloudfront.net/files/${sid}`;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Vello] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Lusia(content) {
-    const spinner = createSpinner("Uploading to Lusia").start();
+    console.log("[Lusia] Mengunggah file...");
     try {
       const {
-        formData,
-        ext
-      } = await createFormData(content, "file");
+        formData
+      } = await this._createFormData(content, "file");
       formData.append("expireAfter", "24");
       formData.append("burn", "false");
-      const getToken = await (await fetch("https://litter.lusia.moe/post/token", {
-          method: "GET"
-        })).json(),
-        response = await fetch(`https://litter.lusia.moe/post/upload?token=${getToken?.token}`, {
-          method: "POST",
-          body: formData,
-          headers: {
-            "User-Agent": fakeUa()
-          }
-        });
-      spinner.succeed(chalk.green("Uploaded to Lusia"));
-      const result = await response.json();
-      return `https://litter.lusia.moe/${result.path}`;
+      const getToken = await this._http.get("https://litter.lusia.moe/post/token");
+      const response = await this._http.post(`https://litter.lusia.moe/post/upload?token=${getToken.data?.token}`, formData, {
+        headers: formData.getHeaders()
+      });
+      console.log("[Lusia] Berhasil diunggah.");
+      return `https://litter.lusia.moe/${response.data.path}`;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Lusia] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Nullbyte(content) {
-    const spinner = createSpinner("Uploading to 0x0.st").start();
+    console.log("[Nullbyte] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("http://0x0.st", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("http://0x0.st", formData, {
+        headers: formData.getHeaders()
       });
-      return spinner.succeed(chalk.green("Uploaded to 0x0.st")), await response.text();
+      console.log("[Nullbyte] Berhasil diunggah.");
+      return response.data;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Nullbyte] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Kraken(content) {
-    const spinner = createSpinner("Uploading to Krakenfiles.com").start();
+    console.log("[Kraken] Mengunggah file...");
     try {
       const {
         data
-      } = await axios.get(referer), uploadUrl = data?.match(uloadUrlRegexStr)?.[1];
-      if (!uploadUrl) throw new Error("No regex match.");
+      } = await this._http.get(this._referer);
+      const uploadUrl = data?.match(this._uloadUrlRegexStr)?.[1];
+      if (!uploadUrl) {
+        return {
+          status: false,
+          message: "URL upload tidak ditemukan pada Krakenfiles"
+        };
+      }
       const {
         formData
-      } = await createFormData(content, "files[]"), response = await axios.post(uploadUrl, formData, {
+      } = await this._createFormData(content, "files[]");
+      const response = await this._http.post(uploadUrl, formData, {
         headers: {
-          Referer: referer,
-          "Content-Type": "multipart/form-data"
+          Referer: this._referer,
+          ...formData.getHeaders()
         }
-      }), {
-        files
-      } = response.data, file = files[0];
-      spinner.succeed(chalk.green("Uploaded to Krakenfiles.com"));
-      const html = await (await fetch(referer + file.url)).text();
-      return cheerio.load(html)("#link1").val();
+      });
+      const file = response.data?.files?.[0];
+      const htmlRes = await this._http.get(this._referer + file.url);
+      console.log("[Kraken] Berhasil diunggah.");
+      return cheerio.load(htmlRes.data)("#link1").val();
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Kraken] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Leopard(content) {
-    const spinner = createSpinner("Uploading to Leopard Hosting").start();
+    console.log("[Leopard] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "uploadContent");
+      } = await this._createFormData(content, "uploadContent");
       formData.append("showname", "yes");
       formData.append("password", "");
-      const response = await axios.post("https://leopard.hosting.pecon.us/upload.php", formData, {
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      const response = await this._http.post("https://leopard.hosting.pecon.us/upload.php", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Leopard Hosting"));
-      const html = response.data;
-      const $ = cheerio.load(html);
+      const $ = cheerio.load(response.data);
       const downloadLink = $(".pageContainer a").first().attr("href");
-      if (!downloadLink) throw new Error("Gagal mendapatkan link download dari respons.");
+      if (!downloadLink) {
+        return {
+          status: false,
+          message: "Gagal mendapatkan link download dari Leopard Hosting"
+        };
+      }
+      console.log("[Leopard] Berhasil diunggah.");
       return downloadLink;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Leopard] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Poners(content) {
-    const spinner = createSpinner("Uploading to Pone.rs").start();
+    console.log("[Poners] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "files[]");
-      const response = await axios.post("https://pone.rs/upload.php", formData, {
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "files[]");
+      const response = await this._http.post("https://pone.rs/upload.php", formData, {
+        headers: formData.getHeaders()
       });
       const resData = response.data;
-      if (!resData.success || !resData.files || resData.files.length === 0) {
-        throw new Error("Gagal mengupload atau format respons tidak sesuai.");
+      if (!resData?.success || !resData?.files || resData.files.length === 0) {
+        return {
+          status: false,
+          message: "Gagal mengupload atau format respons tidak sesuai dari Pone.rs"
+        };
       }
-      spinner.succeed(chalk.green("Uploaded to Pone.rs"));
+      console.log("[Poners] Berhasil diunggah.");
       return resData.files[0].url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Poners] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Kappa(content) {
-    const spinner = createSpinner("Uploading to Kappa.lol").start();
+    console.log("[Kappa] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file");
-      const response = await axios.post("https://kappa.lol/api/upload", formData, {
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://kappa.lol/api/upload", formData, {
+        headers: formData.getHeaders()
       });
-      const resData = response.data;
-      const url = resData?.link || null;
-      if (!url) throw new Error("Gagal mendapatkan link download dari respons.");
-      spinner.succeed(chalk.green("Uploaded to Kappa.lol"));
+      const url = response.data?.link;
+      if (!url) {
+        return {
+          status: false,
+          message: "Gagal mendapatkan link download dari Kappa.lol"
+        };
+      }
+      console.log("[Kappa] Berhasil diunggah.");
       return url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Kappa] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Shz(content) {
-    const spinner = createSpinner("Uploading to Shz.al").start();
+    console.log("[Shz] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "c");
+      } = await this._createFormData(content, "c");
       formData.append("e", "7d");
-      const response = await axios.post("https://shz.al/", formData, {
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      const response = await this._http.post("https://shz.al/", formData, {
+        headers: formData.getHeaders()
       });
       const {
         url
-      } = response.data;
-      if (!url) throw new Error("Gagal mendapatkan URL dari response.");
-      spinner.succeed(chalk.green("Uploaded to Shz.al"));
+      } = response.data || {};
+      if (!url) {
+        return {
+          status: false,
+          message: "Gagal mendapatkan URL dari Shz.al"
+        };
+      }
+      console.log("[Shz] Berhasil diunggah.");
       return url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Shz] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Hostfile(content) {
-    const spinner = createSpinner("Uploading to Hostfile.my.id").start();
+    console.log("[Hostfile] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://hostfile.my.id/api/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://hostfile.my.id/api/upload", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Hostfile.my.id"));
-      const base64Data = await response.text();
-      return JSON.parse(base64Data).url;
+      const base64Data = response.data;
+      console.log("[Hostfile] Berhasil diunggah.");
+      return typeof base64Data === "object" ? base64Data.url : JSON.parse(base64Data).url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Hostfile] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Gofile(content) {
-    const spinner = createSpinner("Uploading to Gofile.io").start();
+    console.log("[Gofile] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), getServer = await (await fetch("https://api.gofile.io/getServer", {
-        method: "GET"
-      })).json(), response = await fetch(`https://${getServer.data?.server}.gofile.io/uploadFile`, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const getServer = await this._http.get("https://api.gofile.io/getServer");
+      const response = await this._http.post(`https://${getServer.data?.data?.server}.gofile.io/uploadFile`, formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Gofile.io"));
-      const result = await response.json();
-      return `https://${getServer.data?.server}.gofile.io/download/${result.data?.fileId}/${result.data?.fileName}`;
+      const result = response.data;
+      console.log("[Gofile] Berhasil diunggah.");
+      return `https://${getServer.data?.data?.server}.gofile.io/download/${result.data?.fileId}/${result.data?.fileName}`;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Gofile] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Fileio(content) {
-    const spinner = createSpinner("Uploading to File.io").start();
+    console.log("[Fileio] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://file.io", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://file.io", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to File.io"));
-      return (await response.json()).link;
+      console.log("[Fileio] Berhasil diunggah.");
+      return response.data?.link;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Fileio] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Filebin(content) {
-    const spinner = createSpinner("Uploading to Filebin.net").start();
+    console.log("[Filebin] Mengunggah file...");
     try {
       const {
         formData,
         ext
-      } = await createFormData(content, "file"), uploadURL = `https://filebin.net/${(await fetch("https://filebin.net/").then(res => res.text())).match(/var\s+bin\s*=\s*['"]([^'"]+)['"]/)?.[1]}/${generateSlug}.${ext || "bin"}`, response = await fetch(uploadURL, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const homeRes = await this._http.get("https://filebin.net/");
+      const binId = homeRes.data.match(/var\s+bin\s*=\s*['"]([^'"]+)['"]/)?.[1];
+      const uploadURL = `https://filebin.net/${binId}/${this._generateSlug()}.${ext || "bin"}`;
+      const response = await this._http.post(uploadURL, formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Filebin.net"));
-      const output = await response.json();
+      const output = response.data;
+      console.log("[Filebin] Berhasil diunggah.");
       return `https://filebin.net/${output.bin?.id}/${output.file?.filename}`;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Filebin] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Fexnet(content) {
-    const spinner = createSpinner("Uploading to Fex.net").start();
+    console.log("[Fexnet] Mengunggah file...");
     try {
       const {
         formData,
         ext
-      } = await createFormData(content, "file");
-      formData.append("filename", `${generateSlug}.${ext || "bin"}`);
-      const response = await fetch("https://fexnet.zendesk.com/api/v2/uploads.json", {
-        method: "POST",
-        body: formData,
+      } = await this._createFormData(content, "file");
+      formData.append("filename", `${this._generateSlug()}.${ext || "bin"}`);
+      const auth = Buffer.from("as@fexnet.com/token:1RQO68P13pmqFXorJUKp4P").toString("base64");
+      const response = await this._http.post("https://fexnet.zendesk.com/api/v2/uploads.json", formData, {
         headers: {
-          "User-Agent": fakeUa(),
-          Authorization: `Basic ${btoa("as@fexnet.com/token:1RQO68P13pmqFXorJUKp4P")}`
+          ...formData.getHeaders(),
+          Authorization: `Basic ${auth}`
         }
       });
-      spinner.succeed(chalk.green("Uploaded to Fex.net"));
-      return (await response.json()).upload.attachment.content_url;
+      console.log("[Fexnet] Berhasil diunggah.");
+      return response.data?.upload?.attachment?.content_url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Fexnet] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async DOffice(content) {
-    const spinner = createSpinner("Uploading to DOffice").start();
+    console.log("[DOffice] Mengunggah file...");
     try {
       const {
-        formData,
-        ext
-      } = await createFormData(content, "file");
-      const response = await fetch("https://www.digitalofficepro.com/file-converter/assembly/upload-file.php", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+        formData
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://www.digitalofficepro.com/file-converter/assembly/upload-file.php", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to DOffice"));
-      const files = await response.text();
-      return `https://s3.us-west-2.amazonaws.com/temp.digitalofficepro.com/${files}`;
+      console.log("[DOffice] Berhasil diunggah.");
+      return `https://s3.us-west-2.amazonaws.com/temp.digitalofficepro.com/${response.data}`;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[DOffice] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Bash(content) {
-    const spinner = createSpinner("Uploading to Bash").start();
+    console.log("[Bash] Mengunggah file...");
     try {
       const {
-        formData,
-        ext
-      } = await createFormData(content, "file_1");
+        formData
+      } = await this._createFormData(content, "file_1");
       formData.append("json", "true");
-      const response = await fetch("https://bashupload.com/", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      const response = await this._http.post("https://bashupload.com/", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Bash"));
-      const files = JSON.parse(await response.text());
+      const files = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+      console.log("[Bash] Berhasil diunggah.");
       return files.file_1?.url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Bash] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async MediaUpload(content) {
-    const spinner = createSpinner("Uploading to Media-upload.net").start();
+    console.log("[MediaUpload] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "files[]"), response = await fetch("https://media-upload.net/php/ajax_upload_file.php", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "files[]");
+      const response = await this._http.post("https://media-upload.net/php/ajax_upload_file.php", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Media-upload.net"));
-      const files = await response.json();
-      return files.files[0]?.fileUrl;
+      console.log("[MediaUpload] Berhasil diunggah.");
+      return response.data?.files?.[0]?.fileUrl;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[MediaUpload] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Eax(content) {
-    const spinner = createSpinner("Uploading to Eax").start();
+    console.log("[Eax] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "files[]"), response = await fetch("https://pomf.eax.moe/upload.php", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "files[]");
+      const response = await this._http.post("https://pomf.eax.moe/upload.php", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Eax"));
-      const files = await response.json();
-      return files.files[0]?.url;
+      console.log("[Eax] Berhasil diunggah.");
+      return response.data?.files?.[0]?.url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Eax] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Sazumi(content) {
-    const spinner = createSpinner("Uploading to sazumi").start();
+    console.log("[Sazumi] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://cdn.sazumi.moe/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://cdn.sazumi.moe/upload", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to sazumi"));
-      return await response.text();
+      console.log("[Sazumi] Berhasil diunggah.");
+      return response.data;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Sazumi] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Imgbb(content, exp, key) {
-    const spinner = createSpinner("Uploading to Imgbb").start();
+    console.log("[Imgbb] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "image");
-      formData.append("key", key || "c93b7d1d3f7a145263d4651c46ba55e4"), formData.append("expiration", exp || 600);
-      const response = await fetch("https://api.imgbb.com/1/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "image");
+      formData.append("key", key || "c93b7d1d3f7a145263d4651c46ba55e4");
+      formData.append("expiration", exp || 600);
+      const response = await this._http.post("https://api.imgbb.com/1/upload", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Imgbb"));
-      const files = await response.json();
-      return files.data?.url;
+      console.log("[Imgbb] Berhasil diunggah.");
+      return response.data?.data?.url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Imgbb] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async FileDitch(content) {
-    const spinner = createSpinner("Uploading to FileDitch").start();
+    console.log("[FileDitch] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "files[]"), response = await fetch("https://up1.fileditch.com/upload.php", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "files[]");
+      const response = await this._http.post("https://up1.fileditch.com/upload.php", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to FileDitch"));
-      const files = await response.json();
-      return files.files[0]?.url;
+      console.log("[FileDitch] Berhasil diunggah.");
+      return response.data?.files?.[0]?.url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[FileDitch] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Uguu(content) {
-    const spinner = createSpinner("Uploading to Uguu").start();
+    console.log("[Uguu] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "files[]"), response = await fetch("https://uguu.se/upload?output=json", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "files[]");
+      const response = await this._http.post("https://uguu.se/upload?output=json", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Uguu"));
-      const files = await response.json();
-      return files.files[0]?.url;
+      console.log("[Uguu] Berhasil diunggah.");
+      return response.data?.files?.[0]?.url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Uguu] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Doodstream(content, key) {
-    const spinner = createSpinner("Uploading to Doodstream").start();
+    console.log("[Doodstream] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file");
-      formData.append("type", "submit"), formData.append("api_key", key || "13527p8pcv54of4yjeryk");
-      const response = await fetch((await (await fetch("https://doodapi.com/api/upload/server?key=" + (key || "13527p8pcv54of4yjeryk"))).json()).result, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      formData.append("type", "submit");
+      formData.append("api_key", key || "13527p8pcv54of4yjeryk");
+      const srvRes = await this._http.get("https://doodapi.com/api/upload/server?key=" + (key || "13527p8pcv54of4yjeryk"));
+      const uploadUrl = srvRes.data?.result;
+      const response = await this._http.post(uploadUrl, formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Doodstream"));
-      const files = await response.json();
-      return files.files[0]?.url;
+      console.log("[Doodstream] Berhasil diunggah.");
+      return response.data?.files?.[0]?.url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Doodstream] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Videy(content) {
-    const spinner = createSpinner("Uploading to Videy.co").start();
+    console.log("[Videy] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://videy.co/api/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://videy.co/api/upload", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Videy.co"));
-      const {
-        id
-      } = await response.json();
-      return `https://cdn.videy.co/${id}.mp4`;
+      console.log("[Videy] Berhasil diunggah.");
+      return `https://cdn.videy.co/${response.data?.id}.mp4`;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Videy] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Gozic(content) {
-    const spinner = createSpinner("Uploading to Gozic.vn").start();
+    console.log("[Gozic] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://appbanhang.gozic.vn/api/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://appbanhang.gozic.vn/api/upload", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Gozic.vn"));
-      const {
-        url: result
-      } = await response.json();
-      return result;
+      console.log("[Gozic] Berhasil diunggah.");
+      return response.data?.url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Gozic] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async UploadEE(content) {
-    const spinner = createSpinner("Uploading to Upload.ee").start();
+    console.log("[UploadEE] Mengunggah file...");
     try {
-      const baseUrl = "https://www.upload.ee",
-        response = await fetch(`${baseUrl}/ubr_link_upload.php?rnd_id=${Date.now()}`);
-      if (!response.ok) throw new Error("Failed to get upload link");
-      const uploadId = ((await response.text()).match(/startUpload\("(.+?)"/) || [])[1];
-      if (!uploadId) throw new Error("Unable to obtain Upload ID");
+      const baseUrl = "https://www.upload.ee";
+      const response = await this._http.get(`${baseUrl}/ubr_link_upload.php?rnd_id=${Date.now()}`);
+      const uploadId = (response.data.match(/startUpload\("(.+?)"/) || [])[1];
+      if (!uploadId) {
+        return {
+          status: false,
+          message: "Tidak dapat memperoleh Upload ID dari Upload.ee"
+        };
+      }
       const {
         formData
-      } = await createFormData(content, "upfile_0");
-      formData.append("link", ""), formData.append("email", ""), formData.append("category", "cat_file"),
-        formData.append("big_resize", "none"), formData.append("small_resize", "120x90");
-      const uploadResponse = await fetch(`${baseUrl}/cgi-bin/ubr_upload.pl?X-Progress-ID=${encodeURIComponent(uploadId)}&upload_id=${encodeURIComponent(uploadId)}`, {
-        method: "POST",
-        body: formData,
+      } = await this._createFormData(content, "upfile_0");
+      formData.append("link", "");
+      formData.append("email", "");
+      formData.append("category", "cat_file");
+      formData.append("big_resize", "none");
+      formData.append("small_resize", "120x90");
+      const uploadResponse = await this._http.post(`${baseUrl}/cgi-bin/ubr_upload.pl?X-Progress-ID=${encodeURIComponent(uploadId)}&upload_id=${encodeURIComponent(uploadId)}`, formData, {
         headers: {
-          Referer: baseUrl
+          Referer: baseUrl,
+          ...formData.getHeaders()
         }
       });
-      if (!uploadResponse.ok) throw new Error("File upload failed");
-      const firstData = await uploadResponse.text(),
-        viewUrl = cheerio.load(firstData)("input#file_src").val() || "";
-      if (!viewUrl) throw new Error("File upload failed");
-      const viewResponse = await fetch(viewUrl),
-        finalData = await viewResponse.text(),
-        downUrl = cheerio.load(finalData)("#d_l").attr("href") || "";
-      if (!downUrl) throw new Error("File upload failed");
-      return spinner.succeed(chalk.green("Uploaded to Upload.ee")), downUrl;
+      const viewUrl = cheerio.load(uploadResponse.data)("input#file_src").val() || "";
+      if (!viewUrl) {
+        return {
+          status: false,
+          message: "Proses upload gagal pada Upload.ee"
+        };
+      }
+      const viewResponse = await this._http.get(viewUrl);
+      const downUrl = cheerio.load(viewResponse.data)("#d_l").attr("href") || "";
+      if (!downUrl) {
+        return {
+          status: false,
+          message: "Gagal mendapatkan tautan unduhan dari Upload.ee"
+        };
+      }
+      console.log("[UploadEE] Berhasil diunggah.");
+      return downUrl;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[UploadEE] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Uploadify(content) {
-    const spinner = createSpinner("Uploading to Uploadify.net").start();
+    console.log("[Uploadify] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "files[]"), response = await fetch("https://uploadify.net/core/page/ajax/file_upload_handler.ajax.php?r=uploadify.net&p=https&csaKey1=1af7f41511fe40833ff1aa0505ace436a09dcb7e6e35788aaad2ef29d0331596&csaKey2=256b861c64ec1e4d1007eb16c68b3cfc5cb8170658b1053b7185653640bb3909", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "files[]");
+      const response = await this._http.post("https://uploadify.net/core/page/ajax/file_upload_handler.ajax.php?r=uploadify.net&p=https&csaKey1=1af7f41511fe40833ff1aa0505ace436a09dcb7e6e35788aaad2ef29d0331596&csaKey2=256b861c64ec1e4d1007eb16c68b3cfc5cb8170658b1053b7185653640bb3909", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Uploadify.net"));
-      const files = await response.json();
-      return files[0]?.url;
+      console.log("[Uploadify] Berhasil diunggah.");
+      return response.data?.[0]?.url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Uploadify] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Kitc(content) {
-    const spinner = createSpinner("Uploading to Ki.tc").start();
+    console.log("[Kitc] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://ki.tc/file/u/", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://ki.tc/file/u/", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Ki.tc"));
-      const result = await response.json();
-      return result.file?.link;
+      console.log("[Kitc] Berhasil diunggah.");
+      return response.data?.file?.link;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Kitc] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Stylar(content) {
-    const spinner = createSpinner("Uploading to Stylar.ai").start();
+    console.log("[Stylar] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://cdn.stylar.ai/api/v1/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://cdn.stylar.ai/api/v1/upload", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Stylar.ai"));
-      const result = await response.json();
-      return result?.file_path;
+      console.log("[Stylar] Berhasil diunggah.");
+      return response.data?.file_path;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Stylar] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Filezone(content) {
-    const spinner = createSpinner("Uploading to Filezone").start();
+    console.log("[Filezone] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://filezone.my.id/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://filezone.my.id/upload", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Filezone"));
-      const result = await response.json();
-      return result?.result?.url?.url_file;
+      console.log("[Filezone] Berhasil diunggah.");
+      return response.data?.result?.url?.url_file;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Filezone] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Sojib(content) {
-    const spinner = createSpinner("Uploading to Sojib").start();
+    console.log("[Sojib] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://chat-gpt.photos/api/uploadImage", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://chat-gpt.photos/api/uploadImage", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Sojib"));
-      const result = await response.json();
-      return result.location;
+      console.log("[Sojib] Berhasil diunggah.");
+      return response.data?.location;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Sojib] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Instantiated(content) {
-    const spinner = createSpinner("Uploading to Instantiated").start();
+    console.log("[Instantiated] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "fileName"), response = await fetch("https://instantiated.xyz/upload.php", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "fileName");
+      const response = await this._http.post("https://instantiated.xyz/upload.php", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Instantiated"));
-      const result = await response.json();
-      return result.url;
+      console.log("[Instantiated] Berhasil diunggah.");
+      return response.data?.url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Instantiated] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Uplider(content) {
-    const spinner = createSpinner("Uploading to Uplider").start();
+    console.log("[Uplider] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://uplider.my.id/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://uplider.my.id/upload", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Uplider"));
-      const {
-        url: res_url
-      } = await response.json();
-      return `https://uplider.my.id${res_url}`;
+      console.log("[Uplider] Berhasil diunggah.");
+      return `https://uplider.my.id${response.data?.url}`;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Uplider] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Exonity(content) {
-    const spinner = createSpinner("Uploading to Exonity").start();
+    console.log("[Exonity] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://exonity.tech/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://exonity.tech/upload", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Exonity"));
-      const result = await response.json();
-      return result.media_url || result.github_raw;
+      console.log("[Exonity] Berhasil diunggah.");
+      return response.data?.media_url || response.data?.github_raw;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Exonity] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Zcy(content) {
-    const spinner = createSpinner("Uploading to Zcy").start();
+    console.log("[Zcy] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "c");
+      } = await this._createFormData(content, "c");
       formData.append("e", "7d");
-      const response = await fetch("https://p.zcy.moe/", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      const response = await this._http.post("https://p.zcy.moe/", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Zcy"));
-      const files = await response.json();
-      return files?.url || files?.admin;
+      console.log("[Zcy] Berhasil diunggah.");
+      return response.data?.url || response.data?.admin;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Zcy] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async BltokProject(content) {
-    const spinner = createSpinner("Uploading to BltokProject").start();
+    console.log("[BltokProject] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://www.bltokproject.xyz/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://www.bltokproject.xyz/upload", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to BltokProject"));
-      const result = await response.text();
-      return result;
+      console.log("[BltokProject] Berhasil diunggah.");
+      return response.data;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[BltokProject] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Maricon(content) {
-    const spinner = createSpinner("Uploading to Maricon").start();
+    console.log("[Maricon] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://maricon.lol/-/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://maricon.lol/-/upload", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Maricon"));
-      const result = await response.json();
-      return result.linkExt;
+      console.log("[Maricon] Berhasil diunggah.");
+      return response.data?.linkExt;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Maricon] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Quax(content) {
-    const spinner = createSpinner("Uploading to Quax").start();
+    console.log("[Quax] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "files[]");
+      } = await this._createFormData(content, "files[]");
       formData.append("expiry", "30");
-      const response = await fetch("https://qu.ax/upload.php", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "User-Agent": fakeUa()
-        }
+      const response = await this._http.post("https://qu.ax/upload.php", formData, {
+        headers: formData.getHeaders()
       });
-      spinner.succeed(chalk.green("Uploaded to Quax"));
-      const result = await response.json();
-      return result?.files[0]?.url;
+      console.log("[Quax] Berhasil diunggah.");
+      return response.data?.files?.[0]?.url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Quax] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Nauval(content) {
-    const spinner = createSpinner("Uploading to Nauval").start();
+    console.log("[Nauval] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file");
+      } = await this._createFormData(content, "file");
       formData.append("filename", "");
       formData.append("expire_value", "24");
       formData.append("expire_unit", "");
-      const response = await fetch("https://nauval.cloud/upload", {
-          method: "POST",
-          body: formData,
-          headers: {
-            "User-Agent": fakeUa()
-          }
-        }),
-        {
-          file_url
-        } = await response.json();
-      return spinner.succeed(chalk.green("Uploaded to Nauval")), `${file_url}`;
+      const response = await this._http.post("https://nauval.cloud/upload", formData, {
+        headers: formData.getHeaders()
+      });
+      console.log("[Nauval] Berhasil diunggah.");
+      return response.data?.file_url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Nauval] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Aceimg(content) {
-    const spinner = createSpinner("Uploading to Aceimg").start();
+    console.log("[Aceimg] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file");
-      const response = await fetch("https://api.aceimg.com/api/upload", {
-          method: "POST",
-          body: formData,
-          headers: {
-            "User-Agent": fakeUa()
-          }
-        }),
-        {
-          link
-        } = await response.json();
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://api.aceimg.com/api/upload", formData, {
+        headers: formData.getHeaders()
+      });
+      const link = response.data?.link;
       const urlObject = new URL(link);
-      const searchParams = urlObject.search;
-      const urlParams = new URLSearchParams(searchParams);
-      const filename = urlParams.get("f");
-      return spinner.succeed(chalk.green("Uploaded to Aceimg")), `https://cdn.aceimg.com/${filename}`;
+      const filename = urlObject.searchParams.get("f");
+      console.log("[Aceimg] Berhasil diunggah.");
+      return `https://cdn.aceimg.com/${filename}`;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Aceimg] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
-  async Supa(content) {
-    const spinner = createSpinner("Uploading to Supa").start();
+  async PhotoToUrl(content) {
+    console.log("[PhotoToUrl] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "file"), response = await fetch("https://i.supa.sh/api/upload", {
-        method: "POST",
-        body: formData,
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://phototourl.com/api/upload", formData, {
         headers: {
-          "User-Agent": fakeUa()
+          ...formData.getHeaders(),
+          Origin: "https://phototourl.com",
+          Referer: "https://phototourl.com/"
         }
       });
-      spinner.succeed(chalk.green("Uploaded to Supa"));
-      const result = await response.json();
-      return result.link;
+      const directUrl = response.data?.url;
+      if (directUrl) {
+        console.log("[PhotoToUrl] Berhasil diunggah.");
+        return directUrl;
+      }
+      console.log("[PhotoToUrl] Berhasil diunggah.");
+      return response.data;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[PhotoToUrl] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
+    }
+  }
+  async TmpfileLink(content) {
+    console.log("[TmpfileLink] Mengunggah file...");
+    try {
+      const {
+        formData
+      } = await this._createFormData(content, "file");
+      const response = await this._http.post("https://tmpfile.link/api/upload", formData, {
+        headers: {
+          ...formData.getHeaders(),
+          Origin: "https://tmpfile.link",
+          Referer: "https://tmpfile.link/"
+        }
+      });
+      const downloadLink = response.data?.downloadLink || response.data?.downloadLinkEncoded;
+      if (downloadLink) {
+        console.log("[TmpfileLink] Berhasil diunggah.");
+        return downloadLink;
+      }
+      console.log("[TmpfileLink] Berhasil diunggah.");
+      return response.data;
+    } catch (error) {
+      console.error("[TmpfileLink] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
+    }
+  }
+  async DropMeAFile(content) {
+    console.log("[DropMeAFile] Mengunggah file...");
+    try {
+      const baseHeaders = {
+        Origin: "https://dropmeafile.com",
+        Referer: "https://dropmeafile.com/"
+      };
+      const sessionRes = await this._http.post("https://support2.lsdsoftware.com/dropmeafile", null, {
+        headers: baseHeaders
+      });
+      const folderId = sessionRes.data?.id;
+      if (!folderId) {
+        return {
+          status: false,
+          message: "Gagal membuat ID folder di DropMeAFile"
+        };
+      }
+      const {
+        formData
+      } = await this._createFormData(content, "files[]");
+      const uploadRes = await this._http.post(`https://support2.lsdsoftware.com/dropmeafile/${folderId}`, formData, {
+        headers: {
+          ...formData.getHeaders(),
+          ...baseHeaders
+        }
+      });
+      const fileData = Array.isArray(uploadRes.data) ? uploadRes.data[0] : uploadRes.data;
+      const fileId = fileData?.id;
+      if (!fileId) {
+        return {
+          status: false,
+          message: "Gagal mendapatkan ID file dari DropMeAFile"
+        };
+      }
+      const directUrl = `https://support2.lsdsoftware.com/dropmeafile/${folderId}/${fileId}`;
+      console.log("[DropMeAFile] Berhasil diunggah.");
+      return directUrl;
+    } catch (error) {
+      console.error("[DropMeAFile] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
+    }
+  }
+  async ImageUrlGen(content) {
+    console.log("[ImageUrlGen] Mengunggah file...");
+    try {
+      const fileInfo = await fileTypeFromBuffer(content);
+      const ext = fileInfo?.ext || "jpg";
+      const mime = fileInfo?.mime || "image/jpeg";
+      const filename = `${crypto.randomUUID()}.${ext}`;
+      const filesize = content.length;
+      const uploadUrl = `https://imageurlgenerator-upload.hrbrackishlifecarepvt.workers.dev/?filename=${encodeURIComponent(filename)}&filesize=${filesize}`;
+      const response = await this._http.post(uploadUrl, content, {
+        headers: {
+          "Content-Type": mime,
+          Origin: "https://www.imageurlgenerator.com",
+          Referer: "https://www.imageurlgenerator.com/"
+        }
+      });
+      console.log("[ImageUrlGen] Berhasil diunggah.");
+      return response.data?.url;
+    } catch (error) {
+      console.error("[ImageUrlGen] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async Knowee(content) {
-    const spinner = createSpinner("Uploading to Knowee").start();
+    console.log("[Knowee] Mengunggah file...");
     try {
       const {
         formData
-      } = await createFormData(content, "files"), response = await fetch("https://core.knowee.ai/api/databank/pub-files", {
-        method: "POST",
-        body: formData,
+      } = await this._createFormData(content, "files");
+      const response = await this._http.post("https://core.knowee.ai/api/databank/pub-files", formData, {
         headers: {
-          "User-Agent": fakeUa(),
+          ...formData.getHeaders(),
           Client: "web",
           "Device-Id": "9b5fe0d0-d92f-42d2-a461-eb30b63fa45e",
           "Update-Version": "0.1.0",
           Referer: "https://knowee.ai/webapp/homework/1b7562c3-e9ab-442d-9c00-4b0eea2310e3"
         }
       });
-      spinner.succeed(chalk.green("Uploaded to Knowee"));
-      const result = await response.json();
-      return result.data?.files[0]?.url;
+      console.log("[Knowee] Berhasil diunggah.");
+      return response.data?.data?.files?.[0]?.url;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[Knowee] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
   async ZippyShare(content) {
-    const spinner = createSpinner("Uploading to ZippyShare").start();
+    console.log("[ZippyShare] Mengunggah file...");
     try {
-      const {
-        formData
-      } = await createFormData(content, "file"), response = await fetch("https://api.zippysha.re/upload", {
-        method: "POST",
-        body: formData,
+      const fileInfo = await fileTypeFromBuffer(content);
+      const ext = fileInfo?.ext || "bin";
+      const mime = fileInfo?.mime || "application/octet-stream";
+      const filename = `${this._generateSlug()}.${ext}`;
+      const size = content.length;
+      let cookieJar = "";
+      const syncCookies = res => {
+        const raw = res?.headers?.["set-cookie"];
+        if (raw) {
+          const map = new Map();
+          if (cookieJar) {
+            cookieJar.split("; ").forEach(p => {
+              const [k, ...v] = p.split("=");
+              if (k) map.set(k.trim(), v.join("="));
+            });
+          }
+          raw.forEach(p => {
+            const [k, ...v] = p.split(";")[0].split("=");
+            if (k) map.set(k.trim(), v.join("="));
+          });
+          cookieJar = Array.from(map.entries()).map(([k, v]) => `${k}=${v}`).join("; ");
+        }
+      };
+      const homeRes = await this._http.get("https://zippyshare.day/");
+      syncCookies(homeRes);
+      let $ = cheerio.load(homeRes.data);
+      let csrfToken = $('meta[name="csrf-token"]').attr("content");
+      if (!csrfToken) {
+        return {
+          status: false,
+          message: "Gagal mendapatkan CSRF Token awal dari ZippyShare"
+        };
+      }
+      const presignRes = await this._http.post("https://zippyshare.day/upload/presign", {
+        filename: filename,
+        size: size,
+        mime: mime,
+        password: "",
+        upload_auto_delete: 14,
+        folder_id: null
+      }, {
         headers: {
-          "User-Agent": fakeUa()
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": csrfToken,
+          "X-Requested-With": "XMLHttpRequest",
+          Origin: "https://zippyshare.day",
+          Referer: "https://zippyshare.day/",
+          Cookie: cookieJar
         }
       });
-      spinner.succeed(chalk.green("Uploaded to ZippyShare"));
-      const result = await response.json();
-      const fullUrl = result.data.file.url.full;
-      const res_ = await fetch(fullUrl, {
-        method: "GET",
+      syncCookies(presignRes);
+      const presignData = presignRes.data;
+      if (presignData?.type !== "success" || !presignData?.presigned_url) {
+        return {
+          status: false,
+          message: presignData?.msg || "Presign gagal di ZippyShare"
+        };
+      }
+      await axios.put(presignData.presigned_url, content, {
         headers: {
-          "User-Agent": fakeUa()
+          "Content-Type": mime
         }
       });
-      const html = await res_.text();
-      const downloadUrl = html.match(/id="download-url"(?:.|\n)*?href="(.+?)"/)[1];
-      return downloadUrl;
+      const completeRes = await this._http.post("https://zippyshare.day/upload/complete", {
+        token: presignData.token,
+        mime: mime
+      }, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": csrfToken,
+          "X-Requested-With": "XMLHttpRequest",
+          Origin: "https://zippyshare.day",
+          Referer: "https://zippyshare.day/",
+          Cookie: cookieJar
+        }
+      });
+      syncCookies(completeRes);
+      const completeData = completeRes.data;
+      const fileCode = completeData?.download_id && completeData.download_id.replace("download_", "") || completeData?.download_link && completeData.download_link.match(/zippyshare\.day\/([a-zA-Z0-9]+)/)?.[1] || completeData?.preview_id && completeData.preview_id.replace("preview_", "") || completeData?.file_code;
+      if (!fileCode) {
+        return completeData?.download_link || completeData;
+      }
+      const filePageUrl = `https://zippyshare.day/${fileCode}/file`;
+      const filePageRes = await this._http.get(filePageUrl, {
+        headers: {
+          Referer: "https://zippyshare.day/",
+          Cookie: cookieJar
+        }
+      });
+      syncCookies(filePageRes);
+      $ = cheerio.load(filePageRes.data);
+      const pageCsrf = $('meta[name="csrf-token"]').attr("content");
+      if (pageCsrf) csrfToken = pageCsrf;
+      const dlCreateRes = await this._http.post(`https://zippyshare.day/${fileCode}/download/create`, {}, {
+        headers: {
+          Accept: "application/json, text/javascript, */*; q=0.01",
+          "X-CSRF-TOKEN": csrfToken,
+          "X-Requested-With": "XMLHttpRequest",
+          Origin: "https://zippyshare.day",
+          Referer: filePageUrl,
+          Cookie: cookieJar
+        }
+      });
+      const directLink = dlCreateRes.data?.download_link;
+      if (directLink) {
+        console.log("[ZippyShare] Berhasil diunggah & direct link didapatkan.");
+        return directLink;
+      }
+      console.log("[ZippyShare] Berhasil diunggah.");
+      return filePageUrl;
     } catch (error) {
-      handleError(error, spinner);
+      console.error("[ZippyShare] Gagal:", error.message);
+      return {
+        status: false,
+        message: error.message
+      };
     }
   }
 }
@@ -1233,42 +1534,15 @@ const upload = multer({
   },
   storage: multer.memoryStorage()
 });
-
-function formatBytes(bytes) {
-  if (bytes === 0) return "0 B";
-  const units = ["B", "KB", "MB", "GB", "TB", "PB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${units[i]}`;
-}
-async function getBufferInfo(buffer) {
-  try {
-    if (!Buffer.isBuffer(buffer)) throw new Error("Input bukan Buffer");
-    const info = await fileTypeFromBuffer(buffer);
-    const length = buffer.length;
-    return {
-      valid: true,
-      length: length,
-      formatted: formatBytes(length),
-      mime: info?.mime || "unknown",
-      ext: info?.ext || "unknown",
-      preview: buffer.slice(0, 16).toString("hex").toUpperCase()
-    };
-  } catch (e) {
-    return {
-      valid: false,
-      error: e.message
-    };
-  }
-}
 export default async function handler(req, res) {
   if (!["GET", "POST"].includes(req.method)) {
     return res.status(405).json({
       error: `Metode ${req.method} tidak diizinkan`
     });
   }
+  const uploader = new Uploader();
   if (req.method === "GET") {
-    const uploader = new Uploader();
-    const availableHosts = Object.getOwnPropertyNames(Object.getPrototypeOf(uploader)).filter(fn => typeof uploader[fn] === "function" && fn !== "constructor");
+    const availableHosts = Object.getOwnPropertyNames(Object.getPrototypeOf(uploader)).filter(fn => typeof uploader[fn] === "function" && fn !== "constructor" && !fn.startsWith("_"));
     return res.status(200).json({
       hosts: availableHosts
     });
@@ -1279,12 +1553,9 @@ export default async function handler(req, res) {
     let host;
     const contentType = req.headers["content-type"] || "";
     if (contentType.startsWith("multipart/form-data")) {
-      console.log("multipart upload");
       await new Promise((resolve, reject) => {
         upload.single("file")(req, res, err => {
-          if (err) {
-            return reject(err);
-          }
+          if (err) return reject(err);
           resolve();
         });
       });
@@ -1297,7 +1568,6 @@ export default async function handler(req, res) {
       fileName = req.file.originalname;
       host = req.body.host || req.query.host || "Tmpfiles";
     } else {
-      console.log("raw upload");
       let rawBody = "";
       await new Promise((resolve, reject) => {
         req.on("data", chunk => rawBody += chunk.toString());
@@ -1324,7 +1594,7 @@ export default async function handler(req, res) {
       if (urlRegex.test(media)) {
         const {
           data
-        } = await axios.get(media, {
+        } = await uploader._http.get(media, {
           responseType: "arraybuffer"
         });
         buffer = Buffer.from(data);
@@ -1350,32 +1620,28 @@ export default async function handler(req, res) {
         error: "Buffer kosong. Tidak dapat memproses file."
       });
     }
-    const uploader = new Uploader();
-    const availableHosts = Object.getOwnPropertyNames(Object.getPrototypeOf(uploader)).filter(fn => typeof uploader[fn] === "function" && fn !== "constructor");
+    const availableHosts = Object.getOwnPropertyNames(Object.getPrototypeOf(uploader)).filter(fn => typeof uploader[fn] === "function" && fn !== "constructor" && !fn.startsWith("_"));
     if (!availableHosts.includes(host)) {
       return res.status(400).json({
         error: `Penyedia tidak valid. Gunakan salah satu: ${availableHosts.join(", ")}`
       });
     }
-    console.log(chalk.blue(`Mengunggah ke ${host}...`));
-    try {
-      const result = await uploader[host](buffer, fileName);
-      const info = await getBufferInfo(buffer);
-      console.log(chalk.green(`Unggahan berhasil ke ${host}`));
-      return res.status(200).json({
-        result: result,
-        name: fileName,
-        host: host,
-        ...info
-      });
-    } catch (err) {
-      console.error(chalk.red(`Gagal unggah: ${err.message}`));
+    console.log(`[Handler] Memproses unggahan ke ${host}...`);
+    const result = await uploader[host](buffer, fileName);
+    if (result && typeof result === "object" && result.status === false) {
       return res.status(500).json({
-        error: `Gagal unggah: ${err.message}`
+        error: `Gagal unggah ke ${host}: ${result.message}`
       });
     }
+    const info = await uploader._getBufferInfo(buffer);
+    return res.status(200).json({
+      result: result,
+      name: fileName,
+      host: host,
+      ...info
+    });
   } catch (err) {
-    console.error("Kesalahan di handler:", err);
+    console.error("[Handler] Terjadi kesalahan:", err.message);
     if (err.message.includes("too large")) {
       return res.status(413).json({
         error: `Payload terlalu besar. Batas platform terlampaui. Pesan: ${err.message}`
