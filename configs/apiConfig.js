@@ -4,7 +4,7 @@ const apiConfig = {
   MONGODB_URI: env.MY_MONGODB_URI || "",
   DOMAIN_URL: env.MY_DOMAIN_URL || "wudysoft.my.id",
   DOMAIN_KOYEB: env.MY_DOMAIN_KOYEB || "wudysoft.koyeb.app",
-  DOMAIN_VERCEL: env.MY_DOMAIN_VERCEL || "koyeb-api-wudy-team.vercel.app",
+  DOMAIN_VERCEL: env.MY_DOMAIN_VERCEL || "koyeb-api-beta.vercel.app",
   EMAIL: env.MY_EMAIL || "wudysoft@mail.com",
   LIMIT_POINTS: Number(env.MY_LIMIT_POINTS) || 30,
   LIMIT_DURATION: Number(env.MY_LIMIT_DURATION) || 60,
