@@ -130,9 +130,9 @@ export default async function handler(req, res) {
       error: "Paramenter 'action' diperlukan.",
       allowed_actions: ["country", "create", "message"],
       usage: {
-        country: "GET /api/veepn-sms?action=country",
-        create: "GET /api/veepn-sms?action=create&country=russia",
-        message: "GET /api/veepn-sms?action=message&country=russia&number=79273719818&page=1&count=100"
+        country: "GET /?action=country",
+        create: "GET /?action=create&country=russia",
+        message: "GET /?action=message&country=russia&number=79273719818&page=1&count=100"
       }
     });
   }

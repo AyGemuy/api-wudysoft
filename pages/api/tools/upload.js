@@ -1,9 +1,7 @@
 import crypto from "crypto";
 import FormData from "form-data";
-import pkg from "file-type";
-const {
-  fromBuffer: fileTypeFromBuffer
-} = pkg;
+import * as fileType from "file-type";
+const fileTypeFromBuffer = fileType.fileTypeFromBuffer || fileType.fromBuffer || fileType.default?.fileTypeFromBuffer || fileType.default?.fromBuffer;
 import axios from "axios";
 import * as cheerio from "cheerio";
 import multer from "multer";

@@ -52,22 +52,19 @@ const MODELS = {
 };
 class RunWare {
   constructor() {
-    this.keys = ApiKey.runware || [];
-    this._idx = 0;
+    this.keys = Array.isArray(ApiKey.runware) ? ApiKey.runware : ApiKey.runware ? [ApiKey.runware] : [];
     this.http = axios.create({
-      baseURL: BASE
-    });
-    this.http.interceptors.request.use(cfg => {
-      cfg.headers["Authorization"] = `Bearer ${this.keys[this._idx]}`;
-      cfg.headers["Content-Type"] = "application/json";
-      cfg.headers["User-Agent"] = "okhttp/4.12.0";
-      cfg.headers["Accept"] = "application/json";
-      return cfg;
+      baseURL: BASE,
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "okhttp/4.12.0",
+        Accept: "application/json"
+      }
     });
   }
   models({
     type = ""
-  }) {
+  } = {}) {
     const list = Object.entries(MODELS).map(([key, val]) => ({
       key: key,
       ...val
@@ -83,6 +80,7 @@ class RunWare {
     height = 1024,
     steps = 4,
     CFGScale = 4,
+    key = "",
     ...rest
   } = {}) {
     try {
@@ -109,7 +107,7 @@ class RunWare {
           }
         };
       }
-      const taskUUID = crypto.randomUUID ? crypto.randomUUID() : `task-${Date.now()}`;
+      const taskUUID = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `task-${Date.now()}`;
       const taskPayload = {
         taskType: "imageInference",
         taskUUID: taskUUID,
@@ -133,25 +131,36 @@ class RunWare {
           taskPayload.negativePrompt = negativePrompt;
         }
       }
+      const keysToTry = key ? [key.trim()] : this.keys;
+      if (!keysToTry.length) {
+        throw new Error("API Key Runware tidak ditemukan.");
+      }
       let lastErr;
-      for (let i = 0; i < this.keys.length; i++) {
-        this._idx = i;
+      for (let i = 0; i < keysToTry.length; i++) {
+        const currentKey = keysToTry[i];
         try {
           console.log(`[SUBMIT RUNWARE] Mode=${isEditMode ? "i2i" : "t2i"} | Model=${model} | Key Index=${i}`);
           const {
             data
-          } = await this.http.post("/", [taskPayload]);
-          if (!data || data.length === 0) throw new Error("API Runware merespon dengan data kosong.");
+          } = await this.http.post("/", [taskPayload], {
+            headers: {
+              Authorization: `Bearer ${currentKey}`
+            }
+          });
+          if (!data || data.length === 0) {
+            throw new Error("API Runware merespon dengan data kosong.");
+          }
           return {
             status: "success",
             model: model,
             mode: isEditMode ? "i2i" : "t2i",
             task_id: taskUUID,
+            key_used: currentKey,
             data: data[0]
           };
         } catch (e) {
           lastErr = e;
-          console.warn(`[RETRY RUNWARE] Key index ${i} bermasalah. Mencoba pencadangan...`);
+          console.warn(`[RETRY RUNWARE] Key index ${i} bermasalah: ${e.message}`);
         }
       }
       throw lastErr;
@@ -163,12 +172,15 @@ class RunWare {
     }
   }
   async status({
-    task_id = ""
+    task_id = "",
+    key = ""
   } = {}) {
+    const activeKey = key ? key.trim() : this.keys[0] || null;
     return {
       status: "success",
       message: "Runware menggunakan transaksi synchronous (sync). Gambar langsung dikembalikan di endpoint generate.",
-      task_id: task_id
+      task_id: task_id,
+      key_used: activeKey
     };
   }
 }
@@ -188,12 +200,16 @@ export default async function handler(req, res) {
   const api = new RunWare();
   try {
     let response;
+    const customKey = params.key || params.api_key || "";
     switch (action) {
       case "models":
         response = await api.models(params);
         break;
       case "generate":
-        response = await api.generate(params);
+        response = await api.generate({
+          ...params,
+          key: customKey
+        });
         break;
       case "status":
         if (!params.task_id) {
@@ -202,7 +218,10 @@ export default async function handler(req, res) {
             error: "Parameter 'task_id' diperlukan untuk pengecekan status."
           });
         }
-        response = await api.status(params);
+        response = await api.status({
+          ...params,
+          key: customKey
+        });
         break;
       default:
         return res.status(400).json({

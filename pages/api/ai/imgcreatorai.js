@@ -293,7 +293,8 @@ export default async function handler(req, res) {
   const api = new ImgCreatorAI();
   try {
     const data = await api.generate(params);
-    return res.status(200).json(data);
+    res.setHeader("Content-Type", result.contentType);
+    return res.status(200).send(result.buffer);
   } catch (error) {
     const errorMessage = error.message || "Terjadi kesalahan saat memproses request";
     return res.status(500).json({

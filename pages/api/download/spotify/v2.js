@@ -1,122 +1,220 @@
 import axios from "axios";
-import {
-  wrapper
-} from "axios-cookiejar-support";
-import {
-  CookieJar
-} from "tough-cookie";
-import * as cheerio from "cheerio";
-class SpowloadAPI {
+class SpotSaver {
   constructor() {
-    this.cookieJar = new CookieJar();
-    this.client = wrapper(axios.create({
-      baseURL: "https://spowload.com",
+    this.base = "https://spotsaver.net";
+    this.cookies = {};
+    this.client = axios.create({
+      baseURL: this.base,
+      decompress: true,
       headers: {
         accept: "*/*",
-        "accept-language": "id-ID,id;q=0.9",
-        "content-type": "application/json",
-        origin: "https://spowload.com",
-        referer: "https://spowload.com/",
-        "sec-ch-ua": '"Chromium";v="131", "Not_A Brand";v="24", "Microsoft Edge Simulate";v="131", "Lemur";v="131"',
+        "accept-language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
+        "cache-control": "no-cache",
+        pragma: "no-cache",
+        priority: "u=1, i",
+        referer: "https://spotsaver.net/results/",
+        "sec-ch-ua": '"Chromium";v="127", "Not)A;Brand";v="99", "Microsoft Edge Simulate";v="127", "Lemur";v="127"',
         "sec-ch-ua-mobile": "?1",
         "sec-ch-ua-platform": '"Android"',
         "sec-fetch-dest": "empty",
         "sec-fetch-mode": "cors",
         "sec-fetch-site": "same-origin",
-        "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
-      },
-      jar: this.cookieJar,
-      withCredentials: true
-    }));
+        "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36"
+      }
+    });
   }
-  async fetchHtml(url) {
+  save(res) {
     try {
-      const {
-        data
-      } = await this.client.get(url);
-      return data;
-    } catch {
-      return null;
-    }
-  }
-  parseCsrfToken(html) {
-    return cheerio.load(html)('meta[name="csrf-token"]').attr("content") || "";
-  }
-  parseSpotifyId(url) {
-    return url.match(/(?:track\/|track%3A)([a-zA-Z0-9]+)/)?.[1] || null;
-  }
-  async getTrackData(url) {
-    try {
-      const data = await this.fetchHtml(url);
-      if (!data) return null;
-      const $ = cheerio.load(data);
-      const urldataMatch = [...$("script")].map(el => $(el).html()).find(script => script.includes("let urldata ="));
-      const rawJson = urldataMatch?.match(/let urldata = "(.*?)";/)?.[1];
-      return rawJson ? {
-        parsedData: JSON.parse(rawJson.replace(/\\"/g, '"').replace(/"\{/g, "{").replace(/\}"/g, "}").replace(/"\[/g, "[").replace(/\]"/g, "]").replace(/\\\\\//g, "/")),
-        data: data
-      } : null;
-    } catch {
-      return null;
-    }
-  }
-  async fetchTrackInfo(spotifyUrl) {
-    try {
-      const id = this.parseSpotifyId(spotifyUrl);
-      if (!id) throw new Error("Invalid Spotify URL");
-      const res = await this.getTrackData(`https://spowload.com/spotify/track-${id}`);
-      if (!res) return null;
-      const {
-        parsedData,
-        data
-      } = res;
-      const conversionData = await this.convertUrlToJson(spotifyUrl, parsedData?.album?.images?.[0]?.url || "", this.parseCsrfToken(data));
-      return {
-        ...parsedData,
-        ...conversionData
-      };
-    } catch (error) {
-      console.error("Error fetching track info:", error);
-      return null;
-    }
-  }
-  async convertUrlToJson(spotifyUrl, coverImage, csrfToken) {
-    try {
-      const {
-        data
-      } = await this.client.post("/convert", {
-        urls: spotifyUrl,
-        cover: coverImage
-      }, {
-        headers: {
-          "content-type": "application/json",
-          cookie: this.cookieJar.getCookieString("https://spowload.com"),
-          "x-csrf-token": csrfToken
-        }
+      const raw = res?.headers?.["set-cookie"] || [];
+      const list = Array.isArray(raw) ? raw : [raw];
+      list.forEach(c => {
+        if (!c) return;
+        const [pair] = c.split(";");
+        const [k, ...v] = pair.split("=");
+        if (k) this.cookies[k.trim()] = v.join("=").trim();
       });
-      return data;
-    } catch {
-      return null;
+    } catch (e) {
+      console.error("Save Cookie Error:", e?.message || e);
+    }
+  }
+  jar() {
+    try {
+      return Object.entries(this.cookies).map(([k, v]) => `${k}=${v}`).join("; ");
+    } catch (e) {
+      return "";
+    }
+  }
+  async req(path, method = "GET", data = null, customHeaders = {}) {
+    try {
+      const cookieStr = this.jar();
+      const headers = {
+        ...cookieStr ? {
+          cookie: cookieStr
+        } : {},
+        ...data ? {
+          "content-type": "application/json",
+          origin: "https://spotsaver.net"
+        } : {},
+        ...customHeaders
+      };
+      const res = await this.client({
+        url: path,
+        method: method,
+        data: data,
+        headers: headers
+      });
+      this.save(res);
+      return {
+        status: true,
+        data: res?.data
+      };
+    } catch (e) {
+      return {
+        status: false,
+        message: e?.response?.data?.message || e?.message || "Request failed"
+      };
+    }
+  }
+  async info(url) {
+    try {
+      console.log("[1/3] Mengambil metadata Spotify (/api/spotify/)...");
+      const res = await this.req(`/api/spotify/?url=${encodeURIComponent(url)}`, "GET");
+      const item = res?.data?.items?.[0] || null;
+      if (!res?.status || !item) {
+        return {
+          status: false,
+          message: res?.message || "Gagal mengambil metadata Spotify"
+        };
+      }
+      return {
+        status: true,
+        item: item
+      };
+    } catch (e) {
+      return {
+        status: false,
+        message: `Info Error: ${e?.message || e}`
+      };
+    }
+  }
+  async getId(title, artist) {
+    try {
+      console.log("[2/3] Mencari ID track/video (/api/get-id/)...");
+      const res = await this.req("/api/get-id/", "POST", {
+        title: title || "",
+        artist: artist || ""
+      });
+      const videoId = res?.data?.videoId || "";
+      if (!res?.status || !res?.data?.success || !videoId) {
+        return {
+          status: false,
+          message: res?.data?.message || res?.message || "Video ID tidak ditemukan"
+        };
+      }
+      return {
+        status: true,
+        videoId: videoId
+      };
+    } catch (e) {
+      return {
+        status: false,
+        message: `Get ID Error: ${e?.message || e}`
+      };
+    }
+  }
+  async getDl(videoId, title, artist, format = "mp3") {
+    try {
+      console.log(`[3/3] Memproses direct download link [${format}] (/api/download/)...`);
+      const trackTitle = `${title || "Track"} - ${artist || "Artist"}`;
+      const res = await this.req("/api/download/", "POST", {
+        videoId: videoId,
+        candidateIds: [],
+        format: format || "mp3",
+        title: trackTitle
+      });
+      const downloadUrl = res?.data?.downloadUrl || res?.data?.url || res?.data?.mediaUrl || "";
+      if (!res?.status || !downloadUrl) {
+        return {
+          status: false,
+          message: res?.data?.message || res?.message || "Gagal mendapatkan tautan unduhan"
+        };
+      }
+      return {
+        status: true,
+        downloadUrl: downloadUrl,
+        data: res.data
+      };
+    } catch (e) {
+      return {
+        status: false,
+        message: `Get Download Error: ${e?.message || e}`
+      };
+    }
+  }
+  async download({
+    url,
+    format = "mp3",
+    ...rest
+  }) {
+    try {
+      if (!url) {
+        return {
+          status: false,
+          message: "Parameter 'url' Spotify diperlukan."
+        };
+      }
+      const cleanUrl = url.split("?")[0];
+      const infoRes = await this.info(cleanUrl);
+      if (!infoRes?.status) return infoRes;
+      const item = infoRes.item;
+      const title = item?.title || "Unknown Title";
+      const artist = item?.artist || "Unknown Artist";
+      const idRes = await this.getId(title, artist);
+      if (!idRes?.status) return idRes;
+      const dlRes = await this.getDl(idRes.videoId, title, artist, format);
+      if (!dlRes?.status) return dlRes;
+      console.log("✔ Berhasil mendapatkan link download SpotSaver!");
+      return {
+        status: true,
+        title: title,
+        artist: artist,
+        album: item?.album || "",
+        duration: dlRes?.data?.duration || item?.duration || 0,
+        thumbnail: item?.thumbnail || "",
+        preview_url: item?.previewUrl || "",
+        filename: dlRes?.data?.filename || `${title} - ${artist}.${format}`,
+        download: {
+          url: dlRes.downloadUrl,
+          format: format || "mp3"
+        },
+        metadata: {
+          ...item,
+          videoId: idRes.videoId
+        }
+      };
+    } catch (err) {
+      return {
+        status: false,
+        message: err?.message || "Terjadi kesalahan sistem"
+      };
     }
   }
 }
 export default async function handler(req, res) {
-  const {
-    url
-  } = req.method === "GET" ? req.query : req.body;
-  if (!url) {
+  const params = req.method === "GET" ? req.query : req.body;
+  if (!params.url) {
     return res.status(400).json({
-      error: "URL is required"
+      error: "Parameter 'url' diperlukan"
     });
   }
-  const spowload = new SpowloadAPI();
+  const api = new SpotSaver();
   try {
-    const result = await spowload.fetchTrackInfo(url);
-    return res.status(200).json(result);
+    const data = await api.download(params);
+    return res.status(200).json(data);
   } catch (error) {
-    console.error("Error:", error);
+    const errorMessage = error.message || "Terjadi kesalahan saat memproses.";
     return res.status(500).json({
-      error: "An error occurred while processing the request."
+      error: errorMessage
     });
   }
 }

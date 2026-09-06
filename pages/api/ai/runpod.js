@@ -174,20 +174,17 @@ const MODELS = {
 };
 class RunPod {
   constructor() {
-    this.keys = ApiKey.runpod;
-    this._idx = 0;
+    this.keys = Array.isArray(ApiKey.runpod) ? ApiKey.runpod : [ApiKey.runpod];
     this.http = axios.create({
-      baseURL: BASE
-    });
-    this.http.interceptors.request.use(cfg => {
-      cfg.headers["Authorization"] = `Bearer ${this.keys[this._idx]}`;
-      cfg.headers["Content-Type"] = "application/json";
-      return cfg;
+      baseURL: BASE,
+      headers: {
+        "Content-Type": "application/json"
+      }
     });
   }
   models({
     type = ""
-  }) {
+  } = {}) {
     const list = Object.entries(MODELS).map(([key, val]) => ({
       key: key,
       ...val
@@ -198,6 +195,7 @@ class RunPod {
     model = "p-image-t2i",
     prompt = "",
     image = "",
+    key = "",
     ...rest
   } = {}) {
     try {
@@ -233,25 +231,31 @@ class RunPod {
         } : {},
         ...rest
       };
+      const keysToTry = key ? [key] : this.keys;
       let lastErr;
-      for (let i = 0; i < this.keys.length; i++) {
-        this._idx = i;
+      for (let i = 0; i < keysToTry.length; i++) {
+        const currentKey = keysToTry[i];
         try {
           console.log(`[SUBMIT] ${model} | key_idx=${i}`);
           const {
             data
           } = await this.http.post(`/${meta.id}/run`, {
             input: input
+          }, {
+            headers: {
+              Authorization: `Bearer ${currentKey}`
+            }
           });
           if (!data?.id) throw new Error(JSON.stringify(data));
           return {
             status: "success",
             model: model,
-            task_id: data.id
+            task_id: data.id,
+            key_used: currentKey
           };
         } catch (e) {
           lastErr = e;
-          console.warn(`[RETRY] key_idx=${i} failed`);
+          console.warn(`[RETRY] key_idx=${i} failed: ${e.message}`);
         }
       }
       throw lastErr;
@@ -264,23 +268,40 @@ class RunPod {
   }
   async status({
     model = "p-image-t2i",
-    task_id = ""
+    task_id = "",
+    key = ""
   } = {}) {
     try {
       if (!model || !task_id) throw new Error("Model and task_id required");
       const meta = MODELS[model];
       if (!meta) throw new Error("Invalid model key");
-      const {
-        data
-      } = await this.http.get(`/${meta.id}/status/${task_id}`);
-      return {
-        status: "success",
-        ...data
-      };
+      const keysToTry = key ? [key] : this.keys;
+      let lastErr;
+      for (let i = 0; i < keysToTry.length; i++) {
+        const currentKey = keysToTry[i];
+        try {
+          const {
+            data
+          } = await this.http.get(`/${meta.id}/status/${task_id}`, {
+            headers: {
+              Authorization: `Bearer ${currentKey}`
+            }
+          });
+          return {
+            status: "success",
+            key_used: currentKey,
+            ...data
+          };
+        } catch (e) {
+          lastErr = e;
+          console.warn(`[STATUS RETRY] key_idx=${i} failed: ${e.message}`);
+        }
+      }
+      throw lastErr;
     } catch (e) {
       return {
         status: "error",
-        message: e.message
+        message: e.response?.data?.error || e.message
       };
     }
   }
@@ -290,7 +311,7 @@ export default async function handler(req, res) {
     action,
     ...params
   } = req.method === "GET" ? req.query : req.body;
-  const validActions = ["home", "search", "detail", "chapter", "genres", "novel_list"];
+  const validActions = ["models", "generate", "status"];
   if (!action) {
     return res.status(400).json({
       status: false,
@@ -298,25 +319,29 @@ export default async function handler(req, res) {
       available_actions: validActions,
       usage: {
         method: "GET / POST",
-        example: "/?action=generate&prompt=isekai"
+        example: "/?action=generate&prompt=cyberpunk%20city"
       }
     });
   }
   const api = new RunPod();
   try {
     let response;
+    const customKey = params.key || params.api_key || "";
     switch (action) {
       case "models":
         response = await api.models(params);
         break;
       case "generate":
-        if (!params.prompt) {
+        if (!params.prompt && params.model !== "minimax-speech" && params.model !== "whisper-v3") {
           return res.status(400).json({
             status: false,
             error: "Parameter 'prompt' wajib diisi untuk action 'generate'."
           });
         }
-        response = await api.generate(params);
+        response = await api.generate({
+          ...params,
+          key: customKey
+        });
         break;
       case "status":
         if (!params.task_id) {
@@ -326,7 +351,10 @@ export default async function handler(req, res) {
             example: "daf9b16b-0a51-45c8-a8eb-740e9c9567e4-e1"
           });
         }
-        response = await api.status(params);
+        response = await api.status({
+          ...params,
+          key: customKey
+        });
         break;
       default:
         return res.status(400).json({
@@ -344,7 +372,7 @@ export default async function handler(req, res) {
     console.error(`[FATAL ERROR] Kegagalan pada action '${action}':`, error);
     return res.status(500).json({
       status: false,
-      message: "Terjadi kesalahan internal pada server atau target website.",
+      message: "Terjadi kesalahan internal pada server.",
       error: error.message || "Unknown Error"
     });
   }

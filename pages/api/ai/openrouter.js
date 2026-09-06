@@ -1,11 +1,12 @@
 import fetch from "node-fetch";
 import ApiKey from "@/configs/api-key";
-const AVAILABLE_ACTIONS = ["chat", "image_gen", "embeddings", "check_key", "models", "credits", "completions"];
+const AVAILABLE_ACTIONS = ["chat", "image_gen", "embeddings", "check_key", "status", "models", "credits", "completions"];
 class OpenRouterAPI {
   constructor() {
+    const rawKeys = ApiKey.openrouter;
     this.config = {
       baseUrl: "https://openrouter.ai/api/v1",
-      keys: ApiKey.openrouter,
+      keys: Array.isArray(rawKeys) ? rawKeys : rawKeys ? [rawKeys] : [],
       defaultPayload: {
         model: "openai/gpt-4o",
         temperature: .7,
@@ -20,10 +21,21 @@ class OpenRouterAPI {
       }
     };
   }
-  async safeRequest(url, method, payload = null, customHeaders = {}) {
+  async safeRequest(url, method, payload = null, customHeaders = {}, customKey = null) {
     let lastResult = null;
     let attempt = 0;
-    for (const apiKey of this.config.keys) {
+    const keysToTry = customKey ? [customKey.trim()] : this.config.keys;
+    if (!keysToTry || keysToTry.length === 0) {
+      return {
+        status: 500,
+        data: {
+          error: {
+            message: "API Key tidak ditemukan di konfigurasi atau parameter."
+          }
+        }
+      };
+    }
+    for (const apiKey of keysToTry) {
       attempt++;
       try {
         console.log(`[Request] Attempt ${attempt} using key ending ...${apiKey.slice(-5)}`);
@@ -46,14 +58,27 @@ class OpenRouterAPI {
           }));
           lastResult = {
             status: response.status,
-            data: errorData
+            data: {
+              ...typeof errorData === "object" ? errorData : {
+                error: errorData
+              },
+              key_used: apiKey
+            }
           };
+          if (customKey) break;
           continue;
         }
         const data = await response.json();
+        const finalData = typeof data === "object" && data !== null && !Array.isArray(data) ? {
+          ...data,
+          key_used: apiKey
+        } : {
+          data: data,
+          key_used: apiKey
+        };
         return {
           status: response.status,
-          data: data
+          data: finalData
         };
       } catch (error) {
         console.error(`[Network Error] Key ...${apiKey.slice(-5)}: ${error.message}`);
@@ -63,9 +88,11 @@ class OpenRouterAPI {
             error: {
               message: error.message,
               type: "network_error"
-            }
+            },
+            key_used: apiKey
           }
         };
+        if (customKey) break;
         continue;
       }
     }
@@ -73,7 +100,7 @@ class OpenRouterAPI {
       status: 500,
       data: {
         error: {
-          message: "All API keys exhausted or failed."
+          message: "Semua API key habis atau gagal diproses."
         }
       }
     };
@@ -81,6 +108,7 @@ class OpenRouterAPI {
   async chat(params) {
     try {
       const url = `${this.config.baseUrl}${this.config.endpoints.chat}`;
+      const customKey = params.key || params.api_key || null;
       const payload = {
         model: params.model || this.config.defaultPayload.model,
         messages: params.messages || [{
@@ -91,7 +119,9 @@ class OpenRouterAPI {
       };
       delete payload.prompt;
       delete payload.action;
-      return await this.safeRequest(url, "POST", payload);
+      delete payload.key;
+      delete payload.api_key;
+      return await this.safeRequest(url, "POST", payload, {}, customKey);
     } catch (error) {
       console.error("[Class Error] chat:", error);
       return {
@@ -107,6 +137,7 @@ class OpenRouterAPI {
   async generateImage(params) {
     try {
       const url = `${this.config.baseUrl}${this.config.endpoints.chat}`;
+      const customKey = params.key || params.api_key || null;
       const payload = {
         model: params.model || "google/gemini-2.5-flash-image-preview",
         messages: [{
@@ -116,7 +147,7 @@ class OpenRouterAPI {
         modalities: ["image", "text"],
         image_config: params.image_config
       };
-      return await this.safeRequest(url, "POST", payload);
+      return await this.safeRequest(url, "POST", payload, {}, customKey);
     } catch (error) {
       console.error("[Class Error] generateImage:", error);
       return {
@@ -132,11 +163,12 @@ class OpenRouterAPI {
   async embeddings(params) {
     try {
       const url = `${this.config.baseUrl}${this.config.endpoints.embeddings}`;
+      const customKey = params.key || params.api_key || null;
       const payload = {
         model: params.model || "openai/text-embedding-3-small",
         input: params.input
       };
-      return await this.safeRequest(url, "POST", payload);
+      return await this.safeRequest(url, "POST", payload, {}, customKey);
     } catch (error) {
       console.error("[Class Error] embeddings:", error);
       return {
@@ -149,10 +181,11 @@ class OpenRouterAPI {
       };
     }
   }
-  async checkKeyInfo() {
+  async checkKeyInfo(params = {}) {
     try {
       const url = `${this.config.baseUrl}${this.config.endpoints.authKey}`;
-      return await this.safeRequest(url, "GET");
+      const customKey = params.key || params.api_key || null;
+      return await this.safeRequest(url, "GET", null, {}, customKey);
     } catch (error) {
       console.error("[Class Error] checkKeyInfo:", error);
       return {
@@ -165,10 +198,11 @@ class OpenRouterAPI {
       };
     }
   }
-  async getModels() {
+  async getModels(params = {}) {
     try {
       const url = `${this.config.baseUrl}${this.config.endpoints.models}`;
-      return await this.safeRequest(url, "GET");
+      const customKey = params.key || params.api_key || null;
+      return await this.safeRequest(url, "GET", null, {}, customKey);
     } catch (error) {
       console.error("[Class Error] getModels:", error);
       return {
@@ -181,10 +215,11 @@ class OpenRouterAPI {
       };
     }
   }
-  async getCredits() {
+  async getCredits(params = {}) {
     try {
       const url = `${this.config.baseUrl}${this.config.endpoints.credits}`;
-      return await this.safeRequest(url, "GET");
+      const customKey = params.key || params.api_key || null;
+      return await this.safeRequest(url, "GET", null, {}, customKey);
     } catch (error) {
       console.error("[Class Error] getCredits:", error);
       return {
@@ -219,29 +254,34 @@ export default async function handler(req, res) {
         result = await api.chat(params);
         break;
       case "image_gen":
-        if (!params.prompt) return res.status(400).json({
-          error: {
-            message: "Prompt is required for image_gen"
-          }
-        });
+        if (!params.prompt) {
+          return res.status(400).json({
+            error: {
+              message: "Prompt is required for image_gen"
+            }
+          });
+        }
         result = await api.generateImage(params);
         break;
       case "embeddings":
-        if (!params.input) return res.status(400).json({
-          error: {
-            message: "Input is required for embeddings"
-          }
-        });
+        if (!params.input) {
+          return res.status(400).json({
+            error: {
+              message: "Input is required for embeddings"
+            }
+          });
+        }
         result = await api.embeddings(params);
         break;
+      case "status":
       case "check_key":
-        result = await api.checkKeyInfo();
+        result = await api.checkKeyInfo(params);
         break;
       case "models":
-        result = await api.getModels();
+        result = await api.getModels(params);
         break;
       case "credits":
-        result = await api.getCredits();
+        result = await api.getCredits(params);
         break;
       case "completions":
         result = await api.chat({

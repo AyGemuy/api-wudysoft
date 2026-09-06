@@ -3,7 +3,7 @@ import FormData from "form-data";
 import ApiKey from "@/configs/api-key";
 class PoyoAPI {
   constructor() {
-    this.key = ApiKey.poyo;
+    this.key = Array.isArray(ApiKey.poyo) ? ApiKey.poyo : ApiKey.poyo ? [ApiKey.poyo] : [];
     this.baseUrl = "https://api.poyo.ai";
     this.validKeys = [];
     this.isChecked = false;
@@ -44,7 +44,10 @@ class PoyoAPI {
     this.log(`Validasi selesai. Total key aktif: ${this.validKeys.length}`);
     return this.validKeys;
   }
-  async getTk() {
+  async getTk(customKey = "") {
+    if (customKey && typeof customKey === "string" && customKey.trim()) {
+      return customKey.trim();
+    }
     if (!this.isChecked) {
       this.log("Menjalankan auto-check key sebelum eksekusi request...");
       await this.check();
@@ -80,20 +83,24 @@ class PoyoAPI {
   async upload(args) {
     try {
       const {
-        image
+        image,
+        key,
+        api_key
       } = args ?? {};
       if (!image) return {
         error: "Input image diperlukan"
       };
-      const token = await this.getTk();
+      const token = await this.getTk(key || api_key);
       if (!token) return {
         error: "Tidak ada API Key yang tersedia"
       };
       this.log("Memproses upload gambar (single)...");
       const bufferData = await this.toBuffer(image);
-      if (!bufferData) return {
-        error: "Gagal mengonversi gambar ke buffer murni."
-      };
+      if (!bufferData) {
+        return {
+          error: "Gagal mengonversi gambar ke buffer murni."
+        };
+      }
       const form = new FormData();
       form.append("file", bufferData, {
         filename: "upload.jpg",
@@ -107,7 +114,13 @@ class PoyoAPI {
         }
       });
       this.log("Upload selesai.");
-      return res.data ?? {};
+      const responseData = res.data ?? {};
+      return {
+        ...typeof responseData === "object" ? responseData : {
+          data: responseData
+        },
+        key_used: token
+      };
     } catch (err) {
       this.log(`Error di upload(): ${err.response?.data?.message || err.message}`);
       return err.response?.data ?? {
@@ -120,6 +133,8 @@ class PoyoAPI {
       const {
         type,
         model,
+        key,
+        api_key,
         ...rest
       } = args ?? {};
       if (!type || !this.allowedTypes.includes(type)) {
@@ -128,7 +143,7 @@ class PoyoAPI {
         };
       }
       const selectedModel = model || this.defaultModels[type];
-      const token = await this.getTk();
+      const token = await this.getTk(key || api_key);
       if (!token) return {
         error: "Tidak ada API Key yang tersedia"
       };
@@ -180,7 +195,13 @@ class PoyoAPI {
         }
       });
       this.log("Task / Request berhasil disubmit.");
-      return res.data ?? {};
+      const responseData = res.data ?? {};
+      return {
+        ...typeof responseData === "object" ? responseData : {
+          data: responseData
+        },
+        key_used: token
+      };
     } catch (err) {
       this.log(`Error di create(): ${err.response?.data || err.message}`);
       return err.response?.data ?? {
@@ -193,6 +214,8 @@ class PoyoAPI {
       const {
         type,
         task_id,
+        key,
+        api_key,
         ...rest
       } = args ?? {};
       if (!type || !this.allowedTypes.includes(type)) {
@@ -201,10 +224,12 @@ class PoyoAPI {
         };
       }
       const id = task_id || rest.id || "";
-      if (!id) return {
-        error: "Property 'task_id' wajib diisi."
-      };
-      const token = await this.getTk();
+      if (!id) {
+        return {
+          error: "Property 'task_id' wajib diisi."
+        };
+      }
+      const token = await this.getTk(key || api_key);
       if (!token) return {
         error: "Tidak ada API Key yang tersedia"
       };
@@ -229,7 +254,13 @@ class PoyoAPI {
           Authorization: `Bearer ${token}`
         }
       });
-      return res.data ?? {};
+      const responseData = res.data ?? {};
+      return {
+        ...typeof responseData === "object" ? responseData : {
+          data: responseData
+        },
+        key_used: token
+      };
     } catch (err) {
       this.log(`Error di status(): ${err.response?.data || err.message}`);
       return err.response?.data ?? {
@@ -264,28 +295,34 @@ export default async function handler(req, res) {
     switch (action) {
       case "create":
         response = await api.create(params);
-        if (response.error) return res.status(400).json({
-          status: false,
-          ...response
-        });
+        if (response.error) {
+          return res.status(400).json({
+            status: false,
+            ...response
+          });
+        }
         return res.status(200).json({
           ...response
         });
       case "status":
         response = await api.status(params);
-        if (response.error) return res.status(400).json({
-          status: false,
-          ...response
-        });
+        if (response.error) {
+          return res.status(400).json({
+            status: false,
+            ...response
+          });
+        }
         return res.status(200).json({
           ...response
         });
       case "upload":
         response = await api.upload(params);
-        if (response.error) return res.status(400).json({
-          status: false,
-          ...response
-        });
+        if (response.error) {
+          return res.status(400).json({
+            status: false,
+            ...response
+          });
+        }
         return res.status(200).json({
           ...response
         });

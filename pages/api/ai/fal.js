@@ -5,22 +5,33 @@ import {
 import ApiKey from "@/configs/api-key";
 class FalApi {
   constructor() {
-    this.apiKeys = ApiKey.fal || [];
+    this.apiKeys = Array.isArray(ApiKey.fal) ? ApiKey.fal : ApiKey.fal ? [ApiKey.fal] : [];
     this.axios = axios.create({
       headers: {
         "Content-Type": "application/json"
       }
     });
   }
-  async _executeWithRotation(fn) {
+  async _executeWithRotation(fn, customKey = null) {
     let lastError = null;
-    if (!this.apiKeys.length) {
+    const keysToTry = customKey ? [customKey.trim()] : this.apiKeys;
+    if (!keysToTry.length) {
       throw new Error("API Key tidak ditemukan di konfigurasi.");
     }
-    for (const key of this.apiKeys) {
+    for (const key of keysToTry) {
       try {
         console.log(`[PROCESS] Mencoba dengan API Key: ${key.substring(0, 8)}...`);
-        return await fn(key);
+        const res = await fn(key);
+        if (typeof res === "object" && res !== null && !Array.isArray(res)) {
+          return {
+            ...res,
+            key_used: key
+          };
+        }
+        return {
+          result: res,
+          key_used: key
+        };
       } catch (error) {
         lastError = error;
         const status = error.response?.status;
@@ -30,7 +41,7 @@ class FalApi {
         const isLocked = errorMessage.toLowerCase().includes("user is locked");
         const isExhausted = errorMessage.toLowerCase().includes("exhausted balance");
         const isRotatableStatus = [401, 402, 403, 429].includes(status);
-        if (isRotatableStatus || isLocked || isExhausted) {
+        if ((isRotatableStatus || isLocked || isExhausted) && keysToTry.length > 1) {
           console.warn(`[ROTATE] Key bermasalah (Saldo habis/Locked). Mencoba key berikutnya...`);
           continue;
         } else {
@@ -38,7 +49,7 @@ class FalApi {
         }
       }
     }
-    throw new Error(`Semua API Key gagal. Error terakhir: ${lastError?.response?.data?.error || lastError.message}`);
+    throw new Error(`Semua API Key gagal. Error terakhir: ${lastError?.response?.data?.detail || lastError?.response?.data?.error || lastError.message}`);
   }
   async _uploadToFal(imageUrl, key) {
     try {
@@ -111,6 +122,7 @@ class FalApi {
     throw new Error("Polling Timeout: Proses terlalu lama.");
   }
   async listModels(params) {
+    const customKey = params.key || params.api_key;
     return this._executeWithRotation(async key => {
       const {
         data
@@ -120,9 +132,10 @@ class FalApi {
         }
       });
       return data;
-    });
+    }, customKey);
   }
   async txt2img(params) {
+    const customKey = params.key || params.api_key;
     return this._executeWithRotation(async key => {
       const model = params.model || "fal-ai/flux/schnell";
       const {
@@ -138,9 +151,10 @@ class FalApi {
       });
       if (params.async === "true" || params.async === true) return queue;
       return await this._pollResult(model, queue.request_id, key);
-    });
+    }, customKey);
   }
   async img2img(params) {
+    const customKey = params.key || params.api_key;
     return this._executeWithRotation(async key => {
       const model = params.model || "fal-ai/flux/dev/image-to-image";
       const uploadedUrl = await this._uploadToFal(params.imageUrl, key);
@@ -157,9 +171,10 @@ class FalApi {
       });
       if (params.async === "true" || params.async === true) return queue;
       return await this._pollResult(model, queue.request_id, key);
-    });
+    }, customKey);
   }
   async img2vid(params) {
+    const customKey = params.key || params.api_key;
     return this._executeWithRotation(async key => {
       const model = params.model || "fal-ai/wan-pro/image-to-video";
       const uploadedUrl = await this._uploadToFal(params.imageUrl, key);
@@ -175,9 +190,10 @@ class FalApi {
       });
       if (params.async === "true" || params.async === true) return queue;
       return await this._pollResult(model, queue.request_id, key);
-    });
+    }, customKey);
   }
   async checkStatus(params) {
+    const customKey = params.key || params.api_key;
     return this._executeWithRotation(async key => {
       const {
         model,
@@ -204,7 +220,7 @@ class FalApi {
         status: status.status,
         result: result
       };
-    });
+    }, customKey);
   }
 }
 export default async function handler(req, res) {

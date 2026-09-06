@@ -1,75 +1,191 @@
 import axios from "axios";
-class SpotifyDownloader {
+class SpotifyDL {
   constructor() {
-    this.baseUrl = "https://api.spotidownloader.com";
-    this.headers = {
-      Accept: "*/*",
-      "Accept-Language": "en-US,en;q=0.9,id;q=0.8,zh-TW;q=0.7,zh;q=0.6,ja;q=0.5",
-      Origin: "https://spotifydown.com",
-      Referer: "https://spotifydown.com/",
-      "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
+    this.api = {
+      meta: "https://spotify.dlapi.app/api/Gettrack",
+      convert: "https://master.dlapi.app/api/v1/convert",
+      task: "https://master.dlapi.app/api/v1/tasks"
     };
-  }
-  extractTrackId(url) {
-    const match = url.match(/track\/([a-zA-Z0-9]+)/);
-    return match ? match[1] : null;
-  }
-  async getMetadata(trackId) {
-    try {
-      const url = `${this.baseUrl}/metadata/track/${trackId}`;
-      const response = await axios.get(url, {
-        headers: this.headers
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(`Error fetching metadata: ${error.response?.status || error.message}`);
-    }
-  }
-  async getDownloadLink(trackId) {
-    try {
-      const url = `${this.baseUrl}/download/${trackId}`;
-      const response = await axios.get(url, {
-        headers: this.headers
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(`Error fetching download link: ${error.response?.status || error.message}`);
-    }
-  }
-  async fetchTrackData(spotifyUrl) {
-    try {
-      const trackId = this.extractTrackId(spotifyUrl);
-      if (!trackId) {
-        throw new Error("Invalid Spotify URL");
+    this.client = axios.create({
+      headers: {
+        Authorization: "Bearer pGLXoCsVu0hcstAecIDwlrlbcrUzv0e1cWBJ0yuB",
+        "Content-Type": "application/json",
+        "User-Agent": "Spotmate/1.0"
       }
-      const [metadata, downloadData] = await Promise.all([this.getMetadata(trackId), this.getDownloadLink(trackId)]);
-      const fileName = `${metadata.artists} - ${metadata.title}.mp3`;
+    });
+  }
+  log(type, msg) {
+    try {
+      console.log(`[${new Date().toLocaleTimeString()}] [${type}] ${msg}`);
+    } catch (e) {
+      console.error(e?.message || e);
+    }
+  }
+  async meta(url) {
+    try {
+      this.log("META", `Processing: ${url}`);
+      const {
+        data
+      } = await this.client.get(this.api.meta, {
+        params: {
+          spotify_url: url
+        }
+      });
+      if (!data) {
+        return {
+          status: false,
+          message: "API Data Empty"
+        };
+      }
       return {
-        metadata: metadata,
-        downloadLink: `/download?url=${encodeURIComponent(downloadData.link)}`,
-        fileName: fileName
+        status: true,
+        data: data
       };
-    } catch (error) {
-      throw new Error(`Error fetching track data: ${error.message}`);
+    } catch (e) {
+      return {
+        status: false,
+        message: `Meta Error: ${e.response?.data?.message || e.message || "Unknown error"}`
+      };
+    }
+  }
+  async convert(url, format = "mp3") {
+    try {
+      this.log("CONVERT", `Initiating conversion... [${format}]`);
+      const {
+        data: init
+      } = await this.client.post(this.api.convert, {
+        url: url,
+        format: format
+      });
+      if (init?.download_url) {
+        return {
+          status: true,
+          download_url: init.download_url
+        };
+      }
+      const taskId = init?.task_id || init?.id;
+      if (!taskId) {
+        return {
+          status: false,
+          message: "No Task ID received"
+        };
+      }
+      let attempts = 0;
+      const maxAttempts = 60;
+      while (attempts < maxAttempts) {
+        attempts++;
+        await new Promise(r => setTimeout(r, 3e3));
+        try {
+          const {
+            data: status
+          } = await this.client.get(`${this.api.task}/${taskId}`);
+          const progress = status?.progress ? ` [${status.progress}%]` : "";
+          this.log("POLLING", `Status: ${status?.status || "processing"} (${attempts}/${maxAttempts})${progress}`);
+          if (status?.status === "finished" || status?.status === "completed") {
+            return {
+              status: true,
+              download_url: status?.result?.download_url || status?.download_url || null
+            };
+          }
+          if (status?.status === "failed") {
+            return {
+              status: false,
+              message: "Server-side processing failed"
+            };
+          }
+        } catch (e) {
+          if (attempts > 5 && !e.response) {
+            return {
+              status: false,
+              message: `Polling Error: ${e.message}`
+            };
+          }
+        }
+      }
+      return {
+        status: false,
+        message: "Task Timeout"
+      };
+    } catch (e) {
+      return {
+        status: false,
+        message: `Convert Error: ${e.response?.data?.message || e.message || "Unknown error"}`
+      };
+    }
+  }
+  async download({
+    url,
+    format = "mp3"
+  }) {
+    try {
+      if (!url) {
+        return {
+          status: false,
+          message: "URL is required",
+          result: null
+        };
+      }
+      const metaRes = await this.meta(url);
+      if (!metaRes?.status) {
+        this.log("ERROR", metaRes?.message);
+        return {
+          status: false,
+          message: metaRes?.message || "Failed to fetch metadata",
+          result: null
+        };
+      }
+      const data = metaRes.data;
+      const isCollection = !!(data?.tracks?.items || Array.isArray(data?.tracks) && data.type !== "track");
+      const type = data?.type || (isCollection ? "playlist" : "track");
+      let result = null;
+      if (type === "track") {
+        const targetUrl = data?.external_urls?.spotify || url;
+        const convRes = await this.convert(targetUrl, format);
+        if (!convRes?.status) {
+          this.log("ERROR", convRes?.message);
+          return {
+            status: false,
+            message: convRes?.message || "Failed to convert track",
+            result: null,
+            metadata: data
+          };
+        }
+        result = convRes.download_url;
+      }
+      return {
+        status: true,
+        message: result ? "Download ready" : "Metadata ready",
+        result: result,
+        metadata: data
+      };
+    } catch (e) {
+      this.log("ERROR", e.message);
+      return {
+        status: false,
+        message: e.message || "Unknown error occurred",
+        result: null
+      };
     }
   }
 }
 export default async function handler(req, res) {
-  const {
-    url
-  } = req.method === "GET" ? req.query : req.body;
-  if (!url) {
-    return res.status(400).json({
-      error: "Missing required query parameter: url"
-    });
-  }
   try {
-    const spotifyDownloader = new SpotifyDownloader();
-    const trackData = await spotifyDownloader.fetchTrackData(url);
-    return res.status(200).json(trackData);
+    const params = req.method === "GET" ? req.query : req.body;
+    if (!params?.url) {
+      return res.status(400).json({
+        status: false,
+        error: "Parameter 'url' diperlukan"
+      });
+    }
+    const api = new SpotifyDL();
+    const data = await api.download(params);
+    const statusCode = data?.status ? 200 : 400;
+    return res.status(statusCode).json(data);
   } catch (error) {
+    const errorMessage = error?.message || "Terjadi kesalahan saat memproses.";
     return res.status(500).json({
-      error: error.message
+      status: false,
+      error: errorMessage
     });
   }
 }

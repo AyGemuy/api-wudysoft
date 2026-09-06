@@ -1,109 +1,170 @@
 import axios from "axios";
-import {
-  wrapper
-} from "axios-cookiejar-support";
-import {
-  CookieJar
-} from "tough-cookie";
 import * as cheerio from "cheerio";
-class Spotmate {
+class SpotiDown {
   constructor() {
-    this.baseURL = "https://spotmate.online";
-    this.cookieJar = new CookieJar();
-    this.client = wrapper(axios.create({
-      baseURL: this.baseURL,
-      jar: this.cookieJar,
-      withCredentials: true,
+    this.base = "https://spotidown.app";
+    this.cookies = {};
+    this.client = axios.create({
+      baseURL: this.base,
+      decompress: true,
       headers: {
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36",
-        Referer: "https://spotmate.online/"
+        "User-Agent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36",
+        Connection: "Keep-Alive",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9,id;q=0.8",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        Referer: "https://spotidown.app/"
       }
-    }));
+    });
   }
-  async getCsrfToken() {
+  saveCookies(res) {
+    const setCookie = res?.headers?.["set-cookie"] || [];
+    const list = Array.isArray(setCookie) ? setCookie : [setCookie];
+    list.forEach(c => {
+      if (!c) return;
+      const [pair] = c.split(";");
+      const [k, ...v] = pair.split("=");
+      if (k) this.cookies[k.trim()] = v.join("=").trim();
+    });
+  }
+  getCookieHeader() {
+    return Object.entries(this.cookies).map(([k, v]) => `${k}=${v}`).join("; ");
+  }
+  async req(path, method = "GET", data = null) {
+    const cookieStr = this.getCookieHeader();
+    const headers = {
+      ...cookieStr ? {
+        Cookie: cookieStr
+      } : {},
+      ...data ? {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Origin: "https://spotidown.app",
+        "X-Requested-With": "XMLHttpRequest"
+      } : {}
+    };
+    const res = await this.client({
+      url: path,
+      method: method,
+      data: data,
+      headers: headers
+    });
+    this.saveCookies(res);
+    return res;
+  }
+  async init() {
+    console.log("[1/3] Mendapatkan session token & cookies...");
+    const res = await this.req("/en6");
+    const html = typeof res?.data === "string" ? res.data : "";
+    const $ = cheerio.load(html);
+    let key = "";
+    let token = "";
+    $('form[name="spotifyurl"] input[type="hidden"], form.form-inline input[type="hidden"]').each((_, el) => {
+      const name = $(el).attr("name") || "";
+      const val = $(el).attr("value") || "";
+      if (name && name !== "g-recaptcha-response") {
+        key = name;
+        token = val;
+      }
+    });
+    return {
+      key: key || "_ZWKfT",
+      token: token || ""
+    };
+  }
+  async download({
+    url,
+    ...rest
+  }) {
     try {
-      const response = await this.client.get("/");
-      const $ = cheerio.load(response.data);
-      const csrfToken = $('meta[name="csrf-token"]').attr("content");
-      return csrfToken;
-    } catch (error) {
-      console.error("Error fetching CSRF token:", error);
-      return null;
-    }
-  }
-  async getTrackData(spotifyUrl) {
-    const csrfToken = await this.getCsrfToken();
-    if (!csrfToken) {
-      console.error("CSRF token tidak ditemukan.");
-      return null;
-    }
-    try {
-      const response = await this.client.post("/getTrackData", {
-        spotify_url: spotifyUrl
-      }, {
-        headers: {
-          "X-CSRF-TOKEN": csrfToken
-        }
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching track data:", error);
-      return null;
-    }
-  }
-  async convertTrack(url) {
-    const csrfToken = await this.getCsrfToken();
-    if (!csrfToken) {
-      console.error("CSRF token tidak ditemukan.");
-      return null;
-    }
-    try {
-      const response = await this.client.post("/convert", {
-        urls: url
-      }, {
-        headers: {
-          "X-CSRF-TOKEN": csrfToken
-        }
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Error converting track:", error);
-      return null;
-    }
-  }
-  async getCombinedData(spotifyUrl) {
-    const trackData = await this.getTrackData(spotifyUrl);
-    const convertedTrack = await this.convertTrack(spotifyUrl);
-    if (trackData && convertedTrack) {
+      if (!url) throw new Error("URL Spotify wajib diisi.");
+      const cleanUrl = url.split("?")[0];
+      const {
+        key,
+        token
+      } = await this.init();
+      console.log("[2/3] Mengirim permintaan lagu ke server...");
+      const actBody = new URLSearchParams({
+        url: cleanUrl,
+        "g-recaptcha-response": rest?.recaptchaToken ? rest.recaptchaToken : "dummy_token",
+        [key]: token
+      }).toString();
+      const actRes = await this.req("/action", "POST", actBody);
+      const rawData = typeof actRes?.data === "string" ? JSON.parse(actRes.data || "{}") : actRes?.data || {};
+      if (rawData?.error) {
+        throw new Error(rawData?.message || "Server menolak request (URL tidak valid / reCAPTCHA failed)");
+      }
+      const htmlFragment = rawData?.data || "";
+      if (!htmlFragment) {
+        throw new Error("Respons HTML kosong dari /action.");
+      }
+      const $act = cheerio.load(htmlFragment);
+      const formInputs = $act('form[name="submitspurl"] input, form input[type="hidden"]').map((_, el) => ({
+        k: $act(el).attr("name"),
+        v: $act(el).attr("value")
+      })).get();
+      const payload = formInputs.reduce((acc, curr) => {
+        if (curr?.k) acc[curr.k] = curr?.v || "";
+        return acc;
+      }, {});
+      if (!payload?.data || !payload?.token) {
+        const alertMsg = $act(".alert").text().trim();
+        throw new Error(alertMsg || "Gagal mengekstrak form token lagu dari respons server.");
+      }
+      console.log("[3/3] Mengambil tautan unduhan akhir...");
+      const trackBody = new URLSearchParams({
+        data: payload?.data || "",
+        base: payload?.base || cleanUrl,
+        token: payload?.token || "",
+        "g-recaptcha-response": rest?.recaptchaToken ? rest.recaptchaToken : "dummy_token"
+      }).toString();
+      const finalRes = await this.req("/action/track", "POST", trackBody);
+      const finalData = typeof finalRes?.data === "string" ? JSON.parse(finalRes.data || "{}") : finalRes?.data || {};
+      const $final = cheerio.load(finalData?.data || "");
+      const title = $final('h3[itemprop="name"] div, h3[itemprop="name"]').first().text().trim() || "Unknown Title";
+      const artist = $final(".spotidown-downloader-middle p span").first().text().trim() || "Unknown Artist";
+      const thumbnail = $final(".spotidown-downloader-left img").attr("src") || "";
+      const links = $final("a#popup, a.abutton").map((_, el) => ({
+        title: $final(el).text().trim(),
+        link: $final(el).attr("href") || ""
+      })).get();
+      const audio = links.find(l => l?.title?.toLowerCase()?.includes("mp3"))?.link || "";
+      const cover = links.find(l => l?.title?.toLowerCase()?.includes("cover"))?.link || "";
+      console.log("✔ Unduhan berhasil didapatkan!");
       return {
-        ...trackData,
-        ...convertedTrack
+        status: true,
+        title: title,
+        artist: artist,
+        thumbnail: thumbnail,
+        download: {
+          audio: audio,
+          cover: cover
+        }
       };
-    } else {
-      console.error("Gagal menggabungkan data.");
-      return null;
+    } catch (err) {
+      console.error("✖ Terjadi kesalahan:", err?.message || err);
+      return {
+        status: false,
+        message: err?.message || "Gagal memproses request"
+      };
     }
   }
 }
 export default async function handler(req, res) {
-  const {
-    url
-  } = req.method === "GET" ? req.query : req.body;
-  if (!url) {
+  const params = req.method === "GET" ? req.query : req.body;
+  if (!params.url) {
     return res.status(400).json({
-      error: "Missing required query parameter: url"
+      error: "Parameter 'url' diperlukan"
     });
   }
+  const api = new SpotiDown();
   try {
-    const spotmate = new Spotmate();
-    const combinedData = await spotmate.getCombinedData(url);
-    return res.status(200).json({
-      result: combinedData
-    });
+    const data = await api.download(params);
+    return res.status(200).json(data);
   } catch (error) {
+    const errorMessage = error.message || "Terjadi kesalahan saat memproses.";
     return res.status(500).json({
-      error: error.message
+      error: errorMessage
     });
   }
 }

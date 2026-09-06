@@ -1,6 +1,6 @@
 import axios from "axios";
 import FormData from "form-data";
-import PROXY from "@/configs/proxy-cors";
+import PROXY from "@/configs/proxy-url";
 const proxy = PROXY.url();
 console.log("CORS proxy", proxy);
 class SparkPix {

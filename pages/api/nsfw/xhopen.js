@@ -1,7 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import qs from "qs";
-import PROXY from "@/configs/proxy-url";
+import PROXY from "@/configs/proxy-cors";
 const proxy = PROXY.url();
 console.log("CORS proxy", proxy);
 class Xhopen {
