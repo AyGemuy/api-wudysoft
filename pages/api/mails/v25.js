@@ -1,0 +1,323 @@
+import axios from "axios";
+import crypto from "crypto";
+import PROXY from "@/configs/proxy-url";
+const proxy = PROXY.url();
+console.log("CORS proxy", proxy);
+class TempMail {
+  constructor() {
+    try {
+      this.token = "";
+      this.address = "";
+      this.password = "";
+      this.baseUrl = `${proxy}https://api.mail.tm`;
+      this.headers = {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 15; RMX3890 Build/AQ3A.240812.002)",
+        Connection: "Keep-Alive",
+        "Accept-Encoding": "gzip"
+      };
+      console.log("[MailTm] Client structural entry point initialized.");
+    } catch (err) {
+      console.error("[MailTm] Init crash:", err?.message);
+    }
+  }
+  _r(type) {
+    try {
+      const v = "aeiou";
+      const c = "bcdfghjklmnpqrstvwxyz";
+      const rc = str => str.charAt(crypto.randomInt ? crypto.randomInt(0, str.length) : Math.floor(Math.random() * str.length));
+      const rn = (min, max) => crypto.randomInt ? crypto.randomInt(min, max) : Math.floor(Math.random() * (max - min)) + min;
+      if (type === "user") {
+        let name = "";
+        const syl = rn(3, 5);
+        for (let i = 0; i < syl; i++) {
+          name += rc(c) + rc(v);
+        }
+        return `${name}${rn(10, 99)}`;
+      }
+      let pass = rc(c).toUpperCase() + rc(v);
+      for (let i = 0; i < 3; i++) {
+        pass += rc(c) + rc(v);
+      }
+      return `${pass}${rn(100, 999)}`;
+    } catch (err) {
+      return crypto.randomUUID ? crypto.randomUUID().split("-")[0] : Math.random().toString(36).substring(2, 10);
+    }
+  }
+  _s(obj) {
+    try {
+      if (Array.isArray(obj)) return obj.map(v => this._s(v));
+      if (obj !== null && typeof obj === "object" && obj.constructor === Object) {
+        return Object.keys(obj).reduce((acc, key) => {
+          const sk = key.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`).replace("@", "at_");
+          acc[sk] = this._s(obj[key]);
+          return acc;
+        }, {});
+      }
+      return obj;
+    } catch (err) {
+      return obj;
+    }
+  }
+  async _q(method, path, data, tok) {
+    try {
+      const act = tok || this.token;
+      const hdrs = {
+        ...this.headers
+      };
+      if (act) hdrs["Authorization"] = `Bearer ${act}`;
+      const res = await axios({
+        method: method || "GET",
+        url: `${this.baseUrl}${path}`,
+        headers: hdrs,
+        data: data || null
+      });
+      return res?.data || null;
+    } catch (err) {
+      console.error(`[MailTm] Err [${method}] ${path}:`, err?.response?.data || err?.message);
+      throw err;
+    }
+  }
+  async _t(tok) {
+    try {
+      if (tok || this.token) return tok || this.token;
+      console.log("[MailTm] Token absence detected. Requesting auto registration...");
+      const acc = await this.create({});
+      return acc?.token || "";
+    } catch (err) {
+      return "";
+    }
+  }
+  async domain({
+    token,
+    ...rest
+  } = {}) {
+    const act = token || this.token;
+    try {
+      console.log("[MailTm] Pulling accessible network domains...");
+      const p = rest?.page || 1;
+      const raw = await this._q("GET", `/domains?page=${p}`, null, act);
+      return {
+        status: true,
+        result: this._s(raw),
+        token: act
+      };
+    } catch (err) {
+      return {
+        status: false,
+        result: err.message || null,
+        token: act
+      };
+    }
+  }
+  async create({
+    token,
+    ...rest
+  } = {}) {
+    const act = token || this.token;
+    try {
+      console.log("[MailTm] Initializing identity constructor routine...");
+      let addr = rest?.address || this.address;
+      let pass = rest?.password || this.password;
+      if (!addr) {
+        const doms = await this.domain({
+          token: act
+        });
+        const domainsList = doms?.result?.["hydra:member"];
+        let selected = "web-library.net";
+        if (Array.isArray(domainsList) && domainsList.length > 0) {
+          const randomIndex = Math.floor(Math.random() * domainsList.length);
+          selected = domainsList[randomIndex]?.domain || selected;
+        }
+        addr = `${this._r("user")}@${selected}`;
+      }
+      if (!pass) pass = this._r("pass");
+      this.address = addr;
+      this.password = pass;
+      console.log(`[MailTm] Committing mapping for address target: ${addr}`);
+      const body = {
+        address: addr,
+        password: pass
+      };
+      const accRaw = await this._q("POST", "/accounts", body, act);
+      console.log("[MailTm] Exchanging credentials for identity token signature...");
+      const tokRaw = await this._q("POST", "/token", body, act);
+      this.token = tokRaw?.token || this.token;
+      return {
+        status: true,
+        result: this._s({
+          ...accRaw,
+          account_password: pass
+        }),
+        token: this.token
+      };
+    } catch (err) {
+      return {
+        status: false,
+        result: err.message || null,
+        token: act
+      };
+    }
+  }
+  async message({
+    token,
+    download,
+    source,
+    ...rest
+  } = {}) {
+    const act = await this._t(token);
+    try {
+      const msgId = rest?.id || rest?.msg_id || null;
+      const isDownloadTrue = download === true || download === "true";
+      const isSourceTrue = source === true || source === "true";
+      if (msgId) {
+        console.log(`[MailTm] Deep pulling targeted single node package message: ${msgId}`);
+        const single = await this._q("GET", `/messages/${msgId}`, null, act);
+        const detail = {
+          ...single
+        };
+        if (isDownloadTrue && single?.downloadUrl) {
+          try {
+            detail.download = await this._q("GET", single.downloadUrl, null, act);
+          } catch (dlErr) {
+            console.error(`[MailTm] Fail to download raw from dynamic path: ${single.downloadUrl}`);
+          }
+        }
+        if (isSourceTrue && single?.sourceUrl) {
+          try {
+            detail.source = await this._q("GET", single.sourceUrl, null, act);
+          } catch (srcErr) {
+            console.error(`[MailTm] Fail to get source from dynamic path: ${single.sourceUrl}`);
+          }
+        }
+        return {
+          status: true,
+          result: this._s({
+            ...single,
+            detail: detail
+          }),
+          token: act
+        };
+      }
+      console.log("[MailTm] Syncing current mailbox message queue registry...");
+      const p = rest?.page || 1;
+      const raw = await this._q("GET", `/messages?page=${p}`, null, act);
+      const isArray = Array.isArray(raw);
+      const shallow = isArray ? raw : raw?.["hydra:member"] || [];
+      const detailed = [];
+      console.log(`[MailTm] Parsing sequence buffer for ${shallow.length} mail packages via sequential for...of loop...`);
+      for (const item of shallow) {
+        let mappedItem = {
+          ...item
+        };
+        try {
+          const id = item?.id;
+          if (id) {
+            const content = await this._q("GET", `/messages/${id}`, null, act);
+            if (content) {
+              const detail = {
+                ...content
+              };
+              if (isDownloadTrue && content?.downloadUrl) {
+                try {
+                  detail.download = await this._q("GET", content.downloadUrl, null, act);
+                } catch (dlErr) {}
+              }
+              if (isSourceTrue && content?.sourceUrl) {
+                try {
+                  detail.source = await this._q("GET", content.sourceUrl, null, act);
+                } catch (srcErr) {}
+              }
+              mappedItem = {
+                ...item,
+                detail: detail
+              };
+            }
+          }
+        } catch (subErr) {
+          mappedItem.detail = null;
+        }
+        detailed.push(mappedItem);
+      }
+      return {
+        status: true,
+        result: this._s(detailed),
+        token: act
+      };
+    } catch (err) {
+      return {
+        status: false,
+        result: err.message || null,
+        token: act
+      };
+    }
+  }
+}
+export default async function handler(req, res) {
+  const {
+    action,
+    ...params
+  } = req.method === "GET" ? req.query : req.body;
+  const validActions = ["domain", "create", "message"];
+  if (!action) {
+    return res.status(400).json({
+      status: false,
+      result: {
+        error: "Parameter 'action' wajib diisi.",
+        available_actions: validActions,
+        usage: {
+          method: "GET / POST",
+          example: "/?action=create"
+        }
+      },
+      token: params.token || null
+    });
+  }
+  const api = new TempMail();
+  try {
+    let response;
+    switch (action) {
+      case "domain":
+        response = await api.domain(params);
+        break;
+      case "create":
+        response = await api.create(params);
+        break;
+      case "message":
+        if (!params.token) {
+          return res.status(400).json({
+            status: false,
+            result: "Parameter 'token' wajib diisi untuk action 'message'.",
+            token: null
+          });
+        }
+        response = await api.message(params);
+        break;
+      default:
+        return res.status(400).json({
+          status: false,
+          result: {
+            error: `Action tidak valid: ${action}.`,
+            valid_actions: validActions
+          },
+          token: params.token || null
+        });
+    }
+    return res.status(200).json({
+      status: response.status,
+      result: response.result,
+      token: response.token
+    });
+  } catch (error) {
+    console.error(`[FATAL ERROR] Kegagalan pada action '${action}':`, error);
+    return res.status(500).json({
+      status: false,
+      result: {
+        message: "Terjadi kesalahan internal pada server atau target website.",
+        error: error.message || "Unknown Error"
+      },
+      token: params.token || null
+    });
+  }
+}
