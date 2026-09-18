@@ -91,7 +91,6 @@ class TikApi {
       };
       const res = await axios(config);
       this.log(`Status: ${res?.status || 0}`, "OK");
-      console.log(res?.data);
       return res?.data;
     } catch (e) {
       const errMsg = e?.response?.data?.message || e?.message || "Unknown Error";
@@ -123,13 +122,16 @@ class TikApi {
   }
   async video_info({
     videoid,
+    video_id,
     ...rest
   } = {}) {
+    const id = videoid || video_id;
+    if (!id) throw new Error("Parameter 'videoid' wajib diisi.");
     return await this.req({
       method: "GET",
       path: this.cfg.video_info,
       params: {
-        videoid: videoid,
+        videoid: id,
         ...rest
       }
     });
@@ -138,6 +140,9 @@ class TikApi {
     video_ids,
     ...rest
   } = {}) {
+    if (!video_ids || Array.isArray(video_ids) && !video_ids.length) {
+      throw new Error("Parameter 'video_ids' wajib diisi.");
+    }
     return await this.req({
       method: "GET",
       path: this.cfg.videos_info,
@@ -175,26 +180,32 @@ class TikApi {
   }
   async read_video({
     video_id,
+    videoid,
     ...rest
   } = {}) {
+    const id = video_id || videoid;
+    if (!id) throw new Error("Parameter 'video_id' wajib diisi.");
     return await this.req({
       method: "POST",
       path: this.cfg.read_video,
       data: {
-        video_id: video_id,
+        video_id: id,
         ...rest
       }
     });
   }
   async share_video({
     video_id,
+    videoid,
     ...rest
   } = {}) {
+    const id = video_id || videoid;
+    if (!id) throw new Error("Parameter 'video_id' wajib diisi.");
     return await this.req({
       method: "POST",
       path: this.cfg.share_video,
       data: {
-        video_id: video_id,
+        video_id: id,
         ...rest
       }
     });
@@ -215,15 +226,18 @@ class TikApi {
   }
   async video_comments({
     videoid,
+    video_id,
     limit = 10,
     offset = 0,
     ...rest
   } = {}) {
+    const id = videoid || video_id;
+    if (!id) throw new Error("Parameter 'videoid' wajib diisi.");
     return await this.req({
       method: "GET",
       path: this.cfg.video_comments,
       params: {
-        videoid: videoid,
+        videoid: id,
         limit: limit,
         offset: offset,
         ...rest
@@ -235,6 +249,7 @@ class TikApi {
     limit = 10,
     ...rest
   } = {}) {
+    if (!comment_id) throw new Error("Parameter 'comment_id' wajib diisi.");
     return await this.req({
       method: "GET",
       path: this.cfg.comment_replies,
@@ -254,27 +269,33 @@ class TikApi {
   }
   async related_videos({
     videoid,
+    video_id,
     ...rest
   } = {}) {
+    const id = videoid || video_id;
+    if (!id) throw new Error("Parameter 'videoid' wajib diisi.");
     return await this.req({
       method: "GET",
       path: this.cfg.related_videos,
       params: {
-        videoid: videoid,
+        videoid: id,
         ...rest
       }
     });
   }
   async related_tag_videos({
     tagid,
+    tag_id,
     limit = 10,
     ...rest
   } = {}) {
+    const id = tagid || tag_id;
+    if (!id) throw new Error("Parameter 'tagid' wajib diisi.");
     return await this.req({
       method: "GET",
       path: this.cfg.related_tag_videos,
       params: {
-        tagid: tagid,
+        tagid: id,
         limit: limit,
         ...rest
       }
@@ -303,15 +324,18 @@ class TikApi {
   }
   async user_uploaded_videos({
     user_id,
+    userid,
     limit = 12,
     offset = 0,
     ...rest
   } = {}) {
+    const id = user_id || userid;
+    if (!id) throw new Error("Parameter 'user_id' wajib diisi.");
     return await this.req({
       method: "GET",
       path: this.cfg.user_uploaded_videos,
       params: {
-        user_id: user_id,
+        user_id: id,
         limit: limit,
         offset: offset,
         ...rest
@@ -329,6 +353,7 @@ class TikApi {
     slug,
     ...rest
   } = {}) {
+    if (!slug) throw new Error("Parameter 'slug' wajib diisi.");
     return await this.req({
       method: "GET",
       path: this.cfg.user_by_slug,
@@ -342,6 +367,7 @@ class TikApi {
     slug,
     ...rest
   } = {}) {
+    if (!slug) throw new Error("Parameter 'slug' wajib diisi.");
     return await this.req({
       method: "GET",
       path: this.cfg.live_cams_by_slug,
@@ -355,6 +381,7 @@ class TikApi {
     slug,
     ...rest
   } = {}) {
+    if (!slug) throw new Error("Parameter 'slug' wajib diisi.");
     return await this.req({
       method: "GET",
       path: this.cfg.live_cam_by_slug,
@@ -389,6 +416,7 @@ class TikApi {
     slug,
     ...rest
   } = {}) {
+    if (!slug) throw new Error("Parameter 'slug' wajib diisi.");
     return await this.req({
       method: "GET",
       path: this.cfg.pornstar_by_slug,
@@ -409,6 +437,7 @@ class TikApi {
     slug,
     ...rest
   } = {}) {
+    if (!slug) throw new Error("Parameter 'slug' wajib diisi.");
     return await this.req({
       method: "GET",
       path: this.cfg.producer_by_slug,
@@ -436,6 +465,7 @@ class TikApi {
     slug,
     ...rest
   } = {}) {
+    if (!slug) throw new Error("Parameter 'slug' wajib diisi.");
     return await this.req({
       method: "GET",
       path: this.cfg.action_by_slug,
@@ -463,6 +493,7 @@ class TikApi {
     slug,
     ...rest
   } = {}) {
+    if (!slug) throw new Error("Parameter 'slug' wajib diisi.");
     return await this.req({
       method: "GET",
       path: this.cfg.tag_by_slug,
@@ -516,16 +547,60 @@ class TikApi {
   }
   async listing_search({
     q,
+    query,
     ...rest
   } = {}) {
+    const keyword = q || query;
+    if (!keyword) throw new Error("Parameter 'q' wajib diisi.");
     return await this.req({
       method: "GET",
       path: this.cfg.listing_search,
       params: {
-        q: q,
+        q: keyword,
         ...rest
       }
     });
+  }
+  async search({
+    s,
+    q,
+    query,
+    ...rest
+  } = {}) {
+    const keyword = s || q || query || "";
+    if (!keyword) throw new Error("Parameter 's', 'q', atau 'query' wajib diisi.");
+    this.log(`Search Next.js -> "${keyword}"...`);
+    try {
+      const url = `https://tik.porn/?s=${encodeURIComponent(keyword)}`;
+      const res = await axios.get(url, {
+        headers: {
+          ...this.headers,
+          origin: "https://tik.porn",
+          referer: `https://tik.porn/?s=${encodeURIComponent(keyword)}`,
+          "x-nextjs-data": "1"
+        },
+        timeout: 3e4
+      });
+      if (res.data && typeof res.data === "object" && res.data.pageProps) {
+        return res.data;
+      }
+      if (typeof res.data === "string") {
+        const match = res.data.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
+        if (match) {
+          const nextData = JSON.parse(match[1]);
+          return nextData?.props || nextData;
+        }
+      }
+      return res.data || {
+        error: "No data found."
+      };
+    } catch (e) {
+      const errMsg = e?.response?.data?.message || e?.message || "Search failed";
+      this.log(errMsg, "ERR");
+      return {
+        error: errMsg
+      };
+    }
   }
 }
 export default async function handler(req, res) {
@@ -533,7 +608,7 @@ export default async function handler(req, res) {
     action,
     ...params
   } = req.method === "GET" ? req.query : req.body;
-  const validActions = ["guest", "video_recomendation", "video_info", "videos_info", "popular_videos", "next_videos", "read_video", "share_video", "recent_videos", "best_slide", "video_comments", "comment_replies", "explore_page_data", "related_videos", "related_tag_videos", "initial_profile_related_videos", "profile_related_videos", "user_rating_videos", "user_uploaded_videos", "user_following_data", "user_by_slug", "live_cams_by_slug", "live_cam_by_slug", "live_cam_3fold", "live_cam_online", "top_pornstars", "pornstar_by_slug", "top_producers", "producer_by_slug", "action_list", "top_actions", "action_by_slug", "tag_list", "top_tags", "tag_by_slug", "metadata", "following_info", "mentions_data", "profile_faqs", "profile_schema_data", "initial_listing", "listing_search"];
+  const validActions = ["guest", "search", "video_recomendation", "video_info", "videos_info", "popular_videos", "next_videos", "read_video", "share_video", "recent_videos", "best_slide", "video_comments", "comment_replies", "explore_page_data", "related_videos", "related_tag_videos", "initial_profile_related_videos", "profile_related_videos", "user_rating_videos", "user_uploaded_videos", "user_following_data", "user_by_slug", "live_cams_by_slug", "live_cam_by_slug", "live_cam_3fold", "live_cam_online", "top_pornstars", "pornstar_by_slug", "top_producers", "producer_by_slug", "action_list", "top_actions", "action_by_slug", "tag_list", "top_tags", "tag_by_slug", "metadata", "following_info", "mentions_data", "profile_faqs", "profile_schema_data", "initial_listing", "listing_search"];
   if (!action) {
     return res.status(400).json({
       status: false,
@@ -546,10 +621,19 @@ export default async function handler(req, res) {
     let response;
     switch (action) {
       case "guest":
-        response = await api.guest();
+        response = await api.guest(params);
+        break;
+      case "search":
+        if (!params.s && !params.q && !params.query) {
+          return res.status(400).json({
+            status: false,
+            error: "Parameter 's', 'q', atau 'query' wajib diisi untuk action 'search'."
+          });
+        }
+        response = await api.search(params);
         break;
       case "listing_search":
-        if (!params.q) {
+        if (!params.q && !params.query) {
           return res.status(400).json({
             status: false,
             error: "Parameter 'q' wajib diisi untuk action 'listing_search'."
@@ -561,15 +645,56 @@ export default async function handler(req, res) {
       case "related_videos":
       case "video_comments":
       case "read_video":
-      case "share_video":
-        if (!params.videoid && !params.video_id) {
-          const id = params.videoid || params.video_id;
-          if (!id) return res.status(400).json({
+      case "share_video": {
+        const id = params.videoid || params.video_id;
+        if (!id) {
+          return res.status(400).json({
             status: false,
-            error: `Parameter 'videoid' wajib diisi untuk action '${action}'.`
+            error: `Parameter 'videoid' atau 'video_id' wajib diisi untuk action '${action}'.`
           });
         }
-        response = await api[action](params);
+        response = await api[action]({
+          videoid: id,
+          video_id: id,
+          ...params
+        });
+        break;
+      }
+      case "videos_info":
+        if (!params.video_ids) {
+          return res.status(400).json({
+            status: false,
+            error: "Parameter 'video_ids' wajib diisi untuk action 'videos_info'."
+          });
+        }
+        response = await api.videos_info(params);
+        break;
+      case "comment_replies":
+        if (!params.comment_id) {
+          return res.status(400).json({
+            status: false,
+            error: "Parameter 'comment_id' wajib diisi untuk action 'comment_replies'."
+          });
+        }
+        response = await api.comment_replies(params);
+        break;
+      case "related_tag_videos":
+        if (!params.tagid && !params.tag_id) {
+          return res.status(400).json({
+            status: false,
+            error: "Parameter 'tagid' atau 'tag_id' wajib diisi untuk action 'related_tag_videos'."
+          });
+        }
+        response = await api.related_tag_videos(params);
+        break;
+      case "user_uploaded_videos":
+        if (!params.user_id && !params.userid) {
+          return res.status(400).json({
+            status: false,
+            error: "Parameter 'user_id' wajib diisi untuk action 'user_uploaded_videos'."
+          });
+        }
+        response = await api.user_uploaded_videos(params);
         break;
       case "user_by_slug":
       case "pornstar_by_slug":
@@ -591,21 +716,33 @@ export default async function handler(req, res) {
       case "recent_videos":
       case "best_slide":
       case "top_pornstars":
+      case "top_producers":
+      case "top_actions":
       case "top_tags":
+      case "action_list":
+      case "tag_list":
       case "metadata":
+      case "following_info":
+      case "mentions_data":
+      case "profile_faqs":
+      case "profile_schema_data":
+      case "initial_listing":
+      case "video_recomendation":
+      case "explore_page_data":
+      case "initial_profile_related_videos":
+      case "profile_related_videos":
+      case "user_rating_videos":
+      case "user_following_data":
+      case "live_cam_3fold":
+      case "live_cam_online":
         response = await api[action](params);
         break;
       default:
-        if (validActions.includes(action) && typeof api[action] === "function") {
-          response = await api[action](params);
-        } else {
-          return res.status(400).json({
-            status: false,
-            error: `Action tidak valid: ${action}.`,
-            valid_actions: validActions
-          });
-        }
-        break;
+        return res.status(400).json({
+          status: false,
+          error: `Action tidak valid: ${action}.`,
+          valid_actions: validActions
+        });
     }
     return res.status(200).json(response);
   } catch (error) {

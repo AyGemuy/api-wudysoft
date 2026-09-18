@@ -167,7 +167,7 @@ class NHentai {
   }
   async tagged({
     tag_id,
-    sort = "recent",
+    sort = "date",
     page = 1,
     ...rest
   } = {}) {
@@ -215,7 +215,7 @@ class NHentai {
   async search({
     query,
     page = 1,
-    sort = "recent",
+    sort = "date",
     ...rest
   } = {}) {
     if (!query) {

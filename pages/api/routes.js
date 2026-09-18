@@ -1082,6 +1082,7 @@ export default function handler(req, res) {
     { path: "/api/ai/dola", name: "Dola", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/ai/aichatpro", name: "Aichatpro", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/ai/multichats", name: "Multichats", params: [{ "name": "prompt", "in": "query", "required": false }], },
+    { path: "/api/ai/deeparena", name: "Deeparena", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/ai/aura", name: "Aura", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/ai/flatai", name: "Flatai", params: [{ "name": "prompt", "in": "query", "required": false }], },
     { path: "/api/ai/mentor", name: "Mentor", params: [{ "name": "prompt", "in": "query", "required": false }], },
