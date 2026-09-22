@@ -42,9 +42,9 @@ class BrainlyScraper {
 }
 export default async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
-  if (!params.prompt) {
+  if (!params.query) {
     return res.status(400).json({
-      error: "Prompt are required"
+      error: "query are required"
     });
   }
   try {
