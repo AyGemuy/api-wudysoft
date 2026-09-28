@@ -44,7 +44,7 @@ export default async function handler(req, res) {
 
     // Ganti res.set() menjadi res.setHeader()
     res.setHeader("Content-Type", "audio/mp3");
-    
+    res.setHeader("Content-Length", audioBuffer.length);
     
     return res.status(200).send(audioBuffer);
   } catch (error) {

@@ -1,4 +1,5 @@
 import axios from "axios";
+
 class MemeGenerator {
   constructor() {
     this.api = "https://api.memegen.link";
@@ -18,167 +19,131 @@ class MemeGenerator {
       '"': "''"
     };
   }
+
   encodeText(text) {
-    return text ? text.split("").map(c => this.chars[c] || c).join("") : "_";
+    if (!text || !text.trim()) return "_";
+    return text
+      .trim()
+      .split("")
+      .map(c => this.chars[c] || c)
+      .join("");
   }
-  async request(endpoint, method = "GET", body = null) {
-    try {
-      const options = {
-        method: method,
-        url: `${this.api}${endpoint}`
-      };
-      if (body) options.data = body;
-      const {
-        data
-      } = await axios(options);
-      return data;
-    } catch (err) {
-      throw new Error(`Gagal memproses permintaan: ${err.message}`);
-    }
-  }
+
   async getFonts() {
     try {
-      const fonts = await this.request("/fonts");
-      return fonts.map(v => v.id);
+      const { data } = await axios.get(`${this.api}/fonts`, { timeout: 15000 });
+      return data.map(v => v.id);
     } catch {
-      throw new Error("Gagal mengambil daftar font.");
+      return ["impact", "arial", "helvetica", "comic-sans"];
     }
   }
+
   async getTemplates() {
     try {
-      const templates = await this.request("/templates");
-      return templates.map(t => t.id);
+      const { data } = await axios.get(`${this.api}/templates`, { timeout: 15000 });
+      return data.map(t => t.id);
     } catch {
-      throw new Error("Gagal mengambil daftar template.");
+      return ["buzz", "doge", "drake", "fine", "kermit"];
     }
   }
-  async createImage(bg, top, bottom, font) {
-    if (!/^https?:\/\/.+/i.test(bg)) {
-      throw new Error("URL gambar tidak valid.");
-    }
-    try {
-      return await this.request("/images/custom", "POST", {
-        background: bg,
-        text: [top, bottom],
-        font: font,
-        extension: "png"
-      });
-    } catch {
-      throw new Error("Gagal membuat gambar kustom.");
-    }
+
+  createDirectCustomUrl(bgUrl, top, bottom, font = null) {
+    const encodedTop = this.encodeText(top);
+    const encodedBottom = this.encodeText(bottom);
+    let finalUrl = `${this.api}/images/custom/${encodedTop}/${encodedBottom}.png?background=${encodeURIComponent(bgUrl)}`;
+    if (font) finalUrl += `&font=${encodeURIComponent(font)}`;
+    return { url: finalUrl };
   }
-  async createImageFromTemplate(template, top, bottom) {
-    try {
-      const encodedTop = this.encodeText(top);
-      const encodedBottom = this.encodeText(bottom);
-      return {
-        url: `${this.api}/images/${template}/${encodedTop}/${encodedBottom}.png`
-      };
-    } catch {
-      throw new Error("Gagal membuat gambar dari template.");
-    }
+
+  createTemplateUrl(templateId, top, bottom) {
+    const encodedTop = this.encodeText(top);
+    const encodedBottom = this.encodeText(bottom);
+    return {
+      url: `${this.api}/images/${templateId}/${encodedTop}/${encodedBottom}.png`
+    };
   }
+
   async fetchBuffer(imageUrl) {
-    try {
-      const {
-        data
-      } = await axios.get(imageUrl, {
-        responseType: "arraybuffer"
-      });
-      return Buffer.from(data);
-    } catch {
-      throw new Error("Gagal mengambil gambar meme.");
-    }
-  }
-  async fetchBase64(imageUrl) {
-    try {
-      const buffer = await this.fetchBuffer(imageUrl);
-      return `data:image/png;base64,${buffer.toString("base64")}`;
-    } catch {
-      throw new Error("Gagal mengonversi gambar ke base64.");
-    }
+    const { data } = await axios.get(imageUrl, {
+      responseType: "arraybuffer",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      },
+      timeout: 30000
+    });
+    return Buffer.from(data);
   }
 }
+
 export default async function handler(req, res) {
   const memeGen = new MemeGenerator();
-  const {
-    action,
-    link,
-    top = " ",
-    bottom = " ",
-    font = 0,
-    template,
-    output = "buffer"
-  } = req.method === "GET" ? req.query : req.body;
+  const params = req.method === "GET" ? req.query : req.body;
+
+  const action = params.action || "generate";
+  const link = params.link || params.url || params.image;
+  const top = params.top || "_";
+  const bottom = params.bottom || "_";
+  const font = params.font || null;
+  const template = params.template || null;
+  const output = params.output || "buffer";
+
   try {
     switch (action) {
       case "fonts":
         return res.status(200).json(await memeGen.getFonts());
+
       case "templates":
         return res.status(200).json(await memeGen.getTemplates());
+
       case "generate":
-        if (!top || !bottom) {
-          return res.status(400).json({
-            error: "Paramenters 'top' dan 'bottom' diperlukan."
-          });
-        }
-        const fonts = await memeGen.getFonts();
-        const selectedFont = font ? fonts[font - 1] : fonts[0];
-        let memeImage;
+        let memeUrlObj = null;
+
+        // 1. Generate via Template Bawaan
         if (template) {
-          const templates = await memeGen.getTemplates();
-          const templateId = templates[template - 1] || templates[0];
-          memeImage = await memeGen.createImageFromTemplate(templateId, top, bottom);
-        } else if (link) {
+          memeUrlObj = memeGen.createTemplateUrl(template, top, bottom);
+        }
+        // 2. Generate via Custom Link Gambar
+        else if (link) {
           if (!/^https?:\/\/.+/i.test(link)) {
-            return res.status(400).json({
-              error: "URL gambar tidak valid."
-            });
+            return res.status(400).json({ status: false, error: "URL gambar tidak valid." });
           }
-          memeImage = await memeGen.createImage(link, top, bottom, selectedFont);
+          memeUrlObj = memeGen.createDirectCustomUrl(link, top, bottom, font);
         } else {
           return res.status(400).json({
-            error: "Paramenter 'link' atau 'template' diperlukan."
+            status: false,
+            error: "Parameter 'link' atau 'template' diperlukan."
           });
         }
-        if (!memeImage.url) {
-          return res.status(500).json({
-            error: "Gagal mendapatkan URL gambar meme."
-          });
-        }
+
         if (output === "url") {
+          return res.status(200).json({ status: true, url: memeUrlObj.url });
+        }
+
+        // Ambil hasil gambar dalam bentuk Buffer
+        const imageBuffer = await memeGen.fetchBuffer(memeUrlObj.url);
+
+        if (output === "base64") {
           return res.status(200).json({
-            url: memeImage.url
+            status: true,
+            base64: `data:image/png;base64,${imageBuffer.toString("base64")}`
           });
         }
-        try {
-          if (output === "buffer") {
-            const imageBuffer = await memeGen.fetchBuffer(memeImage.url);
-            res.setHeader("Content-Type", "image/png");
-            return res.status(200).send(imageBuffer);
-          } else if (output === "base64") {
-            const base64Image = await memeGen.fetchBase64(memeImage.url);
-            return res.status(200).json({
-              base64: base64Image
-            });
-          } else {
-            return res.status(400).json({
-              error: "Format output tidak valid."
-            });
-          }
-        } catch {
-          return res.status(500).json({
-            error: "Gagal mengambil gambar meme."
-          });
-        }
+
+        res.setHeader("Content-Type", "image/png");
+        res.setHeader("Cache-Control", "public, max-age=86400");
+        return res.status(200).send(imageBuffer);
+
       default:
         return res.status(400).json({
+          status: false,
           error: "Aksi tidak valid. Gunakan 'fonts', 'templates', atau 'generate'."
         });
     }
   } catch (error) {
+    console.error("[MEMEGEN API ERROR]:", error?.message || error);
     return res.status(500).json({
-      error: error.message
+      status: false,
+      error: error?.message || "Terjadi kesalahan saat memproses gambar meme."
     });
   }
 }
