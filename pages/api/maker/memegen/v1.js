@@ -16,23 +16,26 @@ class MemeGenerator {
       "\\": "~b",
       "<": "~l",
       ">": "~g",
-      '"': "''"
+      '"': "''",
     };
   }
 
   encodeText(text) {
-    if (!text || !text.trim()) return "_";
-    return text
+    // Jika teks kosong, spasi, atau placeholder "_", kembalikan 1 underscore (Blank di memegen)
+    if (!text || !String(text).trim() || String(text).trim() === "_") {
+      return "_";
+    }
+    return String(text)
       .trim()
       .split("")
-      .map(c => this.chars[c] || c)
+      .map((c) => this.chars[c] || c)
       .join("");
   }
 
   async getFonts() {
     try {
       const { data } = await axios.get(`${this.api}/fonts`, { timeout: 15000 });
-      return data.map(v => v.id);
+      return data.map((v) => v.id);
     } catch {
       return ["impact", "arial", "helvetica", "comic-sans"];
     }
@@ -41,7 +44,7 @@ class MemeGenerator {
   async getTemplates() {
     try {
       const { data } = await axios.get(`${this.api}/templates`, { timeout: 15000 });
-      return data.map(t => t.id);
+      return data.map((t) => t.id);
     } catch {
       return ["buzz", "doge", "drake", "fine", "kermit"];
     }
@@ -59,7 +62,7 @@ class MemeGenerator {
     const encodedTop = this.encodeText(top);
     const encodedBottom = this.encodeText(bottom);
     return {
-      url: `${this.api}/images/${templateId}/${encodedTop}/${encodedBottom}.png`
+      url: `${this.api}/images/${templateId}/${encodedTop}/${encodedBottom}.png`,
     };
   }
 
@@ -67,9 +70,10 @@ class MemeGenerator {
     const { data } = await axios.get(imageUrl, {
       responseType: "arraybuffer",
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       },
-      timeout: 30000
+      timeout: 30000,
     });
     return Buffer.from(data);
   }
@@ -81,8 +85,9 @@ export default async function handler(req, res) {
 
   const action = params.action || "generate";
   const link = params.link || params.url || params.image;
-  const top = params.top || "_";
-  const bottom = params.bottom || "_";
+  // JANGAN gunakan default "_" di sini agar tidak memicu double underscore ("__")
+  const top = params.top ?? "";
+  const bottom = params.bottom ?? "";
   const font = params.font || null;
   const template = params.template || null;
   const output = params.output || "buffer";
@@ -111,7 +116,7 @@ export default async function handler(req, res) {
         } else {
           return res.status(400).json({
             status: false,
-            error: "Parameter 'link' atau 'template' diperlukan."
+            error: "Parameter 'link' atau 'template' diperlukan.",
           });
         }
 
@@ -125,7 +130,7 @@ export default async function handler(req, res) {
         if (output === "base64") {
           return res.status(200).json({
             status: true,
-            base64: `data:image/png;base64,${imageBuffer.toString("base64")}`
+            base64: `data:image/png;base64,${imageBuffer.toString("base64")}`,
           });
         }
 
@@ -136,14 +141,14 @@ export default async function handler(req, res) {
       default:
         return res.status(400).json({
           status: false,
-          error: "Aksi tidak valid. Gunakan 'fonts', 'templates', atau 'generate'."
+          error: "Aksi tidak valid. Gunakan 'fonts', 'templates', atau 'generate'.",
         });
     }
   } catch (error) {
     console.error("[MEMEGEN API ERROR]:", error?.message || error);
     return res.status(500).json({
       status: false,
-      error: error?.message || "Terjadi kesalahan saat memproses gambar meme."
+      error: error?.message || "Terjadi kesalahan saat memproses gambar meme.",
     });
   }
 }

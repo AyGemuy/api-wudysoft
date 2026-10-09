@@ -56,7 +56,7 @@ export default async function handler(req, res) {
     if (!response.ok) throw new Error(`Gagal mengambil gambar dari URL: ${response.status}`);
     const buffer = await response.arrayBuffer();
     const paintByText = new PaintByText();
-    const result = await paintByText.create(Buffer, from(buffer), prompt);
+    const result = await paintByText.create(Buffer.from(buffer), prompt);
     return res.status(200).json({
       status: "success",
       data: result
