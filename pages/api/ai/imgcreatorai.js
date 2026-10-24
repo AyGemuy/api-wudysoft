@@ -292,7 +292,7 @@ export default async function handler(req, res) {
   }
   const api = new ImgCreatorAI();
   try {
-    const data = await api.generate(params);
+    const result = await api.generate(params);
     res.setHeader("Content-Type", result.contentType);
     return res.status(200).send(result.buffer);
   } catch (error) {

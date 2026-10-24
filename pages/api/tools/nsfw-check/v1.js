@@ -1,8 +1,5 @@
 import axios from "axios";
-import {
-  Blob,
-  FormData
-} from "formdata-node";
+import FormData from "form-data";
 import * as cheerio from "cheerio";
 class NyckelChecker {
   constructor() {
@@ -21,7 +18,7 @@ class NyckelChecker {
     if (!url || !url.startsWith("http")) {
       return {
         valid: false,
-        error: "Input harus berupa URL gambar yang valid."
+        error: "URL gambar tidak valid atau format URL salah."
       };
     }
     try {
@@ -30,7 +27,7 @@ class NyckelChecker {
       if (!contentType || !contentType.startsWith("image/")) {
         return {
           valid: false,
-          error: "URL tersebut bukan gambar."
+          error: "URL yang diberikan bukan merupakan file gambar."
         };
       }
       return {
@@ -64,8 +61,10 @@ class NyckelChecker {
       };
     }
   }
-  async checkImage(url) {
-    const validation = await this.validateImage(url);
+  async checkImage({
+    image
+  }) {
+    const validation = await this.validateImage(image);
     if (!validation.valid) {
       return {
         success: false,
@@ -86,16 +85,16 @@ class NyckelChecker {
       };
     }
     try {
-      const imageRes = await axios.get(url, {
+      const imageRes = await axios.get(image, {
         responseType: "arraybuffer",
         headers: this.headers
       });
-      const blob = new Blob([imageRes.data], {
-        type: validation.contentType
-      });
       const form = new FormData();
-      const ext = validation.contentType.split("/")[1];
-      form.append("file", blob, "image." + ext);
+      const ext = validation.contentType.split("/")[1] || "jpeg";
+      form.append("file", Buffer.from(imageRes.data), {
+        filename: `image.${ext}`,
+        contentType: validation.contentType
+      });
       const invokeUrl = `${this.base}${this.invokeEndpoint}/${functionData.id}/invoke`;
       const response = await axios.post(invokeUrl, form, {
         headers: {
@@ -112,16 +111,17 @@ class NyckelChecker {
         const cap = Math.random() * (.992 - .97) + .97;
         confidence = Math.min(confidence, cap);
       }
+      const isNsfw = labelName.toLowerCase().includes("nsfw");
       return {
         success: true,
         code: 200,
         result: {
-          isNsfw: labelName.toLowerCase().includes("nsfw"),
+          isNsfw: isNsfw,
           labelName: labelName,
           labelId: labelId,
           confidence: confidence,
           percentage: (confidence * 100).toFixed(2) + "%",
-          message: labelName.toLowerCase().includes("nsfw") ? "Waduh, gambar ini terdeteksi NSFW. Jangan dishare yak bree." : "Aman bree, gambar ini tidak terdeteksi NSFW. Gaskeun!"
+          message: isNsfw ? "Gambar terdeteksi mengandung konten NSFW." : "Gambar tidak terdeteksi mengandung konten NSFW."
         }
       };
     } catch (err) {
@@ -129,26 +129,27 @@ class NyckelChecker {
         success: false,
         code: 400,
         result: {
-          error: err.message
+          error: err.response?.data?.message || err.message
         }
       };
     }
   }
 }
 export default async function handler(req, res) {
-  try {
-    const {
-      url
-    } = req.method === "GET" ? req.query : req.body;
-    if (!url) return res.status(400).json({
-      error: "No URL"
+  const params = req.method === "GET" ? req.query : req.body;
+  if (!params.image) {
+    return res.status(400).json({
+      error: "Parameter 'image' diperlukan"
     });
-    const check = new NyckelChecker();
-    const result = await check.checkImage(url);
-    return res.status(200).json(result);
+  }
+  const api = new NyckelChecker();
+  try {
+    const data = await api.checkImage(params);
+    return res.status(200).json(data);
   } catch (error) {
-    res.status(500).json({
-      error: error.message
+    const errorMessage = error.message || "Terjadi kesalahan saat memproses.";
+    return res.status(500).json({
+      error: errorMessage
     });
   }
 }
