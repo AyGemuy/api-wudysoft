@@ -1,0 +1,21 @@
+{
+  "name": "Glass Next",
+  "short_name": "Glass",
+  "description": "Starter Next.js glassmorphism dengan auth, playground, dan PWA.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0a1c",
+  "theme_color": "#0a0a1c",
+  "lang": "id",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Playground", "url": "/playground" },
+    { "name": "Masuk", "url": "/auth" }
+  ]
+}
