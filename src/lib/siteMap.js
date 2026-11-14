@@ -1,0 +1,178 @@
+/** Peta halaman: dipakai oleh grid card di Home dan footer situs. */
+export const CATEGORIES = [
+  { id: 'all', label: 'Semua' },
+  { id: 'core', label: 'Core' },
+  { id: 'tools', label: 'Tools' },
+  { id: 'comms', label: 'Komunikasi' },
+  { id: 'identity', label: 'Akses' },
+  { id: 'api', label: 'API' },
+];
+
+/**
+ * preview: jenis ilustrasi animasi pada kartu
+ * accent: a1 | a2 | a3 (mengikuti tema)
+ * locked: butuh login (middleware)
+ * external: dibuka di tab baru (route API)
+ * action: 'theme' membuka Theme Studio
+ */
+export const SITE_PAGES = [
+  {
+    id: 'playground',
+    title: 'API Playground',
+    href: '/playground',
+    category: 'core',
+    icon: 'Terminal',
+    accent: 'a2',
+    preview: 'terminal',
+    status: 'LIVE',
+    locked: true,
+    desc: 'Terminal interaktif untuk mencoba endpoint, mengirim request, dan melihat respons secara real-time.',
+    tags: ['REST', 'Request', 'Console'],
+  },
+  {
+    id: 'stats',
+    title: 'System & API Stats',
+    href: '/stats',
+    category: 'core',
+    icon: 'Activity',
+    accent: 'a1',
+    preview: 'chart',
+    status: 'LIVE',
+    desc: 'Telemetri penggunaan API, log permintaan, dan kesehatan sistem dalam satu dasbor.',
+    tags: ['Telemetri', 'Log', 'Grafik'],
+  },
+  {
+    id: 'rooms',
+    title: 'Cyber Rooms',
+    href: '/rooms',
+    category: 'comms',
+    icon: 'MessageSquare',
+    accent: 'a3',
+    preview: 'chat',
+    status: 'LIVE',
+    desc: 'Ruang obrolan real-time dengan beberapa kanal, cocok untuk koordinasi cepat antar operator.',
+    tags: ['Chat', 'Realtime', 'Kanal'],
+  },
+  {
+    id: 'beautify',
+    title: 'Code Beautifier',
+    href: '/tools/beautify',
+    category: 'tools',
+    icon: 'FileCode',
+    accent: 'a2',
+    preview: 'code',
+    status: 'TOOL',
+    desc: 'Rapikan, minify, dan buka bungkusan kode JavaScript, HTML, dan CSS dalam hitungan detik.',
+    tags: ['JS', 'HTML', 'CSS'],
+  },
+  {
+    id: 'upload',
+    title: 'Multi-Host Uploader',
+    href: '/tools/upload',
+    category: 'tools',
+    icon: 'UploadCloud',
+    accent: 'a1',
+    preview: 'upload',
+    status: 'TOOL',
+    desc: 'Unggah file ke beberapa host sekaligus dan dapatkan tautan siap bagikan.',
+    tags: ['Upload', 'Link', 'Multi-host'],
+  },
+  {
+    id: 'theme',
+    title: 'Theme Studio',
+    href: '#theme',
+    category: 'core',
+    icon: 'Sliders',
+    accent: 'a3',
+    preview: 'theme',
+    status: 'NEW',
+    action: 'theme',
+    desc: '17 preset tema, warna bebas, gaya kartu, partikel, font, dan kecepatan animasi. Semua tersimpan otomatis.',
+    tags: ['17 tema', 'Warna bebas', 'Ekspor'],
+  },
+  {
+    id: 'auth',
+    title: 'Masuk & Daftar',
+    href: '/auth',
+    category: 'identity',
+    icon: 'Lock',
+    accent: 'a2',
+    preview: 'lock',
+    status: 'SECURE',
+    desc: 'Daftar atau masuk dengan email & password, GitHub, atau Google. Password disimpan terenkripsi.',
+    tags: ['Sign up', 'OAuth', 'bcrypt'],
+  },
+  {
+    id: 'guest',
+    title: 'Akses Tamu Instan',
+    href: '/auth/guest',
+    category: 'identity',
+    icon: 'Zap',
+    accent: 'a1',
+    preview: 'guest',
+    status: 'FAST',
+    desc: 'Coba platform tanpa mendaftar. Sesi tamu dibuat otomatis dengan satu ketukan.',
+    tags: ['Tanpa akun', 'Cepat'],
+  },
+  {
+    id: 'health',
+    title: 'API Health',
+    href: '/api/health',
+    category: 'api',
+    icon: 'Server',
+    accent: 'a3',
+    preview: 'json',
+    status: 'JSON',
+    external: true,
+    desc: 'Endpoint status layanan: cek apakah API dan database sedang online.',
+    tags: ['GET', 'JSON', 'Status'],
+  },
+  {
+    id: 'openapi',
+    title: 'OpenAPI Spec',
+    href: '/api/openapi',
+    category: 'api',
+    icon: 'FileText',
+    accent: 'a2',
+    preview: 'json',
+    status: 'DOCS',
+    external: true,
+    desc: 'Spesifikasi OpenAPI lengkap untuk semua endpoint, siap diimpor ke Postman atau Swagger.',
+    tags: ['OpenAPI', 'Docs'],
+  },
+];
+
+export const FOOTER_COLUMNS = [
+  {
+    title: 'Platform',
+    links: [
+      { label: 'Command Deck', href: '/' },
+      { label: 'API Playground', href: '/playground' },
+      { label: 'System Stats', href: '/stats' },
+      { label: 'Cyber Rooms', href: '/rooms' },
+    ],
+  },
+  {
+    title: 'Tools',
+    links: [
+      { label: 'Code Beautifier', href: '/tools/beautify' },
+      { label: 'Multi-Host Uploader', href: '/tools/upload' },
+    ],
+  },
+  {
+    title: 'Akun',
+    links: [
+      { label: 'Masuk', href: '/auth' },
+      { label: 'Daftar', href: '/auth/signup' },
+      { label: 'Akses Tamu', href: '/auth/guest' },
+      { label: 'OAuth', href: '/auth/oauth' },
+    ],
+  },
+  {
+    title: 'API',
+    links: [
+      { label: 'Health', href: '/api/health', external: true },
+      { label: 'OpenAPI', href: '/api/openapi', external: true },
+    ],
+  },
+];

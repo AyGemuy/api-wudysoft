@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "node src/index.js --dev",
     "build": "next build",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "openapi": "node scripts/openapi-gen.mjs",
+    "predev": "npm run openapi",
+    "prebuild": "npm run openapi"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "latest",
@@ -18,6 +21,7 @@
     "awesome-phonenumber": "latest",
     "axios": "latest",
     "axios-cookiejar-support": "^7.0.0",
+    "bcryptjs": "^2.4.3",
     "cainode": "latest",
     "canvafy": "latest",
     "chalk": "latest",

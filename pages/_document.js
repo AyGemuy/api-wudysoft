@@ -1,10 +1,12 @@
 import { Html, Head, Main, NextScript } from 'next/document';
+import { THEME_BOOT_SCRIPT } from '@/src/lib/themes';
 
 export default function Document() {
   return (
     <Html lang="id" data-theme="stealth">
       <Head>
         <meta charSet="utf-8" />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/favicon.ico" />
         <meta name="theme-color" content="#07090e" />
@@ -14,11 +16,14 @@ export default function Document() {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
       </Head>
       <body>
+        <noscript>
+          <style>{'.boot-overlay{display:none!important}html.is-loading{overflow:auto!important}'}</style>
+        </noscript>
         <Main />
         <NextScript />
       </body>

@@ -386,12 +386,13 @@ export default function RoomsPage() {
         .rooms-container {
           display: grid;
           grid-template-columns: 240px 1fr;
-          height: 620px;
+          height: min(620px, calc(100dvh - 220px));
+          min-height: 440px;
           border-radius: var(--radius);
           overflow: hidden;
         }
         .rooms-sidebar {
-          background: rgba(0, 0, 0, 0.35);
+          background: color-mix(in srgb, var(--bg1) 35%, transparent);
           border-right: 1px solid var(--border);
           display: flex;
           flex-direction: column;
@@ -414,7 +415,7 @@ export default function RoomsPage() {
           flex-direction: column;
           gap: 4px;
         }
-        .channel-btn {
+        :global(.channel-btn) {
           display: flex;
           align-items: center;
           gap: 8px;
@@ -429,11 +430,11 @@ export default function RoomsPage() {
           text-align: left;
           transition: 0.15s;
         }
-        .channel-btn:hover {
-          background: rgba(255, 255, 255, 0.04);
+        :global(.channel-btn:hover) {
+          background: color-mix(in srgb, var(--text) 4%, transparent);
           color: var(--text);
         }
-        .channel-btn.active {
+        :global(.channel-btn.active) {
           background: rgba(56, 189, 248, 0.14);
           border-color: rgba(56, 189, 248, 0.3);
           color: var(--a2);
@@ -447,7 +448,7 @@ export default function RoomsPage() {
           display: flex;
           flex-direction: column;
           height: 100%;
-          background: rgba(0, 0, 0, 0.2);
+          background: color-mix(in srgb, var(--bg1) 20%, transparent);
         }
         .chat-top-bar {
           display: flex;
@@ -455,7 +456,7 @@ export default function RoomsPage() {
           justify-content: space-between;
           padding: 12px 18px;
           border-bottom: 1px solid var(--border);
-          background: rgba(255, 255, 255, 0.02);
+          background: color-mix(in srgb, var(--text) 2%, transparent);
         }
         .messages-stream {
           flex: 1;
@@ -465,14 +466,14 @@ export default function RoomsPage() {
           flex-direction: column;
           gap: 12px;
         }
-        .chat-bubble-wrap {
+        :global(.chat-bubble-wrap) {
           display: flex;
           flex-direction: column;
           align-self: flex-start;
           max-width: 75%;
           gap: 4px;
         }
-        .chat-bubble-wrap.mine {
+        :global(.chat-bubble-wrap.mine) {
           align-self: flex-end;
         }
         .bubble-head {
@@ -481,7 +482,7 @@ export default function RoomsPage() {
           gap: 8px;
           font-size: 0.72rem;
         }
-        .chat-bubble-wrap.mine .bubble-head {
+        :global(.chat-bubble-wrap.mine) .bubble-head {
           justify-content: flex-end;
         }
         .bubble-author {
@@ -495,13 +496,13 @@ export default function RoomsPage() {
         .bubble-body {
           padding: 10px 14px;
           border-radius: 16px;
-          background: rgba(255, 255, 255, 0.06);
+          background: color-mix(in srgb, var(--text) 6%, transparent);
           border: 1px solid var(--border);
           font-size: 0.88rem;
           line-height: 1.45;
           word-break: break-word;
         }
-        .chat-bubble-wrap.mine .bubble-body {
+        :global(.chat-bubble-wrap.mine) .bubble-body {
           background: linear-gradient(135deg, rgba(2, 132, 199, 0.35), rgba(99, 102, 241, 0.35));
           border-color: rgba(56, 189, 248, 0.4);
         }
@@ -513,7 +514,7 @@ export default function RoomsPage() {
           display: flex;
           align-items: center;
           gap: 4px;
-          background: rgba(255, 255, 255, 0.04);
+          background: color-mix(in srgb, var(--text) 4%, transparent);
           border: 1px solid var(--border);
           border-radius: 8px;
           color: var(--muted);
@@ -535,7 +536,7 @@ export default function RoomsPage() {
           gap: 10px;
           padding: 14px 18px;
           border-top: 1px solid var(--border);
-          background: rgba(0, 0, 0, 0.35);
+          background: color-mix(in srgb, var(--bg1) 35%, transparent);
         }
         .chat-input-field {
           flex: 1;
@@ -543,7 +544,8 @@ export default function RoomsPage() {
         @media (max-width: 768px) {
           .rooms-container {
             grid-template-columns: 1fr;
-            height: 580px;
+            height: min(580px, calc(100dvh - 220px));
+            min-height: 420px;
           }
           .rooms-sidebar {
             display: none; /* Di mobile chat stream full width */

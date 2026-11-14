@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Seo from '@/components/Seo';
 import { Zap, User, RefreshCw, ArrowRight, ArrowLeft } from 'lucide-react';
 import { sound } from '@/src/lib/interactiveEffects';
+import { safeNext } from '@/src/lib/safeNext';
+import { authErrorMessage } from '@/src/lib/authErrors';
 
 export default function GuestPage() {
   const router = useRouter();
@@ -14,12 +16,15 @@ export default function GuestPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  // 1. Redirect jika sudah login
+  const nextUrl = safeNext(router.query.next, '/playground');
+
+  // 1. Redirect jika sudah login (tunggu query siap)
   useEffect(() => {
+    if (!router.isReady) return;
     if (status === 'authenticated' && session?.user) {
-      router.replace(router.query.next || '/playground');
+      router.replace(nextUrl);
     }
-  }, [status, session, router]);
+  }, [router.isReady, status, session, nextUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 2. Eksekusi Login Tamu via NextAuth
   const handleStartGuest = async (e) => {
@@ -28,16 +33,17 @@ export default function GuestPage() {
     setBusy(true);
     setError('');
 
-    const targetDestination = router.query.next || '/playground';
+    const targetDestination = nextUrl;
 
     try {
       const res = await signIn('guest', {
         redirect: false,
         callbackUrl: targetDestination,
+        name: name.trim(),
       });
 
       if (res?.error) {
-        throw new Error(res.error || 'Gagal memulai sesi tamu');
+        throw new Error(authErrorMessage(res.error) || 'Gagal memulai sesi tamu');
       }
 
       sound.playBeep();
@@ -141,7 +147,7 @@ export default function GuestPage() {
           {/* Link Kembali */}
           <div style={{ textAlign: 'center', marginTop: '6px' }}>
             <Link
-              href={router.query.next ? `/auth?next=${encodeURIComponent(router.query.next)}` : '/auth'}
+              href={router.query.next ? `/auth?next=${encodeURIComponent(nextUrl)}` : '/auth'}
               className="muted-link"
               onClick={() => sound.playClick()}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem' }}

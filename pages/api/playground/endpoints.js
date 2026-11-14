@@ -27,7 +27,7 @@ export default function handler(req, res) {
   let list = scanApiDirectory(apiDirectory);
 
   if (!list || list.length === 0) {
-    list = ['/api/health', '/api/auth/me', '/api/playground/echo', '/api/oauth/providers'];
+    list = ['/api/health', '/api/auth/me', '/api/playground/echo', '/api/auth/providers'];
   }
 
   const cleanList = [...new Set(list)].filter((ep) => ep !== '/api/playground/endpoints');

@@ -113,7 +113,7 @@ export default function StatsPage() {
         </header>
 
         {/* TOP 4 KEY METRIC TILES */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '16px' }}>
           {/* TOTAL REQUESTS */}
           <motion.div className="glass card" whileHover={{ y: -3 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -172,7 +172,7 @@ export default function StatsPage() {
         </div>
 
         {/* MIDDLE SECTION: SYSTEM KERNEL & MEMORY USAGE */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '20px' }}>
           {/* OS & KERNEL SPECS */}
           <motion.div className="glass card" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
@@ -221,7 +221,7 @@ export default function StatsPage() {
                 <span style={{ color: 'var(--muted)' }}>Host RAM Utilization</span>
                 <strong>{data?.system?.memory?.usedMB} MB / {data?.system?.memory?.totalMB} MB ({data?.system?.memory?.percent}%)</strong>
               </div>
-              <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.08)', borderRadius: '6px', overflow: 'hidden' }}>
+              <div style={{ width: '100%', height: '8px', background: 'color-mix(in srgb, var(--text) 8%, transparent)', borderRadius: '6px', overflow: 'hidden' }}>
                 <motion.div
                   style={{ height: '100%', background: 'linear-gradient(90deg, var(--a1), var(--a2))' }}
                   animate={{ width: `${data?.system?.memory?.percent || 0}%` }}
@@ -247,7 +247,7 @@ export default function StatsPage() {
             </div>
 
             {/* MongoDB Telemetry Status */}
-            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(0,0,0,0.3)', borderRadius: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ marginTop: '16px', padding: '12px', background: 'color-mix(in srgb, var(--bg1) 30%, transparent)', borderRadius: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Database size={16} color="var(--a2)" />
                 <span style={{ fontSize: '0.8rem' }}>MongoDB Atlas Cloud</span>
@@ -324,7 +324,7 @@ export default function StatsPage() {
           justify-content: space-between;
           align-items: center;
           padding: 6px 0;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+          border-bottom: 1px solid color-mix(in srgb, var(--text) 4%, transparent);
         }
         .spec-label {
           color: var(--muted);
@@ -337,7 +337,7 @@ export default function StatsPage() {
           flex-direction: column;
           gap: 4px;
           padding: 12px;
-          background: rgba(255, 255, 255, 0.03);
+          background: color-mix(in srgb, var(--text) 3%, transparent);
           border-radius: 12px;
           border: 1px solid var(--border);
         }
@@ -360,7 +360,7 @@ export default function StatsPage() {
         }
         .custom-table td {
           padding: 10px 12px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+          border-bottom: 1px solid color-mix(in srgb, var(--text) 4%, transparent);
         }
       `}</style>
     </>

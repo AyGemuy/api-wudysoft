@@ -156,7 +156,7 @@ export default function BeautifyPage() {
                 color: '#fff',
                 fontSize: '0.85rem',
                 fontWeight: 600,
-                boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                boxShadow: '0 10px 30px color-mix(in srgb, var(--shadow-c) 50%, transparent)',
               }}
             >
               {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
@@ -193,7 +193,7 @@ export default function BeautifyPage() {
               padding: '36px 20px',
               borderRadius: '18px',
               border: `2px dashed ${dragActive ? 'var(--a2)' : 'var(--border)'}`,
-              background: dragActive ? 'rgba(56, 189, 248, 0.12)' : 'rgba(0, 0, 0, 0.25)',
+              background: dragActive ? 'rgba(56, 189, 248, 0.12)' : 'color-mix(in srgb, var(--bg1) 25%, transparent)',
               textAlign: 'center',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
@@ -211,7 +211,7 @@ export default function BeautifyPage() {
             />
             <motion.div whileHover={{ scale: 1.03 }}>
               <UploadCloud size={44} color={dragActive ? 'var(--a2)' : 'var(--muted)'} style={{ margin: '0 auto 10px' }} />
-              <strong style={{ display: 'block', fontSize: '1rem', color: '#fff' }}>
+              <strong style={{ display: 'block', fontSize: '1rem', color: 'var(--text)' }}>
                 Drop File JS / ZIP ke sini (Otomatis Upload & Beautify)
               </strong>
               <span style={{ fontSize: '0.78rem', color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
@@ -272,7 +272,7 @@ export default function BeautifyPage() {
         </motion.div>
 
         {/* Info Cards Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '16px' }}>
           <motion.div className="glass card" whileHover={{ y: -3 }}>
             <FileCode size={24} color="var(--a2)" />
             <strong style={{ marginTop: '8px', display: 'block' }}>Format JS Bersih</strong>

@@ -7,9 +7,9 @@ export default async function handler(req, res) {
   }
 
   const session = await getServerSession(req, res, authOptions);
+  res.setHeader("Cache-Control", "no-store");
 
-  return res.status(200).json({
-    authenticated: Boolean(session?.user),
-    user: session?.user || null,
-  });
+  // apiToken tidak ikut dikirim ke endpoint publik ini
+  const user = session?.user ? { ...session.user, apiToken: undefined } : null;
+  return res.status(200).json({ authenticated: Boolean(user), user });
 }

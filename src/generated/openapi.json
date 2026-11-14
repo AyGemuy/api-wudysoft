@@ -1,0 +1,2045 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "glass-next API",
+    "version": "1.0.0",
+    "description": "Dokumen dibuat otomatis dari `pages/api` (34 operasi pada 16 path). Detail akurat ditambahkan lewat `scripts/openapi-registry.mjs`.\n\n**Auth:** sesi browser (cookie NextAuth) atau `Authorization: Bearer <apiToken>`."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Origin saat ini"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Ai"
+    },
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Cache"
+    },
+    {
+      "name": "Code Share"
+    },
+    {
+      "name": "Comments"
+    },
+    {
+      "name": "Health"
+    },
+    {
+      "name": "Openapi"
+    },
+    {
+      "name": "Playground"
+    },
+    {
+      "name": "Posts"
+    },
+    {
+      "name": "Rooms"
+    },
+    {
+      "name": "Stats"
+    },
+    {
+      "name": "System"
+    }
+  ],
+  "paths": {
+    "/api/ai/loqal": {
+      "get": {
+        "tags": [
+          "Ai"
+        ],
+        "summary": "Ambil Ai Loqal",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "get_api_ai_loqal",
+        "parameters": [
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "chat",
+                "generate",
+                "init"
+              ]
+            },
+            "example": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Ai"
+        ],
+        "summary": "Kirim Ai Loqal",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "post_api_ai_loqal",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "chat",
+                      "generate",
+                      "init"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "action": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Login / daftar untuk token API",
+        "description": "Endpoint untuk klien non-browser. `mode: \"login\"` memverifikasi email & password; `mode: \"register\"` membuat akun baru. Mengembalikan JWT 7 hari untuk header `Authorization: Bearer`.",
+        "operationId": "post_api_auth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "65f1a2b3c4d5e6f7a8b9c0d1"
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "Rina"
+                        },
+                        "email": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": "rina@mail.com"
+                        },
+                        "image": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "user",
+                            "guest",
+                            "admin"
+                          ]
+                        },
+                        "isGuest": {
+                          "type": "boolean"
+                        },
+                        "provider": {
+                          "type": "string",
+                          "enum": [
+                            "credentials",
+                            "github",
+                            "google",
+                            "guest"
+                          ]
+                        }
+                      }
+                    },
+                    "token": {
+                      "type": "string",
+                      "description": "JWT untuk Authorization: Bearer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Email atau password salah"
+          },
+          "409": {
+            "description": "Email sudah terdaftar"
+          },
+          "429": {
+            "description": "Akun terkunci sementara / rate limit"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "default": "login",
+                    "enum": [
+                      "login",
+                      "register"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Nama tampilan (opsional, hanya untuk register)",
+                    "maxLength": 32
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "maxLength": 72
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              },
+              "example": {
+                "mode": "login",
+                "name": "Nexus",
+                "email": "user@example.com",
+                "password": "string"
+              },
+              "examples": {
+                "login": {
+                  "summary": "Login",
+                  "value": {
+                    "mode": "login",
+                    "email": "user@example.com",
+                    "password": "rahasia123"
+                  }
+                },
+                "register": {
+                  "summary": "Daftar",
+                  "value": {
+                    "mode": "register",
+                    "name": "Rina",
+                    "email": "rina@example.com",
+                    "password": "rahasia123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      },
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Status layanan auth",
+        "description": "Mengembalikan status dan sesi NextAuth saat ini (tanpa apiToken).",
+        "operationId": "get_api_auth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Belum login"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/auth/csrf": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "get_api_auth_csrf",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "csrfToken": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "CSRF token",
+        "description": "Dibutuhkan untuk POST ke `/api/auth/callback/*` dan `/api/auth/signout`.",
+        "security": []
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Pengguna saat ini",
+        "description": "Mengembalikan sesi yang sedang aktif. `authenticated: false` jika belum login.",
+        "operationId": "get_api_auth_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "authenticated": {
+                      "type": "boolean"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "65f1a2b3c4d5e6f7a8b9c0d1"
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "Rina"
+                        },
+                        "email": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": "rina@mail.com"
+                        },
+                        "image": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "user",
+                            "guest",
+                            "admin"
+                          ]
+                        },
+                        "isGuest": {
+                          "type": "boolean"
+                        },
+                        "provider": {
+                          "type": "string",
+                          "enum": [
+                            "credentials",
+                            "github",
+                            "google",
+                            "guest"
+                          ]
+                        }
+                      },
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Belum login"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/auth/providers": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "get_api_auth_providers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      },
+                      "signinUrl": {
+                        "type": "string"
+                      },
+                      "callbackUrl": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Daftar provider login",
+        "description": "Provider yang aktif di server: credentials, signup, guest, serta OAuth (github/google) bila dikonfigurasi.",
+        "security": []
+      }
+    },
+    "/api/auth/session": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "get_api_auth_session",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "65f1a2b3c4d5e6f7a8b9c0d1"
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "Rina"
+                        },
+                        "email": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": "rina@mail.com"
+                        },
+                        "image": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "user",
+                            "guest",
+                            "admin"
+                          ]
+                        },
+                        "isGuest": {
+                          "type": "boolean"
+                        },
+                        "provider": {
+                          "type": "string",
+                          "enum": [
+                            "credentials",
+                            "github",
+                            "google",
+                            "guest"
+                          ]
+                        }
+                      }
+                    },
+                    "expires": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Sesi NextAuth",
+        "description": "Objek sesi (termasuk `apiToken`) untuk browser yang sudah login. Kosong `{}` jika belum login.",
+        "security": []
+      }
+    },
+    "/api/cache": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Operasi cache (GET)",
+        "description": "Gunakan `action`: `clear`, `list`, `log`, atau `total`.",
+        "operationId": "get_api_cache",
+        "parameters": [
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "clear",
+                "list",
+                "log",
+                "total"
+              ],
+              "default": "total"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Operasi cache (POST)",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "post_api_cache",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "clear",
+                      "list",
+                      "log",
+                      "total"
+                    ]
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              },
+              "example": {
+                "action": "total"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/code-share": {
+      "get": {
+        "tags": [
+          "Code Share"
+        ],
+        "summary": "Ambil Code Share",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "get_api_code_share",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "halo"
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "string"
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "string"
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f1a2b3c4d5e6f7a8b9c0d1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Code Share"
+        ],
+        "summary": "Kirim Code Share",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "post_api_code_share",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "author": {
+                    "type": "string"
+                  },
+                  "fileName": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "tag": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "author": "Nexus",
+                "fileName": "Nexus",
+                "code": "string",
+                "tag": "string"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Code Share"
+        ],
+        "summary": "Perbarui Code Share",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "put_api_code_share",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "like",
+                      "dislike",
+                      "view",
+                      "DELETE"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "id": "65f1a2b3c4d5e6f7a8b9c0d1",
+                "action": "string"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Code Share"
+        ],
+        "summary": "Hapus Code Share",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "delete_api_code_share",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "id": "65f1a2b3c4d5e6f7a8b9c0d1"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/comments": {
+      "get": {
+        "tags": [
+          "Comments"
+        ],
+        "summary": "Ambil Comments",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "get_api_comments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Comments"
+        ],
+        "summary": "Kirim Comments",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "post_api_comments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "parentId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "name": "Nexus",
+                "message": "halo",
+                "parentId": "65f1a2b3c4d5e6f7a8b9c0d1"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Comments"
+        ],
+        "summary": "Perbarui Comments",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "put_api_comments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "commentId": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "commentId": "65f1a2b3c4d5e6f7a8b9c0d1",
+                "message": "halo"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Comments"
+        ],
+        "summary": "Hapus Comments",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "delete_api_comments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "commentId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "commentId": "65f1a2b3c4d5e6f7a8b9c0d1"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Health check",
+        "description": "Cek apakah API hidup dan konfigurasi dasar termuat.",
+        "operationId": "get_api_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Layanan online",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "online"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "environment": {
+                      "type": "string",
+                      "example": "production"
+                    },
+                    "configLoaded": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      }
+    },
+    "/api/openapi": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Spesifikasi OpenAPI",
+        "description": "Dokumen OpenAPI 3 untuk seluruh API ini. Bisa diimpor langsung ke Postman / Swagger.",
+        "operationId": "get_api_openapi",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/playground/echo": {
+      "get": {
+        "tags": [
+          "Playground"
+        ],
+        "summary": "Echo (GET)",
+        "description": "Memantulkan method, query, dan body. Butuh login. Cocok untuk menguji header, body, dan auth.",
+        "operationId": "get_api_playground_echo",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "halo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Echo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "method": {
+                      "type": "string"
+                    },
+                    "user": {
+                      "type": "string"
+                    },
+                    "provider": {
+                      "type": "string"
+                    },
+                    "query": {
+                      "type": "object"
+                    },
+                    "body": {
+                      "nullable": true
+                    },
+                    "receivedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Belum login"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Playground"
+        ],
+        "summary": "Echo (POST)",
+        "description": "Memantulkan method, query, dan body. Butuh login. Cocok untuk menguji header, body, dan auth.",
+        "operationId": "post_api_playground_echo",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "halo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Echo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "method": {
+                      "type": "string"
+                    },
+                    "user": {
+                      "type": "string"
+                    },
+                    "provider": {
+                      "type": "string"
+                    },
+                    "query": {
+                      "type": "object"
+                    },
+                    "body": {
+                      "nullable": true
+                    },
+                    "receivedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Belum login"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "hello": "nexus",
+                "items": [
+                  1,
+                  2,
+                  3
+                ]
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Playground"
+        ],
+        "operationId": "put_api_playground_echo",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "halo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Echo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "method": {
+                      "type": "string"
+                    },
+                    "user": {
+                      "type": "string"
+                    },
+                    "provider": {
+                      "type": "string"
+                    },
+                    "query": {
+                      "type": "object"
+                    },
+                    "body": {
+                      "nullable": true
+                    },
+                    "receivedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login"
+          }
+        },
+        "summary": "Echo (PUT)",
+        "description": "Memantulkan method, query, dan body. Butuh login. Cocok untuk menguji header, body, dan auth.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "hello": "nexus",
+                "items": [
+                  1,
+                  2,
+                  3
+                ]
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Playground"
+        ],
+        "operationId": "patch_api_playground_echo",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "halo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Echo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "method": {
+                      "type": "string"
+                    },
+                    "user": {
+                      "type": "string"
+                    },
+                    "provider": {
+                      "type": "string"
+                    },
+                    "query": {
+                      "type": "object"
+                    },
+                    "body": {
+                      "nullable": true
+                    },
+                    "receivedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login"
+          }
+        },
+        "summary": "Echo (PATCH)",
+        "description": "Memantulkan method, query, dan body. Butuh login. Cocok untuk menguji header, body, dan auth.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {
+                "hello": "nexus",
+                "items": [
+                  1,
+                  2,
+                  3
+                ]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Playground"
+        ],
+        "operationId": "delete_api_playground_echo",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "halo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Echo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "method": {
+                      "type": "string"
+                    },
+                    "user": {
+                      "type": "string"
+                    },
+                    "provider": {
+                      "type": "string"
+                    },
+                    "query": {
+                      "type": "object"
+                    },
+                    "body": {
+                      "nullable": true
+                    },
+                    "receivedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login"
+          }
+        },
+        "summary": "Echo (DELETE)",
+        "description": "Memantulkan method, query, dan body. Butuh login. Cocok untuk menguji header, body, dan auth.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      }
+    },
+    "/api/posts": {
+      "get": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "Ambil Posts",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "get_api_posts",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "halo"
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "string"
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f1a2b3c4d5e6f7a8b9c0d1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "Kirim Posts",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "post_api_posts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "author": {
+                    "type": "string"
+                  },
+                  "authorAvatar": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "title": "Judul contoh",
+                "content": "halo",
+                "author": "Nexus",
+                "authorAvatar": "Nexus"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "Perbarui Posts",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "put_api_posts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "postId": {
+                    "type": "string"
+                  },
+                  "newTitle": {
+                    "type": "string"
+                  },
+                  "newContent": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "postId": "65f1a2b3c4d5e6f7a8b9c0d1",
+                "newTitle": "Judul contoh",
+                "newContent": "halo"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "Hapus Posts",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "delete_api_posts",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f1a2b3c4d5e6f7a8b9c0d1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      }
+    },
+    "/api/rooms": {
+      "get": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Ambil Rooms",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "get_api_rooms",
+        "parameters": [
+          {
+            "name": "roomName",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Nexus"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Kirim Rooms",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "post_api_rooms",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "roomName": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "messageId": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "string"
+                  },
+                  "avatar": {
+                    "type": "string"
+                  },
+                  "replyToMessageId": {
+                    "type": "string"
+                  },
+                  "emoji": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "roomName": "Nexus",
+                "name": "Nexus",
+                "message": "halo",
+                "messageId": "65f1a2b3c4d5e6f7a8b9c0d1",
+                "action": "string",
+                "userId": "65f1a2b3c4d5e6f7a8b9c0d1",
+                "avatar": "string",
+                "replyToMessageId": "65f1a2b3c4d5e6f7a8b9c0d1",
+                "emoji": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stats": {
+      "delete": {
+        "tags": [
+          "Stats"
+        ],
+        "summary": "Hapus Stats",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "delete_api_stats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Stats"
+        ],
+        "summary": "Ambil Stats",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "get_api_stats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      }
+    },
+    "/api/system/routes": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Ambil System Routes",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "get_api_system_routes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "next-auth.session-token",
+        "description": "Cookie sesi NextAuth (otomatis dikirim browser)."
+      },
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT dari POST /api/auth atau `session.user.apiToken`."
+      }
+    }
+  }
+}

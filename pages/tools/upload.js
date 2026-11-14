@@ -237,7 +237,7 @@ export default function UploadPage() {
                 color: '#fff',
                 fontSize: '0.85rem',
                 fontWeight: 600,
-                boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                boxShadow: '0 10px 30px color-mix(in srgb, var(--shadow-c) 50%, transparent)',
               }}
             >
               {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
@@ -342,7 +342,7 @@ export default function UploadPage() {
               padding: '36px 20px',
               borderRadius: '18px',
               border: `2px dashed ${dragActive ? 'var(--a2)' : 'var(--border)'}`,
-              background: dragActive ? 'rgba(56, 189, 248, 0.1)' : 'rgba(0, 0, 0, 0.25)',
+              background: dragActive ? 'rgba(56, 189, 248, 0.1)' : 'color-mix(in srgb, var(--bg1) 25%, transparent)',
               textAlign: 'center',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
@@ -392,7 +392,7 @@ export default function UploadPage() {
                       flexDirection: 'column',
                       gap: '4px',
                       padding: '10px 14px',
-                      background: 'rgba(255, 255, 255, 0.03)',
+                      background: 'color-mix(in srgb, var(--text) 3%, transparent)',
                       border: '1px solid var(--border)',
                       borderRadius: '12px',
                     }}
@@ -421,7 +421,7 @@ export default function UploadPage() {
                     </div>
 
                     {prog && prog.status === 'mengunggah' && (
-                      <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden', marginTop: '4px' }}>
+                      <div style={{ width: '100%', height: '4px', background: 'color-mix(in srgb, var(--text) 10%, transparent)', borderRadius: '2px', overflow: 'hidden', marginTop: '4px' }}>
                         <motion.div
                           style={{ height: '100%', background: 'linear-gradient(90deg, var(--a1), var(--a2))' }}
                           animate={{ width: ['0%', '100%'] }}
@@ -535,7 +535,7 @@ export default function UploadPage() {
           justify-content: space-between;
           padding: 12px 16px;
           border-radius: 14px;
-          background: rgba(0, 0, 0, 0.4);
+          background: color-mix(in srgb, var(--bg1) 40%, transparent);
           border: 1px solid var(--border);
           cursor: pointer;
           transition: border-color 0.2s;
@@ -560,7 +560,7 @@ export default function UploadPage() {
           border-radius: 16px;
           background: #0d121d !important;
           border: 1px solid var(--border);
-          box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
+          box-shadow: 0 16px 36px color-mix(in srgb, var(--shadow-c) 70%, transparent);
           display: flex;
           flex-direction: column;
           gap: 4px;

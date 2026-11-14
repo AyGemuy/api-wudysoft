@@ -102,7 +102,7 @@ export default function NotFound() {
               lineHeight: 1,
               letterSpacing: '-0.04em',
               fontWeight: 800,
-              background: 'linear-gradient(180deg, #ffffff 40%, rgba(255,255,255,0.2) 100%)',
+              background: 'linear-gradient(180deg, #ffffff 40%, color-mix(in srgb, var(--text) 20%, transparent) 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               marginBottom: '6px',

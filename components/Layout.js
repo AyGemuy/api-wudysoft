@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useSession, signOut } from 'next-auth/react';
@@ -6,11 +6,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Icons } from './Icons';
 import CustomThemeStudio from './CustomThemeStudio';
 import InteractiveCanvas from './InteractiveCanvas';
+import CursorGlow from './CursorGlow';
+import SiteFooter from './SiteFooter';
+import { ThemeContext } from './ThemeContext';
+import { DEFAULT_CONFIG, loadConfig, saveConfig, applyConfig, computeTheme } from '@/src/lib/themes';
 import { sound } from '@/src/lib/interactiveEffects';
 
 export default function Layout({ children }) {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const user = session?.user || null;
 
   const [searchOpen, setSearchOpen] = useState(false);
@@ -18,28 +22,71 @@ export default function Layout({ children }) {
   const [studioOpen, setStudioOpen] = useState(false);
   const [endpoints, setEndpoints] = useState([]);
   const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef(null);
 
-  const [config, setConfig] = useState({
-    theme: 'stealth',
-    radius: 24,
-    particle: 'rain',
-    soundEnabled: true,
-  });
+  // Tutup dropdown profil saat klik di luar / tekan Esc / pindah halaman
+  useEffect(() => {
+    if (!profileOpen) return;
+    const onDown = (e) => {
+      if (e.target.closest?.('[data-profile-toggle]')) return;
+      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
+    };
+    const onKey = (e) => e.key === 'Escape' && setProfileOpen(false);
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [profileOpen]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('nexus_theme_config');
-    if (saved) {
-      try {
-        setConfig((p) => ({ ...p, ...JSON.parse(saved) }));
-      } catch {}
-    }
+    setProfileOpen(false);
+    setSearchOpen(false);
+  }, [router.asPath]);
+
+  // Shortcut ⌘K / Ctrl+K dan Esc untuk pencarian
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      } else if (e.key === 'Escape') {
+        setSearchOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', config.theme);
-    document.documentElement.style.setProperty('--radius', `${config.radius}px`);
+    if (!searchOpen) setSearchQuery('');
+  }, [searchOpen]);
+
+  // ---- Tema: dimuat dari localStorage setelah mount, diterapkan ke <html> ----
+  const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const [hydrated, setHydrated] = useState(false);
+  const theme = useMemo(() => computeTheme(config), [config]);
+
+  useEffect(() => {
+    setConfig(loadConfig());
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    applyConfig(config);
+    saveConfig(config);
     sound.enabled = config.soundEnabled;
-  }, [config]);
+  }, [config, hydrated]);
+
+  const openStudio = useCallback(() => setStudioOpen(true), []);
+  useEffect(() => {
+    window.addEventListener('nexus:open-studio', openStudio);
+    return () => window.removeEventListener('nexus:open-studio', openStudio);
+  }, [openStudio]);
+
+  const themeCtx = useMemo(() => ({ config, setConfig, openStudio }), [config, openStudio]);
 
   useEffect(() => {
     fetch('/api/playground/endpoints')
@@ -60,8 +107,17 @@ export default function Layout({ children }) {
   ].filter((item) => item.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <>
-      <InteractiveCanvas particleType={config.particle} />
+    <ThemeContext.Provider value={themeCtx}>
+      <InteractiveCanvas
+        particleType={config.particle}
+        color={theme.colors.a2}
+        color2={theme.colors.a3}
+        paused={config.anim === 'off'}
+        speed={config.speed}
+      />
+      <CursorGlow enabled={config.spotlight && config.anim === 'on'} />
+
+      <div className="bg-grid" aria-hidden="true" />
 
       <div className="blobs">
         <div className="blob b1" />
@@ -69,104 +125,108 @@ export default function Layout({ children }) {
         <div className="blob b3" />
       </div>
 
-      {/* TOP HEADER DOCK */}
+      {/* TOP HEADER DOCK — hanya ikon, ukuran seragam */}
       <header className="top-header-wrap">
-        <nav className="top-header-nav">
-          <Link href="/" className="brand-link" onClick={() => sound.playClick()}>
-            <div className="brand-badge">
-              <Icons.Zap size={16} />
-            </div>
-            <div className="brand-text">
-              <h2>NEXUS</h2>
-              <span>SYS.ONLINE</span>
-            </div>
-          </Link>
+        <nav className="top-header-nav" aria-label="Navigasi utama">
+          <div className="hd-side">
+            <Link href="/" className="hd-btn hd-brand" aria-label="Beranda" title="Beranda" onClick={() => sound.playClick()}>
+              <Icons.Zap size={18} />
+            </Link>
+          </div>
 
           <button
-            className="search-dock-btn"
+            className="hd-search"
+            aria-label="Cari"
+            title="Cari (Ctrl/⌘ + K)"
             onClick={() => {
               sound.playClick();
               setSearchOpen(true);
             }}
           >
-            <Icons.Search size={14} color="var(--a2)" />
-            <span className="search-text">Quick Search...</span>
-            <kbd className="search-kbd">⌘K</kbd>
+            <Icons.Search size={17} />
+            <span className="hd-search-text">Cari halaman, endpoint…</span>
+            <kbd className="hd-kbd">⌘K</kbd>
           </button>
 
-          <div className="header-right-tools">
+          <div className="hd-side hd-tools">
             <button
-              className="action-icon-btn"
+              className="hd-btn"
+              aria-label="Theme Studio"
+              title="Theme Studio"
               onClick={() => {
                 sound.playClick();
                 setStudioOpen(true);
               }}
-              title="Theme Studio"
             >
-              <Icons.Sliders size={16} color="var(--a2)" />
+              <Icons.Sliders size={17} />
             </button>
 
-            {user ? (
-              <div style={{ position: 'relative' }}>
-                <div
-                  className="profile-pill-btn"
+            {status === 'loading' ? (
+              <div className="skeleton hd-btn" aria-hidden="true" />
+            ) : user ? (
+              <div ref={profileRef} className="hd-profile">
+                <button
+                  className="hd-btn hd-avatar"
+                  aria-label={`Akun ${user.name || ''}`}
+                  aria-haspopup="menu"
+                  aria-expanded={profileOpen}
                   onClick={() => {
                     sound.playClick();
                     setProfileOpen(!profileOpen);
                   }}
                 >
-                  <div className="profile-avatar-circle">
-                    {user.image ? (
-                      <img src={user.image} alt="Avatar" />
-                    ) : (
-                      user.name?.[0]?.toUpperCase() || 'U'
-                    )}
-                  </div>
-                  <span className="profile-name-text">{user.name?.split(' ')[0] || 'User'}</span>
-                  <Icons.ChevronDown size={11} color="var(--muted)" />
-                </div>
+                  {user.image ? <img src={user.image} alt="" /> : <span>{user.name?.[0]?.toUpperCase() || 'U'}</span>}
+                </button>
 
                 <AnimatePresence>
                   {profileOpen && (
                     <motion.div
                       className="profile-dropdown-solid"
-                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                      role="menu"
+                      initial={{ opacity: 0, y: -8, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.96 }}
                       transition={{ duration: 0.16 }}
                     >
-                      <div style={{ paddingBottom: '6px' }}>
-                        <strong style={{ fontSize: '0.85rem', color: '#fff', display: 'block' }}>{user.name}</strong>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--muted)', wordBreak: 'break-all', fontFamily: 'var(--font-mono)' }}>
-                          {user.email}
-                        </span>
+                      <div className="dd-head">
+                        <strong>{user.name}</strong>
+                        <span>{user.email || 'Sesi tamu'}</span>
+                        <em>{user.isGuest ? 'Tamu' : user.provider || 'Akun'}</em>
                       </div>
-                      <div style={{ height: '1px', background: 'var(--border)', margin: '4px 0 6px' }} />
-                      <Link
-                        href="/playground"
-                        className="dropdown-item"
-                        onClick={() => setProfileOpen(false)}
-                      >
+                      <div className="dd-sep" />
+                      <Link href="/playground" className="dropdown-item" role="menuitem" onClick={() => setProfileOpen(false)}>
                         <Icons.Terminal size={14} color="var(--a2)" />
                         <span>Playground</span>
                       </Link>
                       <button
+                        className="dropdown-item"
+                        role="menuitem"
+                        onClick={() => {
+                          setProfileOpen(false);
+                          setStudioOpen(true);
+                        }}
+                      >
+                        <Icons.Sliders size={14} color="var(--a2)" />
+                        <span>Tema</span>
+                      </button>
+                      <button
                         className="dropdown-item logout-btn"
+                        role="menuitem"
                         onClick={() => {
                           setProfileOpen(false);
                           signOut({ callbackUrl: '/auth' });
                         }}
                       >
                         <Icons.LogOut size={14} color="#f87171" />
-                        <span style={{ color: '#f87171' }}>Sign Out</span>
+                        <span style={{ color: '#f87171' }}>Keluar</span>
                       </button>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
             ) : (
-              <Link href="/auth" className="btn primary signin-pill">
-                Sign In
+              <Link href="/auth" className="hd-btn hd-primary" aria-label="Masuk" title="Masuk atau daftar" onClick={() => sound.playClick()}>
+                <Icons.User size={17} />
               </Link>
             )}
           </div>
@@ -227,7 +287,11 @@ export default function Layout({ children }) {
         setConfig={setConfig}
       />
 
-      <main className="wrap">{children}</main>
+      <main className="wrap app-main">{children}</main>
+
+      <div className="wrap footer-wrap">
+        <SiteFooter />
+      </div>
 
       {/* FLOATING BOTTOM NAVBAR */}
       <div className="floating-navbar-wrap">
@@ -262,169 +326,242 @@ export default function Layout({ children }) {
             <Icons.Search size={22} />
           </button>
 
-          <Link href="/auth" className={`nav-tab ${router.pathname.startsWith('/auth') ? 'active' : ''}`} onClick={() => sound.playClick()}>
-            <Icons.User size={22} />
-            {router.pathname.startsWith('/auth') && <motion.div layoutId="navDot" className="nav-active-dot" />}
-          </Link>
+          {user ? (
+            <button
+              className={`nav-tab ${profileOpen ? 'active' : ''}`}
+              aria-label="Profil"
+              data-profile-toggle
+              onClick={() => {
+                sound.playClick();
+                setProfileOpen((v) => !v);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            >
+              <Icons.User size={22} />
+            </button>
+          ) : (
+            <Link href="/auth" className={`nav-tab ${router.pathname.startsWith('/auth') ? 'active' : ''}`} onClick={() => sound.playClick()}>
+              <Icons.User size={22} />
+              {router.pathname.startsWith('/auth') && <motion.div layoutId="navDot" className="nav-active-dot" />}
+            </Link>
+          )}
         </nav>
       </div>
 
       <style jsx>{`
+        /* Header melayang (fixed), satu bahasa desain dengan floating bottom navbar */
         .top-header-wrap {
-          position: sticky;
-          top: 10px;
-          z-index: 900;
-          width: 100%;
-          max-width: 1140px;
-          margin: 0 auto 20px;
-          padding: 0 16px;
-          box-sizing: border-box;
+          position: fixed;
+          top: calc(var(--safe-top) + var(--dock-gap));
+          left: 0;
+          right: 0;
+          display: flex;
+          justify-content: center;
+          padding: 0 var(--dock-gap);
+          z-index: 1000;
+          pointer-events: none;
         }
 
         .top-header-nav {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 8px 16px;
-          border-radius: 999px;
-          background: rgba(13, 18, 30, 0.92);
-          backdrop-filter: blur(28px);
-          border: 1px solid var(--border);
-          box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6);
-        }
-
-        .brand-link {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          flex-shrink: 0;
-        }
-
-        .brand-badge {
-          width: 32px;
-          height: 32px;
-          border-radius: 10px;
-          background: linear-gradient(135deg, var(--a1), var(--a3));
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #fff;
-          box-shadow: 0 0 12px var(--border-glow);
-        }
-
-        .brand-text h2 {
-          font-size: 0.9rem;
-          margin: 0;
-          letter-spacing: -0.02em;
-        }
-
-        .brand-text span {
-          font-family: var(--font-mono);
-          font-size: 0.62rem;
-          color: var(--a2);
-          display: block;
-        }
-
-        .search-dock-btn {
+          pointer-events: auto;
           display: flex;
           align-items: center;
           gap: 8px;
-          background: rgba(0, 0, 0, 0.4);
-          border: 1px solid var(--border);
-          color: var(--muted);
-          padding: 6px 14px;
-          border-radius: 20px;
-          font-size: 0.78rem;
-          font-family: var(--font-mono);
-          cursor: pointer;
+          width: 100%;
+          max-width: 1140px;
+          min-height: var(--header-h);
+          padding: 8px;
+          border-radius: var(--dock-radius);
+          background: var(--dock-bg);
+          backdrop-filter: blur(32px);
+          -webkit-backdrop-filter: blur(32px);
+          border: 1px solid var(--dock-border);
+          box-shadow: var(--dock-shadow);
         }
 
-        .search-kbd {
-          font-size: 0.65rem;
-          background: rgba(255, 255, 255, 0.08);
-          padding: 1px 5px;
-          border-radius: 4px;
-        }
-
-        .header-right-tools {
+        /* sisi kiri & kanan sama lebar → pencarian tepat di tengah (desktop) */
+        .hd-side {
           display: flex;
           align-items: center;
           gap: 8px;
+          flex: 1;
+          min-width: 0;
+        }
+        .hd-tools {
+          justify-content: flex-end;
+          flex: 0 0 auto;
+        }
+
+        /* tombol ikon seragam */
+        .top-header-nav :global(.hd-btn),
+        .hd-btn {
+          position: relative;
+          width: var(--hd-size, 40px);
+          height: var(--hd-size, 40px);
           flex-shrink: 0;
-        }
-
-        .action-icon-btn {
-          width: 34px;
-          height: 34px;
+          display: grid;
+          place-items: center;
+          padding: 0;
           border-radius: 50%;
           border: 1px solid var(--border);
-          background: rgba(255, 255, 255, 0.05);
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          background: color-mix(in srgb, var(--text) 6%, transparent);
+          color: var(--text);
           cursor: pointer;
-        }
-
-        .profile-pill-btn {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          background: rgba(255, 255, 255, 0.06);
-          border: 1px solid var(--border);
-          padding: 3px 10px 3px 3px;
-          border-radius: 30px;
-          cursor: pointer;
-          max-width: 130px;
-        }
-
-        .profile-avatar-circle {
-          width: 26px;
-          height: 26px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, var(--a1), var(--a2));
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 0.75rem;
-          font-weight: bold;
-          color: #fff;
           overflow: hidden;
+          transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
         }
-
-        .profile-avatar-circle img {
+        .hd-btn:hover {
+          border-color: var(--a2);
+          transform: translateY(-1px);
+        }
+        .hd-btn:active {
+          transform: scale(0.94);
+        }
+        .hd-btn :global(svg) {
+          color: currentColor;
+        }
+        .top-header-nav :global(.hd-brand),
+        .top-header-nav :global(.hd-primary) {
+          border-color: transparent;
+          color: var(--on-accent);
+          background: linear-gradient(135deg, var(--a1), var(--a3));
+          box-shadow: 0 6px 16px -4px var(--border-glow);
+        }
+        .top-header-nav :global(.hd-brand:hover),
+        .top-header-nav :global(.hd-primary:hover) {
+          box-shadow: 0 8px 20px -2px var(--border-glow);
+          border-color: transparent;
+        }
+        .top-header-nav :global(.hd-avatar) {
+          border-color: color-mix(in srgb, var(--a2) 55%, transparent);
+          background: linear-gradient(135deg, var(--a1), var(--a3));
+          color: var(--on-accent);
+          font-weight: 800;
+          font-size: 0.9rem;
+        }
+        .hd-avatar img {
           width: 100%;
           height: 100%;
           object-fit: cover;
         }
 
-        .profile-name-text {
-          font-size: 0.75rem;
-          font-weight: 600;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+        /* pencarian: lingkaran di HP, pil lebar di desktop */
+        .hd-search {
+          margin-left: auto;
+          flex-shrink: 0;
+          width: var(--hd-size, 40px);
+          height: var(--hd-size, 40px);
+          display: grid;
+          place-items: center;
+          padding: 0;
+          border-radius: 50%;
+          border: 1px solid var(--border);
+          background: color-mix(in srgb, var(--text) 6%, transparent);
+          color: var(--a2);
+          cursor: pointer;
+          transition: border-color 0.2s ease, background 0.2s ease;
+        }
+        .hd-search:hover {
+          border-color: var(--a2);
+        }
+        .hd-search-text,
+        .hd-kbd {
+          display: none;
+        }
+        .hd-kbd {
+          font-family: var(--font-mono);
+          font-size: 0.68rem;
+          padding: 2px 7px;
+          border-radius: 6px;
+          color: var(--muted);
+          background: color-mix(in srgb, var(--text) 8%, transparent);
+          border: 1px solid var(--border);
         }
 
-        .signin-pill {
-          padding: 6px 14px !important;
-          font-size: 0.75rem !important;
-          border-radius: 20px !important;
+        @media (min-width: 768px) {
+          .hd-search {
+            margin: 0;
+            flex: 0 1 460px;
+            width: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 14px;
+            border-radius: 999px;
+          }
+          .hd-search-text {
+            display: block;
+            flex: 1;
+            text-align: left;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          .hd-kbd {
+            display: block;
+          }
         }
 
-        .profile-dropdown-solid {
+        .hd-profile {
+          position: relative;
+        }
+        .skeleton.hd-btn {
+          border-radius: 50%;
+        }
+
+        :global(.profile-dropdown-solid) {
           position: absolute;
           top: calc(100% + 8px);
           right: 0;
-          width: 220px;
-          padding: 10px;
-          border-radius: 16px;
-          background: #090e17 !important;
+          width: 230px;
+          padding: 12px;
+          border-radius: 18px;
+          background: var(--surface);
           border: 1px solid var(--border);
-          box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85);
+          box-shadow: 0 16px 36px color-mix(in srgb, var(--shadow-c) 85%, transparent);
           z-index: 999;
         }
 
-        .dropdown-item {
+        .dd-head {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          padding: 2px 4px 6px;
+        }
+        .dd-head strong {
+          font-size: 0.88rem;
+          color: var(--text);
+        }
+        .dd-head span {
+          font-size: 0.7rem;
+          color: var(--muted);
+          word-break: break-all;
+          font-family: var(--font-mono);
+        }
+        .dd-head em {
+          align-self: flex-start;
+          margin-top: 4px;
+          font-style: normal;
+          font-size: 0.62rem;
+          font-family: var(--font-mono);
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          padding: 2px 8px;
+          border-radius: 999px;
+          color: var(--a2);
+          background: color-mix(in srgb, var(--a2) 14%, transparent);
+          border: 1px solid color-mix(in srgb, var(--a2) 30%, transparent);
+        }
+        .dd-sep {
+          height: 1px;
+          background: var(--border);
+          margin: 4px 0 6px;
+        }
+
+        :global(.dropdown-item) {
           display: flex;
           align-items: center;
           gap: 8px;
@@ -439,15 +576,15 @@ export default function Layout({ children }) {
           text-align: left;
         }
 
-        .dropdown-item:hover {
-          background: rgba(255, 255, 255, 0.06);
+        :global(.dropdown-item:hover) {
+          background: color-mix(in srgb, var(--text) 6%, transparent);
         }
 
         /* SEARCH MODAL SOLID */
         .search-modal-backdrop {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.85);
+          background: color-mix(in srgb, var(--bg1) 85%, transparent);
           backdrop-filter: blur(8px);
           z-index: 99999;
           display: flex;
@@ -456,20 +593,20 @@ export default function Layout({ children }) {
           padding-top: 15vh;
         }
 
-        .search-modal-solid {
+        :global(.search-modal-solid) {
           width: min(580px, 92%);
-          background: #0b111e !important;
+          background: var(--surface);
           border: 1px solid var(--border);
           border-radius: 20px;
           padding: 20px;
-          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95);
+          box-shadow: 0 25px 60px color-mix(in srgb, var(--shadow-c) 95%, transparent);
         }
 
         .search-input-wrap {
           display: flex;
           align-items: center;
           gap: 12px;
-          background: #151e2f;
+          background: var(--surface-2);
           border: 1px solid var(--border);
           border-radius: 14px;
           padding: 0 14px;
@@ -483,7 +620,7 @@ export default function Layout({ children }) {
           outline: none;
           font-family: var(--font-mono);
           font-size: 0.92rem;
-          color: #fff;
+          color: var(--text);
           padding: 12px 0;
         }
 
@@ -503,8 +640,8 @@ export default function Layout({ children }) {
           border-radius: 10px;
           font-family: var(--font-mono);
           cursor: pointer;
-          background: rgba(255, 255, 255, 0.03);
-          color: #fff;
+          background: color-mix(in srgb, var(--text) 3%, transparent);
+          color: var(--text);
         }
 
         .search-item:hover {
@@ -512,32 +649,34 @@ export default function Layout({ children }) {
           color: var(--a2);
         }
 
-        @media (max-width: 640px) {
-          .top-header-wrap {
-            top: 6px;
-            padding: 0 8px;
-            margin-bottom: 14px;
-          }
+        .search-modal-backdrop {
+          padding-top: max(var(--safe-top), 12vh);
+          padding-left: 12px;
+          padding-right: 12px;
+        }
+
+        :global(.search-modal-solid) {
+          max-height: calc(100dvh - 24vh);
+          display: flex;
+          flex-direction: column;
+        }
+
+        .search-results {
+          max-height: min(280px, 45dvh);
+          overscroll-behavior: contain;
+        }
+
+        @media (max-width: 400px) {
           .top-header-nav {
-            padding: 6px 10px;
+            --hd-size: 38px;
+            gap: 6px;
+            padding: 7px;
           }
-          .brand-text span,
-          .search-dock-btn .search-text,
-          .search-dock-btn .search-kbd {
-            display: none !important;
-          }
-          .search-dock-btn {
-            padding: 6px 10px;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            justify-content: center;
-          }
-          .profile-pill-btn {
-            max-width: 88px;
+          .hd-side {
+            gap: 6px;
           }
         }
       `}</style>
-    </>
+    </ThemeContext.Provider>
   );
 }
