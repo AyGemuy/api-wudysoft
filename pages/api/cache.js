@@ -1,5 +1,6 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import Encoder from "@/lib/encoder";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action
   } = req.method === "GET" ? req.query : req.body;
@@ -46,3 +47,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

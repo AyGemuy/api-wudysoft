@@ -1,6 +1,7 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import connectMongo from "@/lib/mongoose";
 import Code from "@/models/CodeShare";
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     await connectMongo();
     switch (req.method) {
@@ -141,3 +142,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

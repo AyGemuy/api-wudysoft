@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { withRateLimit } from '../../../src/lib/rateLimit';
@@ -14,4 +15,4 @@ async function handler(req, res) {
     receivedAt: new Date().toISOString(),
   });
 }
-export default withRateLimit(handler, { limit: 30, windowMs: 60000 });
+export default withApiLog(withRateLimit(handler, { limit: 30, windowMs: 60000 }));

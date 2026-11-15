@@ -1,4 +1,5 @@
-export default function handler(req, res) {
+import { withApiLog } from "@/lib/apiLogger.cjs";
+function handler(req, res) {
   res.status(200).json({
     status: 'online',
     timestamp: new Date().toISOString(),
@@ -11,3 +12,5 @@ export default function handler(req, res) {
     },
   });
 }
+
+export default withApiLog(handler);

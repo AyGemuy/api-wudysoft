@@ -1,4 +1,5 @@
-export default function handler(req, res) {
+import { withApiLog } from "@/lib/apiLogger.cjs";
+function handler(req, res) {
   try {
     // Fitur bawaan Webpack di Next.js untuk membaca folder saat ini secara rekursif
     const apiContext = require.context('./', true, /\.(js|ts)$/);
@@ -47,3 +48,5 @@ export default function handler(req, res) {
     res.status(500).json({ error: 'Gagal mendeteksi rute', details: error.message });
   }
 }
+
+export default withApiLog(handler);

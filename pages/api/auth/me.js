@@ -1,7 +1,8 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -13,3 +14,5 @@ export default async function handler(req, res) {
   const user = session?.user ? { ...session.user, apiToken: undefined } : null;
   return res.status(200).json({ authenticated: Boolean(user), user });
 }
+
+export default withApiLog(handler);

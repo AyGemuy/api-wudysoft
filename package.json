@@ -9,7 +9,9 @@
     "start": "node src/index.js",
     "openapi": "node scripts/openapi-gen.mjs",
     "predev": "npm run openapi",
-    "prebuild": "npm run openapi"
+    "prebuild": "npm run openapi",
+    "size": "node scripts/trace-size.mjs",
+    "start:standalone": "node scripts/prepare-standalone.mjs && node .next/standalone/server.js"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "latest",

@@ -7,6 +7,7 @@ import Seo from '@/components/Seo';
 import { Zap, User, RefreshCw, ArrowRight, ArrowLeft } from 'lucide-react';
 import { sound } from '@/src/lib/interactiveEffects';
 import { safeNext } from '@/src/lib/safeNext';
+import { hardGo } from '@/src/lib/nav';
 import { authErrorMessage } from '@/src/lib/authErrors';
 
 export default function GuestPage() {
@@ -22,7 +23,7 @@ export default function GuestPage() {
   useEffect(() => {
     if (!router.isReady) return;
     if (status === 'authenticated' && session?.user) {
-      router.replace(nextUrl);
+      hardGo(nextUrl);
     }
   }, [router.isReady, status, session, nextUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -47,7 +48,7 @@ export default function GuestPage() {
       }
 
       sound.playBeep();
-      router.replace(targetDestination);
+      hardGo(targetDestination);
     } catch (err) {
       setError(err.message || 'Terjadi gangguan jaringan');
       setBusy(false);

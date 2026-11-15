@@ -15,7 +15,7 @@ const API_DIR = path.join(ROOT, 'pages', 'api');
 const OUT = path.join(ROOT, 'src', 'generated', 'openapi.json');
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 const SKIP = new Set(['[[...path]].js', 'socket.js']);
-const SKIP_ROUTES = new Set(['/api/playground/endpoints', '/api/routes']); // internal/usang
+const SKIP_ROUTES = new Set(['/api/playground/endpoints', '/api/routes', '/api/live']); // internal/usang
 
 /* ---------------- util ---------------- */
 const cap = (s) => s.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());

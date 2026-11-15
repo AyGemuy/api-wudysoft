@@ -39,6 +39,7 @@ export default function Preloader() {
 
   // --- BOOT: tunggu aset ---
   useEffect(() => {
+    if (document.documentElement.dataset.splash === 'off') setBooting(false); // splash dimatikan di Theme Studio
     let alive = true;
     const maxTimer = setTimeout(() => {
       if (!alive) return;

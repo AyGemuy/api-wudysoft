@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
 import { AnimatePresence } from 'framer-motion';
 import { Icons } from '@/components/Icons';
 import { sound } from '@/src/lib/interactiveEffects';
@@ -27,6 +28,7 @@ const scrub = (d) => ({
 });
 
 export default function Playground() {
+  const router = useRouter();
   const { data: session } = useSession();
   const sessionToken = session?.user?.apiToken || '';
 
@@ -49,6 +51,7 @@ export default function Playground() {
   const [modal, setModal] = useState(null);
   const [hydrated, setHydrated] = useState(false);
   const narrow = useMedia('(max-width: 1099px)');
+  const openOpRef = useRef(null);
   const files = useRef({});
   const aborts = useRef({});
 
@@ -104,6 +107,16 @@ export default function Playground() {
     setTabs([syncPathVars(d)]); setActiveId(d.id);
   }, [hydrated, parsed, tabs.length]);
 
+  /* ---------- buka operasi dari ?op=METHOD /path (pencarian global) ---------- */
+  const wantedOp = router.isReady ? router.query.op : null;
+  useEffect(() => {
+    if (!wantedOp || !parsed || !hydrated) return;
+    const key = Array.isArray(wantedOp) ? wantedOp[0] : wantedOp;
+    const o = parsed.operations.find((x) => x.key === key);
+    if (o) openOpRef.current?.(o);
+    router.replace('/playground', undefined, { shallow: true });
+  }, [wantedOp, parsed, hydrated]); // eslint-disable-line react-hooks/exhaustive-deps
+
   /* ---------- turunan ---------- */
   const active = tabs.find((t) => t.id === activeId) || tabs[0] || null;
   const op = useMemo(() => (parsed && active?.opKey ? parsed.operations.find((o) => o.key === active.opKey) : null), [parsed, active?.opKey]);
@@ -133,6 +146,7 @@ export default function Playground() {
     sound.playClick();
     addTab(syncPathVars(draftFromOperation(o, parsed)));
   };
+  openOpRef.current = openOp;
   const closeTab = (id) => {
     setTabs((ts) => {
       const i = ts.findIndex((t) => t.id === id);

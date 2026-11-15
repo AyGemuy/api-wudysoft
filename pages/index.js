@@ -144,7 +144,8 @@ function Preview({ type }) {
 /* ------------------------------------------------------------------ */
 /* Kartu halaman: link preview → preview → body → footer               */
 /* ------------------------------------------------------------------ */
-function PageCard({ page, index, user, tiltOn, speed, onAction }) {
+function PageCard({ page, index, user, hoverMode, speed, onAction }) {
+  const tiltOn = hoverMode === 'tilt';
   const ref = useRef(null);
   const rx = useMotionValue(0);
   const ry = useMotionValue(0);
@@ -178,6 +179,8 @@ function PageCard({ page, index, user, tiltOn, speed, onAction }) {
       ref={ref}
       className="hx-card glass"
       style={{ rotateX: srx, rotateY: sry, transformPerspective: 900, '--ac': `var(--${page.accent})` }}
+      whileHover={hoverMode === 'lift' ? { y: -7 } : undefined}
+      transition={{ type: 'spring', stiffness: 300, damping: 22 }}
       onPointerMove={onMove}
       onPointerLeave={onLeave}
     >
@@ -287,6 +290,7 @@ export default function Home() {
   const { config, openStudio } = useTheme();
   const user = session?.user || null;
   const speed = config.anim === 'off' ? 1000 : config.speed;
+  const entrance = config.anim === 'off' || !config.animEntrance ? 1000 : config.speed; // kecepatan animasi masuk
 
   const [query, setQuery] = useState('');
   const [cat, setCat] = useState('all');
@@ -373,7 +377,7 @@ export default function Home() {
           className="hx-toprow"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 / speed }}
+          transition={{ duration: 0.5 / entrance }}
         >
           <div className="hx-pill">
             <span className="hx-live" />
@@ -389,7 +393,7 @@ export default function Home() {
           className="hx-h1"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65 / speed, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.65 / entrance, ease: [0.22, 1, 0.36, 1] }}
         >
           {greeting(hours)}
           {firstName ? `, ${firstName}` : ''}.
@@ -401,7 +405,7 @@ export default function Home() {
           className="hx-sub"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 / speed, duration: 0.6 / speed }}
+          transition={{ delay: 0.2 / entrance, duration: 0.6 / entrance }}
         >
           Satu dasbor untuk{' '}
           <span className="hx-rotor" aria-live="polite">
@@ -417,7 +421,7 @@ export default function Home() {
           className="hx-cta"
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 / speed, duration: 0.5 / speed }}
+          transition={{ delay: 0.3 / entrance, duration: 0.5 / entrance }}
         >
           <Link href="/playground" className="btn primary" onClick={() => sound.playClick()}>
             <Icons.Terminal size={16} /> Buka Playground
@@ -439,7 +443,7 @@ export default function Home() {
           className="hx-stats"
           initial="hidden"
           animate="show"
-          variants={{ show: { transition: { staggerChildren: 0.08 / speed, delayChildren: 0.35 / speed } } }}
+          variants={{ show: { transition: { staggerChildren: 0.08 / entrance, delayChildren: 0.35 / entrance } } }}
         >
           {[
             { k: 'Halaman', v: countPages, icon: 'Layers' },
@@ -477,7 +481,7 @@ export default function Home() {
         className="hx-toolbar"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.45 / speed, duration: 0.5 / speed }}
+        transition={{ delay: 0.45 / entrance, duration: 0.5 / entrance }}
       >
         <label className="hx-search glass">
           <Icons.Search size={16} color="var(--a2)" />
@@ -546,8 +550,8 @@ export default function Home() {
               page={p}
               index={SITE_PAGES.indexOf(p)}
               user={user}
-              tiltOn={config.tilt && config.anim === 'on'}
-              speed={speed}
+              hoverMode={config.anim === 'off' ? 'none' : config.animHover}
+              speed={entrance}
               onAction={handleAction}
             />
           ))}
@@ -603,7 +607,7 @@ export default function Home() {
           gap: 8px;
           min-height: 30px;
           padding: 0 12px;
-          border-radius: 999px;
+          border-radius: var(--r-chip);
           font-family: var(--font-mono);
           font-size: 0.7rem;
           letter-spacing: 0.06em;
@@ -757,7 +761,7 @@ export default function Home() {
           gap: 10px;
           padding: 0 16px;
           min-height: 48px;
-          border-radius: 999px !important;
+          border-radius: var(--r-input) !important;
         }
         .hx-search:focus-within {
           border-color: var(--a2);
@@ -795,7 +799,7 @@ export default function Home() {
           padding: 4px;
           max-width: 100%;
           overflow-x: auto;
-          border-radius: 999px;
+          border-radius: var(--r-input);
           background: var(--glass);
           border: 1px solid var(--border);
           scrollbar-width: none;
@@ -812,7 +816,7 @@ export default function Home() {
           padding: 0 16px;
           border: none;
           background: transparent;
-          border-radius: 999px;
+          border-radius: var(--r-chip);
           color: var(--muted);
           font-family: var(--font-mono);
           font-size: 0.76rem;
@@ -825,7 +829,7 @@ export default function Home() {
         .hx-chip-bg {
           position: absolute;
           inset: 0;
-          border-radius: 999px;
+          border-radius: var(--r-chip);
           background: linear-gradient(135deg, var(--a1), var(--a3));
           box-shadow: 0 4px 14px var(--border-glow);
         }
@@ -941,7 +945,7 @@ export default function Home() {
           align-items: center;
           gap: 6px;
           padding: 4px 10px;
-          border-radius: 999px;
+          border-radius: var(--r-chip);
           font-family: var(--font-mono);
           font-size: 0.66rem;
           color: var(--muted);
@@ -1592,6 +1596,9 @@ export default function Home() {
         }
 
         @media (max-width: 560px) {
+          .hx-term {
+            font-size: 0.66rem;
+          }
           .hx-preview {
             height: 130px;
           }

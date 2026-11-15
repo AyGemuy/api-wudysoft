@@ -1,8 +1,9 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import dbConnect from "@/lib/mongoose";
 import Room from "@/models/Room";
 import mongoose from "mongoose";
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     await dbConnect();
   } catch (err) {
@@ -202,3 +203,5 @@ export default async function handler(req, res) {
 
   return res.status(405).json({ success: false, message: "Method Not Allowed" });
 }
+
+export default withApiLog(handler);

@@ -1,64 +1,90 @@
 require("dotenv").config();
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-  poweredByHeader: false,
+/**
+ * File yang TIDAK dibutuhkan saat runtime server, tetapi sering ikut terbawa ke fungsi
+ * serverless dan membuatnya melewati batas 250 MB. Hanya alat build/dev & binary platform
+ * yang dikecualikan, bukan paket yang diimpor kode Anda. Cek hasilnya dengan `npm run size`.
+ */
+const EXCLUDE_FROM_SERVER_TRACE = [
+  "node_modules/@swc/core*/**",
+  "node_modules/@next/swc*/**",
+  "node_modules/@esbuild/**",
+  "node_modules/esbuild/**",
+  "node_modules/esbuild-*/**",
+  "node_modules/typescript/**",
+  "node_modules/eslint/**",
+  "node_modules/eslint-*/**",
+  "node_modules/@eslint/**",
+  "node_modules/@eslint-community/**",
+  "node_modules/webpack/**",
+  "node_modules/postcss/**",
+  "node_modules/tailwindcss/**",
+  "node_modules/autoprefixer/**",
+  "node_modules/@ducanh2912/**",
+  "node_modules/workbox-*/**",
+  "node_modules/sharp/**",
+  "node_modules/@img/**",
+  "node_modules/puppeteer/**",
+  "node_modules/puppeteer-core/**",
+  "node_modules/playwright*/**",
+  "node_modules/@sparticuz/**",
+  ".next/cache/**",
+  "**/*.map",
+];
 
-  // 1. Kompresi HTTP response bawaan Next.js (Gzip)
+/**
+ * Aset klien yang TIDAK boleh di-obfuscate: runtime webpack/Next.js & framework.
+ * Obfuscate bagian ini bisa merusak hydration dan hanya menambah ukuran.
+ */
+const OBFUSCATOR_EXCLUDES = [
+  "static/chunks/webpack-*.js",
+  "static/chunks/framework-*.js",
+  "static/chunks/main-*.js",
+  "static/chunks/main-app-*.js",
+  "static/chunks/polyfills-*.js",
+  "static/chunks/[0-9]*.js", // chunk vendor bersama (node_modules)
+  "static/*/_buildManifest.js",
+  "static/*/_ssgManifest.js",
+  "**/node_modules/**",
+];
+
+const nextConfig = {
+  // 1. Kompresi HTTP response bawaan Next.js (gzip)
   compress: true,
 
   // 2. Matikan source map di production agar ukuran build jauh lebih kecil
   productionBrowserSourceMaps: false,
 
-  // 3. Memperkecil ukuran deployment (hanya menyertakan node_modules yang terpakai)
-  // Catatan: jika pakai ini, jalankan production dengan `node .next/standalone/server.js`
-  // Hapus baris ini jika Anda tetap ingin menjalankan via `next start` biasa.
-  output: "standalone",
+  // 3. Memperkecil ukuran deployment (hanya menyertakan node_modules yang terpakai).
+  //    Jalankan production dengan `node .next/standalone/server.js` (setelah menyalin
+  //    `.next/static` dan `public`), atau tetap pakai `npm start` (server custom + Socket.IO).
+  //    Di Netlify mode ini dimatikan karena runtime Netlify membangun fungsinya sendiri
+  //    dan folder standalone akan ikut terunggah sebagai file statis.
+  ...(process.env.NETLIFY ? {} : { output: "standalone" }),
 
-  // 4. Hapus console.log secara native lewat SWC (lebih ringan daripada plugin obfuscator)
-  compiler: {
-    removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error"] } : false,
-  },
-
+  reactStrictMode: true,
+  poweredByHeader: false,
   images: {
-    domains: [
-      "avatars.githubusercontent.com",
-      "lh3.googleusercontent.com",
-      "images.unsplash.com",
-    ],
-    // Format gambar modern yang jauh lebih terkompresi
-    formats: ["image/avif", "image/webp"],
+    domains: ["avatars.githubusercontent.com", "lh3.googleusercontent.com", "images.unsplash.com"]
   },
-
-  async headers() {
-    return [
-      {
-        source: "/sw.js",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "no-cache, no-store, must-revalidate",
-          },
-          {
-            key: "Service-Worker-Allowed",
-            value: "/",
-          },
-        ],
-      },
-    ];
+  experimental: {
+    outputFileTracingExcludes: {
+      "*": EXCLUDE_FROM_SERVER_TRACE
+    }
   },
 
   webpack: (config, { dev, isServer }) => {
-    config.externals = config.externals || [];
-    config.externals.push({
-      "utf-8-validate": "commonjs utf-8-validate",
-      bufferutil: "commonjs bufferutil",
-    });
+    // ws memakai modul native opsional; jangan di-bundle di sisi server
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        "utf-8-validate": "commonjs utf-8-validate",
+        bufferutil: "commonjs bufferutil"
+      });
+    }
 
-    if (!dev && !isServer) {
-      // OPSI A (Paling Kompres): Cukup andalkan minifier bawaan Next.js (SWC/Terser).
-      // Jika Anda tetap ingin menggunakan WebpackObfuscator, gunakan setting paling ringkas berikut:
+    // Obfuscate hanya kode klien di production. Matikan dengan OBFUSCATE=0.
+    if (!dev && !isServer && process.env.OBFUSCATE !== "0") {
       const WebpackObfuscator = require("webpack-obfuscator");
       config.plugins.push(
         new WebpackObfuscator(
@@ -74,29 +100,26 @@ const nextConfig = {
             controlFlowFlattening: false,
             deadCodeInjection: false,
             selfDefending: false,
-            disableConsoleOutput: true,
+            disableConsoleOutput: true
           },
-          ["node_modules/**"]
+          OBFUSCATOR_EXCLUDES
         )
       );
-
-      // OPSI B (Tambahan): Pre-compress aset statis ke .gz & .br (jika pakai Nginx/CDN atau custom server)
-      // Install dulu: npm i -D compression-webpack-plugin
-      /*
-      const CompressionPlugin = require("compression-webpack-plugin");
-      config.plugins.push(
-        new CompressionPlugin({
-          algorithm: "gzip",
-          test: /\.(js|css|html|svg)$/,
-          threshold: 10240,
-          minRatio: 0.8,
-        })
-      );
-      */
     }
-
     return config;
   },
-};
 
+  async headers() {
+    return [{
+      source: "/sw.js",
+      headers: [{
+        key: "Cache-Control",
+        value: "no-cache, no-store, must-revalidate"
+      }, {
+        key: "Service-Worker-Allowed",
+        value: "/"
+      }]
+    }];
+  }
+};
 module.exports = nextConfig;

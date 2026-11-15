@@ -7,7 +7,8 @@ import s from '@/styles/playground.module.css';
 export default function Sidebar({ parsed, activeKey, onOpen, history, onOpenHistory, onClearHistory, onClose, specLabel }) {
   const [view, setView] = useState('endpoints');
   const [q, setQ] = useState('');
-  const [closed, setClosed] = useState({});
+  const [openMap, setOpenMap] = useState({}); // grup tertutup secara default
+  const activeTag = useMemo(() => parsed.operations.find((o) => o.key === activeKey)?.tags[0], [parsed, activeKey]);
 
   const groups = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -45,19 +46,28 @@ export default function Sidebar({ parsed, activeKey, onOpen, history, onOpenHist
             {q && <button type="button" onClick={() => setQ('')} aria-label="Hapus"><Icons.Close size={14} /></button>}
           </label>
 
+          {!q && groups.length > 1 && (
+            <div className={s.sbBulk}>
+              <button type="button" onClick={() => setOpenMap(Object.fromEntries(groups.map(([t]) => [t, true])))}>Buka semua</button>
+              <span>·</span>
+              <button type="button" onClick={() => setOpenMap(Object.fromEntries(groups.map(([t]) => [t, false])))}>Tutup semua</button>
+            </div>
+          )}
+
           <div className={s.sbScroll}>
             {groups.length === 0 && <div className={s.kvEmpty}>Tidak ada endpoint cocok.</div>}
             {groups.map(([tag, ops]) => {
-              const isClosed = closed[tag] && !q;
+              const isOpen = q ? true : openMap[tag] !== undefined ? openMap[tag] : tag === activeTag;
+              const isClosed = !isOpen;
               return (
                 <div key={tag} className={s.group}>
-                  <button type="button" className={s.groupHead} onClick={() => setClosed((c) => ({ ...c, [tag]: !c[tag] }))} aria-expanded={!isClosed}>
-                    <Icons.ChevronRight size={14} className={cx(s.chev, !isClosed && s.chevOpen)} />
+                  <button type="button" className={s.groupHead} onClick={() => setOpenMap((m) => ({ ...m, [tag]: !isOpen }))} aria-expanded={isOpen}>
+                    <Icons.ChevronRight size={14} className={cx(s.chev, isOpen && s.chevOpen)} />
                     <Icons.Folder size={14} />
                     <span>{tag}</span>
                     <i>{ops.length}</i>
                   </button>
-                  {!isClosed && (
+                  {isOpen && (
                     <ul className={s.opList}>
                       {ops.map((op) => (
                         <li key={op.key}>

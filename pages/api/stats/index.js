@@ -1,8 +1,9 @@
 import os from "os";
 import dbConnect from "@/lib/mongoose";
 import ApiLog from "@/models/ApiLog";
+import logger from "@/lib/apiLogger.cjs";
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const startPing = performance.now();
   let dbStatus = "CONNECTED";
   let dbPing = 0;
@@ -17,6 +18,7 @@ export default async function handler(req, res) {
   // Handle Purge Log History
   if (req.method === "DELETE") {
     try {
+      logger.clearLogs();
       await ApiLog.deleteMany({});
       return res.status(200).json({ ok: true, message: "Log telemetri berhasil dibersihkan." });
     } catch (e) {
@@ -105,19 +107,13 @@ export default async function handler(req, res) {
     console.warn("Gagal membaca koleksi ApiLog:", err.message);
   }
 
-  // Jika database baru kosong, berikan simulated initial baseline
-  if (apiMetrics.totalRequests === 0) {
-    apiMetrics.totalRequests = 1240;
-    apiMetrics.successRequests = 1218;
-    apiMetrics.errorRequests = 22;
-    apiMetrics.avgLatencyMs = 18;
-    apiMetrics.successRate = 98.2;
-  }
-
   return res.status(200).json({
     ok: true,
     timestamp: new Date().toISOString(),
     system: systemSpecs,
     metrics: apiMetrics,
+    live: logger.counters(),
   });
 }
+
+export default handler;

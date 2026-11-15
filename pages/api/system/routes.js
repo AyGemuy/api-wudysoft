@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fs from 'fs';
 import path from 'path';
 
@@ -26,7 +27,7 @@ function scanDirectory(dir, baseRoute = '') {
   return results;
 }
 
-export default function handler(req, res) {
+function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ status: 'error', message: 'Method Not Allowed' });
   }
@@ -55,3 +56,5 @@ export default function handler(req, res) {
     return res.status(500).json({ status: 'error', message: error.message });
   }
 }
+
+export default withApiLog(handler);

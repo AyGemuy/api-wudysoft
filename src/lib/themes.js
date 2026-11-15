@@ -75,14 +75,91 @@ export const PRESETS = [
   P('mint', 'Mint', '#059669', '#10b981', '#0891b2', '#e3f6ee', '#ffffff', { text: '#052e22', muted: '#3f6b5b' }),
 ];
 
+const GF = (family, weights) => `${family.replace(/ /g, '+')}${weights ? `:wght@${weights}` : ''}`;
+const F = (id, name, cat, family, weights, fallback) => ({
+  id, name, cat, family, gf: GF(family, weights),
+  stack: `'${family}', ${fallback}`,
+});
+const SANS = 'system-ui, -apple-system, sans-serif';
+const SERIF = "Georgia, 'Times New Roman', serif";
+const MONO = 'ui-monospace, monospace';
+
+export const FONT_CATS = [
+  { id: 'sans', label: 'Sans' },
+  { id: 'display', label: 'Display' },
+  { id: 'serif', label: 'Serif' },
+  { id: 'mono', label: 'Mono' },
+  { id: 'fun', label: 'Fun' },
+];
+
 export const FONTS = [
-  { id: 'jakarta', name: 'Jakarta', stack: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" },
-  { id: 'inter', name: 'Inter', stack: "'Inter', system-ui, -apple-system, sans-serif" },
-  { id: 'space', name: 'Space Grotesk', stack: "'Space Grotesk', system-ui, sans-serif" },
-  { id: 'outfit', name: 'Outfit', stack: "'Outfit', system-ui, sans-serif" },
-  { id: 'poppins', name: 'Poppins', stack: "'Poppins', system-ui, sans-serif" },
-  { id: 'mono', name: 'Mono', stack: "'JetBrains Mono', ui-monospace, monospace" },
-  { id: 'system', name: 'System', stack: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
+  // sans modern
+  F('jakarta', 'Plus Jakarta', 'sans', 'Plus Jakarta Sans', '400;500;600;700;800', SANS),
+  F('inter', 'Inter', 'sans', 'Inter', '400;500;600;700;800', SANS),
+  F('manrope', 'Manrope', 'sans', 'Manrope', '400;500;600;700;800', SANS),
+  F('dmsans', 'DM Sans', 'sans', 'DM Sans', '400;500;600;700', SANS),
+  F('sora', 'Sora', 'sans', 'Sora', '400;500;600;700;800', SANS),
+  F('outfit', 'Outfit', 'sans', 'Outfit', '400;500;600;700;800', SANS),
+  F('lexend', 'Lexend', 'sans', 'Lexend', '400;500;600;700', SANS),
+  F('urbanist', 'Urbanist', 'sans', 'Urbanist', '400;500;600;700;800', SANS),
+  F('figtree', 'Figtree', 'sans', 'Figtree', '400;500;600;700;800', SANS),
+  F('bricolage', 'Bricolage', 'sans', 'Bricolage Grotesque', '400;500;600;700;800', SANS),
+  F('space', 'Space Grotesk', 'sans', 'Space Grotesk', '400;500;600;700', SANS),
+  F('poppins', 'Poppins', 'sans', 'Poppins', '400;500;600;700;800', SANS),
+  F('ibmplex', 'IBM Plex Sans', 'sans', 'IBM Plex Sans', '400;500;600;700', SANS),
+  { id: 'system', name: 'System UI', cat: 'sans', family: null, gf: null, stack: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
+  // display / cyber
+  F('orbitron', 'Orbitron', 'display', 'Orbitron', '400;500;600;700;800', SANS),
+  F('rajdhani', 'Rajdhani', 'display', 'Rajdhani', '400;500;600;700', SANS),
+  F('exo2', 'Exo 2', 'display', 'Exo 2', '400;500;600;700;800', SANS),
+  F('syne', 'Syne', 'display', 'Syne', '400;500;600;700;800', SANS),
+  F('unbounded', 'Unbounded', 'display', 'Unbounded', '400;500;600;700;800', SANS),
+  F('audiowide', 'Audiowide', 'display', 'Audiowide', '', SANS),
+  F('righteous', 'Righteous', 'display', 'Righteous', '', SANS),
+  F('pressstart', 'Press Start 2P', 'display', 'Press Start 2P', '', MONO),
+  // serif
+  F('fraunces', 'Fraunces', 'serif', 'Fraunces', '400;500;600;700;800', SERIF),
+  F('playfair', 'Playfair Display', 'serif', 'Playfair Display', '400;500;600;700;800', SERIF),
+  F('lora', 'Lora', 'serif', 'Lora', '400;500;600;700', SERIF),
+  F('dmserif', 'DM Serif Display', 'serif', 'DM Serif Display', '', SERIF),
+  // mono
+  F('jetbrains', 'JetBrains Mono', 'mono', 'JetBrains Mono', '400;600', MONO),
+  F('firacode', 'Fira Code', 'mono', 'Fira Code', '400;600', MONO),
+  F('spacemono', 'Space Mono', 'mono', 'Space Mono', '400;700', MONO),
+  F('ibmplexmono', 'IBM Plex Mono', 'mono', 'IBM Plex Mono', '400;600', MONO),
+  F('sourcecode', 'Source Code Pro', 'mono', 'Source Code Pro', '400;600', MONO),
+  // fun
+  F('caveat', 'Caveat', 'fun', 'Caveat', '400;500;600;700', 'cursive'),
+  F('pacifico', 'Pacifico', 'fun', 'Pacifico', '', 'cursive'),
+  F('kalam', 'Kalam', 'fun', 'Kalam', '400;700', 'cursive'),
+];
+
+const DEFAULT_LOADED = new Set(['jakarta', 'jetbrains']); // sudah dimuat di _document.js
+export const getFont = (id) => FONTS.find((f) => f.id === id) || FONTS[0];
+
+/** URL Google Fonts hanya untuk font terpilih yang belum dimuat default. */
+export function fontHref(cfg) {
+  const ids = [cfg.font, cfg.fontHeading !== 'same' ? cfg.fontHeading : null, cfg.fontMono].filter(Boolean);
+  const fam = [...new Set(ids)].filter((id) => !DEFAULT_LOADED.has(id)).map(getFont).filter((f) => f.gf);
+  if (!fam.length) return '';
+  return `https://fonts.googleapis.com/css2?${fam.map((f) => `family=${f.gf}`).join('&')}&display=swap`;
+}
+
+/** Subset kecil (hanya "Aa") untuk pratinjau semua font di Studio. */
+export function fontPreviewHref(cat) {
+  const fam = FONTS.filter((f) => f.gf && (!cat || f.cat === cat)).map((f) => `family=${f.family.replace(/ /g, '+')}`);
+  return fam.length ? `https://fonts.googleapis.com/css2?${fam.join('&')}&text=AaBbCc123&display=swap` : '';
+}
+
+export const GRADIENTS = [
+  { id: 'aurora', name: 'Aurora', css: 'radial-gradient(60% 55% at 15% 10%, rgba(34,211,238,.45), transparent 70%), radial-gradient(50% 50% at 88% 18%, rgba(167,139,250,.42), transparent 70%), radial-gradient(65% 60% at 50% 105%, rgba(16,185,129,.38), transparent 70%)' },
+  { id: 'sunset', name: 'Sunset', css: 'radial-gradient(60% 55% at 85% 10%, rgba(251,113,133,.5), transparent 70%), radial-gradient(60% 60% at 10% 90%, rgba(249,115,22,.42), transparent 70%), radial-gradient(50% 50% at 50% 50%, rgba(251,191,36,.18), transparent 70%)' },
+  { id: 'ocean', name: 'Ocean', css: 'radial-gradient(70% 60% at 50% 0%, rgba(14,165,233,.5), transparent 70%), radial-gradient(60% 60% at 0% 100%, rgba(59,130,246,.4), transparent 70%), radial-gradient(50% 50% at 100% 80%, rgba(34,211,238,.28), transparent 70%)' },
+  { id: 'neon', name: 'Neon', css: 'radial-gradient(55% 55% at 10% 20%, rgba(217,70,239,.5), transparent 70%), radial-gradient(55% 55% at 90% 80%, rgba(34,211,238,.45), transparent 70%), radial-gradient(40% 40% at 60% 30%, rgba(251,191,36,.2), transparent 70%)' },
+  { id: 'forest', name: 'Forest', css: 'radial-gradient(60% 60% at 20% 80%, rgba(22,163,74,.45), transparent 70%), radial-gradient(55% 55% at 85% 15%, rgba(163,230,53,.3), transparent 70%)' },
+  { id: 'rose', name: 'Rose', css: 'radial-gradient(60% 60% at 80% 15%, rgba(244,63,94,.45), transparent 70%), radial-gradient(60% 60% at 15% 85%, rgba(192,132,252,.4), transparent 70%)' },
+  { id: 'mesh', name: 'Mesh', css: 'radial-gradient(40% 40% at 20% 20%, rgba(99,102,241,.5), transparent 70%), radial-gradient(40% 40% at 80% 25%, rgba(236,72,153,.4), transparent 70%), radial-gradient(45% 45% at 30% 85%, rgba(34,211,238,.4), transparent 70%), radial-gradient(40% 40% at 85% 85%, rgba(250,204,21,.28), transparent 70%)' },
+  { id: 'dusk', name: 'Dusk', css: 'linear-gradient(160deg, rgba(76,29,149,.55) 0%, rgba(30,64,175,.35) 50%, rgba(2,6,23,0) 100%)' },
 ];
 
 export const PARTICLES = [
@@ -112,25 +189,59 @@ export const COLOR_KEYS = [
 ];
 
 /* ---------- konfigurasi ---------- */
+export const RADIUS_PRESETS = [
+  { id: 'sharp', label: 'Tajam', v: { radius: 6, rBtn: 6, rInput: 6, rChip: 6, rDockTop: 10, rDockBottom: 10, rDockBtn: 8, rModal: 8 } },
+  { id: 'soft', label: 'Lembut', v: { radius: 24, rBtn: 14, rInput: 14, rChip: 60, rDockTop: 40, rDockBottom: 40, rDockBtn: 60, rModal: 24 } },
+  { id: 'round', label: 'Bulat', v: { radius: 32, rBtn: 60, rInput: 24, rChip: 60, rDockTop: 48, rDockBottom: 48, rDockBtn: 60, rModal: 32 } },
+];
+
 export const DEFAULT_CONFIG = {
   theme: 'stealth',
   custom: {},
-  radius: 24,
+  // bentuk (60 = pill)
+  radius: 24, // kartu
+  rBtn: 14,
+  rInput: 14,
+  rChip: 60,
+  rDockTop: 40, // header & navbar melayang: sudut atas
+  rDockBottom: 40, // sudut bawah
+  rDockBtn: 60, // ikon di dalam dock
+  rModal: 24,
   blur: 26,
   glass: 0.75,
   border: 0.12,
   card: 'glass',
   density: 'normal', // compact | normal | spacious
   cardSize: 'm', // s | m | l
+  // efek latar
   particle: 'rain',
   blobs: true,
   blobIntensity: 0.35,
   grid: false,
   spotlight: true,
-  tilt: true,
-  anim: 'on', // on | off
+  // animasi
+  anim: 'on', // master on | off
   speed: 1,
+  animPage: 'slide', // slide | fade | zoom | none
+  animEntrance: true,
+  animHover: 'tilt', // lift | tilt | glow | none
+  animPreview: true,
+  animBlobs: true,
+  animBtn: true,
+  animSplash: true,
+  animBar: true,
+  // latar kustom
+  bgType: 'none', // none | gradient | link | upload
+  bgGradient: 'aurora',
+  bgUrl: '',
+  bgFit: 'cover', // cover | contain | repeat
+  bgPos: 'center', // center | top | bottom
+  bgBlur: 0,
+  bgDim: 0.45,
+  // teks
   font: 'jakarta',
+  fontHeading: 'same',
+  fontMono: 'jetbrains',
   fontScale: 100,
   soundEnabled: true,
 };
@@ -138,17 +249,32 @@ export const DEFAULT_CONFIG = {
 export const STORAGE_KEY = 'nexus_theme_config_v2';
 export const BOOT_KEY = 'nexus_theme_boot';
 
+const FONT_ALIASES = { mono: 'jetbrains' };
+
 export function sanitizeConfig(raw) {
-  const c = { ...DEFAULT_CONFIG, ...(raw && typeof raw === 'object' ? raw : {}) };
-  if (!PRESETS.some((p) => p.id === c.theme)) c.theme = DEFAULT_CONFIG.theme;
-  if (!FONTS.some((f) => f.id === c.font)) c.font = DEFAULT_CONFIG.font;
-  if (!PARTICLES.some((p) => p.id === c.particle)) c.particle = DEFAULT_CONFIG.particle;
-  if (!CARD_STYLES.some((s) => s.id === c.card)) c.card = DEFAULT_CONFIG.card;
-  if (!['compact', 'normal', 'spacious'].includes(c.density)) c.density = 'normal';
-  if (!['s', 'm', 'l'].includes(c.cardSize)) c.cardSize = 'm';
-  c.anim = c.anim === 'off' ? 'off' : 'on';
+  const r = raw && typeof raw === 'object' ? raw : {};
+  const c = { ...DEFAULT_CONFIG, ...r };
+  const pick = (v, list, d) => (list.includes(v) ? v : d);
   const num = (v, min, max, d) => (Number.isFinite(Number(v)) ? Math.min(max, Math.max(min, Number(v))) : d);
-  c.radius = num(c.radius, 0, 40, 24);
+  const bool = (v, d) => (typeof v === 'boolean' ? v : d);
+
+  if (!PRESETS.some((p) => p.id === c.theme)) c.theme = DEFAULT_CONFIG.theme;
+  c.font = FONT_ALIASES[c.font] || c.font;
+  c.fontMono = FONT_ALIASES[c.fontMono] || c.fontMono;
+  if (!FONTS.some((f) => f.id === c.font)) c.font = DEFAULT_CONFIG.font;
+  if (c.fontHeading !== 'same' && !FONTS.some((f) => f.id === c.fontHeading)) c.fontHeading = 'same';
+  if (!FONTS.some((f) => f.id === c.fontMono && f.cat === 'mono')) c.fontMono = DEFAULT_CONFIG.fontMono;
+  if (!PARTICLES.some((p) => p.id === c.particle)) c.particle = DEFAULT_CONFIG.particle;
+  if (!CARD_STYLES.some((x) => x.id === c.card)) c.card = DEFAULT_CONFIG.card;
+  c.density = pick(c.density, ['compact', 'normal', 'spacious'], 'normal');
+  c.cardSize = pick(c.cardSize, ['s', 'm', 'l'], 'm');
+  c.anim = c.anim === 'off' ? 'off' : 'on';
+  c.animPage = pick(c.animPage, ['slide', 'fade', 'zoom', 'none'], 'slide');
+  // migrasi: `tilt` (boolean) → animHover
+  c.animHover = pick(r.animHover !== undefined ? c.animHover : r.tilt === false ? 'lift' : 'tilt', ['lift', 'tilt', 'glow', 'none'], 'tilt');
+  ['animEntrance', 'animPreview', 'animBlobs', 'animBtn', 'animSplash', 'animBar'].forEach((k) => { c[k] = bool(c[k], DEFAULT_CONFIG[k]); });
+
+  ['radius', 'rBtn', 'rInput', 'rChip', 'rDockTop', 'rDockBottom', 'rDockBtn', 'rModal'].forEach((k) => { c[k] = Math.round(num(c[k], 0, 60, DEFAULT_CONFIG[k])); });
   c.blur = num(c.blur, 0, 50, 26);
   c.glass = num(c.glass, 0.1, 1, 0.75);
   c.border = num(c.border, 0, 0.6, 0.12);
@@ -158,8 +284,16 @@ export function sanitizeConfig(raw) {
   c.blobs = !!c.blobs;
   c.grid = !!c.grid;
   c.spotlight = !!c.spotlight;
-  c.tilt = !!c.tilt;
   c.soundEnabled = c.soundEnabled !== false;
+
+  c.bgType = pick(c.bgType, ['none', 'gradient', 'link', 'upload'], 'none');
+  if (!GRADIENTS.some((g) => g.id === c.bgGradient)) c.bgGradient = DEFAULT_CONFIG.bgGradient;
+  c.bgUrl = typeof c.bgUrl === 'string' && /^https?:\/\//i.test(c.bgUrl.trim()) ? c.bgUrl.trim().slice(0, 2000) : '';
+  c.bgFit = pick(c.bgFit, ['cover', 'contain', 'repeat'], 'cover');
+  c.bgPos = pick(c.bgPos, ['center', 'top', 'bottom'], 'center');
+  c.bgBlur = num(c.bgBlur, 0, 24, 0);
+  c.bgDim = num(c.bgDim, 0, 0.9, 0.45);
+
   const custom = {};
   if (c.custom && typeof c.custom === 'object') {
     COLOR_KEYS.forEach(({ key }) => {
@@ -167,6 +301,7 @@ export function sanitizeConfig(raw) {
     });
   }
   c.custom = custom;
+  delete c.tilt;
   return c;
 }
 
@@ -191,12 +326,16 @@ export function resolveColors(cfg) {
 
 const DENSITY = { compact: 0.8, normal: 1, spacious: 1.25 };
 const CARD_MIN = { s: '240px', m: '300px', l: '380px' };
+const rad = (v) => (v >= 60 ? '999px' : `${v}px`);
 
 export function computeTheme(input) {
   const cfg = sanitizeConfig(input);
   const c = resolveColors(cfg);
-  const font = FONTS.find((f) => f.id === cfg.font) || FONTS[0];
+  const body = getFont(cfg.font);
+  const heading = cfg.fontHeading === 'same' ? body : getFont(cfg.fontHeading);
+  const mono = getFont(cfg.fontMono);
   const surface = mix(c.bg1, c.bg2, 0.6);
+  const grad = GRADIENTS.find((g) => g.id === cfg.bgGradient)?.css || 'none';
 
   const vars = {
     '--a1': c.a1,
@@ -218,15 +357,27 @@ export function computeTheme(input) {
     '--dock-border': rgba(c.text, Math.max(0.1, cfg.border + 0.02)),
     '--shadow-c': c.light ? '#334155' : '#000000',
     '--blur': `${cfg.blur}px`,
-    '--radius': `${cfg.radius}px`,
-    '--font': font.stack,
+    '--radius': rad(cfg.radius),
+    '--r-btn': rad(cfg.rBtn),
+    '--r-input': rad(cfg.rInput),
+    '--r-chip': rad(cfg.rChip),
+    '--r-dock-top': rad(cfg.rDockTop),
+    '--r-dock-bottom': rad(cfg.rDockBottom),
+    '--r-dock-btn': rad(cfg.rDockBtn),
+    '--r-modal': rad(cfg.rModal),
+    '--dock-radius': `${rad(cfg.rDockTop)} ${rad(cfg.rDockTop)} ${rad(cfg.rDockBottom)} ${rad(cfg.rDockBottom)}`,
+    '--font': body.stack,
+    '--font-heading': heading.stack,
+    '--font-mono': mono.stack,
     '--font-scale': String(cfg.fontScale / 100),
     '--speed': String(cfg.anim === 'off' ? 1000 : cfg.speed),
     '--blob-opacity': String(cfg.blobs ? cfg.blobIntensity : 0),
     '--space': String(DENSITY[cfg.density]),
     '--card-min': CARD_MIN[cfg.cardSize],
+    '--bg-gradient': cfg.bgType === 'gradient' ? grad : 'none',
   };
 
+  const off = cfg.anim === 'off';
   const attrs = {
     'data-theme': cfg.theme,
     'data-mode': c.light ? 'light' : 'dark',
@@ -234,9 +385,28 @@ export function computeTheme(input) {
     'data-density': cfg.density,
     'data-anim': cfg.anim,
     'data-grid': cfg.grid ? 'on' : 'off',
+    'data-hover': off ? 'none' : cfg.animHover,
+    'data-page': off ? 'none' : cfg.animPage,
+    'data-anim-preview': cfg.animPreview ? 'on' : 'off',
+    'data-anim-blobs': cfg.animBlobs ? 'on' : 'off',
+    'data-anim-btn': cfg.animBtn ? 'on' : 'off',
+    'data-splash': cfg.animSplash ? 'on' : 'off',
+    'data-bar': cfg.animBar ? 'on' : 'off',
   };
 
-  return { cfg, colors: c, vars, attrs };
+  return { cfg, colors: c, vars, attrs, fontHref: fontHref(cfg) };
+}
+
+function ensureFontLink(href) {
+  let el = document.getElementById('nexus-fonts');
+  if (!href) { el?.remove(); return; }
+  if (!el) {
+    el = document.createElement('link');
+    el.id = 'nexus-fonts';
+    el.rel = 'stylesheet';
+    document.head.appendChild(el);
+  }
+  if (el.getAttribute('href') !== href) el.setAttribute('href', href);
 }
 
 export function applyConfig(input) {
@@ -246,10 +416,11 @@ export function applyConfig(input) {
   Object.entries(t.vars).forEach(([k, v]) => root.style.setProperty(k, v));
   Object.entries(t.attrs).forEach(([k, v]) => root.setAttribute(k, v));
   root.style.colorScheme = t.attrs['data-mode'];
+  ensureFontLink(t.fontHref);
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', t.colors.bg1);
   try {
-    localStorage.setItem(BOOT_KEY, JSON.stringify({ vars: t.vars, attrs: t.attrs }));
+    localStorage.setItem(BOOT_KEY, JSON.stringify({ vars: t.vars, attrs: t.attrs, font: t.fontHref }));
   } catch {}
   return t;
 }
@@ -295,4 +466,4 @@ export function randomPalette(lightMode = false) {
 }
 
 /** Script kecil di <head> supaya tema tersimpan langsung terpasang sebelum paint */
-export const THEME_BOOT_SCRIPT = `(function(){try{var d=JSON.parse(localStorage.getItem('${BOOT_KEY}')||'null');if(!d)return;var r=document.documentElement;for(var k in d.vars)r.style.setProperty(k,d.vars[k]);for(var a in d.attrs)r.setAttribute(a,d.attrs[a]);r.style.colorScheme=d.attrs['data-mode'];}catch(e){}})();`;
+export const THEME_BOOT_SCRIPT = `(function(){try{var d=JSON.parse(localStorage.getItem('${BOOT_KEY}')||'null');if(!d)return;var r=document.documentElement;for(var k in d.vars)r.style.setProperty(k,d.vars[k]);for(var a in d.attrs)r.setAttribute(a,d.attrs[a]);r.style.colorScheme=d.attrs['data-mode'];if(d.font){var l=document.createElement('link');l.id='nexus-fonts';l.rel='stylesheet';l.href=d.font;document.head.appendChild(l);}}catch(e){}})();`;

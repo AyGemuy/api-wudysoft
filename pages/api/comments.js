@@ -1,6 +1,7 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import dbConnect from "@/lib/mongoose";
 import Comment from "@/models/Comment";
-export default async function handler(req, res) {
+async function handler(req, res) {
   await dbConnect();
   if (req.method === "GET") {
     try {
@@ -129,3 +130,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

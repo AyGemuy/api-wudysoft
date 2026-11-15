@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { withRateLimit, clientIp } from "@/src/lib/rateLimit";
@@ -69,4 +70,4 @@ async function handler(req, res) {
   return res.status(405).json({ message: `Method ${req.method} not allowed` });
 }
 
-export default withRateLimit(handler, { limit: 15, windowMs: 60_000 });
+export default withApiLog(withRateLimit(handler, { limit: 15, windowMs: 60_000 }));

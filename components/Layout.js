@@ -7,8 +7,11 @@ import { Icons } from './Icons';
 import CustomThemeStudio from './CustomThemeStudio';
 import InteractiveCanvas from './InteractiveCanvas';
 import CursorGlow from './CursorGlow';
+import BgLayer from './BgLayer';
 import SiteFooter from './SiteFooter';
 import { ThemeContext } from './ThemeContext';
+import { logout } from '@/src/lib/nav';
+import { loadSpecOps } from '@/src/lib/specIndex';
 import { DEFAULT_CONFIG, loadConfig, saveConfig, applyConfig, computeTheme } from '@/src/lib/themes';
 import { sound } from '@/src/lib/interactiveEffects';
 
@@ -88,26 +91,32 @@ export default function Layout({ children }) {
 
   const themeCtx = useMemo(() => ({ config, setConfig, openStudio }), [config, openStudio]);
 
+  // Endpoint untuk pencarian global diambil dari spesifikasi OpenAPI (dimuat saat pencarian dibuka)
   useEffect(() => {
-    fetch('/api/playground/endpoints')
-      .then((r) => r.json())
-      .then((d) => d.endpoints && setEndpoints(d.endpoints))
-      .catch(() => setEndpoints(['/api/health', '/api/auth/me', '/api/playground/echo']));
-  }, []);
+    if (searchOpen && !endpoints.length) loadSpecOps().then(setEndpoints);
+  }, [searchOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const searchResults = [
-    ...endpoints.map((ep) => ({ type: 'Endpoint', title: ep, action: `/playground?endpoint=${ep}` })),
-    { type: 'Navigation', title: 'Command Deck Dashboard', action: '/' },
-    { type: 'Navigation', title: 'API Terminal Playground', action: '/playground' },
-    { type: 'Navigation', title: 'System & API Stats', action: '/stats' },
-    { type: 'Tools', title: 'Code Beautifier & Unpacker', action: '/tools/beautify' },
-    { type: 'Tools', title: 'Multi-Host File Uploader', action: '/tools/upload' },
-    { type: 'Comms', title: 'Cyber Rooms & Mesh Chat', action: '/rooms' },
-    { type: 'Identity', title: 'Sign In / Authorization', action: '/auth' },
-  ].filter((item) => item.title.toLowerCase().includes(searchQuery.toLowerCase()));
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const pages = [
+      { type: 'Halaman', title: 'Command Deck', sub: 'Beranda', action: '/' },
+      { type: 'Halaman', title: 'API Playground', sub: 'Uji endpoint dari OpenAPI', action: '/playground' },
+      { type: 'Halaman', title: 'System & API Stats', sub: 'Telemetri realtime', action: '/stats' },
+      { type: 'Halaman', title: 'Code Beautifier', sub: 'Tools', action: '/tools/beautify' },
+      { type: 'Halaman', title: 'Multi-Host Uploader', sub: 'Tools', action: '/tools/upload' },
+      { type: 'Halaman', title: 'Cyber Rooms', sub: 'Komunikasi', action: '/rooms' },
+      { type: 'Halaman', title: 'Masuk / Daftar', sub: 'Akun', action: '/auth' },
+    ].filter((i) => !q || `${i.title} ${i.sub}`.toLowerCase().includes(q));
+    const eps = endpoints
+      .filter((o) => !q || `${o.method} ${o.path} ${o.summary} ${o.tag}`.toLowerCase().includes(q))
+      .slice(0, 40)
+      .map((o) => ({ type: 'Endpoint', method: o.method, title: o.path, sub: o.summary, secure: o.secure, action: `/playground?op=${encodeURIComponent(o.key)}` }));
+    return [...pages, ...eps];
+  }, [searchQuery, endpoints]);
 
   return (
     <ThemeContext.Provider value={themeCtx}>
+      <BgLayer config={config} />
       <InteractiveCanvas
         particleType={config.particle}
         color={theme.colors.a2}
@@ -214,7 +223,7 @@ export default function Layout({ children }) {
                         role="menuitem"
                         onClick={() => {
                           setProfileOpen(false);
-                          signOut({ callbackUrl: '/auth' });
+                          logout('/');
                         }}
                       >
                         <Icons.LogOut size={14} color="#f87171" />
@@ -249,7 +258,7 @@ export default function Layout({ children }) {
                 <input
                   autoFocus
                   className="search-field"
-                  placeholder="Cari endpoint, file, navigasi..."
+                  placeholder="Cari halaman atau endpoint OpenAPI…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -259,18 +268,26 @@ export default function Layout({ children }) {
               </div>
 
               <div className="search-results">
+                {searchResults.length === 0 && <div className="si-empty">Tidak ada hasil untuk “{searchQuery}”.</div>}
                 {searchResults.map((item, idx) => (
                   <div
-                    key={idx}
+                    key={`${item.type}-${item.title}-${item.method || ''}-${idx}`}
                     className="search-item"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => {
                       sound.playBeep();
                       setSearchOpen(false);
-                      if (item.custom) item.custom();
-                      else router.push(item.action);
+                      router.push(item.action);
                     }}
+                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.click()}
                   >
-                    <span style={{ fontSize: '0.85rem' }}>{item.title}</span>
+                    {item.method ? <span className={`si-badge m-${item.method}`}>{item.method === 'DELETE' ? 'DEL' : item.method}</span> : <span className="si-badge si-page">{item.type}</span>}
+                    <span className="si-text">
+                      <b className={item.method ? 'si-path' : ''}>{item.title}</b>
+                      {item.sub ? <small>{item.sub}</small> : null}
+                    </span>
+                    {item.secure && <Icons.Lock size={12} color="#fbbf24" />}
                     <Icons.ChevronRight size={14} color="var(--a2)" />
                   </div>
                 ))}
@@ -402,7 +419,7 @@ export default function Layout({ children }) {
           display: grid;
           place-items: center;
           padding: 0;
-          border-radius: 50%;
+          border-radius: var(--r-dock-btn);
           border: 1px solid var(--border);
           background: color-mix(in srgb, var(--text) 6%, transparent);
           color: var(--text);
@@ -454,7 +471,7 @@ export default function Layout({ children }) {
           display: grid;
           place-items: center;
           padding: 0;
-          border-radius: 50%;
+          border-radius: var(--r-dock-btn);
           border: 1px solid var(--border);
           background: color-mix(in srgb, var(--text) 6%, transparent);
           color: var(--a2);
@@ -487,7 +504,7 @@ export default function Layout({ children }) {
             align-items: center;
             gap: 10px;
             padding: 0 14px;
-            border-radius: 999px;
+            border-radius: var(--r-dock-btn);
           }
           .hd-search-text {
             display: block;
@@ -509,7 +526,7 @@ export default function Layout({ children }) {
           position: relative;
         }
         .skeleton.hd-btn {
-          border-radius: 50%;
+          border-radius: var(--r-dock-btn);
         }
 
         :global(.profile-dropdown-solid) {
@@ -632,11 +649,59 @@ export default function Layout({ children }) {
           gap: 6px;
         }
 
+        .si-empty {
+          padding: 18px 14px;
+          font-size: 0.82rem;
+          color: var(--muted);
+          text-align: center;
+        }
+        .si-badge {
+          flex-shrink: 0;
+          min-width: 44px;
+          padding: 2px 7px;
+          border-radius: 7px;
+          text-align: center;
+          font-family: var(--font-mono);
+          font-size: 0.62rem;
+          font-weight: 800;
+          color: var(--mc, var(--a2));
+          background: color-mix(in srgb, var(--mc, var(--a2)) 14%, transparent);
+          border: 1px solid color-mix(in srgb, var(--mc, var(--a2)) 38%, transparent);
+        }
+        .si-page {
+          font-weight: 600;
+        }
+        .m-GET { --mc: #34d399; } .m-POST { --mc: #fbbf24; } .m-PUT { --mc: #60a5fa; } .m-PATCH { --mc: #c084fc; } .m-DELETE { --mc: #f87171; }
+        .si-text {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+        }
+        .si-text b {
+          font-size: 0.84rem;
+          font-weight: 600;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .si-path {
+          font-family: var(--font-mono);
+          font-size: 0.78rem !important;
+        }
+        .si-text small {
+          font-size: 0.68rem;
+          color: var(--muted);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
         .search-item {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          padding: 10px 14px;
+          gap: 10px;
+          min-height: 46px;
+          padding: 6px 12px;
           border-radius: 10px;
           font-family: var(--font-mono);
           cursor: pointer;

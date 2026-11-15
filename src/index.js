@@ -14,6 +14,7 @@ if (fs.existsSync(rootEnvLocalPath)) {
   require("dotenv").config();
 }
 const http = require("http");
+const apiLog = require("../lib/apiLogger.cjs");
 const net = require("net");
 const os = require("os");
 const next = require("next");
@@ -58,6 +59,7 @@ app.prepare().then(async () => {
   }
   const server = http.createServer((req, res) => {
     const startTime = performance.now();
+    if (req.url.startsWith("/api/")) apiLog.startLog(req, res); // log req/res realtime untuk semua route API
     res.on("finish", () => {
       if (req.url.startsWith("/_next/static") || req.url.startsWith("/_next/webpack-hmr") || req.url.startsWith("/icons/") || req.url.endsWith(".ico")) {
         return;

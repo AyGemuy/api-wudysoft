@@ -8,6 +8,7 @@ import { Icons } from '@/components/Icons';
 import { PROVIDER_ICONS, PROVIDER_LABELS } from '@/components/ProviderIcons';
 import { sound } from '@/src/lib/interactiveEffects';
 import { safeNext } from '@/src/lib/safeNext';
+import { hardGo, logout } from '@/src/lib/nav';
 import { authErrorMessage, passwordStrength } from '@/src/lib/authErrors';
 
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]+\.[^\s@]{2,}$/;
@@ -48,7 +49,7 @@ export default function AuthPage() {
   // sudah login → arahkan
   useEffect(() => {
     if (!router.isReady) return;
-    if (status === 'authenticated' && session?.user) router.replace(nextUrl);
+    if (status === 'authenticated' && session?.user) hardGo(nextUrl);
   }, [router.isReady, status, session, nextUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // provider OAuth yang benar-benar aktif di server
@@ -91,7 +92,7 @@ export default function AuthPage() {
 
   const finish = (target) => {
     sound.playBeep();
-    router.replace(target);
+    hardGo(target);
   };
 
   const submit = async (e) => {
@@ -169,11 +170,11 @@ export default function AuthPage() {
               {session.user.email || 'Sesi tamu'}
             </p>
             <div style={{ display: 'grid', gap: 10, marginTop: 16 }}>
-              <button className="btn primary full" onClick={() => router.push(nextUrl)}>
+              <button className="btn primary full" onClick={() => hardGo(nextUrl)}>
                 <span>Masuk ke Dashboard</span>
                 <Icons.ArrowRight size={16} />
               </button>
-              <button className="btn full" style={{ color: '#f87171' }} onClick={() => signOut({ callbackUrl: '/auth' })}>
+              <button className="btn full" style={{ color: '#f87171' }} onClick={() => logout('/auth')}>
                 <Icons.LogOut size={16} /> Ganti Akun / Logout
               </button>
             </div>

@@ -3,7 +3,7 @@
   "info": {
     "title": "glass-next API",
     "version": "1.0.0",
-    "description": "Dokumen dibuat otomatis dari `pages/api` (34 operasi pada 16 path). Detail akurat ditambahkan lewat `scripts/openapi-registry.mjs`.\n\n**Auth:** sesi browser (cookie NextAuth) atau `Authorization: Bearer <apiToken>`."
+    "description": "Dokumen dibuat otomatis dari `pages/api` (35 operasi pada 17 path). Detail akurat ditambahkan lewat `scripts/openapi-registry.mjs`.\n\n**Auth:** sesi browser (cookie NextAuth) atau `Authorization: Bearer <apiToken>`."
   },
   "servers": [
     {
@@ -1990,6 +1990,58 @@
             "description": "Kesalahan server"
           }
         }
+      }
+    },
+    "/api/stats/live": {
+      "get": {
+        "tags": [
+          "Stats"
+        ],
+        "summary": "Ambil Stats Live",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "get_api_stats_live",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Belum login"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
       }
     },
     "/api/system/routes": {

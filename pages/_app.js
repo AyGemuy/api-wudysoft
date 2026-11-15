@@ -5,6 +5,7 @@ import { SessionProvider } from 'next-auth/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import Preloader from '@/components/Preloader';
+import PageTransition from '@/components/PageTransition';
 import { sound } from '@/src/lib/interactiveEffects';
 import { lockZoom } from '@/src/lib/lockZoom';
 import '@/styles/globals.css';
@@ -45,20 +46,9 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
       <Preloader />
 
       <Layout>
-        {/* Transisi halaman. TANPA filter/blur: filter membuat elemen position:fixed
-            di dalam halaman (modal, toast) ikut tergeser. */}
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={router.asPath.split('?')[0]}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-            style={{ width: '100%' }}
-          >
-            <Component {...pageProps} />
-          </motion.div>
-        </AnimatePresence>
+        <PageTransition>
+          <Component {...pageProps} />
+        </PageTransition>
       </Layout>
     </SessionProvider>
   );

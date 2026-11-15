@@ -7,6 +7,7 @@ import Seo from '@/components/Seo';
 import { Key, ArrowLeft, RefreshCw, ChevronRight, Zap } from 'lucide-react';
 import { sound } from '@/src/lib/interactiveEffects';
 import { safeNext } from '@/src/lib/safeNext';
+import { hardGo } from '@/src/lib/nav';
 import { authErrorMessage } from '@/src/lib/authErrors';
 import { PROVIDER_ICONS as ICONS, PROVIDER_LABELS } from '@/components/ProviderIcons';
 
@@ -20,7 +21,7 @@ export default function OAuthPage() {
   useEffect(() => {
     if (!router.isReady) return;
     if (status === 'authenticated' && session?.user) {
-      router.replace(nextUrl);
+      hardGo(nextUrl);
     }
   }, [router.isReady, status, session, nextUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 

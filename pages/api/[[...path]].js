@@ -1,4 +1,5 @@
-export default async function handler(req, res) {
+import { withApiLog } from "@/lib/apiLogger.cjs";
+async function handler(req, res) {
   const pathSegments = req.query.path || [];
   const requestedPath = pathSegments.join("/");
   const fullPath = `/${requestedPath}`;
@@ -44,3 +45,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

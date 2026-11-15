@@ -252,7 +252,7 @@ p {
   width: 5px;
   height: 5px;
   background: var(--a2);
-  border-radius: 50%;
+  border-radius: var(--r-dock-btn);
   box-shadow: 0 0 10px var(--a2);
 }
 
@@ -260,7 +260,7 @@ p {
   position: relative;
   width: 50px;
   height: 50px;
-  border-radius: 50%;
+  border-radius: var(--r-dock-btn);
   background: linear-gradient(135deg, var(--a1), var(--a3));
   border: 2px solid color-mix(in srgb, var(--text) 35%, transparent);
   color: var(--on-accent);
@@ -280,7 +280,7 @@ p {
   gap: 8px;
   cursor: pointer;
   padding: 10px 20px;
-  border-radius: 14px;
+  border-radius: var(--r-btn);
   border: 1px solid var(--border);
   font: inherit;
   font-weight: 700;
@@ -310,7 +310,7 @@ p {
 .input, textarea.input, select.input {
   width: 100%;
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: var(--r-input);
   font: inherit;
   color: var(--text);
   background: color-mix(in srgb, var(--bg1) 45%, transparent);
@@ -343,7 +343,7 @@ p {
   display: inline-flex;
   align-items: center;
   padding: 4px 12px;
-  border-radius: 8px;
+  border-radius: var(--r-chip);
   font-size: 0.72rem;
   font-family: var(--font-mono);
   font-weight: 700;
@@ -387,7 +387,7 @@ p {
 
 .alert {
   padding: 10px 14px;
-  border-radius: 12px;
+  border-radius: var(--r-input);
   background: rgba(239, 68, 68, 0.18);
   border: 1px solid rgba(239, 68, 68, 0.4);
   color: #fca5a5;
@@ -781,4 +781,78 @@ p {
 
 [data-anim='off'] .spinner {
   animation: spin 0.8s linear infinite !important;
+}
+
+
+/* ============ TEMA LANJUTAN: font, animasi granular, latar kustom ============ */
+h1, h2, h3, h4 {
+  font-family: var(--font-heading, var(--font));
+}
+
+/* latar kustom (gradien / gambar / video) */
+.bg-custom {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.bg-custom .bg-media {
+  position: absolute;
+  inset: -26px;
+  width: calc(100% + 52px);
+  height: calc(100% + 52px);
+  object-fit: cover;
+}
+.bg-custom .bg-grad {
+  background-image: var(--bg-gradient);
+}
+.bg-custom::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg1) calc(var(--bg-dim, 0) * 100%), transparent);
+}
+
+/* animasi per-bagian */
+[data-anim-preview='off'] .hx-pv,
+[data-anim-preview='off'] .hx-pv * {
+  animation: none !important;
+}
+[data-anim-blobs='off'] .blob {
+  animation: none !important;
+}
+[data-anim-btn='off'] .btn,
+[data-anim-btn='off'] .nav-tab,
+[data-anim-btn='off'] .nav-center-action {
+  transition: none !important;
+}
+[data-anim-btn='off'] .btn:hover,
+[data-anim-btn='off'] .btn:active {
+  transform: none !important;
+}
+[data-hover='none'] .btn:not(:disabled):hover {
+  transform: none;
+}
+[data-hover='none'] .hx-card:hover {
+  box-shadow: none;
+  border-color: var(--border);
+}
+[data-hover='glow'] .hx-card:hover {
+  box-shadow: 0 0 0 1px var(--ac), 0 0 38px color-mix(in srgb, var(--ac) 55%, transparent);
+}
+html[data-splash='off'] .boot-overlay {
+  display: none !important;
+}
+html[data-splash='off'].is-loading {
+  overflow: auto;
+}
+html[data-bar='off'] .route-bar,
+html[data-bar='off'] .route-loader {
+  display: none !important;
+}
+
+/* Cegah teks panjang keluar dari kontainer */
+p, li, dd, dt, td, th, label, h1, h2, h3, h4 {
+  overflow-wrap: anywhere;
 }

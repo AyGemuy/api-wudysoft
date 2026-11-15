@@ -152,7 +152,7 @@ export default function SiteFooter() {
           align-items: center;
           gap: 8px;
           padding: 7px 12px;
-          border-radius: 999px;
+          border-radius: var(--r-chip);
           font-family: var(--font-mono);
           font-size: 0.72rem;
           color: var(--text);

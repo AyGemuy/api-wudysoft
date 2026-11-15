@@ -30,3 +30,22 @@ public/                   manifest.json, sw.js, icons, og.png
 
 ## Catatan
 Rate limit memakai memori proses (cocok untuk 1 instance). Untuk banyak instance, ganti dengan Redis.
+
+## Deploy ke Netlify
+
+- Jika muncul `The function exceeds the maximum size of 250 MB`, jalankan `npm run build && npm run size`.
+  Skrip menampilkan paket yang paling besar di fungsi serverless. `next.config.js` sudah mengecualikan
+  alat build (SWC, esbuild, typescript, eslint, sharp, dst.) lewat `experimental.outputFileTracingExcludes`.
+- Set environment variable `NEXTAUTH_URL` (mis. `https://situs-anda.netlify.app`) dan `SESSION_SECRET`.
+- Spesifikasi OpenAPI dibuat otomatis oleh `scripts/openapi-gen.mjs` (jalan sebelum `dev` dan `build`).
+
+## Realtime log API & stats
+
+- Semua request `/api/*` dicatat oleh `lib/apiLogger.cjs` (method, path, query, status, durasi, ukuran, pratinjau body request/respons — data sensitif seperti password/token/cookie disamarkan).
+- Halaman `/stats` menerima stream lewat **Socket.IO** (`/api/live` → `/api/live-socket`) dan otomatis turun ke **polling** (`/api/stats/live`) di hosting tanpa WebSocket seperti Netlify. Stream hanya untuk pengguna yang login.
+- Dengan server custom (`npm start`) semua route direkam otomatis; tanpa server custom, route yang dibungkus `withApiLog` yang terekam.
+
+## Build
+
+- `OBFUSCATE=0 npm run build` mematikan webpack-obfuscator (obfuscator menambah ±11% ukuran JS klien; gunakan hanya bila perlu).
+- `npm run start:standalone` menyalin aset statis lalu menjalankan `.next/standalone/server.js` (mode `output: "standalone"` dimatikan otomatis di Netlify).
