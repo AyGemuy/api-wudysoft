@@ -1,18 +1,4 @@
-const path = require("path");
-const fs = require("fs");
-const rootEnvPath = path.resolve(process.cwd(), ".env");
-const rootEnvLocalPath = path.resolve(process.cwd(), ".env.local");
-if (fs.existsSync(rootEnvLocalPath)) {
-  require("dotenv").config({
-    path: rootEnvLocalPath
-  });
-} else if (fs.existsSync(rootEnvPath)) {
-  require("dotenv").config({
-    path: rootEnvPath
-  });
-} else {
-  require("dotenv").config();
-}
+// Konfigurasi 100% hardcoded di configs/*.cjs — tidak ada .env / dotenv.
 const http = require("http");
 const apiLog = require("../lib/apiLogger.cjs");
 const net = require("net");
@@ -39,20 +25,8 @@ async function findPort(start, tries = 100) {
 }
 const lanIPs = () => Object.values(os.networkInterfaces()).flat().filter(i => i && i.family === "IPv4" && !i.internal).map(i => i.address);
 app.prepare().then(async () => {
-  let apiConfig;
-  try {
-    const cfgModule = await import("../configs/apiConfig.js");
-    apiConfig = cfgModule.default;
-  } catch {
-    apiConfig = {
-      DOMAIN_URL: process.env.MY_DOMAIN_URL || "api-wudysoft.netlify.app",
-      LIMIT_POINTS: 30,
-      MONGODB_URI: process.env.MY_MONGODB_URI || "",
-      GITHUB_ID: process.env.MY_GITHUB_ID || "",
-      GOOGLE_CLIENT_ID: process.env.MY_GOOGLE_CLIENT_ID || ""
-    };
-  }
-  const wanted = parseInt(process.env.PORT, 10) || 3e3;
+  const apiConfig = require("../configs/apiConfig.cjs");
+  const wanted = apiConfig.PORT || 3000;
   const port = await findPort(wanted);
   if (port !== wanted) {
     console.log(`\x1b[33m⚡ [PORT WARN] Port ${wanted} terpakai, dialihkan ke: ${port}\x1b[0m`);
@@ -91,7 +65,7 @@ app.prepare().then(async () => {
     console.log(`\x1b[36m║\x1b[0m  Target Domain : \x1b[36mhttps://${apiConfig.DOMAIN_URL}\x1b[0m`);
     console.log(`\x1b[36m║\x1b[0m  MongoDB Sync  : ${apiConfig.MONGODB_URI ? "[32m✔ LOADED" : "[31m✖ UNSET"}\x1b[0m`);
     console.log(`\x1b[36m║\x1b[0m  Rate Limiting : \x1b[32m${apiConfig.LIMIT_POINTS} req / ${apiConfig.LIMIT_DURATION}s\x1b[0m`);
-    console.log(`\x1b[36m║\x1b[0m  GitHub OAuth  : ${apiConfig.GITHUB_ID ? "[32m✔ CONFIGURED" : "[33m○ UNSET"}\x1b[0m`);
+    console.log(`\x1b[36m║\x1b[0m  GitHub OAuth  : ${apiConfig.GITHUB_ID && apiConfig.GITHUB_SECRET ? "[32m✔ CONFIGURED" : "[33m○ UNSET"}\x1b[0m`);
     console.log(`\x1b[36m║\x1b[0m  Google OAuth  : ${apiConfig.GOOGLE_CLIENT_ID ? "[32m✔ CONFIGURED" : "[33m○ UNSET"}\x1b[0m`);
     console.log("[36m╚══════════════════════════════════════════════════════════╝[0m\n");
   });

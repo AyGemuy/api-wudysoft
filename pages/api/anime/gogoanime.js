@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class Gogoanime {
@@ -121,7 +122,7 @@ class Gogoanime {
     return popularAnime;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const gogoanime = new Gogoanime({});
   try {
     if (req.query.action === "search") {
@@ -151,3 +152,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

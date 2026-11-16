@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const BASE_URL = "https://downforeveryoneorjustme.com/api/httpcheck/";
 const DEFAULT_HEADERS = {
@@ -44,7 +45,7 @@ const checkWebsite = async websiteUrl => {
     throw new Error(`Gagal memeriksa status website: ${error.message}`);
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       url: link
@@ -66,3 +67,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

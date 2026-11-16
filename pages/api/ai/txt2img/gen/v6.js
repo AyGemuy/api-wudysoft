@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const NeuralBlender = async prompt => {
   const url = "https://nb3corsproxyfunction2.azurewebsites.net/api/corsproxy/render";
@@ -27,7 +28,7 @@ const NeuralBlender = async prompt => {
     throw error;
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     method
   } = req;
@@ -51,3 +52,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

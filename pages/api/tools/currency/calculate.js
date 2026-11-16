@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import {
@@ -152,7 +153,7 @@ class MandiriAPI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const api = new MandiriAPI();
   try {
@@ -165,3 +166,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

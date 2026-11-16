@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import qs from "querystring";
 class InstagramScraper {
@@ -88,7 +89,7 @@ class InstagramScraper {
     return this.extractPostInfo(data.data?.xdt_shortcode_media);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       url
@@ -109,3 +110,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

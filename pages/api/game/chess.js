@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import dbConnect from "@/lib/mongoose";
 import {
   Chess,
@@ -5,7 +6,7 @@ import {
 } from "chess.js";
 import chessSession from "@/models/Chess";
 const DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     method
   } = req;
@@ -197,3 +198,5 @@ export default async function handler(req, res) {
     message: 'Invalid action. Valid actions are "create", "move", "list", "delete", "clearAll", and "details".'
   });
 }
+
+export default withApiLog(handler);

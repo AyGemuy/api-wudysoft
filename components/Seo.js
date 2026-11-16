@@ -1,10 +1,11 @@
 import Head from 'next/head';
+import site from '@/configs/siteConfig';
 
-const NAME = process.env.NEXT_PUBLIC_APP_NAME || 'Glass Next';
-const URL_ = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
+const NAME = site.APP_NAME;
+const URL_ = site.SITE_URL.replace(/\/$/, '');
 
 export default function Seo({
-  title = 'Glass Next — Glassmorphism Starter',
+  title = 'NEXUS OS — Cyber Dashboard Platform',
   description = 'Starter Next.js bergaya glassmorphism dengan login, OAuth, guest, playground, dan PWA.',
   path = '/',
   image = '/og.png',

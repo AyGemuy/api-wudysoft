@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 const song_list = [{
   ID: "3U4isOIWM3VvDubwSI3y7a",
   title: "All of Me",
@@ -26494,7 +26495,7 @@ class SongQuiz {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const api = new SongQuiz();
   try {
     const data = await api.generate();
@@ -26506,3 +26507,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

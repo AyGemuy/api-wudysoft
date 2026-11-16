@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 async function Fiddle(prompt) {
   try {
@@ -19,7 +20,7 @@ async function Fiddle(prompt) {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       prompt
@@ -41,3 +42,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

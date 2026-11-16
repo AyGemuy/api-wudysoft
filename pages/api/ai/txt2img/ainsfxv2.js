@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class AinSFXUploader {
   constructor(apiUrl = "https://ins.neastooid.xyz/api/ai/ainsfxv2") {
@@ -21,7 +22,7 @@ class AinSFXUploader {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url: imageUrl
   } = req.method === "GET" ? req.query : req.body;
@@ -41,3 +42,5 @@ export default async function handler(req, res) {
     result: uploadedUrl
   });
 }
+
+export default withApiLog(handler);

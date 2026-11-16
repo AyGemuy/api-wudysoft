@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class McpedlScraper {
@@ -68,7 +69,7 @@ class McpedlScraper {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     page,
@@ -106,3 +107,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

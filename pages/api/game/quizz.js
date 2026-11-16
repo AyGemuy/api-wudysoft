@@ -1,5 +1,6 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     method
   } = req;
@@ -33,3 +34,5 @@ export default async function handler(req, res) {
     message: "Method Not Allowed"
   });
 }
+
+export default withApiLog(handler);

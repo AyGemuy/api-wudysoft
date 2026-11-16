@@ -1,6 +1,7 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import connectMongo from "@/lib/mongoose";
 import User from "@/models/User";
-export default async function handler(req, res) {
+async function handler(req, res) {
   await connectMongo();
   const data = req.method === "GET" ? req.query : req.body;
   const {
@@ -47,3 +48,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const sourceMap = {
   tribun: {
@@ -48,7 +49,7 @@ class NewsAPI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     news,
     type,
@@ -67,3 +68,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

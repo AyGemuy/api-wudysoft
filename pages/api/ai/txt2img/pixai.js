@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const baseURL = "https://api.pixai.art/graphql";
 async function getImages(q, n = 5, isNsfw = false) {
@@ -91,7 +92,7 @@ async function apiResponse(artworkId) {
     return {};
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method === "GET" || req.method === "POST") {
     const {
       prompt: text,
@@ -129,3 +130,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -64,7 +65,7 @@ class MediaScraper {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url
   } = req.method === "GET" ? req.query : req.body;
@@ -84,3 +85,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

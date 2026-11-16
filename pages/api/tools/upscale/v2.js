@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const headers = {
   accept: "application/json, text/plain, */*",
@@ -52,7 +53,7 @@ async function startUpscaling(imageUrl) {
     throw new Error("Failed to upscale image");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method === "GET" || req.method === "POST") {
     const {
       url
@@ -76,3 +77,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

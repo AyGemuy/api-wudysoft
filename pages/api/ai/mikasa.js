@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import apiConfig from "@/configs/apiConfig";
 class MikasaAI {
@@ -42,7 +43,7 @@ class MikasaAI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     custom
@@ -63,3 +64,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

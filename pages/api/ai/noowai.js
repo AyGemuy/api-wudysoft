@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class NoowaiChat {
   constructor() {
@@ -75,7 +76,7 @@ class NoowaiChat {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const chat = new NoowaiChat();
   const {
     chatId = "u4ye0hwdop",
@@ -102,3 +103,5 @@ export default async function handler(req, res) {
     response: response
   });
 }
+
+export default withApiLog(handler);

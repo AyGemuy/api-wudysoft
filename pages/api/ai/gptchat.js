@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const FREE_MODELS = ["google/gemini-2.5-flash-lite", "google/gemma-3-27b-it", "google/gemma-3-27b-it:free"];
 const DEFAULT_MODEL = "google/gemini-2.5-flash-lite";
@@ -146,7 +147,7 @@ class GptChat {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.prompt) {
     return res.status(400).json({
@@ -164,3 +165,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

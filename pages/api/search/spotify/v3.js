@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import ApiKey from "@/configs/api-key";
 const BASE_URL = "https://api.spotify.com/v1";
@@ -279,7 +280,7 @@ class Spotify {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -365,3 +366,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

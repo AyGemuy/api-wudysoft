@@ -1,6 +1,0 @@
-fix signout yang mengarah ke localhost harusnya home,
-fix signin karena home tidak dimuat malah kosong jadi harus di refresh page
-fix search path agar sesuai openapi
-fix endpoint list di playground agar tidak terbuka semua,
-fix juga agar stats realime api serta gunakan socket untuk realtime log api req/res
-fix semua konten yang keluar batas, serta fix agar saya bisa kustom full radius item misal radius top/bottom floating button, serta saya bisa set semua animasi, saya juga bisa set background bisa dari link/upload, font lebih banyak dan kece

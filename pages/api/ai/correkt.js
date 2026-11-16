@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import apiConfig from "@/configs/apiConfig";
 class Correkt {
@@ -134,7 +135,7 @@ class Correkt {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const korrekt = new Correkt();
   const requestData = req.method === "GET" ? req.query : req.body;
   const {
@@ -165,3 +166,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const SUPPORTED_TYPES = ["BOT", "SERVER", "GAME"];
 const SUPPORTED_PLATFORMS = ["DISCORD", "ROBLOX"];
@@ -375,7 +376,7 @@ class TopggSearch {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const rawParams = req.method === "GET" ? req.query : req.body;
   const {
     action,
@@ -454,3 +455,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 class StickerCloud {
   constructor() {
@@ -64,7 +65,7 @@ const pack = async slug => {
     throw error;
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     type
@@ -75,3 +76,5 @@ export default async function handler(req, res) {
   const result = type && type === "pack" ? await pack(url) : await search(url);
   return res.status(200).json(typeof result === "object" ? result : result);
 }
+
+export default withApiLog(handler);

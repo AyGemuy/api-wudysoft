@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class Brainly {
   async getData(query, limit = 10) {
@@ -67,7 +68,7 @@ class Brainly {
   }
 }
 const brainly = new Brainly();
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method === "GET") {
     const {
       query,
@@ -89,3 +90,5 @@ export default async function handler(req, res) {
   res.setHeader("Allow", ["GET"]);
   res.status(405).end(`Method ${req.method} Not Allowed`);
 }
+
+export default withApiLog(handler);

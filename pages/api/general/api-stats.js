@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import {
   Server
 } from "socket.io";
@@ -23,7 +24,7 @@ async function fetchAllApiData(host) {
   }
   return results;
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (!res.socket.server.io) {
     io = new Server(res.socket.server, {
       path: "/api/general/api-stats",
@@ -60,3 +61,5 @@ export default async function handler(req, res) {
   }
   res.end();
 }
+
+export default withApiLog(handler);

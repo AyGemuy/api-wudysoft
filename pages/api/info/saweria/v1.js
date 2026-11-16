@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import {
   Client
 } from "saweria";
@@ -90,7 +91,7 @@ class SaweriaClient {
     this.client.on("donations", callback);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const saweria = new SaweriaClient();
   try {
@@ -200,3 +201,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

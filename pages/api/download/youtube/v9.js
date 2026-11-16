@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   Parser
@@ -62,7 +63,7 @@ class YouTubeDownloader {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     provider
@@ -82,3 +83,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

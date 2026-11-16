@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class CountryService {
   constructor() {
@@ -33,7 +34,7 @@ class CountryService {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     method
   } = req;
@@ -69,3 +70,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

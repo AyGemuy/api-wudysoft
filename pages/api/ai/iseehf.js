@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const baseUrl = "https://iseehf-hf-llm-api.hf.space";
 const headers = {
@@ -55,7 +56,7 @@ async function chatCompletions({
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action = "chat",
       prompt = "Hello, who are you?",
@@ -97,3 +98,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import FormData from "form-data";
 import SpoofHead from "@/lib/spoof-head";
@@ -106,7 +107,7 @@ class Veo31 {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -148,3 +149,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

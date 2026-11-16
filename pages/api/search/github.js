@@ -1,5 +1,6 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     q = "code",
       language = "javascript",
@@ -63,3 +64,5 @@ order: "desc"
     });
   }
 }
+
+export default withApiLog(handler);

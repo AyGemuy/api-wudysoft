@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   v4 as uuidv4
@@ -54,7 +55,7 @@ async function postToTaoanhdep(imageBuffer) {
     throw new Error("Error processing image");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       url: imageUrl
@@ -74,3 +75,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

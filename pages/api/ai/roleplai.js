@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 async function getRoleplaiAnswer(query, bid = 208) {
@@ -27,7 +28,7 @@ async function getRoleplaiAnswer(query, bid = 208) {
     return null;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     uid
@@ -42,3 +43,5 @@ export default async function handler(req, res) {
     result: typeof result === "string" ? result : "Error processing request"
   });
 }
+
+export default withApiLog(handler);

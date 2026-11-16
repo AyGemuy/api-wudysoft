@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class YtMp3 {
   constructor() {
@@ -120,7 +121,7 @@ class YtMp3 {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       url,
@@ -141,3 +142,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

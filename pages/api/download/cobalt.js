@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 async function cobalt(config) {
   try {
@@ -44,7 +45,7 @@ async function cobalt(config) {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url
   } = req.method === "GET" ? req.query : req.body;
@@ -56,3 +57,5 @@ export default async function handler(req, res) {
   });
   return res.status(200).json(typeof result === "object" ? result : result);
 }
+
+export default withApiLog(handler);

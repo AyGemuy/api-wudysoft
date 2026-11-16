@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const URL_TM = "https://api-tm.tempo.co";
 const URL_API = "https://api.tempo.co";
@@ -787,7 +788,7 @@ class TempoApi {
   }
 }
 const VALID_ACTIONS = ["home", "kanal_topbar", "kanal_home", "kanal", "kanal_sub", "subkanal", "kanal_menu", "indeks", "populer", "cari", "tag", "artikel", "foto", "video", "foto_list", "video_list", "podcast_list", "podcast", "manfaat", "paket", "reporter", "plus_home", "koran_home", "koran_rubrik", "koran_detail", "majalah", "edisi_latest", "edisi_list", "edisi_by_date", "edisi_home", "edisi_home2", "edisi_detail", "edisi_detail2", "edisi_rubrik", "edisi_rubrik_related", "edisi_kanal", "edisi_artikel", "edisi_tag", "edisi_cari", "edisi_editor", "privasi", "syarat"];
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -1059,3 +1060,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

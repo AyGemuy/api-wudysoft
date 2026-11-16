@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import crypto from "crypto";
 const BASE_URL = "https://aiplatform.tattooidea.ai/aimodels/api/v1/ai";
@@ -373,7 +374,7 @@ class NanoBanana {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.prompt) {
     return res.status(400).json({
@@ -391,3 +392,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import ApiKey from "@/configs/api-key";
 import fetch from "node-fetch";
 class Gemini {
@@ -259,7 +260,7 @@ class Gemini {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -324,3 +325,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

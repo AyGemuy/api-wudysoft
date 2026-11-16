@@ -1,6 +1,7 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import dbConnect from "@/lib/mongoose";
 import ApiInfo from "@/models/ApiInfo";
-export default async function handler(req, res) {
+async function handler(req, res) {
   await dbConnect();
   try {
     const apiInfo = await ApiInfo.findOne({
@@ -18,3 +19,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

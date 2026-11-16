@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 class TikTokIO {
@@ -39,7 +40,7 @@ class TikTokIO {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url
   } = req.method === "GET" ? req.query : req.body;
@@ -59,3 +60,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

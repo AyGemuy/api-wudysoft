@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const headers = {
   Accept: "*/*",
@@ -6,7 +7,7 @@ const headers = {
   "User-Agent": "Postify/1.0.0",
   Authority: "api.sendthesong.xyz"
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     name,
     page = 1,
@@ -65,3 +66,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

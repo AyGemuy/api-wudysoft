@@ -1,6 +1,7 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const TENOR_API_KEY = "NX2ZM22Q1B3I";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     query,
     sticker,
@@ -47,3 +48,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

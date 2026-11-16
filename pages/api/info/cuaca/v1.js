@@ -1,9 +1,10 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const ACCUWEATHER_API_KEY = "d7e795ae6a0d44aaa8abb1a0a7ac19e4";
 const LOCATION_URL = "https://api.accuweather.com/locations/v1/cities/search.json";
 const FORECAST_URL = "https://api.accuweather.com/forecasts/v1/daily/10day";
 const fahrenheitToCelsius = f => ((f - 32) * 5 / 9).toFixed(1);
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     q
   } = req.method === "GET" ? req.query : req.body;
@@ -72,3 +73,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

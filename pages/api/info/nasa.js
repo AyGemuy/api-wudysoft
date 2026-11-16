@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class SpaceAPI {
   constructor(apiKey = "DEMO_KEY") {
@@ -79,7 +80,7 @@ class SpaceAPI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const spaceAPI = new SpaceAPI();
     const result = await spaceAPI.getSpaceData();
@@ -90,3 +91,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

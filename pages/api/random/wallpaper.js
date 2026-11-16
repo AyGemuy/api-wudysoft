@@ -1,5 +1,6 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const imgSource = ["https://api.btstu.cn/sjbz/api.php?lx=1920x1080", "https://minimalistic-wallpaper.demolab.com/?random", "https://www.loremflickr.com/1920/1080", "https://www.picsum.photos/1920/1080"];
   try {
     const randomUrl = imgSource[Math.floor(Math.random() * imgSource.length)];
@@ -11,3 +12,5 @@ export default async function handler(req, res) {
     res.status(500).end("Gagal mengambil wallpaper.");
   }
 }
+
+export default withApiLog(handler);

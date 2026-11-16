@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 class TextStudio {
@@ -54,7 +55,7 @@ class TextStudio {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     query = "",
@@ -108,3 +109,5 @@ export default async function handler(req, res) {
     result: "Invalid action or missing parameters"
   });
 }
+
+export default withApiLog(handler);

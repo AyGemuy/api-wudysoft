@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import canvafy from "canvafy";
 import apiConfig from "@/configs/apiConfig";
 class CaptchaGenerator {
@@ -50,7 +51,7 @@ class CaptchaGenerator {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const captchaGenerator = new CaptchaGenerator();
   try {
     const params = req.method === "GET" ? req.query : req.body;
@@ -68,3 +69,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const API_URL = "https://pastebin.com/api/api_post.php";
 const API_KEY = "_L_ZkBp7K3aZMY7z4ombPIztLxITOOpD";
@@ -27,7 +28,7 @@ async function createPaste({
     raw: rawUrl
   };
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     title,
     content
@@ -48,3 +49,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

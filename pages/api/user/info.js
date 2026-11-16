@@ -1,6 +1,7 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import uaParser from "ua-parser-js";
 let requestLogs = {};
-export default async function handler(req, res) {
+async function handler(req, res) {
   const fwd = req.headers["x-forwarded-for"];
   const fwdIps = fwd ? fwd.split(",").map(x => x.trim()) : [];
   const real = req.connection?.remoteAddress || req.socket?.remoteAddress || req.connection?.socket?.remoteAddress || "unknown";
@@ -53,3 +54,5 @@ export default async function handler(req, res) {
     }
   });
 }
+
+export default withApiLog(handler);

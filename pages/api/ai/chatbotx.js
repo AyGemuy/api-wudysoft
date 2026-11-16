@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const API_KEY = "AIzaSyBxKrGul3jgna-EpYYBf4nInHsuZHs2dnY";
 const URL_API = "https://us-central1-aichatbot-223a8.cloudfunctions.net/openAiStream";
@@ -112,7 +113,7 @@ class ChatBotx {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.prompt) {
     return res.status(400).json({
@@ -130,3 +131,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

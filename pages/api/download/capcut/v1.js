@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 async function downloadv1(url) {
   try {
@@ -322,7 +323,7 @@ async function trending() {
     throw new Error("Failed to fetch trending data from ssscap.net");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     type = "downloadv1",
@@ -378,3 +379,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

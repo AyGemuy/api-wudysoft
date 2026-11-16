@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class CitaCita {
   constructor() {
@@ -37,7 +38,7 @@ class CitaCita {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   try {
     const api = new CitaCita();
@@ -48,3 +49,5 @@ export default async function handler(req, res) {
     return res.status(500).json(JSON.parse(e.message));
   }
 }
+
+export default withApiLog(handler);

@@ -1,9 +1,10 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   FormData,
   Blob
 } from "formdata-node";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url
   } = req.method === "GET" ? req.query : req.body;
@@ -106,3 +107,5 @@ export default async function handler(req, res) {
     error: "Failed to transcribe audio."
   });
 }
+
+export default withApiLog(handler);

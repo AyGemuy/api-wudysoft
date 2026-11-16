@@ -1,9 +1,10 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import connectMongo from "@/lib/mongoose";
 import DataUser from "@/models/DataUser";
 import {
   randomUUID
 } from "crypto";
-export default async function handler(req, res) {
+async function handler(req, res) {
   await connectMongo();
   const {
     method,
@@ -108,3 +109,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

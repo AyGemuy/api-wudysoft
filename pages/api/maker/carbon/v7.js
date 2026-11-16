@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const themeIds = ["vercel", "rabbit", "supabase", "tailwind", "openai", "mintlify", "prisma", "clerk", "elevenlabs", "resend", "triggerdev", "nuxt", "browserbase", "cloudflare", "gemini", "stripe", "wrapped", "bitmap", "noir", "ice", "sand", "forest", "mono", "breeze", "candy", "crimson", "falcon", "meadow", "midnight", "raindrop", "sunset"];
 const langIds = ["shell", "astro", "cpp", "csharp", "clojure", "console", "crystal", "css", "cypher", "dart", "diff", "dockerfile", "elm", "erb", "elixir", "erlang", "gleam", "graphql", "go", "hcl", "haskell", "html", "java", "javascript", "julia", "json", "jsx", "kotlin", "latex", "liquid", "lisp", "lua", "markdown", "matlab", "move", "plaintext", "powershell", "objectivec", "ocaml", "php", "prisma", "python", "r", "ruby", "rust", "scala", "scss", "solidity", "sql", "swift", "svelte", "toml", "typescript", "tsx", "v", "vue", "xml", "yaml", "zig"];
@@ -58,7 +59,7 @@ class RaySo {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.code) {
     return res.status(400).json({
@@ -85,3 +86,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

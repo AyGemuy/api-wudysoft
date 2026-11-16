@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 import _ from "lodash";
@@ -18,7 +19,7 @@ const stylizeText = async query => {
     throw new Error("Failed to fetch and process data");
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     text
   } = req.method === "GET" ? req.query : req.body;
@@ -28,3 +29,5 @@ export default async function handler(req, res) {
   const result = await stylizeText(text);
   return res.status(200).json(typeof result === "object" ? result : result);
 }
+
+export default withApiLog(handler);

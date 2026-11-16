@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import crypto from "crypto";
 class Shuiyinla {
@@ -81,7 +82,7 @@ class Shuiyinla {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const url = req.method === "GET" ? req.query.url : req.body.url;
   if (!url) {
     return res.status(400).json({
@@ -103,3 +104,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

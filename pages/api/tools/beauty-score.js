@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   FormData
@@ -68,7 +69,7 @@ class BeautyScore {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method === "POST" || req.method === "GET") {
     try {
       const {
@@ -93,3 +94,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

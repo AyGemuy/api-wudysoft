@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import crypto from "crypto";
 import fetch from "node-fetch";
 const generateRandomIP = () => {
@@ -13,7 +14,7 @@ const generateRandomUserAgent = () => {
   const chromeVersion = `Chrome/${Math.floor(Math.random() * 80) + 1}.${Math.floor(Math.random() * 999) + 1}.${Math.floor(Math.random() * 9999) + 1}`;
   return `Mozilla/5.0 (Linux; Android ${androidVersions[Math.floor(Math.random() * androidVersions.length)]}; ${selectedModel} Build/${selectedBuild}) AppleWebKit/537.36 (KHTML, like Gecko) ${chromeVersion} Mobile Safari/537.36 WhatsApp/1.${Math.floor(Math.random() * 9) + 1}.${Math.floor(Math.random() * 9) + 1}`;
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     assistant = "Kamu adalah asisten AI yang siap membantu segala hal!"
@@ -65,3 +66,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

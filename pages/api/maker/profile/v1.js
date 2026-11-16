@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import Html from "@/data/html/profile/list";
 import axios from "axios";
@@ -64,7 +65,7 @@ class HtmlToImg {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const htmlToImg = new HtmlToImg();
   try {
@@ -85,3 +86,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

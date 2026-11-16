@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const urls = {
   dare: "https://raw.githubusercontent.com/BochilTeam/database/master/kata-kata/dare.json",
@@ -15,7 +16,7 @@ const getRandom = async type => {
   }
   return cache[type][Math.floor(Math.random() * cache[type].length)];
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       type
@@ -33,3 +34,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

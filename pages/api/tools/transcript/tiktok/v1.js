@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class TokAudit {
   constructor() {
@@ -115,7 +116,7 @@ class TokAudit {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     transcript
@@ -133,3 +134,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

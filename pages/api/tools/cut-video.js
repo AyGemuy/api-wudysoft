@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const fetchData = async url => {
   try {
@@ -14,7 +15,7 @@ const fetchData = async url => {
     throw new Error("Error fetching data: " + error.message);
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     link,
     start,
@@ -61,3 +62,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

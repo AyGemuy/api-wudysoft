@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const FOOOCUS_BASE_URL = "https://fooocus.one";
 const FOOOCUS_GENERATE_PATH = "/api/flux-generate";
@@ -31,7 +32,7 @@ class FooocusService {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const data = req.method === "GET" ? req.query : req.body;
   const {
     prompt,
@@ -65,3 +66,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

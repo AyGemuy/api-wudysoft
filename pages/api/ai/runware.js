@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import ApiKey from "@/configs/api-key";
 const BASE = "https://api.runware.ai/v1";
@@ -221,7 +222,7 @@ class RunWare {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -287,3 +288,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

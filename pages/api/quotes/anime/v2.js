@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class AnimeQuotes {
   constructor() {
@@ -31,7 +32,7 @@ class AnimeQuotes {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const quote = new AnimeQuotes();
   const params = req.method === "GET" ? req.query : req.body;
   try {
@@ -46,3 +47,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

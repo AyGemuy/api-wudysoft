@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import crypto from "crypto";
 
@@ -10,7 +11,7 @@ function userAgent() {
     chromeVersion = `Chrome/${Math.floor(80 * Math.random()) + 1}.${Math.floor(999 * Math.random()) + 1}.${Math.floor(9999 * Math.random()) + 1}`;
   return `Mozilla/5.0 (Linux; Android ${androidVersions[Math.floor(Math.random() * androidVersions.length)]}; ${selectedModel} Build/${selectedBuild}) AppleWebKit/537.36 (KHTML, like Gecko) ${chromeVersion} Mobile Safari/537.36 WhatsApp/1.${Math.floor(9 * Math.random()) + 1}.${Math.floor(9 * Math.random()) + 1}`;
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt: message,
     type = "chat",
@@ -51,3 +52,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class BacaKomik {
@@ -127,7 +128,7 @@ class BacaKomik {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const params = req.method === "GET" ? req.query : req.body;
     const komik = new BacaKomik();
@@ -155,3 +156,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class ChatAPI {
   constructor() {
@@ -22,7 +23,7 @@ class ChatAPI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt = "Hai",
       system = "You are a helpful and informative AI assistant.",
@@ -45,3 +46,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

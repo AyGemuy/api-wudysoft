@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const randomStr = (len = 12) => Math.random().toString(36).substring(2, 2 + len);
 class TempMailClient {
@@ -90,7 +91,7 @@ class TempMailClient {
     });
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -180,3 +181,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

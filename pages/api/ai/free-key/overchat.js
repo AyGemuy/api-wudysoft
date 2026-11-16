@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class Scanner {
   async scan() {
@@ -18,7 +19,7 @@ class Scanner {
     return allKeys;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const api = new Scanner();
     const result = await api.scan();
@@ -31,3 +32,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

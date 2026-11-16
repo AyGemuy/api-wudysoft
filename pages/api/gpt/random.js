@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import {
   FormData,
@@ -53,7 +54,7 @@ class GPTService {
     return await response.text();
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     prompt,
@@ -84,3 +85,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class TemporaryGmailApi {
   constructor(apiKey = "33b5fc1663msha9ab0128c5449e7p13f98bjsnc0b11b98db57") {
@@ -142,7 +143,7 @@ class TemporaryGmailApi {
     }, "unduh (downloadAttachment)");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -230,3 +231,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

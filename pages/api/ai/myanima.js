@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 async function MyAnima(query, local_uuid) {
   const url = "https://api.myanima.ai/api/messaging/handle";
@@ -30,7 +31,7 @@ async function MyAnima(query, local_uuid) {
     return null;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     uid
@@ -43,3 +44,5 @@ export default async function handler(req, res) {
     result: typeof result === "object" ? result : result
   });
 }
+
+export default withApiLog(handler);

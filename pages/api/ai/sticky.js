@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import ApiKey from "@/configs/api-key";
 class Sticky {
@@ -72,7 +73,7 @@ class Sticky {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const sticky = new Sticky();
   const {
     action,
@@ -129,3 +130,5 @@ export default async function handler(req, res) {
       });
   }
 }
+
+export default withApiLog(handler);

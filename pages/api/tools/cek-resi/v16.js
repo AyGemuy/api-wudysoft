@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const ALL = ["spx", "anteraja", "jne", "jnt", "sicepat", "tiki", "pos", "lion", "sap", "ninja", "lex", "ide", "wahana"];
 const BASE = "https://resi.idm.web.id/api.php";
@@ -108,7 +109,7 @@ class ResiApi {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -140,3 +141,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

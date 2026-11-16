@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class Oceansaver {
   constructor() {
@@ -99,7 +100,7 @@ class Oceansaver {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const input = req.method === "GET" ? req.query : req.body;
   const action = input.action || "download";
   const params = {
@@ -142,3 +143,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

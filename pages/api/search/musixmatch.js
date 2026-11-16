@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class MX {
   constructor(apiKey = "1fa457017b5da4afa11cec83fa21034d") {
@@ -366,7 +367,7 @@ class MX {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -418,3 +419,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class Retatube {
@@ -73,7 +74,7 @@ class Retatube {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       url: vidLink,
@@ -99,3 +100,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

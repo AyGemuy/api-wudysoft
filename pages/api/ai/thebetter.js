@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import crypto from "crypto";
 import {
   v7 as uuidv7
@@ -434,7 +435,7 @@ class TheBetterAi {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -511,3 +512,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

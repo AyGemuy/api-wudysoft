@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const CONFIG = {
   API_KEY: "7a56ed7a117d0b58f841f827314fa95d927kdjn0okdkndjaebdndwkamvnfjdltdk",
@@ -214,7 +215,7 @@ class DramaQueenApi {
     return await this._req("GET", "/search", "DONGHUA", params);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -353,3 +354,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

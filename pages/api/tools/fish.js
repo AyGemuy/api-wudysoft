@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class FshApi {
   constructor() {
@@ -283,7 +284,7 @@ class FshApi {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const fshApi = new FshApi();
   const {
     endpoint,
@@ -315,3 +316,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

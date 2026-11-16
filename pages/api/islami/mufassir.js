@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const API_BASE_URL = "https://hadits.e-mufassir.com/api";
 const getHaditsByKitab = async (kitabId, page = 1) => {
@@ -10,7 +11,7 @@ const getHaditsByKitab = async (kitabId, page = 1) => {
     throw new Error("Gagal mengambil hadits.");
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     kitabId,
     page
@@ -29,3 +30,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

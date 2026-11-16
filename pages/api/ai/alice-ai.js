@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 class AliceApi {
   constructor(baseURL = "https://prod.aliceprj.com/api/ms/v1/alice") {
@@ -198,7 +199,7 @@ class AliceApi {
     return result;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -243,3 +244,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

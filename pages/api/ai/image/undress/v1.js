@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import crypto from "crypto";
 class UndressAI {
@@ -277,7 +278,7 @@ class UndressAI {
     return Buffer.from(cleanB64, "base64");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.imageUrl) {
     return res.status(400).json({
@@ -296,3 +297,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import crypto from "crypto";
 const WASM_URL = "https://www.easemate.ai/_wasm/chat_generator.wasm?v=1778839543951";
@@ -855,7 +856,7 @@ class EasemateAI {
     return result;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -928,3 +929,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

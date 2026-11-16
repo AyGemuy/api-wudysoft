@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import ApiKey from "@/configs/api-key";
 class Perplexity {
@@ -261,7 +262,7 @@ class Perplexity {
     });
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     prompt,
@@ -320,3 +321,5 @@ chunk: chunk
     });
   }
 }
+
+export default withApiLog(handler);

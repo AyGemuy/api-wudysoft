@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import * as cheerio from "cheerio";
 import fetch from "node-fetch";
 const getHentaiList = async () => {
@@ -25,7 +26,7 @@ const getHentaiList = async () => {
     throw new Error("Terjadi kesalahan saat mengambil daftar video hentai dari sfmcompile.club.");
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method === "GET") {
     try {
       const hentaiList = await getHentaiList();
@@ -41,3 +42,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

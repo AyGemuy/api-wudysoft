@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   FormData,
@@ -9,7 +10,7 @@ import {
 import {
   createHash
 } from "crypto";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url
   } = req.method === "GET" ? req.query : req.body;
@@ -64,3 +65,5 @@ async function Barbie(input) {
     throw error;
   }
 }
+
+export default withApiLog(handler);

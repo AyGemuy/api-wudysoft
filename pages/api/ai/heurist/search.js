@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const splitAndFormat = input => {
   const [llm, related] = ["__LLM_RESPONSE__", "__RELATED_QUESTIONS__"].map(tag => input.indexOf(tag));
@@ -46,7 +47,7 @@ class HeuristSearch {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const heurist = new HeuristSearch("ks5mn1yavasotm5p55cw90j4scbm6cm7");
   const {
     query,
@@ -71,3 +72,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

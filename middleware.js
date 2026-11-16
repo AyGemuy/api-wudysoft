@@ -5,14 +5,12 @@ import { checkRateLimit, clientIp } from "./src/lib/rateLimit";
 import { safeNext } from "./src/lib/safeNext";
 
 /** Halaman yang wajib login. Tambahkan path lain di sini bila perlu. */
-const PROTECTED = ["/playground"];
+const PROTECTED = ["/playground", "/profile"];
 const DEFAULT_AFTER_LOGIN = "/";
 
-const siteUrl = String(apiConfig.DOMAIN_URL || "").startsWith("http")
-  ? apiConfig.DOMAIN_URL
-  : `https://${apiConfig.DOMAIN_URL}`;
-// Harus sama dengan `useSecureCookies` di lib/auth.js
-const preferSecure = process.env.NODE_ENV === "production" || siteUrl.startsWith("https");
+// NextAuth memilih nama cookie (secure / biasa) dari protokol request (AUTH_TRUST_HOST di lib/auth.js);
+// di sini kita ikuti protokol yang sama, lalu coba mode lain sebagai cadangan.
+const isHttps = (req) => (req.headers.get("x-forwarded-proto") || req.nextUrl.protocol.replace(":", "")).split(",")[0].trim() === "https";
 
 const isProtected = (p) => PROTECTED.some((b) => p === b || p.startsWith(`${b}/`));
 const isAuthRoot = (p) => p === "/auth" || p === "/auth/";
@@ -24,10 +22,11 @@ const isAuthRoot = (p) => p === "/auth" || p === "/auth/";
  * sehingga tidak ada lagi loop /auth <-> /playground.
  */
 async function readSession(req) {
+  const preferSecure = isHttps(req);
   for (const secureCookie of [preferSecure, !preferSecure]) {
     try {
       const token = await getToken({ req, secret: apiConfig.JWT_SECRET, secureCookie });
-      if (token) return token;
+      if (token && !token.revoked) return token;
     } catch {
       /* coba mode cookie berikutnya */
     }

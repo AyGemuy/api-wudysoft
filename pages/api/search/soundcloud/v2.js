@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class SoundCloudSearch {
   constructor() {
@@ -23,7 +24,7 @@ class SoundCloudSearch {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       q,
@@ -45,3 +46,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

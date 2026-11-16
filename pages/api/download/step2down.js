@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 async function step2down(link) {
@@ -24,7 +25,7 @@ async function step2down(link) {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url: prompt
   } = req.method === "GET" ? req.query : req.body;
@@ -34,3 +35,5 @@ export default async function handler(req, res) {
   const result = await step2down(prompt);
   return res.status(200).json(typeof result === "object" ? result : result);
 }
+
+export default withApiLog(handler);

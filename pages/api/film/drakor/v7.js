@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const BASE_URL = "https://api.drakor.la/v2";
 const DEFAULT_HEADERS = {
@@ -484,7 +485,7 @@ class DrakorLaAPI {
     });
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -589,3 +590,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

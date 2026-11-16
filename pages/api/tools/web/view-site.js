@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import axios from "axios";
 const playwright = {
@@ -23,7 +24,7 @@ const playwright = {
     }
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     count
@@ -64,3 +65,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

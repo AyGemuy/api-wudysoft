@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class AnimeBatch {
@@ -102,7 +103,7 @@ class AnimeBatch {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     method
   } = req;
@@ -125,3 +126,5 @@ export default async function handler(req, res) {
     msg: "Search query or detail URL is required"
   });
 }
+
+export default withApiLog(handler);

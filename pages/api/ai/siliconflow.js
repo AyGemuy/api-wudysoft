@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 class SiliconFlow {
@@ -203,7 +204,7 @@ class SiliconFlow {
     return await this._request("POST", "/audio/speech", data);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -264,3 +265,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

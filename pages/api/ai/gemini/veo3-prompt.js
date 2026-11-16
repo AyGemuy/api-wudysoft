@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class GeminiService {
   constructor(customKey = null) {
@@ -379,7 +380,7 @@ Make the prompts highly detailed, creative and ready to use for video creation.`
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   try {
     const api = new GeminiService();
@@ -397,3 +398,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

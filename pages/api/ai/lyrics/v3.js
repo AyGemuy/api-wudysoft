@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const API_KEY = "AIzaSyDt9xlxCjO0pslXbFvdbuFmfkjRiMg_vHM";
 const BASE = "https://us-central1-music-generate-app.cloudfunctions.net";
@@ -71,7 +72,7 @@ class MusicGenerateClient {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const api = new MusicGenerateClient();
   try {
@@ -84,3 +85,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

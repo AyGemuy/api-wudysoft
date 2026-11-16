@@ -1,5 +1,6 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const response = await fetch("https://translate.google.com/translate_a/l?client=webapp&sl=auto&tl=en&v=1.0&hl=en&pv=1&tk=&source=bh&ssel=0&tsel=0&kc=1&tk=626515.626515&q=");
     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
@@ -16,3 +17,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

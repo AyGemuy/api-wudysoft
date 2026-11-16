@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import pkg from "javascript-obfuscator";
 import axios from "axios";
 import apiConfig from "@/configs/apiConfig";
@@ -186,7 +187,7 @@ class ObfsMgr {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.code) {
     return res.status(400).json({
@@ -205,3 +206,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

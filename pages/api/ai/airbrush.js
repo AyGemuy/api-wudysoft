@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const UA = "okhttp/5.3.2";
 const FBASE = "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyB8XaGLKyMR1t8jT_NSMhsVi0acvtGL0Vk";
@@ -382,7 +383,7 @@ class Airbrush {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.image) {
     return res.status(400).json({
@@ -400,3 +401,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

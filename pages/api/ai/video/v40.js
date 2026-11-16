@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const CONFIG = {
   BASE_URL: "https://acc-swap-ai-production.up.railway.app",
@@ -131,7 +132,7 @@ class VeoBackend {
     throw new Error(msg);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -185,3 +186,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

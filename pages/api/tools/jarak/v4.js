@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -47,7 +48,7 @@ class JarakChecker {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.from || !params.to) return res.status(400).json({
     error: "Paramenter 'from' dan 'to' diperlukan"
@@ -62,3 +63,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

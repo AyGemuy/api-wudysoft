@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class ImageWithAI {
   constructor() {
@@ -71,7 +72,7 @@ class ImageWithAI {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     scale = 2
@@ -93,3 +94,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const AVAILABLE_MODELS = ["neversleep/llama-3-lumimaid-8b", "anthropic/claude-3.5-sonnet:beta", "openai/gpt-4o-mini", "gryphe/mythomax-l2-13b", "neversleep/llama-3-lumimaid-80b"];
 const NETWRCK_CHAT_API = "https://netwrck.com/api/chatpred_or";
@@ -30,7 +31,7 @@ async function ChatNetwrck(prompt, model) {
     throw error;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     model
@@ -43,3 +44,5 @@ export default async function handler(req, res) {
     result: typeof result === "object" ? result : result
   });
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   wrapper
@@ -246,7 +247,7 @@ class SoundcloudMe {
     return this.regex.playlist.test(url) ? await this.dlPlaylist(url) : await this.dlTrack(url);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       url
@@ -263,3 +264,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

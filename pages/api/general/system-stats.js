@@ -1,6 +1,7 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import axios from "axios";
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const routesResponse = await axios.get(`https://${apiConfig.DOMAIN_URL}/api/routes`);
     const totalRoutes = routesResponse.data.length;
@@ -41,3 +42,5 @@ function formatUptime(seconds) {
   const secs = Math.floor(seconds % 60);
   return `${days}d ${hours}h ${minutes}m ${secs}s`;
 }
+
+export default withApiLog(handler);

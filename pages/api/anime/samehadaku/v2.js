@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import https from "https";
 import * as cheerio from "cheerio";
@@ -164,7 +165,7 @@ type: "schtml"
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       method
@@ -205,3 +206,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

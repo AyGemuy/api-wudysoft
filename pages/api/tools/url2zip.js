@@ -1,6 +1,7 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import AdmZip from "adm-zip";
-export default async function handler(req, res) {
+async function handler(req, res) {
   let urls;
   if (req.method === "GET") {
     const {
@@ -40,3 +41,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

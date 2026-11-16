@@ -1,14 +1,20 @@
 import { withApiLog } from "@/lib/apiLogger.cjs";
+import apiConfig from "@/configs/apiConfig";
+import site from "@/configs/siteConfig";
+
 function handler(req, res) {
   res.status(200).json({
-    status: 'online',
+    status: "online",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
     configLoaded: {
-      hasSessionSecret: Boolean(process.env.SESSION_SECRET),
-      hasGithubAuth: Boolean(process.env.GITHUB_CLIENT_ID),
-      rateLimitMax: process.env.RATE_LIMIT_MAX || 60,
-      appUrl: process.env.NEXT_PUBLIC_APP_URL || 'Not set (using default fallback)',
+      source: "hardcoded (configs/apiConfig.cjs)",
+      hasSessionSecret: Boolean(apiConfig.JWT_SECRET),
+      hasMongo: Boolean(apiConfig.MONGODB_URI),
+      hasGithubAuth: Boolean(apiConfig.GITHUB_ID && apiConfig.GITHUB_SECRET),
+      hasGoogleAuth: Boolean(apiConfig.GOOGLE_CLIENT_ID && apiConfig.GOOGLE_CLIENT_SECRET),
+      rateLimitMax: apiConfig.LIMIT_POINTS,
+      appUrl: site.SITE_URL,
     },
   });
 }

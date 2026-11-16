@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   randomBytes,
@@ -67,7 +68,7 @@ class Quotly {
     throw new Error("Quotly generation failed: All APIs are unreachable.");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   try {
     const api = new Quotly();
@@ -81,3 +82,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

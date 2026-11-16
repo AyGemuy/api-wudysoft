@@ -1,7 +1,8 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import qs from "qs";
 import apiConfig from "@/configs/apiConfig";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const chatbot = {
     getCharacters: async () => {
       try {
@@ -151,3 +152,5 @@ export default async function handler(req, res) {
     result: result
   });
 }
+
+export default withApiLog(handler);

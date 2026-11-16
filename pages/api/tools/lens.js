@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import {
   FormData,
@@ -49,7 +50,7 @@ async function Lens(imgUrl) {
     return `Error fetching or processing data: ${error}`;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       imgUrl
@@ -65,3 +66,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

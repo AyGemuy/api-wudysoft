@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import cloudscraper from "cloudscraper";
 const BASE = "https://web2.temp-mail.org";
 const MAILBOX = "/mailbox";
@@ -148,7 +149,7 @@ class TempMail {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -202,3 +203,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

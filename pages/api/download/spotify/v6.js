@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const log = (...a) => console.log(`[${new Date().toISOString()}]`, ...a);
 const SPOTIFY_RE = /^https?:\/\/open\.spotify\.com\/(track|album|playlist|artist)\/[A-Za-z0-9]+/i;
@@ -193,7 +194,7 @@ class Spotmate {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.url) {
     return res.status(400).json({
@@ -211,3 +212,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

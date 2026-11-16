@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const FIS_URL = "https://firebaseinstallations.googleapis.com";
 const FAC_URL = "https://firebaseappcheck.googleapis.com";
@@ -173,7 +174,7 @@ class ResikuBypass {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -212,3 +213,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

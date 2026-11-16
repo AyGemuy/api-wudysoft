@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class AimakeSong {
   constructor() {
@@ -38,7 +39,7 @@ class AimakeSong {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const params = req.method === "GET" ? req.query : req.body;
     const aimakeSong = new AimakeSong();
@@ -50,3 +51,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

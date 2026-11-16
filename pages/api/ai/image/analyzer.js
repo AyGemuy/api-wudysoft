@@ -1,5 +1,6 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       url: img,
@@ -62,3 +63,5 @@ function parse(data) {
   });
   return result.trim();
 }
+
+export default withApiLog(handler);

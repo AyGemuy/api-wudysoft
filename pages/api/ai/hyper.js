@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const extractData = input => {
   return input.split("\n").filter(line => line.startsWith("0")).map(line => {
@@ -32,7 +33,7 @@ class HyperGenerate {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt
   } = req.method === "POST" ? req.body : req.query;
@@ -50,3 +51,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

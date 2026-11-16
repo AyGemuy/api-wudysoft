@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   CookieJar
@@ -129,7 +130,7 @@ class GardenStockChecker {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const checker = new GardenStockChecker();
     const response = await checker.check();
@@ -140,3 +141,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

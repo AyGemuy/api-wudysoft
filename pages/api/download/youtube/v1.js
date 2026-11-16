@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const formats = ["audio", "video"];
 const audioQuality = [320, 256, 192, 128, 64];
@@ -133,7 +134,7 @@ const bigconv = {
     });
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     method
   } = req;
@@ -158,3 +159,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

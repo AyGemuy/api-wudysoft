@@ -1,7 +1,8 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import crypto from "crypto";
 import connectMongo from "@/lib/mongoose";
 import TicTacToe from "@/models/TicTacToe";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     gameId,
@@ -125,3 +126,5 @@ function checkWinner(board) {
   if (board.flat().every(cell => cell)) return "draw";
   return null;
 }
+
+export default withApiLog(handler);

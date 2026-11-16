@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import axios from "axios";
 
@@ -182,7 +183,7 @@ price('${a}', '${b}', '${c}', '${d}').then(a => console.log(a));`;
   } = await runPlaywrightCode(code.trim());
   return output;
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     method
   } = req;
@@ -208,3 +209,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

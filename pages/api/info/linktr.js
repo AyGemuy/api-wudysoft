@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class Linktree {
@@ -57,7 +58,7 @@ class Linktree {
     return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v != null));
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.input) {
     return res.status(400).json({
@@ -75,3 +76,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

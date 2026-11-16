@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 const BASE_URL = "https://api.muapi.ai/api/v1";
@@ -247,7 +248,7 @@ class MuApi {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -321,3 +322,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

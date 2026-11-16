@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import axios from "axios";
 class PlaywrightDownloader {
@@ -56,7 +57,7 @@ class PlaywrightDownloader {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.query) {
     return res.status(400).json({
@@ -73,3 +74,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

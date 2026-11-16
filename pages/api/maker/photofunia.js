@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
@@ -244,7 +245,7 @@ const txt = async (url, texts = []) => {
     };
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     method
   } = req;
@@ -294,3 +295,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

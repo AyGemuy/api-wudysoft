@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class QrCodeGenerator {
   async generateQRCode(data, options = {}) {
@@ -60,7 +61,7 @@ class QrCodeGenerator {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const qrCodeGenerator = new QrCodeGenerator();
     const {
@@ -83,3 +84,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

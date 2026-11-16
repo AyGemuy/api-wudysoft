@@ -4,7 +4,7 @@ Starter Next.js bergaya glassmorphism: auth (OAuth + guest), playground, middlew
 
 ## Install & jalankan
 ```bash
-cp .env.example .env     # isi SESSION_SECRET & OAuth (opsional)
+# Tidak perlu .env — semua konfigurasi hardcoded di configs/apiConfig.cjs & configs/siteConfig.cjs
 npm install
 npm run build
 npm run start            # production
@@ -26,7 +26,7 @@ components/               Seo, Background, Navbar, ThemePanel, Layout
 public/                   manifest.json, sw.js, icons, og.png
 ```
 ## OAuth callback URL
-`{URL}/api/oauth/callback/github` dan `{URL}/api/oauth/callback/google`
+`{URL}/api/auth/callback/github` dan `{URL}/api/auth/callback/google` (NextAuth)
 
 ## Catatan
 Rate limit memakai memori proses (cocok untuk 1 instance). Untuk banyak instance, ganti dengan Redis.
@@ -36,7 +36,8 @@ Rate limit memakai memori proses (cocok untuk 1 instance). Untuk banyak instance
 - Jika muncul `The function exceeds the maximum size of 250 MB`, jalankan `npm run build && npm run size`.
   Skrip menampilkan paket yang paling besar di fungsi serverless. `next.config.js` sudah mengecualikan
   alat build (SWC, esbuild, typescript, eslint, sharp, dst.) lewat `experimental.outputFileTracingExcludes`.
-- Set environment variable `NEXTAUTH_URL` (mis. `https://situs-anda.netlify.app`) dan `SESSION_SECRET`.
+- Tidak ada environment variable yang dibutuhkan. Ubah domain/DB/OAuth di `configs/*.cjs`. NextAuth memakai host request (`AUTH_TRUST_HOST` diset di `lib/auth.js`).
+- Isi `GITHUB_SECRET` di `configs/apiConfig.cjs` agar login GitHub aktif. Callback OAuth: `{URL}/api/auth/callback/github` dan `{URL}/api/auth/callback/google`.
 - Spesifikasi OpenAPI dibuat otomatis oleh `scripts/openapi-gen.mjs` (jalan sebelum `dev` dan `build`).
 
 ## Realtime log API & stats
@@ -47,5 +48,5 @@ Rate limit memakai memori proses (cocok untuk 1 instance). Untuk banyak instance
 
 ## Build
 
-- `OBFUSCATE=0 npm run build` mematikan webpack-obfuscator (obfuscator menambah ±11% ukuran JS klien; gunakan hanya bila perlu).
+- Set `OBFUSCATE_CLIENT: false` di `configs/siteConfig.cjs` untuk mematikan webpack-obfuscator (obfuscator menambah ±11% ukuran JS klien; gunakan hanya bila perlu).
 - `npm run start:standalone` menyalin aset statis lalu menjalankan `.next/standalone/server.js` (mode `output: "standalone"` dimatikan otomatis di Netlify).

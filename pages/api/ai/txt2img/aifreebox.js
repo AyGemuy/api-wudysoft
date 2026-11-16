@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class AIFreeBoxAI {
   constructor() {
@@ -52,7 +53,7 @@ class AIFreeBoxAI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const aifreebox = new AIFreeBoxAI();
   try {
@@ -64,3 +65,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

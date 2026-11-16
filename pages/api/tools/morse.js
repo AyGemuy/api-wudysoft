@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class FunTranslations {
   constructor(apiKey = null) {
@@ -35,7 +36,7 @@ class FunTranslations {
     });
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     text,
@@ -74,3 +75,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

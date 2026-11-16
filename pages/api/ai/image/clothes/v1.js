@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 class FashionAPI {
   constructor() {
@@ -226,7 +227,7 @@ class FashionAPI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -276,3 +277,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

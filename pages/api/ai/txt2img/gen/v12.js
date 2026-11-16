@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const AiArtGenerator = async (prompt, style = "3D Model", model = "sdxl-lightning") => {
   try {
@@ -26,7 +27,7 @@ const AiArtGenerator = async (prompt, style = "3D Model", model = "sdxl-lightnin
     return null;
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     style,
@@ -43,3 +44,5 @@ export default async function handler(req, res) {
   });
   return res.status(200).json(typeof result === "object" ? result : result);
 }
+
+export default withApiLog(handler);

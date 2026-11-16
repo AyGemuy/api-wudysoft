@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class Quotly {
   constructor() {
@@ -45,7 +46,7 @@ class Quotly {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const data = req.method === "GET" ? req.query : req.body;
     const text = "Hello World";
@@ -96,3 +97,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

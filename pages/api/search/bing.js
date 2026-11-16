@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class BingSearch {
   constructor(apiKey) {
@@ -26,7 +27,7 @@ class BingSearch {
   }
 }
 const apiKey = "D41D8CD98F00B204E9800998ECF8427E4F4A7492";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     query,
     type,
@@ -49,3 +50,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

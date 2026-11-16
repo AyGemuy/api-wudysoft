@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import Encoder from "@/lib/encoder";
 class Y2MateDownloader {
@@ -148,7 +149,7 @@ class Y2MateDownloader {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const input = req.method === "GET" ? req.query : req.body;
   const action = input.action || "download";
   const params = {
@@ -191,3 +192,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

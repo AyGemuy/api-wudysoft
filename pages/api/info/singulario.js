@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class Singulario {
   constructor() {
@@ -92,7 +93,7 @@ class Singulario {
     return degrees * (Math.PI / 180);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       action,
@@ -151,3 +152,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

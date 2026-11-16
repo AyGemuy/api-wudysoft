@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 class Eqing {
   async token() {
@@ -50,7 +51,7 @@ class Eqing {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     model = "gpt-3.5-turbo",
       temp: temperature = .5,
@@ -82,3 +83,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

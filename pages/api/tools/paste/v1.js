@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import connectMongo from "@/lib/mongoose";
 import Paste from "@/models/Paste";
 import crypto from "crypto";
@@ -5,7 +6,7 @@ const generateRandomKey = () => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   return Array.from(crypto.randomBytes(8)).map(byte => chars[byte % chars.length]).join("");
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     await connectMongo();
     const {
@@ -161,3 +162,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class WhatOnEarthSearch {
   constructor() {
@@ -27,7 +28,7 @@ class WhatOnEarthSearch {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     query,
     offline = true,
@@ -48,3 +49,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

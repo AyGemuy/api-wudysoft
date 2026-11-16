@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class Lyrics {
   async search(query) {
@@ -43,7 +44,7 @@ class Lyrics {
     return text.toString().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     query,
@@ -99,3 +100,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

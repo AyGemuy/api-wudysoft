@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import axios from "axios";
 class AppMaker {
@@ -126,7 +127,7 @@ class AppMaker {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     appId,
@@ -155,3 +156,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,4 +1,5 @@
-export default async function handler(req, res) {
+import { withApiLog } from "@/lib/apiLogger.cjs";
+async function handler(req, res) {
   const {
     text
   } = req.method === "GET" ? req.query : req.body;
@@ -52,3 +53,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

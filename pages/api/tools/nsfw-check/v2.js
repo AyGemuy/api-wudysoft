@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import vm from "vm";
 import axios from "axios";
 class NSFWDetector {
@@ -261,7 +262,7 @@ class NSFWDetector {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.image) {
     return res.status(400).json({
@@ -279,3 +280,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

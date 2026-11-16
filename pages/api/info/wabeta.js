@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import * as cheerio from "cheerio";
 import axios from "axios";
@@ -82,7 +83,7 @@ class WABetaInfo {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     method
   } = req;
@@ -125,3 +126,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

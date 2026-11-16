@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import qs from "qs";
 const BASE_URL_DRAKORID = "https://wincamp.web.id/drakor/phalcon/api";
@@ -150,7 +151,7 @@ class DrakorIDAPI {
     });
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -233,3 +234,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

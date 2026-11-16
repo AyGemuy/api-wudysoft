@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import canvafy from "canvafy";
 import apiConfig from "@/configs/apiConfig";
 class LevelUpImageGenerator {
@@ -79,7 +80,7 @@ class LevelUpImageGenerator {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const levelUpGenerator = new LevelUpImageGenerator();
   try {
     const params = req.method === "GET" ? req.query : req.body;
@@ -97,3 +98,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

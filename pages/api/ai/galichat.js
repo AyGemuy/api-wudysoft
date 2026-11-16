@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const url = "https://widget.galichat.com/api/vector-search";
 const headers = {
@@ -13,7 +14,7 @@ const defaultBody = {
   chatHash: "6691wb9cakfml2mjro2x19",
   chatHistory: []
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const body = req.method === "POST" ? req.body && typeof req.body === "object" ? req.body : defaultBody : {
     message: req.query.message || "Woi",
     userPrompt: req.query.prompt || defaultBody.userPrompt,
@@ -46,3 +47,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

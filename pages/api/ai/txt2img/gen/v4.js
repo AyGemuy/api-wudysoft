@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class XImageGenerator {
   constructor() {
@@ -33,7 +34,7 @@ class XImageGenerator {
     return ["stable-diffusion-xl-fast", "stable-diffusion-xl-base", "dreamshaper-8-base"];
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     prompt,
@@ -65,3 +66,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

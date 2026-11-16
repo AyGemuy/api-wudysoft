@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 class KomeTranscript {
   constructor(url, format) {
@@ -32,7 +33,7 @@ class KomeTranscript {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       url,
@@ -52,3 +53,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

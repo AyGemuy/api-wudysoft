@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import WebSocket from "ws";
 import crypto from "crypto";
 import axios from "axios";
@@ -104,7 +105,7 @@ class ColorifyAI {
     });
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const validTypes = ["img2color", "txt2img", "img2img"];
   if (!params.type || !validTypes.includes(params.type.toLowerCase())) {
@@ -122,3 +123,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

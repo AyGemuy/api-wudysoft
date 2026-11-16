@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import FormData from "form-data";
 import crypto from "crypto";
@@ -426,7 +427,7 @@ class Generator {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const api = new Generator();
   try {
@@ -439,3 +440,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

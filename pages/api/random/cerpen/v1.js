@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 async function randomCerpen() {
@@ -82,7 +83,7 @@ async function ceritahantu() {
     });
   });
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     type
   } = req.method === "GET" ? req.query : req.body;
@@ -104,3 +105,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,5 +1,6 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const src = await (await fetch("https://raw.githubusercontent.com/qisyana/scrape/main/lengkapikalimat.json")).json();
     const json = src[Math.floor(Math.random() * src.length)];
@@ -10,3 +11,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

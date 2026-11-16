@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import dbConnect from "@/lib/mongoose";
 import akiSession from "@/models/AkinatorV4";
 import PROXY from "@/configs/proxy-url";
@@ -92,7 +93,7 @@ class AkinatorGame {
     return response.data;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   await dbConnect();
   const {
     action,
@@ -211,3 +212,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

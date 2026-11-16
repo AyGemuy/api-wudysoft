@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import * as cheerio from "cheerio";
 import axios from "axios";
 import apiConfig from "@/configs/apiConfig";
@@ -88,7 +89,7 @@ class Sokuja {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     query,
@@ -136,3 +137,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

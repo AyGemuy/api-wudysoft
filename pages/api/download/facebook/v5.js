@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import https from "https";
 import crypto from "crypto";
@@ -138,7 +139,7 @@ class FVDownloader {
     return parsedResult;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.url) {
     return res.status(400).json({
@@ -155,3 +156,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,8 +1,9 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const apiDomains = {
   1: "api.myquran.com/v2"
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     api = 1,
       path = "/sholat",
@@ -33,3 +34,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

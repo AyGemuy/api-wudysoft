@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
@@ -86,7 +87,7 @@ async function getApk4free(url) {
     throw new Error("Error fetching additional information: " + error.message);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     method
   } = req;
@@ -123,3 +124,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

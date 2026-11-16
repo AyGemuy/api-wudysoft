@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const BASE = "http://87.228.63.134";
 const UA = "okhttp/4.12.0";
@@ -252,7 +253,7 @@ class GenAI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.prompt) {
     return res.status(400).json({
@@ -270,3 +271,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

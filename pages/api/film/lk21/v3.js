@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -238,7 +239,7 @@ class LK21 {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     query,
@@ -278,3 +279,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

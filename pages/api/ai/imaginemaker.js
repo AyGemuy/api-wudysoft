@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import crypto from "crypto";
 import FormData from "form-data";
@@ -347,7 +348,7 @@ class AIVideoScraper {
     throw new Error("Unsupported image format");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -429,3 +430,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

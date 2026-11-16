@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import axios from "axios";
 
@@ -94,7 +95,7 @@ brat('${encodedText}').then(a => console.log(a));`;
   const res = await runPlaywrightCode(code.trim());
   return Buffer.from(res.output?.trim() || "", "base64");
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     method
   } = req;
@@ -117,3 +118,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

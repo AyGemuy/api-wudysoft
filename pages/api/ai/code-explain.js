@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class Wdtc {
   async check(code) {
@@ -38,7 +39,7 @@ class Wdtc {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const wdtc = new Wdtc();
     const code = req.method === "GET" ? req.query.code : req.body.code;
@@ -60,3 +61,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

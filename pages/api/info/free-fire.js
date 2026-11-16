@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import FreeFireAPI from "@pure0cd/freefire-api";
 class FFAgent {
   constructor() {
@@ -58,7 +59,7 @@ class FFAgent {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -135,3 +136,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

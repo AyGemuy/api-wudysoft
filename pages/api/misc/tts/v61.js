@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import FormData from "form-data";
 const APIKEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1d21semtqaGp2dmlmYmhwbWhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1NDgxMzMsImV4cCI6MjEwMzEyNDEzM30.X8FE2J_aCqpmOTC4EZd5goR0Wxp4xrNC0eufgbR9nCc";
@@ -509,7 +510,7 @@ class VocalisRepo {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -718,3 +719,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

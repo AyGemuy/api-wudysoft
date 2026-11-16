@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const parseResponse = response => {
   const lines = response.split("\n");
@@ -67,7 +68,7 @@ class Heurist {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const heurist = new Heurist();
   const {
     query,
@@ -95,3 +96,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

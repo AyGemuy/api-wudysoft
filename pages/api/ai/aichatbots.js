@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   wrapper
@@ -94,7 +95,7 @@ class ApiClient {
     return await this.submitChat(session_id, sessionResponse.restNonce, chatMessages);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     session_id,
@@ -120,3 +121,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

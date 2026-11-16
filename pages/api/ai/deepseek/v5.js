@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class DeepSeekAssistant {
   constructor(baseUrl = "https://deepseek-assistant.com/api", defaultModel = "V3 model") {
@@ -70,7 +71,7 @@ class DeepSeekAssistant {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.prompt) {
     return res.status(400).json({
@@ -87,3 +88,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

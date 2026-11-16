@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import ApiKey from "@/configs/api-key";
 const AVAILABLE_ACTIONS = ["chat", "image_gen", "embeddings", "check_key", "status", "models", "credits", "completions"];
@@ -233,7 +234,7 @@ class OpenRouterAPI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -308,3 +309,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

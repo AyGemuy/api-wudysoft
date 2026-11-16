@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import crypto from "crypto";
 const ENCRYPTION_KEY = Buffer.from("@sk=Rigel5729%2-diordnA", "utf-8");
@@ -448,7 +449,7 @@ class MimoClient {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -511,3 +512,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

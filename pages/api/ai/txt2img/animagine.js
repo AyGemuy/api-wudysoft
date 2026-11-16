@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class Animagine {
   constructor() {
@@ -101,7 +102,7 @@ class Animagine {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const animagine = new Animagine();
   try {
@@ -115,3 +116,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

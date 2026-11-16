@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import md5 from "crypto-js/md5.js";
 const BASE_URL = "https://3bic.com";
@@ -50,7 +51,7 @@ class CapcutDownloader {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url
   } = req.method === "GET" ? req.query : req.body;
@@ -72,3 +73,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

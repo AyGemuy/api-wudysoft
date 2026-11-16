@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class TeraboxDownloader {
   constructor() {
@@ -27,7 +28,7 @@ class TeraboxDownloader {
     throw new Error("Semua API key gagal digunakan");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.url) {
     return res.status(400).json({
@@ -45,3 +46,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

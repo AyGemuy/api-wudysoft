@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const BASE_URL = "https://api.airforce";
 class AirforceAPI {
@@ -68,7 +69,7 @@ class AirforceAPI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action = "Hello!",
       prompt,
@@ -133,3 +134,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

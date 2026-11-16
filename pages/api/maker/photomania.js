@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   FormData,
@@ -71,7 +72,7 @@ async function fetchEffectsList() {
     throw new Error("Failed to fetch effects list: " + error.message);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method === "GET" || req.method === "POST") {
     try {
       const input = req.method === "GET" ? req.query.effectIndex : req.body.effectIndex;
@@ -128,3 +129,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

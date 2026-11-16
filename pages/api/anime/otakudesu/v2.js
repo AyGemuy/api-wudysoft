@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import * as cheerio from "cheerio";
 import axios from "axios";
 const url = {
@@ -457,7 +458,7 @@ function _notFoundQualityHandler(res, num) {
     });
   }), response;
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     page,
@@ -585,3 +586,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class MangaScraper {
@@ -157,7 +158,7 @@ class MangaScraper {
     return manhwaData;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     genre,
@@ -223,3 +224,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

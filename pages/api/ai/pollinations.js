@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import qs from "qs";
 import FormData from "form-data";
@@ -285,7 +286,7 @@ class PolliNations {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const api = new PolliNations();
   try {
@@ -301,3 +302,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

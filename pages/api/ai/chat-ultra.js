@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import FormData from "form-data";
 import {
@@ -504,7 +505,7 @@ class UniversalAI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const api = new UniversalAI();
   try {
@@ -517,3 +518,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

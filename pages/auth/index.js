@@ -25,7 +25,6 @@ export default function AuthPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  const [mode, setMode] = useState('signin'); // signin | signup
   const [busy, setBusy] = useState(''); // '', 'form', 'guest', provider-id
   const [err, setErr] = useState('');
   const [info, setInfo] = useState('');
@@ -37,14 +36,15 @@ export default function AuthPage() {
   const [providers, setProviders] = useState([]);
 
   const nextUrl = safeNext(router.query.next, '/');
+  // Mode berasal dari URL (/auth?mode=signup, juga /auth/signup) → tab, URL, dan form selalu sinkron
+  const mode = router.query.mode === 'signup' ? 'signup' : 'signin'; // signin | signup
   const isSignup = mode === 'signup';
 
   // sinkronkan mode & error dari URL
   useEffect(() => {
     if (!router.isReady) return;
-    setMode(router.query.mode === 'signup' ? 'signup' : 'signin');
     if (router.query.error) setErr(authErrorMessage(router.query.error));
-  }, [router.isReady, router.query.mode, router.query.error]);
+  }, [router.isReady, router.query.error]);
 
   // sudah login → arahkan
   useEffect(() => {
@@ -64,7 +64,7 @@ export default function AuthPage() {
     sound.playClick();
     setErr('');
     setInfo('');
-    setMode(m);
+    setConfirm('');
     const query = { ...router.query };
     if (m === 'signup') query.mode = 'signup';
     else delete query.mode;

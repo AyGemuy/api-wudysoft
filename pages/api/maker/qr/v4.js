@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class BarcodeGenerator {
   async generateBarcode(data, code = "QRCode", imagetype = "Png", eclevel = "L", download = true) {
@@ -39,7 +40,7 @@ class BarcodeGenerator {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const barcodeGenerator = new BarcodeGenerator();
   const {
     data,
@@ -69,3 +70,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

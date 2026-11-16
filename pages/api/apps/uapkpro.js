@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 async function searchUapkpro(query) {
@@ -40,7 +41,7 @@ async function getUapkpro(url) {
     return null;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     method
   } = req;
@@ -66,3 +67,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

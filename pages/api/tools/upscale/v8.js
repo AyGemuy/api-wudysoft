@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   FormData
@@ -126,7 +127,7 @@ class ImageProcessor {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     ...params
@@ -157,3 +158,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

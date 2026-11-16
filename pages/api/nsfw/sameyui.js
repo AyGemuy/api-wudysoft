@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 
 function parseResult(data) {
@@ -9,7 +10,7 @@ function parseResult(data) {
     cover: x.cover.t.replace(/a.kontol|b.kontol/, "c.kontol") || x.cover.replace(/a.kontol|b.kontol/, "c.kontol")
   }));
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     method
   } = req;
@@ -76,3 +77,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

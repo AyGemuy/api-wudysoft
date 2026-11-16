@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const AiContinues = async (inputText, uid = "uid") => {
   const params = new URLSearchParams({
@@ -18,7 +19,7 @@ const AiContinues = async (inputText, uid = "uid") => {
     throw new Error("AI response fetch failed.");
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     uid
@@ -31,3 +32,5 @@ export default async function handler(req, res) {
     result: typeof result === "object" ? result : result
   });
 }
+
+export default withApiLog(handler);

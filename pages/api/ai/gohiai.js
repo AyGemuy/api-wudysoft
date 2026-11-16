@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import CryptoJS from "crypto-js";
 import Qs from "qs";
@@ -724,7 +725,7 @@ class GoHIAAIAPI {
     });
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -774,3 +775,5 @@ export default async function handler(req, res) {
     console.log("WebSocket connection closure sequence initiated.");
   }
 }
+
+export default withApiLog(handler);

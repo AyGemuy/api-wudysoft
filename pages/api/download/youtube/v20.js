@@ -1,6 +1,7 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const decodeUrl = encodedArray => String.fromCharCode(...encodedArray);
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     quality = "128kbps",
@@ -32,3 +33,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

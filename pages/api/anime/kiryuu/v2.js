@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 const BASE_URL = "https://kiryuu01.com/";
@@ -114,7 +115,7 @@ class MangaService {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     url,
@@ -170,3 +171,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

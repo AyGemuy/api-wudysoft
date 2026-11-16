@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class AnimeIndo {
@@ -243,7 +244,7 @@ class AnimeIndo {
     throw new Error("No GDRIVE link found or all GDrive processing methods failed.");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const animeindo = new AnimeIndo();
   try {
     const {
@@ -293,3 +294,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

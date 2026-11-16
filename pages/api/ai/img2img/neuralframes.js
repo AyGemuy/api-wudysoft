@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import CryptoJS from "crypto-js";
 import axios from "axios";
 import {
@@ -157,7 +158,7 @@ padding: CryptoJS.pad.Pkcs7
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   try {
     if (!params.imageUrl) {
@@ -175,3 +176,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

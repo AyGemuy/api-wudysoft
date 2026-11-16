@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const modelNames = ["Cristiano Ronaldo", "Lionel Messi", "Ataturk", "Albert Einstein", "Aristotle", "Carl Sagan", "Isaac Asimov", "Confucius", "Frida Kahlo", "G.G. Marquez", "Ernest Miller Hemingway", "Lucius Annaeus Seneca", "Steve Jobs", "Nikola Tesla", "Socrates", "Thomas Edison", "Rosalind Franklin", "Gary Vaynerchuk", "Amelia Earhart", "Elon Musk", "Marcus Aurelius", "Ludwig van Beethoven", "Jane Goodall", "Rumi"];
 async function AskThee(prompt, index = null) {
@@ -25,7 +26,7 @@ async function AskThee(prompt, index = null) {
     console.error("Error fetching data:", error);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     type = 3
@@ -40,3 +41,5 @@ export default async function handler(req, res) {
     }
   });
 }
+
+export default withApiLog(handler);

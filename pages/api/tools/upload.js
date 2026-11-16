@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import crypto from "crypto";
 import FormData from "form-data";
 import * as fileType from "file-type";
@@ -1532,7 +1533,7 @@ const upload = multer({
   },
   storage: multer.memoryStorage()
 });
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (!["GET", "POST"].includes(req.method)) {
     return res.status(405).json({
       error: `Metode ${req.method} tidak diizinkan`
@@ -1650,3 +1651,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

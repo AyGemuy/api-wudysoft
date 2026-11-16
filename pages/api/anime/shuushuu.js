@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import * as cheerio from "cheerio";
 import fetch from "node-fetch";
 const shuuShuu = async () => {
@@ -23,7 +24,7 @@ const shuuShuu = async () => {
     throw error;
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const result = await shuuShuu();
     if (!result) return res.status(404).json({
@@ -36,3 +37,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

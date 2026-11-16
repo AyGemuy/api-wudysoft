@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const GEMINI_API_KEY = ["global-xXbQMjv2j0omw2123PDmPQu2", "global-xZbQMjv2j0omw2EznPDmPQuw"];
 const API_BASE_URL = "https://generate-api-test.ghibli-gpt.net/v1beta/models/";
@@ -251,7 +252,7 @@ class GeminiGhibli {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.prompt) {
     return res.status(400).json({
@@ -269,3 +270,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

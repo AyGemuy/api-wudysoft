@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import {
@@ -84,7 +85,7 @@ class TextEffect {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     text,
     type = "1"
@@ -106,3 +107,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

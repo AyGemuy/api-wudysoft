@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 async function OpenGpt(prompt, id = "clf3yg8730000ih08ndbdi2v4") {
   try {
@@ -24,7 +25,7 @@ async function OpenGpt(prompt, id = "clf3yg8730000ih08ndbdi2v4") {
     return null;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     uid
@@ -37,3 +38,5 @@ export default async function handler(req, res) {
     result: typeof result === "object" ? result : result
   });
 }
+
+export default withApiLog(handler);

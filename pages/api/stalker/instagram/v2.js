@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class WebScraper {
   constructor(apiKey = "0") {
@@ -20,7 +21,7 @@ class WebScraper {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     query
   } = req.method === "POST" ? req.body : req.query;
@@ -39,3 +40,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

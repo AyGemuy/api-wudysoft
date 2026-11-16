@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const extractData = input => {
   return input.split("\n").filter(line => line.startsWith("{")).map(line => {
@@ -9,7 +10,7 @@ const extractData = input => {
     }
   }).join("").trim();
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     sessionId = "f056f1be76d0f242fb751661cacee195",
@@ -57,3 +58,5 @@ export default async function handler(req, res) {
     res.status(500).send(`Internal Server Error: ${error.message}`);
   }
 }
+
+export default withApiLog(handler);

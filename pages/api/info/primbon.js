@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import * as cheerio from "cheerio";
 import axios from "axios";
 class Primbon {
@@ -1145,7 +1146,7 @@ class Primbon {
     });
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     method: httpMethod,
     query
@@ -1175,3 +1176,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

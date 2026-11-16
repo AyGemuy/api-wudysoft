@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class Transcat {
@@ -156,7 +157,7 @@ class Transcat {
     return this.languages;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     text,
@@ -198,3 +199,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

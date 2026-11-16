@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   FormData
@@ -7,7 +8,7 @@ const sizes = ["1_1", "1_1_HD", "1_2", "2_1", "2_3", "4_5", "9_16", "3_2", "4_3"
 const styles = ["no_style", "anime", "digital", "fantasy", "neon_punk", "dark", "low_poly", "line_art", "pixel_art", "comic", "analog_film", "surreal"];
 const colors = ["no_color", "cool", "muted", "vibrant", "pastel", "bw"];
 const lightings = ["no_lighting", "lighting", "dramatic", "volumetric", "studio", "sunlight", "low_light", "golden_hour"];
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     model = 1,
@@ -67,3 +68,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

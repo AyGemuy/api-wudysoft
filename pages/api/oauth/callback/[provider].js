@@ -1,7 +1,8 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import { PROVIDERS, isConfigured, baseUrl } from '../../../../src/lib/oauth';
 import { parseCookies, startSession, cookie } from '../../../../src/lib/session';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const { provider, code, state } = req.query;
   const p = PROVIDERS[provider];
   const fail = (m) => res.redirect(`/auth/oauth?error=${encodeURIComponent(m)}`);
@@ -34,3 +35,5 @@ export default async function handler(req, res) {
     fail('Terjadi kesalahan saat login');
   }
 }
+
+export default withApiLog(handler);

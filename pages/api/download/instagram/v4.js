@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import qs from "qs";
@@ -105,7 +106,7 @@ const instagramDownloader = async url => {
   }
   return rejectFSPR("All methods failed");
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url
   } = req.method === "GET" ? req.query : req.body;
@@ -117,3 +118,5 @@ export default async function handler(req, res) {
   const result = await instagramDownloader(url);
   return res.status(200).json(typeof result === "object" ? result : result);
 }
+
+export default withApiLog(handler);

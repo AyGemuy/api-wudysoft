@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 async function Calendar() {
@@ -23,7 +24,7 @@ async function Calendar() {
     throw new Error("Failed to fetch calendar data");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const holidays = await Calendar();
     return res.status(200).json(holidays);
@@ -33,3 +34,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

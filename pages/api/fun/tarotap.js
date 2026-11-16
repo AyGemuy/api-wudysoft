@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 class Tarotap {
   async daily(name = "Anonymous", locale = "en", email = "", date = new Date().toISOString().split("T")[0]) {
@@ -56,7 +57,7 @@ class Tarotap {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action
   } = req.method === "GET" ? req.query : req.body;
@@ -88,3 +89,5 @@ export default async function handler(req, res) {
     error: "Invalid action"
   });
 }
+
+export default withApiLog(handler);

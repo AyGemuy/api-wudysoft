@@ -1,4 +1,5 @@
-require("dotenv").config();
+// Tanpa .env: semua pengaturan build ada di configs/siteConfig.cjs
+const site = require("./configs/siteConfig.cjs");
 
 /**
  * File yang TIDAK dibutuhkan saat runtime server, tetapi sering ikut terbawa ke fungsi
@@ -60,7 +61,7 @@ const nextConfig = {
   //    `.next/static` dan `public`), atau tetap pakai `npm start` (server custom + Socket.IO).
   //    Di Netlify mode ini dimatikan karena runtime Netlify membangun fungsinya sendiri
   //    dan folder standalone akan ikut terunggah sebagai file statis.
-  ...(process.env.NETLIFY ? {} : { output: "standalone" }),
+  ...(site.DEPLOY_TARGET === "netlify" ? {} : { output: "standalone" }),
 
   reactStrictMode: true,
   poweredByHeader: false,
@@ -83,8 +84,18 @@ const nextConfig = {
       });
     }
 
-    // Obfuscate hanya kode klien di production. Matikan dengan OBFUSCATE=0.
-    if (!dev && !isServer && process.env.OBFUSCATE !== "0") {
+    // Log API otomatis: bungkus semua route pages/api/** (kecuali daftar di bawah) tanpa mengubah file route.
+    if (isServer) {
+      config.module.rules.unshift({
+        test: /[\\/]pages[\\/]api[\\/].+\.js$/,
+        exclude: /[\\/]pages[\\/]api[\\/](auth[\\/]\[\.\.\.nextauth\]|stats|live|socket|avatar)/,
+        enforce: "pre",
+        use: [{ loader: require("path").join(__dirname, "scripts", "api-log-loader.js") }],
+      });
+    }
+
+    // Obfuscate hanya kode klien di production. Matikan lewat OBFUSCATE_CLIENT di configs/siteConfig.cjs.
+    if (!dev && !isServer && site.OBFUSCATE_CLIENT) {
       const WebpackObfuscator = require("webpack-obfuscator");
       config.plugins.push(
         new WebpackObfuscator(

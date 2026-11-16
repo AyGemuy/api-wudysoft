@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 const modes = {
   noob: [-3, 3, -3, 3, "+-", 15e3, 10],
   easy: [-10, 10, -10, 10, "*/+-", 2e4, 40],
@@ -42,7 +43,7 @@ function genMath(mode) {
     result: result
   };
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     level
   } = req.method === "GET" ? req.query : req.body;
@@ -51,3 +52,5 @@ export default async function handler(req, res) {
   const mathProblem = genMath(randomLevel);
   return res.status(200).json(mathProblem);
 }
+
+export default withApiLog(handler);

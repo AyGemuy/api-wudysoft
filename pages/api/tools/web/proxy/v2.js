@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   wrapper
@@ -63,7 +64,7 @@ class Proxysite {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url: link,
     server
@@ -84,3 +85,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

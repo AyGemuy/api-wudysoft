@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const API_ENDPOINT = "https://code2img.vercel.app";
 const themes = ["a11y-dark", "atom-dark", "base16-ateliersulphurpool.light", "cb", "darcula", "default", "dracula", "duotone-dark", "duotone-earth", "duotone-forest", "duotone-light", "duotone-sea", "duotone-space", "ghcolors", "hopscotch", "material-dark", "material-light", "material-oceanic", "nord", "pojoaque", "shades-of-purple", "synthwave84", "vs", "vsc-dark-plus", "xonokai"];
@@ -55,7 +56,7 @@ const fetchImage = async (code, preferences = defaultPreferences) => {
     throw error;
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
       message: "Method not allowed"
@@ -81,3 +82,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const uploadImageFromUrl = async imageUrl => {
   try {
@@ -81,7 +82,7 @@ const getBabyTaskResult = async taskId => {
     throw error;
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     ayah: fatherImageUrl,
     ibu: motherImageUrl,
@@ -113,3 +114,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

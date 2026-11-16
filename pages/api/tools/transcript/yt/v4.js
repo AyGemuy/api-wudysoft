@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 class YouTubeTranscription {
   constructor(url) {
@@ -27,7 +28,7 @@ class YouTubeTranscription {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url
   } = req.method === "GET" ? req.query : req.body;
@@ -47,3 +48,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

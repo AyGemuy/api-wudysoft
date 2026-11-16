@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const BLAKE3 = {
   IV: [1779033703, 3144134277, 1013904242, 2773480762, 1359893119, 2600822924, 528734635, 1541459225],
@@ -236,7 +237,7 @@ class SimSimi {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.prompt) {
     return res.status(400).json({
@@ -254,3 +255,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

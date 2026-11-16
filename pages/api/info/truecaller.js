@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import parsePhoneNumber from "awesome-phonenumber";
 const trueCallerModels = [{
@@ -412,7 +413,7 @@ async function TrueSearchBulk(token, number) {
     message: error.response.statusText
   }));
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     number,
@@ -467,3 +468,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import Tiktok from "tiktokapi-src";
 class TikTokDownloader {
   async search(query, type = "user") {
@@ -11,7 +12,7 @@ class TikTokDownloader {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     query,
     type = "user"
@@ -31,3 +32,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

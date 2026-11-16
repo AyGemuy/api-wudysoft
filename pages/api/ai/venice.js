@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import axios from "axios";
 import {
@@ -282,7 +283,7 @@ class VeniceAI {
     return Math.random().toString(36).substring(2, 10);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -336,3 +337,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const fluximg = {
   ratios: ["1:1", "16:9", "2:3", "3:2", "4:5", "5:4", "9:16", "21:9", "9:21"],
@@ -26,7 +27,7 @@ const fluximg = {
     }
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     ration
@@ -53,3 +54,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import ws from "ws";
 const voices = ["Airi", "Akane", "Akari", "Ako", "Aris", "Arona", "Aru", "Asuna", "Atsuko", "Ayane", "Azusa", "Cherino", "Chihiro", "Chinatsu", "Chise", "Eimi", "Erica", "Fubuki", "Fuuka", "Hanae", "Hanako", "Hare", "Haruka", "Haruna", "Hasumi", "Hibiki", "Hihumi", "Himari", "Hina", "Hinata", "Hiyori", "Hoshino", "Iori", "Iroha", "Izumi", "Izuna", "Juri", "Kaede", "Karin", "Kayoko", "Kazusa", "Kirino", "Koharu", "Kokona", "Kotama", "Kotori", "Main", "Maki", "Mari", "Marina", "Mashiro", "Michiru", "Midori", "Miku", "Mimori", "Misaki", "Miyako", "Miyu", "Moe", "Momoi", "Momoka", "Mutsuki", "NP0013", "Natsu", "Neru", "Noa", "Nodoka", "Nonomi", "Pina", "Rin", "Saki", "Saori", "Saya", "Sena", "Serika", "Serina", "Shigure", "Shimiko", "Shiroko", "Shizuko", "Shun", "ShunBaby", "Sora", "Sumire", "Suzumi", "Tomoe", "Tsubaki", "Tsurugi", "Ui", "Utaha", "Wakamo", "Yoshimi", "Yuuka", "Yuzu", "Zunko"];
 class HuggingFace {
@@ -195,7 +196,7 @@ class HuggingFace {
     return Math.random().toString(36).substring(2);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     type = "blue",
       text,
@@ -234,3 +235,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

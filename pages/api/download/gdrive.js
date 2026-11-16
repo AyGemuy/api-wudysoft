@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class GoogleDriveDownloader {
@@ -119,7 +120,7 @@ id: id
     return (bytes / Math.pow(1024, i)).toFixed(2) + " " + (sizes[i] || "B");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.url) {
     return res.status(400).json({
@@ -136,3 +137,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

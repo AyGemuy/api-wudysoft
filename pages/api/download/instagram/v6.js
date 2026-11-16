@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const API_KEY = "0647bc5201msh84a9358b48d00eep163485jsne7ecf062e49f";
 const RAPIDAPI_HOST = "instagram-media-downloader.p.rapidapi.com";
@@ -29,7 +30,7 @@ class InstagramDownloader {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     type,
     url: urlInstagram
@@ -49,3 +50,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class Cutout {
   constructor() {
@@ -88,7 +89,7 @@ class Cutout {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     style,
@@ -110,3 +111,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

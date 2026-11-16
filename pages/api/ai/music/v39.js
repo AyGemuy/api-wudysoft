@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import crypto from "crypto";
 const USERS = ["102729471983875601261", "107049034776881783285", "coocent01", "coocent02", "coocent03", "coocent04", "coocent05", "coocent21", "coocent22", "coocent31"];
@@ -189,7 +190,7 @@ class CoocentAI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -249,3 +250,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

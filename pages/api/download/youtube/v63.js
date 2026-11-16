@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import crypto from "crypto";
 import fetch from "node-fetch";
 class YT {
@@ -191,7 +192,7 @@ class YT {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const input = req.method === "GET" ? req.query : req.body;
   const action = input.action || "download";
   const params = {
@@ -234,3 +235,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

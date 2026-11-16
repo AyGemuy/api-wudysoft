@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class LuminAI {
   constructor(baseURL = "https://luminai.my.id") {
@@ -172,7 +173,7 @@ class LuminAI {
     return result ? result[0] : null;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const luminAI = new LuminAI();
   const {
     action = "webSearch",
@@ -230,3 +231,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

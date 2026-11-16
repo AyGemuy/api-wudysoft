@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   FormData,
@@ -16,7 +17,7 @@ const headers = {
   referer: "https://ai.animedb.cn/",
   "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36"
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     force_one,
     model,
@@ -66,3 +67,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

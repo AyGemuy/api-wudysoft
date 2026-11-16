@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class CalendarGenerator {
   constructor(params = {}) {
@@ -61,7 +62,7 @@ class CalendarGenerator {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (!["GET", "POST"].includes(req.method)) return res.status(405).json({
     error: "Method not allowed"
   });
@@ -77,3 +78,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

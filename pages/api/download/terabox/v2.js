@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class TeraboxDownAPI {
   constructor() {
@@ -122,7 +123,7 @@ class TeraboxDownAPI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     pwd = "",
@@ -144,3 +145,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

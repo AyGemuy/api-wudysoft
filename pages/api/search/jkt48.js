@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -129,7 +130,7 @@ class Jkt48Scraper {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const scraper = new Jkt48Scraper();
   const {
     action,
@@ -167,3 +168,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

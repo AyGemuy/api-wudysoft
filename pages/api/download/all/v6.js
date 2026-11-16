@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class AioDown {
@@ -102,7 +103,7 @@ const aiodown = async (videoUrl, desiredQuality = "360p") => {
   const aioDown = new AioDown();
   return await aioDown.getDownloadLinks(videoUrl, desiredQuality);
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     quality
@@ -113,3 +114,5 @@ export default async function handler(req, res) {
   const result = await aiodown(url, quality);
   return res.status(200).json(typeof result === "object" ? result : result);
 }
+
+export default withApiLog(handler);

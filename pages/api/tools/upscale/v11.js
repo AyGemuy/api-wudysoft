@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import WebSocket from "ws";
 class PixnovaAI {
@@ -89,7 +90,7 @@ class PixnovaAI {
     return Math.random().toString(36).substring(2, 15);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     ...params
@@ -114,3 +115,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

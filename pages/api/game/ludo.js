@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import Html from "@/data/html/ludo/list";
 import connectMongo from "@/lib/mongoose";
@@ -49,7 +50,7 @@ class HtmlToImg {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   await connectMongo();
   const {
     action,
@@ -348,3 +349,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

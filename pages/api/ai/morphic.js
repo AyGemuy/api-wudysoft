@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import {
   FormData
@@ -56,7 +57,7 @@ async function morphic(query) {
     throw error;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt
   } = req.method === "GET" ? req.query : req.body;
@@ -68,3 +69,5 @@ export default async function handler(req, res) {
     result: typeof result === "object" ? result : result
   });
 }
+
+export default withApiLog(handler);

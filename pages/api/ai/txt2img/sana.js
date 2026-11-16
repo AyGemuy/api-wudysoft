@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const sanai = {
   create: async (prompt = "Example", weight = 1024, height = 1024, guiscale = 5, paguiscale = 2, nis = 18, step = 20, sid = -1) => {
@@ -49,7 +50,7 @@ const sanai = {
     }
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method === "GET" || req.method === "POST") {
     const {
       prompt,
@@ -78,3 +79,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

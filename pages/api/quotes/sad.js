@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 async function katasad() {
   try {
@@ -20,7 +21,7 @@ async function getRandomSadQuote() {
     return "Error fetching quotes.";
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const randomQuote = await getRandomSadQuote();
     return res.status(200).json({
@@ -32,3 +33,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

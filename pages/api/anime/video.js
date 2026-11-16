@@ -1,5 +1,6 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const tikTokUserIds = ["6966254204646441989", "7093800451225322502", "6572773017842352130", "6880529154954068998", "6958125517749896198", "7086868979805766658", "7403912348879504389", "6806145845533344769", "7108701608724513798", "7010288109087523845", "6822271197663036422"];
   try {
     const videos = await fetchTikTokUsersVideos(tikTokUserIds);
@@ -64,3 +65,5 @@ async function fetchTikTokUserVideos(userId) {
     return [];
   }
 }
+
+export default withApiLog(handler);

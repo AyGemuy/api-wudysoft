@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import apiConfig from "@/configs/apiConfig";
 import Encoder from "@/lib/encoder";
@@ -551,7 +552,7 @@ class VivagoAPI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -605,3 +606,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

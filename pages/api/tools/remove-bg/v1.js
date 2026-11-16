@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   fileTypeFromBuffer
@@ -227,7 +228,7 @@ class RemoveClient {
     return await this.runProvider(imageData, provider);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     provider = 0
@@ -255,3 +256,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

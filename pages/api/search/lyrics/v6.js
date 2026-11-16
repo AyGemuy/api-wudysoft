@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 const proxyUrls = "https://api.allorigins.win/raw?url=";
@@ -58,7 +59,7 @@ class Songfact {
     return text.replace(/\s+/g, " ").replace(/<[^>]*>?/gm, "").trim();
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     query,
@@ -112,3 +113,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

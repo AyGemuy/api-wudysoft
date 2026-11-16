@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import ApiKey from "@/configs/api-key";
 class DeepseekChat {
@@ -115,7 +116,7 @@ class DeepseekChat {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const hasPrompt = params.prompt && params.prompt.trim().length > 0;
   const hasMessages = Array.isArray(params.messages) && params.messages.length > 0;
@@ -134,3 +135,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

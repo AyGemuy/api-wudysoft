@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class Donghua {
@@ -117,7 +118,7 @@ class Donghua {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const donghua = new Donghua();
   const {
     method
@@ -145,3 +146,5 @@ export default async function handler(req, res) {
     msg: "Invalid action or missing parameters!"
   });
 }
+
+export default withApiLog(handler);

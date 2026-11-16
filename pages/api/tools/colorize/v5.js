@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   wrapper
@@ -119,7 +120,7 @@ class ImageColorizer {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.imageUrl) {
     return res.status(400).json({
@@ -138,3 +139,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,9 +1,10 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import {
   AnimeWallpaper,
   AnimeSource
 } from "anime-wallpaper";
 const wall = new AnimeWallpaper();
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     source = "random",
       query,
@@ -88,3 +89,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

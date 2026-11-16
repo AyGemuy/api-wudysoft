@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import PDFDocument from "pdfkit";
 import axios from "axios";
 import {
@@ -74,7 +75,7 @@ async function createPDFBuffer(inputs) {
     }
   });
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== "GET" && req.method !== "POST") {
     return res.status(405).json({
       error: "Method not allowed"
@@ -109,3 +110,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

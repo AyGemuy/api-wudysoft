@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class Harimanga {
@@ -88,7 +89,7 @@ class Harimanga {
     return `${title}\n\n${chapters.join("\n")}`;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     query,
@@ -134,3 +135,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

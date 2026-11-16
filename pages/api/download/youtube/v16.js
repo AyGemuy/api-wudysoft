@@ -1,6 +1,7 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const getId = url => url.match(/(?:https?:\/\/)?(?:www\.|m\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\/?\?v=|\/embed\/|\/)([^\s&\?\/\#]+)/)[1];
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url: id
   } = req.method === "GET" ? req.query : req.body;
@@ -40,3 +41,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

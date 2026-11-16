@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 async function createPaste(input) {
   const response = await fetch("https://api.paste.gg/v1/pastes", {
@@ -16,7 +17,7 @@ async function createPaste(input) {
   });
   return await response.json();
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     input
   } = req.method === "POST" ? req.body : req.query;
@@ -46,3 +47,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

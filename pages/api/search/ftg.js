@@ -1,6 +1,7 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const BASE_URL = "https://www.freetogame.com/api";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action = "",
       id,
@@ -58,3 +59,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

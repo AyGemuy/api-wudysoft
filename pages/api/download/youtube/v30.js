@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import WebSocket from "ws";
 class Mp3Downloader {
@@ -107,7 +108,7 @@ class Mp3Downloader {
     throw new Error("Tidak ada sumber video ditemukan.");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     ...params
@@ -135,3 +136,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

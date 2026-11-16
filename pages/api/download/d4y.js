@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const BASE_URL = "https://www.d4y.online/download_";
 const PROVIDERS = ["youtube", "facebook", "instagram", "tiktok", "twitter", "vimeo", "dailymotion", "soundcloud", "twitch", "bandcamp", "pornhub", "telegram"];
@@ -77,7 +78,7 @@ class VideoDownloader {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.url) {
     return res.status(400).json({
@@ -94,3 +95,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

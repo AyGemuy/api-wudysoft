@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import {
   createHash
 } from "crypto";
@@ -91,7 +92,7 @@ class AmpangPedia {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const instance = new AmpangPedia("4IBPmfPZ", "9WMugYrv57cppyyEAZmb0LVXcWagTjr6YGbFqBZd1WeHDq1tTxKLwc2R2t0l36GA");
   try {
     const {
@@ -125,3 +126,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

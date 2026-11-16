@@ -1,5 +1,6 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const url = "https://chat100.erweima.ai/api/v1/chat/gpt4o/chat";
   const headers = {
     authorization: "",
@@ -43,3 +44,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

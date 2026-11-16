@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class SoundCloudDownloader {
   constructor() {
@@ -31,7 +32,7 @@ class SoundCloudDownloader {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       url
@@ -48,3 +49,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

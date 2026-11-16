@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import crypto from "crypto";
 class ImageToImageAI {
@@ -358,7 +359,7 @@ snOjvdDb4wiZI8x3UwIDAQAB
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const params = req.method === "GET" ? req.query : req.body;
     if (!params?.prompt) {
@@ -378,3 +379,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

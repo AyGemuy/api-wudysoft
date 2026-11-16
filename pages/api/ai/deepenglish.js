@@ -1,5 +1,6 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const query = req.query.prompt;
   const customInstruction = req.query.instruction || "\nProvide a direct and useful answer in English.";
   if (!query) {
@@ -57,3 +58,5 @@ export default async function handler(req, res) {
     result: answer
   });
 }
+
+export default withApiLog(handler);

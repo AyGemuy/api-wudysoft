@@ -40,15 +40,16 @@ function Meter({ label, value, unit = '%', hint, tone }) {
 export default function StatsPage() {
   const { status: authStatus } = useSession();
   const live = useLive();
-  const { status, events, counters, sys, paused, setPaused, clear } = live;
-  const [now, setNow] = useState(() => Date.now());
+  const { status, events, counters, sys, paused, setPaused, clear, skew } = live;
+  const [tick, setTick] = useState(() => Date.now());
+  const now = tick + skew; // jam server (bukan jam perangkat) agar grafik & RPS akurat
   const [stats, setStats] = useState(null);
   const [selected, setSelected] = useState(null);
   const [purging, setPurging] = useState(false);
 
   // jam internal 1 detik untuk grafik & penanda baris baru
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
+    const id = setInterval(() => setTick(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -92,7 +93,10 @@ export default function StatsPage() {
     if (!window.confirm('Hapus semua riwayat log (memori & database)?')) return;
     sound.playClick();
     setPurging(true);
-    try { await fetch('/api/stats', { method: 'DELETE' }); clear(); } finally { setPurging(false); }
+    try {
+      const r = await fetch('/api/stats', { method: 'DELETE' });
+      if (r.ok) clear(); else window.alert((await r.json().catch(() => ({}))).error || 'Gagal menghapus log.');
+    } finally { setPurging(false); }
   };
 
   const conn = CONN[status] || CONN.connecting;
@@ -134,7 +138,7 @@ export default function StatsPage() {
           <>
             <div className={s.kpis}>
               <div className={s.kpi}><span className={s.kLabel}><Icons.Zap size={13} /> Request / detik</span><b className={s.kVal}>{k.rps}</b><small>rata-rata 10 detik terakhir</small></div>
-              <div className={s.kpi}><span className={s.kLabel}><Icons.Activity size={13} /> Total request</span><b className={s.kVal}>{k.total.toLocaleString()}</b><small>sejak server menyala</small></div>
+              <div className={s.kpi}><span className={s.kLabel}><Icons.Activity size={13} /> Total request</span><b className={s.kVal}>{k.total.toLocaleString()}</b><small>{counters?.source === 'db' ? `database · ${counters.windowLabel}` : 'sejak instance menyala'}</small></div>
               <div className={s.kpi}><span className={s.kLabel}><Icons.AlertCircle size={13} /> Error</span><b className={cx(s.kVal, Number(k.errRate) > 5 && s.kBad)}>{k.errRate}%</b><small>{k.errors.toLocaleString()} permintaan 4xx/5xx</small></div>
               <div className={s.kpi}><span className={s.kLabel}><Icons.Clock size={13} /> Latensi</span><b className={s.kVal}>{k.avg}<em>ms</em></b><small>rata-rata · p95 {k.p95} ms</small></div>
             </div>

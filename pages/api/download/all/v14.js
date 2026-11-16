@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import WebSocket from "ws";
 class VidExtractWS {
   constructor() {
@@ -60,7 +61,7 @@ class VidExtractWS {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       url
@@ -84,3 +85,5 @@ export default async function handler(req, res) {
     wsClient.close();
   }
 }
+
+export default withApiLog(handler);

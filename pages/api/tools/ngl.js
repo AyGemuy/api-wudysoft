@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const deviceIDs = () => {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
@@ -53,7 +54,7 @@ const ngl = {
     }
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     link,
     message,
@@ -82,3 +83,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

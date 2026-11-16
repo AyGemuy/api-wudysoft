@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 async function quotesbucin() {
   try {
@@ -8,7 +9,7 @@ async function quotesbucin() {
     return [];
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const quotes = await quotesbucin();
     if (quotes.length > 0) {
@@ -28,3 +29,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

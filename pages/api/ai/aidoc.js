@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   v4 as uuidv4
@@ -70,7 +71,7 @@ class AidocmakerAPI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     prompt,
@@ -121,3 +122,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

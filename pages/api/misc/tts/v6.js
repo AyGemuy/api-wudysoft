@@ -1,5 +1,6 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     voice = 1,
       text
@@ -37,3 +38,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

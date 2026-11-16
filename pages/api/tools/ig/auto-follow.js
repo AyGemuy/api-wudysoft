@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const sendInstagramFollowers = async data => {
   try {
@@ -17,7 +18,7 @@ const sendInstagramFollowers = async data => {
     throw error;
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     jumlah_followers,
     user_id,
@@ -43,3 +44,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

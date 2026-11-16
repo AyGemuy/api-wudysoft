@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import apiConfig from "@/configs/apiConfig";
@@ -490,7 +491,7 @@ class Kodepos {
     return result;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const kode = params.kode || null;
   const index = params.index ? parseInt(params.index) : null;
@@ -510,3 +511,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

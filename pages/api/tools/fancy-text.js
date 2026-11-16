@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 class Lunicode {
   constructor() {
@@ -2540,7 +2541,7 @@ function FontListV2() {
     text: "Ｅｘａｍｐｌｅ"
   }];
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     version = "2",
       text = "",
@@ -2584,3 +2585,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import crypto from "crypto";
 class BotnoiVoice {
@@ -514,7 +515,7 @@ class BotnoiVoice {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const rawData = req.method === "GET" ? req.query : req.body || {};
     const {
@@ -608,3 +609,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 async function ArtiKata(input) {
@@ -22,7 +23,7 @@ async function ArtiKata(input) {
     return null;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method === "GET") {
     const {
       text
@@ -43,3 +44,5 @@ export default async function handler(req, res) {
   res.setHeader("Allow", ["GET"]);
   res.status(405).end(`Method ${req.method} Not Allowed`);
 }
+
+export default withApiLog(handler);

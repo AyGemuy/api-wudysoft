@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import {
@@ -65,7 +66,7 @@ class ApiService {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     fzsid = "652", ...params
   } = req.method === "POST" ? req.body : req.query;
@@ -84,3 +85,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

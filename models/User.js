@@ -26,6 +26,9 @@ const UserSchema = new Schema(
     // Akun lama bisa masih berisi teks biasa; dimigrasi otomatis saat login berikutnya.
     password: { type: String, select: false },
     image: { type: String },
+    // Avatar unggahan (data URL JPEG kecil). Tidak ikut query biasa; disajikan lewat /api/avatar/[id].
+    avatarData: { type: String, select: false },
+    bio: { type: String, trim: true, maxlength: 160 },
     role: { type: String, default: "user" },
 
     // provider pendaftaran awal: credentials | github | google

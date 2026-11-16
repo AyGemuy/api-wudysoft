@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import CryptoJS from "crypto-js";
 class Tiqu {
@@ -84,7 +85,7 @@ class Tiqu {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url
   } = req.method === "GET" ? req.query : req.body;
@@ -102,3 +103,5 @@ export default async function handler(req, res) {
     return res.status(400).json(result);
   }
 }
+
+export default withApiLog(handler);

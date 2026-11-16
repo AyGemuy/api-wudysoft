@@ -1,5 +1,6 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     q,
     p = 0,
@@ -63,3 +64,5 @@ export default async function handler(req, res) {
     return format === "jsonp" ? res.send(`${callback || "callback"}(${JSON.stringify(errorResponse)});`) : res.status(500).json(errorResponse);
   }
 }
+
+export default withApiLog(handler);

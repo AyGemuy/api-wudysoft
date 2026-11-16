@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import requestIp from "request-ip";
 import axios from "axios";
 import moment from "moment-timezone";
@@ -260,7 +261,7 @@ class IPInfoFetcher {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   let clientIp = requestIp.getClientIp(req);
   if (clientIp && clientIp.includes("::ffff:")) {
     clientIp = clientIp.replace("::ffff:", "");
@@ -282,3 +283,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class Lalals {
   constructor() {
@@ -20,7 +21,7 @@ class Lalals {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const lalals = new Lalals();
     const response = await lalals.get();
@@ -31,3 +32,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

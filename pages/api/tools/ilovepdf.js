@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import {
   FormData,
@@ -134,7 +135,7 @@ class IlovePDF {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const ilovePdf = new IlovePDF();
   if (req.method === "POST") {
     try {
@@ -192,3 +193,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

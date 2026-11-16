@@ -1,5 +1,6 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const src = await (await fetch("https://api.jikan.moe/v4/random/characters")).json();
     const json = src.data;
@@ -10,3 +11,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

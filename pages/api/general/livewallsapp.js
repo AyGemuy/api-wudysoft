@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import xml2js from "xml2js";
 class Wallpapers {
@@ -86,7 +87,7 @@ class Wallpapers {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const api = new Wallpapers();
   try {
@@ -99,3 +100,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

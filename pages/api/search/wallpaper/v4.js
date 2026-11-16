@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import * as cheerio from "cheerio";
 import fetch from "node-fetch";
 import axios from "axios";
@@ -105,7 +106,7 @@ class DeviantArt {
     return await parseXml(xml);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     method
   } = req;
@@ -154,3 +155,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

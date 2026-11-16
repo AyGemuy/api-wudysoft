@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import FormData from "form-data";
 import Encoder from "@/lib/encoder";
@@ -299,7 +300,7 @@ class DeeVidAPI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const startTime = Date.now();
   console.log("\n========================================");
   console.log(`[HANDLER] Request diterima: ${req.method} ${req.url}`);
@@ -372,3 +373,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

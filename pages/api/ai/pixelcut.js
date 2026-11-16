@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import FormData from "form-data";
 const BASE_URL = "https://api2.pixelcut.app";
@@ -187,7 +188,7 @@ class PixelcutAPI {
     throw new Error("Input tidak valid: gunakan URL, base64, atau Buffer");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     mode,
     ...params
@@ -222,3 +223,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

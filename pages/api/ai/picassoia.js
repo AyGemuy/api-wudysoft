@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import CryptoJS from "crypto-js";
 const VALID_ASPECT_RATIOS = ["match_input_image", "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3"];
@@ -309,7 +310,7 @@ class PicassoAI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.prompt && !params.imageUrl) {
     return res.status(400).json({
@@ -327,3 +328,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

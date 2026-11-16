@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 async function Bubblegum(prompt, style = "Creative", invoice = 0) {
   try {
@@ -31,7 +32,7 @@ async function Bubblegum(prompt, style = "Creative", invoice = 0) {
     throw error;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     style,
@@ -50,3 +51,5 @@ export default async function handler(req, res) {
     result: typeof result === "object" ? result : result
   });
 }
+
+export default withApiLog(handler);

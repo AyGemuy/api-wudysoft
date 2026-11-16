@@ -1,6 +1,7 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import connectMongo from "@/lib/mongoose";
 import Request from "@/models/Request";
-export default async function handler(req, res) {
+async function handler(req, res) {
   await connectMongo();
   if (req.method === "GET" || req.method === "POST") {
     try {
@@ -29,3 +30,5 @@ export default async function handler(req, res) {
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
+
+export default withApiLog(handler);

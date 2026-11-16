@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const API_ORIGIN = "https://api.pastes.dev";
 const WEB_ORIGIN = "https://pastes.dev";
@@ -122,7 +123,7 @@ class PastesDev {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -202,3 +203,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

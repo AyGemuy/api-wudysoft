@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const headers = {
   authority: "labs.writingmate.ai",
@@ -7,7 +8,7 @@ const headers = {
   referer: "https://labs.writingmate.ai/share/JyVg?__show_banner=false",
   "user-agent": "Postify/1.0.0"
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     imageUrl,
     prompt = "Analyze this image and provide a detailed creative prompt not longer than 400 symbols."
@@ -70,3 +71,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

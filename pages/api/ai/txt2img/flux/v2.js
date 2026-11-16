@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const endpoints = ["generate_image", "RealtimeFlux", "generate_image_1", "realtime_generation", "realtime_generation_1", "realtime_generation_2", "realtime_generation_3"];
 const buildPayload = (endpoint, prompt, width, height) => {
@@ -58,7 +59,7 @@ const fetchResult = async (endpoint, prompt, width, height) => {
     };
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const type = parseInt(req.query.type || "0", 10) - 1;
     const prompt = req.query.prompt || "Default Prompt";
@@ -76,3 +77,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

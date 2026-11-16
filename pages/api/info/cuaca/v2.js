@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const latLonToTile = (lat, lon, zoom) => {
   const x = Math.floor((lon + 180) / 360 * Math.pow(2, zoom));
@@ -92,7 +93,7 @@ const weather = async text => {
     throw new Error(`Error fetching weather data: ${e.message}`);
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     kota
   } = req.method === "GET" ? req.query : req.body;
@@ -112,3 +113,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

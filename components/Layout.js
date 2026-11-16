@@ -9,11 +9,23 @@ import InteractiveCanvas from './InteractiveCanvas';
 import CursorGlow from './CursorGlow';
 import BgLayer from './BgLayer';
 import SiteFooter from './SiteFooter';
+import NexusBrand from './NexusBrand';
 import { ThemeContext } from './ThemeContext';
 import { logout } from '@/src/lib/nav';
 import { loadSpecOps } from '@/src/lib/specIndex';
 import { DEFAULT_CONFIG, loadConfig, saveConfig, applyConfig, computeTheme } from '@/src/lib/themes';
 import { sound } from '@/src/lib/interactiveEffects';
+
+/** Avatar header: foto bila ada (dan bisa dimuat), jika tidak → inisial nama. */
+function Avatar({ user }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [user?.image]);
+  if (user?.image && !failed) {
+    // referrerPolicy: foto Google/GitHub sering menolak request yang membawa Referer
+    return <img src={user.image} alt="" referrerPolicy="no-referrer" onError={() => setFailed(true)} />;
+  }
+  return <span>{(user?.name || 'U').trim()[0]?.toUpperCase() || 'U'}</span>;
+}
 
 export default function Layout({ children }) {
   const router = useRouter();
@@ -112,7 +124,7 @@ export default function Layout({ children }) {
       .slice(0, 40)
       .map((o) => ({ type: 'Endpoint', method: o.method, title: o.path, sub: o.summary, secure: o.secure, action: `/playground?op=${encodeURIComponent(o.key)}` }));
     return [...pages, ...eps];
-  }, [searchQuery, endpoints]);
+  }, [searchQuery, endpoints, user]);
 
   return (
     <ThemeContext.Provider value={themeCtx}>
@@ -138,9 +150,7 @@ export default function Layout({ children }) {
       <header className="top-header-wrap">
         <nav className="top-header-nav" aria-label="Navigasi utama">
           <div className="hd-side">
-            <Link href="/" className="hd-btn hd-brand" aria-label="Beranda" title="Beranda" onClick={() => sound.playClick()}>
-              <Icons.Zap size={18} />
-            </Link>
+            <NexusBrand onClick={() => sound.playClick()} />
           </div>
 
           <button
@@ -184,7 +194,7 @@ export default function Layout({ children }) {
                     setProfileOpen(!profileOpen);
                   }}
                 >
-                  {user.image ? <img src={user.image} alt="" /> : <span>{user.name?.[0]?.toUpperCase() || 'U'}</span>}
+                  <Avatar user={user} />
                 </button>
 
                 <AnimatePresence>
@@ -203,6 +213,14 @@ export default function Layout({ children }) {
                         <em>{user.isGuest ? 'Tamu' : user.provider || 'Akun'}</em>
                       </div>
                       <div className="dd-sep" />
+                      <Link href="/profile" className="dropdown-item" role="menuitem" onClick={() => setProfileOpen(false)}>
+                        <Icons.User size={14} color="var(--a2)" />
+                        <span>Profil saya</span>
+                      </Link>
+                      <Link href="/stats" className="dropdown-item" role="menuitem" onClick={() => setProfileOpen(false)}>
+                        <Icons.Activity size={14} color="var(--a2)" />
+                        <span>Live Stats</span>
+                      </Link>
                       <Link href="/playground" className="dropdown-item" role="menuitem" onClick={() => setProfileOpen(false)}>
                         <Icons.Terminal size={14} color="var(--a2)" />
                         <span>Playground</span>
@@ -344,18 +362,15 @@ export default function Layout({ children }) {
           </button>
 
           {user ? (
-            <button
-              className={`nav-tab ${profileOpen ? 'active' : ''}`}
+            <Link
+              href="/profile"
+              className={`nav-tab ${router.pathname === '/profile' ? 'active' : ''}`}
               aria-label="Profil"
-              data-profile-toggle
-              onClick={() => {
-                sound.playClick();
-                setProfileOpen((v) => !v);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              onClick={() => sound.playClick()}
             >
               <Icons.User size={22} />
-            </button>
+              {router.pathname === '/profile' && <motion.div layoutId="navDot" className="nav-active-dot" />}
+            </Link>
           ) : (
             <Link href="/auth" className={`nav-tab ${router.pathname.startsWith('/auth') ? 'active' : ''}`} onClick={() => sound.playClick()}>
               <Icons.User size={22} />

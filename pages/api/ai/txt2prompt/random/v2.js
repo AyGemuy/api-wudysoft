@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 class GetimgAI {
   async getRandomPrompt() {
@@ -20,7 +21,7 @@ class GetimgAI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const getimgAI = new GetimgAI();
     const data = await getimgAI.getRandomPrompt();
@@ -32,3 +33,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

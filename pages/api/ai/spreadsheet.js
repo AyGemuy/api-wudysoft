@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import SpoofHead from "@/lib/spoof-head";
 const VALID_MODELS = ["Claude Sonnet", "Claude Haiku", "o1-mini", "o1", "GPT-4", "GPT-4o", "GPT-4o mini", "Llama 3", "Command R", "Command R+"];
@@ -167,7 +168,7 @@ class ApiChat {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.prompt) {
     return res.status(400).json({
@@ -184,3 +185,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

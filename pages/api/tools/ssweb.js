@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class ScreenshotProvider {
   async fetchBuffer(url, options = {}) {
@@ -188,7 +189,7 @@ class ScreenshotService {
     throw new Error("Semua provider gagal.");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     type: v = 2
@@ -210,3 +211,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,6 +1,7 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     query,
@@ -89,3 +90,5 @@ async function getModData(id) {
     throw error;
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class PiAI {
   constructor() {
@@ -45,7 +46,7 @@ class PiAI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt: text,
     conversation
@@ -67,3 +68,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

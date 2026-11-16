@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import Encoder from "@/lib/encoder";
 class Ytmp3Converter {
@@ -419,7 +420,7 @@ class Ytmp3Converter {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const input = req.method === "GET" ? req.query : req.body;
   const action = input.action || "download";
   const params = {
@@ -462,3 +463,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

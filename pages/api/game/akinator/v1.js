@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import dbConnect from "@/lib/mongoose";
 import akiSession from "@/models/Akinator";
 import PROXY from "@/configs/proxy-url";
@@ -354,7 +355,7 @@ class Akinator {
     console.log("Game state restored.");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     id,
@@ -564,3 +565,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

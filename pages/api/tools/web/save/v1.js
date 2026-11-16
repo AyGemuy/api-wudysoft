@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class Web2zipService {
   constructor() {
@@ -57,7 +58,7 @@ class Web2zipService {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     rename = false,
@@ -88,3 +89,5 @@ export default async function handler(req, res) {
     message: "Invalid output parameter, must be 'link' or 'media'"
   });
 }
+
+export default withApiLog(handler);

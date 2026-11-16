@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class AlisiaAPI {
   constructor() {
@@ -24,7 +25,7 @@ class AlisiaAPI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt: query,
     session_id = "7f2fc21a-ee30-4e76-8b24-2b6dd4d6a7ca"
@@ -41,3 +42,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

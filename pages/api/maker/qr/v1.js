@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class QRCodeGenerator {
   constructor() {
@@ -34,7 +35,7 @@ class QRCodeGenerator {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       fmt = "PNG",
@@ -67,3 +68,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

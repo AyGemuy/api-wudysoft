@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import AdmZip from "adm-zip";
 import uglify from "uglify-js";
@@ -179,7 +180,7 @@ class FileProcessor {
     return `Process completed in ${timeElapsed} seconds.\nProcessed files: ${this.processedFiles.length}\nFiles with errors: ${this.errorFiles.length}`;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     filetype,
@@ -257,3 +258,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

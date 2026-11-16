@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const extractData = input => {
   return input.split("\n").filter(line => line.startsWith("{")).map(line => {
@@ -53,7 +54,7 @@ class AutoSiteChat {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt = "hai",
       uniqueId = "57304d90fe3471e561a563f150e61349",
@@ -87,3 +88,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

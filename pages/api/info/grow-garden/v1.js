@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import WebSocket from "ws";
 class WebSocketClient {
   constructor(url, origin) {
@@ -123,7 +124,7 @@ class WebSocketClient {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const client = new WebSocketClient();
     const response = await client.connect();
@@ -134,3 +135,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

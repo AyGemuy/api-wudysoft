@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const FB_KEY = "AIzaSyBBr35pmWkZsnSV_Zc1Enk-tGp_4RGw7a8";
 const FB_SIGNUP_URL = `https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=${FB_KEY}`;
@@ -574,7 +575,7 @@ class NovaAI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -642,3 +643,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

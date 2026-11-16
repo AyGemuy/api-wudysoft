@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import CryptoJS from "crypto-js";
@@ -462,7 +463,7 @@ class MyTuner {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -551,3 +552,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

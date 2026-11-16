@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import * as cheerio from "cheerio";
 import PDFDocument from "pdfkit";
 import fetch from "node-fetch";
@@ -49,7 +50,7 @@ async function createPDFBuffer(imageUrls) {
     }
   });
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     q,
     index,
@@ -77,3 +78,5 @@ export default async function handler(req, res) {
     result: selectedResult
   });
 }
+
+export default withApiLog(handler);

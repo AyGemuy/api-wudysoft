@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class TextSimilarity {
   constructor() {
@@ -36,7 +37,7 @@ class TextSimilarity {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     text1,
     text2
@@ -59,3 +60,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import FormData from "form-data";
 class NanoBananaEditor {
@@ -130,7 +131,7 @@ class NanoBananaEditor {
     return this.processImageOutput(rawImage);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const {
     prompt,
@@ -158,3 +159,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

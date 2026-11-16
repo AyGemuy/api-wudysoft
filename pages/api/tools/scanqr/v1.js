@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   FormData
@@ -67,7 +68,7 @@ class BarcodeRecognizer {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       url
@@ -93,3 +94,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

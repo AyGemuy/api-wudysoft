@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   FormData,
@@ -116,7 +117,7 @@ class OCRService {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   !params.image && res.status(400).json({
     error: "Image is required"
@@ -136,3 +137,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

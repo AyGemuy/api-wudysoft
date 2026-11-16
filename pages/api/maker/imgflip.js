@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class MemePlugin {
   constructor(username = "Wudysoft", password = "Wudysoft") {
@@ -48,7 +49,7 @@ class MemePlugin {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action = "create",
       id: memeId, ...queryParams
@@ -87,3 +88,5 @@ export default async function handler(req, res) {
     message: "Invalid action or missing parameters"
   });
 }
+
+export default withApiLog(handler);

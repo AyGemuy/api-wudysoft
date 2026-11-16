@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 async function fetchQuotes(page) {
@@ -24,7 +25,7 @@ async function fetchQuotes(page) {
     return [];
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       page = 1
@@ -44,3 +45,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

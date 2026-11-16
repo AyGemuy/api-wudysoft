@@ -1,5 +1,6 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const getRandomAyah = () => Math.floor(Math.random() * 6236) + 1;
     const src = await fetch(`https://api.alquran.cloud/v1/ayah/${getRandomAyah()}/ar.alafasy`);
@@ -15,3 +16,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

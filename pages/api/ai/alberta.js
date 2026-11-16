@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class SearchAI {
   constructor() {
@@ -62,7 +63,7 @@ class SearchAI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const searchAI = new SearchAI();
   const inputData = req.method === "GET" ? req.query : req.body;
   try {
@@ -74,3 +75,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

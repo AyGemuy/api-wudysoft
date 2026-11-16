@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 const getToken = async () => {
@@ -30,7 +31,7 @@ const downloadVideoData = async (link, token) => {
     throw new Error(`Gagal mengunduh data video: ${error.response?.data || error.message}`);
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       url: link
@@ -53,3 +54,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

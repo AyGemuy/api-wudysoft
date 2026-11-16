@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class LyricsAPI {
   async fetchLyrics(source, title) {
@@ -11,7 +12,7 @@ class LyricsAPI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     query,
     type = 1
@@ -35,3 +36,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import FormData from "form-data";
 import crypto from "crypto";
@@ -328,7 +329,7 @@ class PhotunaAI {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const queryParams = req.method === "GET" ? req.query : typeof req.body === "object" && req.body !== null ? req.body : {};
     const {
@@ -476,3 +477,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

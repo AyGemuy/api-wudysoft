@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const url = "https://chat.tune.app/api/chat/completions";
 const headers = {
@@ -32,7 +33,7 @@ async function TuneAi(query, profile = "AI", model = "tune-gpt-4o-mini") {
     throw new Error("Failed to fetch data from TuneAi.");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     profile,
@@ -46,3 +47,5 @@ export default async function handler(req, res) {
     result: typeof result === "object" ? result : result
   });
 }
+
+export default withApiLog(handler);

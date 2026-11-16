@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const API_BASE_URL = "https://api.pictory.ai/pictoryapis";
 const CLIENT_ID = "7n3gkamqknqc4eisek9q3gniv0";
@@ -81,7 +82,7 @@ class PictoryVideo {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -123,3 +124,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

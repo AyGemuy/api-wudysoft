@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 async function fetchData(url, body) {
   try {
@@ -30,7 +31,7 @@ async function ToolbotAI(desire) {
     throw error;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt: desire
   } = req.method === "GET" ? req.query : req.body;
@@ -51,3 +52,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,5 +1,6 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     text,
     size,
@@ -54,3 +55,5 @@ export default async function handler(req, res) {
     console.log(message);
   }
 }
+
+export default withApiLog(handler);

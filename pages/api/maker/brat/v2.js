@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class BratGenerator {
   constructor() {
@@ -31,7 +32,7 @@ class BratGenerator {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       text = "Brat",
@@ -45,3 +46,5 @@ export default async function handler(req, res) {
     res.status(500).end();
   }
 }
+
+export default withApiLog(handler);

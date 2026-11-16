@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import qs from "qs";
 import * as cheerio from "cheerio";
@@ -56,7 +57,7 @@ class YouTubeMP4Downloader {
     };
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       url
@@ -73,3 +74,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

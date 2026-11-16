@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 async function RefinePrompt(prompt) {
   const url = "https://imagine-anything-backend-container.ll7be3d1enog6.eu-west-2.cs.amazonlightsail.com/api/refine-prompt/";
@@ -25,7 +26,7 @@ async function RefinePrompt(prompt) {
     console.error(error);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt
   } = req.method === "GET" ? req.query : req.body;
@@ -37,3 +38,5 @@ export default async function handler(req, res) {
     result: typeof result === "object" ? result : result
   });
 }
+
+export default withApiLog(handler);

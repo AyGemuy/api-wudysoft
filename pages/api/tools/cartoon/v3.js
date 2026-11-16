@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import {
@@ -274,7 +275,7 @@ class ImageUpscaler {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   try {
     const upscaler = new ImageUpscaler();
@@ -286,3 +287,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

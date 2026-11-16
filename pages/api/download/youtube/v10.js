@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import apiConfig from "@/configs/apiConfig";
 const getId = url => url.match(/(?:https?:\/\/)?(?:www\.|m\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\/?\?v=|\/embed\/|\/)([^\s&\?\/\#]+)/)[1];
@@ -13,7 +14,7 @@ const Y232 = async url => {
     throw new Error(`Y232 Fetch Error: ${error.message}`);
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url
   } = req.method === "GET" ? req.query : req.body;
@@ -35,3 +36,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

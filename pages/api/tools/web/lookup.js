@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 async function fetchPage(url) {
@@ -72,7 +73,7 @@ async function dnsRecords(domain) {
     throw new Error("Failed to fetch DNS records: " + error.message);
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     domain
@@ -102,3 +103,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

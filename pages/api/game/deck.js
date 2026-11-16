@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import connectMongo from "@/lib/mongoose";
 import Deck from "@/models/Deck";
@@ -66,7 +67,7 @@ const drawCard = async deckApiId => {
     };
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   await connectMongo();
   const {
     action,
@@ -279,3 +280,5 @@ export default async function handler(req, res) {
     error: "Invalid action. Available actions: create, delete, clear, hit, stand, info."
   });
 }
+
+export default withApiLog(handler);

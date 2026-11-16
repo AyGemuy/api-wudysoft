@@ -1,9 +1,15 @@
 import os from "os";
 import dbConnect from "@/lib/mongoose";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import { invalidateCounters } from "@/lib/liveData";
 import ApiLog from "@/models/ApiLog";
 import logger from "@/lib/apiLogger.cjs";
 
 async function handler(req, res) {
+  const session = await getServerSession(req, res, authOptions);
+  const authed = Boolean(session?.user);
+  res.setHeader("Cache-Control", "no-store");
   const startPing = performance.now();
   let dbStatus = "CONNECTED";
   let dbPing = 0;
@@ -17,9 +23,11 @@ async function handler(req, res) {
 
   // Handle Purge Log History
   if (req.method === "DELETE") {
+    if (!authed || session.user.isGuest) return res.status(401).json({ ok: false, error: "Masuk dengan akun untuk menghapus log." });
     try {
       logger.clearLogs();
       await ApiLog.deleteMany({});
+      invalidateCounters();
       return res.status(200).json({ ok: true, message: "Log telemetri berhasil dibersihkan." });
     } catch (e) {
       return res.status(500).json({ ok: false, error: e.message });
@@ -41,7 +49,7 @@ async function handler(req, res) {
 
   const systemSpecs = {
     platform: `${os.type()} ${os.release()} (${os.arch()})`,
-    osHostname: os.hostname(),
+    osHostname: authed ? os.hostname() : "—",
     cpuModel,
     cpuCores,
     loadAverage: loadAvg.map((l) => l.toFixed(2)).join(", "),
@@ -91,7 +99,7 @@ async function handler(req, res) {
         errorRequests: errorCount,
         avgLatencyMs: avg,
         successRate: Number(rate),
-        recentLogs: logs.map((l) => ({
+        recentLogs: !authed ? [] : logs.map((l) => ({
           id: l._id.toString(),
           path: l.path,
           method: l.method,

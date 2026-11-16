@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 const fixUrl = url => url.startsWith("//") ? url.replace(/^\/\//, "https://") : url;
@@ -45,7 +46,7 @@ class WebScraper {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     query,
@@ -84,3 +85,5 @@ export default async function handler(req, res) {
     error: "Invalid action or missing query/url parameter"
   });
 }
+
+export default withApiLog(handler);

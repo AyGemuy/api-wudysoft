@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class JadwalNonton {
@@ -262,7 +263,7 @@ class JadwalNonton {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   const location = params.location ? isNaN(params.location) ? params.location : parseInt(params.location) : null;
   const theater = params.theater ? isNaN(params.theater) ? params.theater : parseInt(params.theater) : null;
@@ -282,3 +283,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

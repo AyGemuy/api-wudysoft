@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import SpoofHead from "@/lib/spoof-head";
 class ImageDescriber {
@@ -38,7 +39,7 @@ class ImageDescriber {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url: imageUrl,
     prompt = "describing the image below for image generation. Focus on essential details for accurate results."
@@ -58,3 +59,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const AVAILABLE_MODELS = ["llama-3-70b", "llama-3-405b", "gpt-3.5-turbo", "gpt-4o"];
 const extractData = input => {
@@ -43,7 +44,7 @@ async function Chat(prompt, model) {
     throw error;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     model
@@ -56,3 +57,5 @@ export default async function handler(req, res) {
     result: typeof result === "object" ? result : result
   });
 }
+
+export default withApiLog(handler);

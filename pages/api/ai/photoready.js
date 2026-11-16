@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const SYSTEM_PROMPTS = {
   chatgpt_3: "\nYou are ChatGPT 3.0 — a helpful and intelligent AI assistant.\nCommunicate in a friendly, natural, and concise way.\nFocus on being clear, informative, and human-like in tone.\nWhen answering, avoid mentioning that you are an AI model unless the user asks.\nAlways aim to provide accurate, useful, and easy-to-understand responses.\n",
@@ -206,7 +207,7 @@ class AIClient {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.prompt) {
     return res.status(400).json({
@@ -224,3 +225,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

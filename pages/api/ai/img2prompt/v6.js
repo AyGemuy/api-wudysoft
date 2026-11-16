@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class ImageToPrompt {
   constructor() {
@@ -60,7 +61,7 @@ class ImageToPrompt {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const imageToPromptService = new ImageToPrompt();
   const {
     imageUrl,
@@ -87,3 +88,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

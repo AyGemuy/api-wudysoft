@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const KITSU_URI = "https://kitsu.io/api/edge/";
 const fetchKitsuData = async url => {
@@ -13,7 +14,7 @@ const fetchKitsuData = async url => {
     throw new Error(error.response?.data?.errors || error.message);
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     query = "",
@@ -67,3 +68,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

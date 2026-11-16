@@ -1,7 +1,8 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const API_KEY = "0647bc5201msh84a9358b48d00eep163485jsne7ecf062e49f";
 const RAPIDAPI_HOST = "ip-reputation-geoip-and-detect-vpn.p.rapidapi.com";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     ip
   } = req.method === "GET" ? req.query : req.body;
@@ -31,3 +32,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

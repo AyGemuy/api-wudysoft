@@ -1,8 +1,9 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   v4 as uuidv4
 } from "uuid";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt
   } = req.method === "GET" ? req.query : req.body;
@@ -47,3 +48,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

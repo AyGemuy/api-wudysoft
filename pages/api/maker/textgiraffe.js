@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import * as cheerio from "cheerio";
 import fetch from "node-fetch";
 class LogoGenerator {
@@ -40,7 +41,7 @@ class LogoGenerator {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     text,
     style = 1,
@@ -59,3 +60,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

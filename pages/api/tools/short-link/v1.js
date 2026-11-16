@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 class ShortLink {
   async tinyurl(url) {
@@ -282,7 +283,7 @@ const shortlink = async (url, index) => {
   const shortLink = new ShortLink();
   return await shortLink.gen(url, index);
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     type
@@ -295,3 +296,5 @@ export default async function handler(req, res) {
     result: result
   });
 }
+
+export default withApiLog(handler);

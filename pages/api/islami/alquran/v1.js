@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 async function fetchJson(url) {
   try {
@@ -23,7 +24,7 @@ function getImageUrl(surah, ayah) {
 function getAudioUrl(edition, number) {
   return `https://cdn.islamic.network/quran/audio-surah/128/${edition}/${number}.mp3`;
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     ayah,
     surah,
@@ -54,3 +55,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

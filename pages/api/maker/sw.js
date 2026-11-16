@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 async function generateWhatsAppStatus(profileImage, mainImage, caption, views) {
   const url = "https://ruloaooa-swgen.hf.space/generate";
@@ -18,7 +19,7 @@ async function generateWhatsAppStatus(profileImage, mainImage, caption, views) {
     throw new Error("Gagal menghasilkan WhatsApp status");
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method === "GET") {
     const {
       profileImage,
@@ -46,3 +47,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

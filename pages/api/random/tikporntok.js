@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 const getTikPornData = async () => {
@@ -27,7 +28,7 @@ const getTikPornData = async () => {
     throw new Error(`Error fetching TikPornTok data: ${error.message}`);
   }
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const data = await getTikPornData();
     return res.status(200).json({
@@ -41,3 +42,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

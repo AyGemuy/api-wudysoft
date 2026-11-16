@@ -1,6 +1,7 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import apiConfig from "@/configs/apiConfig";
-export default async function handler(req, res) {
+async function handler(req, res) {
   const query = req.method === "GET" ? req.query.query : req.body.query;
   if (!query) return res.status(400).json({
     error: "Query required"
@@ -17,3 +18,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

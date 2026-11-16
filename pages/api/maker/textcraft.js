@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import xml2js from "xml2js";
 class TextCraftImageGenerator {
@@ -90,7 +91,7 @@ class TextCraftImageGenerator {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const params = req.method === "GET" ? req.query : req.body;
   if (!params.text && !params.text2 && !params.text3) {
     return res.status(400).json({
@@ -112,3 +113,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

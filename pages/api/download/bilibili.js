@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class BStation {
@@ -140,7 +141,7 @@ class BStation {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     url,
     action,
@@ -199,3 +200,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

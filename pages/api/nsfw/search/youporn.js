@@ -1,9 +1,10 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 const proxyUrls = [`https://${apiConfig.DOMAIN_URL}/api/tools/web/html/v1?url=`];
 const randomProxyUrl = proxyUrls[Math.floor(Math.random() * proxyUrls.length)];
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     q,
     id,
@@ -85,3 +86,5 @@ export default async function handler(req, res) {
     error: "Action tidak valid."
   });
 }
+
+export default withApiLog(handler);

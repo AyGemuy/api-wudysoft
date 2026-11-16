@@ -1,7 +1,8 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const encodeKey = "c2stc3ZjcDBtWUZwaDgzaGJnYVBVRDhhMXdrdVdBTDZ3WHBrRlI4SVRyeEpnY1ZnbEQ4";
 const decodeKey = encodedKey => Buffer.from(encodedKey, "base64").toString("utf-8");
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     prompt,
     model = "moonshot-v1-8k",
@@ -42,3 +43,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

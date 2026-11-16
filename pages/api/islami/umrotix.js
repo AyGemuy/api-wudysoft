@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 class Umrotix {
@@ -41,7 +42,7 @@ class Umrotix {
     })).get();
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const umrotix = new Umrotix();
   try {
     const {
@@ -72,3 +73,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import * as cheerio from "cheerio";
 class CekResiPaket {
@@ -94,7 +95,7 @@ class CekResiPaket {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -133,3 +134,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

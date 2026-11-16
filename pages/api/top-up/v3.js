@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import {
   CookieJar
@@ -124,7 +125,7 @@ class BagusPulsaService {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...body
@@ -151,3 +152,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

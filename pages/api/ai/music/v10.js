@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import https from "https";
 import SpoofHead from "@/lib/spoof-head";
@@ -153,7 +154,7 @@ class MusicMuseAPI {
     return response;
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     ...params
@@ -184,3 +185,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

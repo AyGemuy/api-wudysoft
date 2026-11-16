@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 const alquran = async (surah, ayat) => {
@@ -134,7 +135,7 @@ const ayatCountData = {
   113: 5,
   114: 6
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     surah,
     ayat
@@ -158,3 +159,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const apiDomains = {
   1: "api.paxsenix.biz.id",
@@ -11,7 +12,7 @@ const apiDomains = {
   9: "api.rifandavinci.my.id",
   10: "forestapi.web.id"
 };
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     api = 1,
       path = "/ai/gemini",
@@ -42,3 +43,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

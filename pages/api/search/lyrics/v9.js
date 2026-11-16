@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -83,7 +84,7 @@ class Azlyric {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     const {
       query,
@@ -134,3 +135,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);

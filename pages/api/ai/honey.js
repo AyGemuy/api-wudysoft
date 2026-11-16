@@ -1,3 +1,4 @@
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import crypto from "crypto";
 const apiHosts = ["api.aianychat.top", "ailink.funnyai.top", "api.stargirlai.top", "api.sayhichat.top"];
@@ -324,7 +325,7 @@ class SayHiApi {
     }
   }
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   const {
     action,
     host,
@@ -370,3 +371,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(handler);
