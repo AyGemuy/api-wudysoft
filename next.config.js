@@ -88,7 +88,7 @@ const nextConfig = {
     if (isServer) {
       config.module.rules.unshift({
         test: /[\\/]pages[\\/]api[\\/].+\.js$/,
-        exclude: /[\\/]pages[\\/]api[\\/](auth[\\/]\[\.\.\.nextauth\]|stats|live|socket|avatar)/,
+        exclude: /[\\/]pages[\\/]api[\\/](auth[\\/]\[\.\.\.nextauth\]|stats|live|socket|avatar|og\.js$)/,
         enforce: "pre",
         use: [{ loader: require("path").join(__dirname, "scripts", "api-log-loader.js") }],
       });

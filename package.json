@@ -1,8 +1,8 @@
 {
-  "name": "glass-next",
+  "name": "wudysoft",
   "version": "1.0.0",
   "private": true,
-  "description": "Next.js glassmorphism starter: auth, OAuth, guest, playground, PWA",
+  "description": "Wudysoft: platform Next.js bergaya Microsoft Fluent (auth, OAuth, playground, tools, PWA)",
   "scripts": {
     "dev": "node src/index.js --dev",
     "build": "next build",

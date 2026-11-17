@@ -25,7 +25,7 @@ export default function SiteFooter() {
             <span className="brand-badge-f">
               <Icons.Zap size={16} />
             </span>
-            <strong>NEXUS</strong>
+            <strong>Wudysoft</strong>
             <span className="online">
               <i /> online
             </span>
@@ -71,7 +71,7 @@ export default function SiteFooter() {
       </div>
 
       <div className="footer-bottom">
-        <span>© {new Date().getFullYear()} NEXUS OS · Dibangun dengan Next.js</span>
+        <span>© {new Date().getFullYear()} Wudysoft · Dibangun dengan Next.js</span>
         <button
           type="button"
           className="to-top"

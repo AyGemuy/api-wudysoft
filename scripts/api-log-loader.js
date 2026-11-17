@@ -13,10 +13,10 @@ module.exports = function apiLogLoader(source) {
   if (/withApiLog/.test(source) || !/export\s+default\s/.test(source)) return source;
 
   const logger = path.join(this.rootContext, "lib", "apiLogger.cjs").replace(/\\/g, "/");
-  const out = source.replace(/export\s+default\s+/, "const __nexusHandler = ");
+  const out = source.replace(/export\s+default\s+/, "const __wudysoftHandler = ");
 
   return (
-    `import { withApiLog as __nexusWithLog } from ${JSON.stringify(logger)};\n` +
-    `${out}\n;export default __nexusWithLog(__nexusHandler);\n`
+    `import { withApiLog as __wudysoftWithLog } from ${JSON.stringify(logger)};\n` +
+    `${out}\n;export default __wudysoftWithLog(__wudysoftHandler);\n`
   );
 };

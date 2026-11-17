@@ -1,4 +1,3 @@
-import { withApiLog } from "@/lib/apiLogger.cjs";
 import { Server } from "socket.io";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
@@ -14,7 +13,7 @@ const PATH = "/api/live-socket";
  * Hanya bekerja di server Node yang long-lived (server custom, `next start`, VPS).
  * Di serverless (Netlify) tidak ada WebSocket: klien otomatis memakai polling /api/stats/live.
  */
-async function handler(req, res) {
+export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user) return res.status(401).json({ ok: false, error: "Belum login" });
 
@@ -22,9 +21,9 @@ async function handler(req, res) {
     const srv = res.socket?.server;
     if (!srv || typeof srv.on !== "function") return res.status(200).json({ ok: false, transport: "poll", reason: "server tidak mendukung WebSocket" });
 
-    if (!srv.__nexusLive) {
+    if (!srv.__wudysoftLive) {
       const io = new Server(srv, { path: PATH, addTrailingSlash: false, cors: { origin: true, credentials: true } });
-      srv.__nexusLive = io;
+      srv.__wudysoftLive = io;
 
       io.use(async (socket, next) => {
         const t = await tokenFromHeaders(socket.request.headers);
@@ -52,5 +51,3 @@ async function handler(req, res) {
     return res.status(200).json({ ok: false, transport: "poll", reason: err.message });
   }
 }
-
-export default withApiLog(handler);

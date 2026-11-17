@@ -1,4 +1,4 @@
-export const BG_UPLOAD_KEY = 'nexus_bg_upload';
+export const BG_UPLOAD_KEY = 'wudysoft_bg_upload';
 
 const load = (file) =>
   new Promise((resolve, reject) => {
@@ -30,15 +30,15 @@ export async function saveBackgroundFile(file) {
   } catch {
     throw new Error('Penyimpanan browser penuh. Coba gambar yang lebih kecil atau pakai tautan.');
   }
-  window.dispatchEvent(new Event('nexus:bg-upload'));
+  window.dispatchEvent(new Event('wudysoft:bg-upload'));
   return { size: data.length };
 }
 
 export function readBackground() {
-  try { return localStorage.getItem(BG_UPLOAD_KEY) || ''; } catch { return ''; }
+  try { return localStorage.getItem(BG_UPLOAD_KEY) || localStorage.getItem('nexus_bg_upload') || ''; } catch { return ''; }
 }
 
 export function clearBackground() {
-  try { localStorage.removeItem(BG_UPLOAD_KEY); } catch {}
-  window.dispatchEvent(new Event('nexus:bg-upload'));
+  try { localStorage.removeItem(BG_UPLOAD_KEY); localStorage.removeItem('nexus_bg_upload'); } catch {}
+  window.dispatchEvent(new Event('wudysoft:bg-upload'));
 }

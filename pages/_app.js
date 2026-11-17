@@ -5,6 +5,7 @@ import { SessionProvider } from 'next-auth/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import Preloader from '@/components/Preloader';
+import Seo from '@/components/Seo';
 import PageTransition from '@/components/PageTransition';
 import { sound } from '@/src/lib/interactiveEffects';
 import { lockZoom } from '@/src/lib/lockZoom';
@@ -39,8 +40,10 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
           name="viewport"
           content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
         />
-        <title>NEXUS OS // Cyber Dashboard Platform</title>
       </Head>
+
+      {/* Meta bawaan dari peta rute; <Seo /> milik halaman menimpanya (tag ber-key sama) */}
+      <Seo />
 
       {/* Splash awal + indikator loading antar halaman */}
       <Preloader />

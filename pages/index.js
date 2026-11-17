@@ -16,7 +16,7 @@ import { sound } from '@/src/lib/interactiveEffects';
 import { SITE_PAGES, CATEGORIES } from '@/src/lib/siteMap';
 import { PRESETS } from '@/src/lib/themes';
 
-const HOST = 'nexus.app';
+const HOST = 'wudysoft.app';
 const ROTATING = ['API Playground', 'Realtime Rooms', 'Dev Tools', 'Theme Studio', 'Live Telemetry'];
 
 /* ------------------------------------------------------------------ */

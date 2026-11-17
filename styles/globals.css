@@ -3,34 +3,34 @@
 @tailwind utilities;
 
 :root {
-  --a1: #0284c7;
-  --a2: #38bdf8;
-  --a3: #6366f1;
-  --bg1: #07090e;
-  --bg2: #0f172a;
-  --text: #f8fafc;
-  --muted: #94a3b8;
-  --glass: rgba(15, 23, 42, 0.75);
-  --glass-strong: rgba(30, 41, 59, 0.85);
-  --border: rgba(255, 255, 255, 0.12);
-  --border-glow: rgba(56, 189, 248, 0.35);
+  --a1: #0067b8;
+  --a2: #0078d4;
+  --a3: #00a4ef;
+  --bg1: #f3f3f3;
+  --bg2: #ffffff;
+  --text: #1b1b1b;
+  --muted: #5e5e5e;
+  --glass: rgba(255, 255, 255, 0.8);
+  --glass-strong: rgba(255, 255, 255, 0.92);
+  --border: rgba(27, 27, 27, 0.1);
+  --border-glow: rgba(0, 120, 212, 0.38);
   --blur: 26px;
-  --radius: 24px;
+  --radius: 8px;
   /* Floating dock (header & bottom nav) */
-  --dock-bg: rgba(13, 18, 28, 0.95);
-  --dock-border: rgba(255, 255, 255, 0.14);
-  --shadow-c: #000000;
+  --dock-bg: rgba(255, 255, 255, 0.94);
+  --dock-border: rgba(27, 27, 27, 0.12);
+  --shadow-c: #334155;
   --dock-shadow: 0 18px 40px color-mix(in srgb, var(--shadow-c) 75%, transparent);
   --on-accent: #ffffff;
-  --surface: #0b111e;
-  --surface-2: #151e2f;
-  --surface-3: #334155;
+  --surface: #fbfbfb;
+  --surface-2: #ececec;
+  --surface-3: #d6d6d6;
   --font-scale: 1;
   --speed: 1;
   --blob-opacity: 0.35;
   --space: 1;
   --card-min: 300px;
-  --dock-radius: 40px;
+  --dock-radius: 12px;
   --dock-gap: 12px;
   --header-h: 56px;
   /* skala jarak & gutter fluid */
@@ -44,8 +44,8 @@
   --s-6: 32px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Cascadia Code', 'Cascadia Mono', Consolas, 'JetBrains Mono', ui-monospace, monospace;
 }
 
 * {
@@ -64,7 +64,7 @@ html, body {
 
 html {
   font-size: calc(16px * var(--font-scale));
-  color-scheme: dark;
+  color-scheme: light;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
@@ -856,3 +856,93 @@ html[data-bar='off'] .route-loader {
 p, li, dd, dt, td, th, label, h1, h2, h3, h4 {
   overflow-wrap: anywhere;
 }
+
+/* ============ Microsoft / Fluent: penyesuaian mode terang ============ */
+[data-mode='light'] .badge.ok { color: #0b6a0b; background: rgba(16, 124, 16, 0.12); border-color: rgba(16, 124, 16, 0.3); }
+[data-mode='light'] .badge.err { color: #a4262c; background: rgba(209, 52, 56, 0.1); border-color: rgba(209, 52, 56, 0.3); }
+[data-mode='light'] .btn.primary { box-shadow: 0 1px 2px color-mix(in srgb, var(--a1) 40%, transparent); }
+.btn.primary { background: var(--a2); }
+[data-mode='dark'] .btn.primary { background: linear-gradient(135deg, var(--a1), var(--a3)); }
+.btn.primary:not(:disabled):hover { filter: brightness(0.94); }
+
+/* ============ Komponen bersama: modal, toast, tombol kecil, chip ============ */
+.ws-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: calc(var(--safe-top) + 72px) 14px calc(var(--safe-bottom) + 16px);
+  background: color-mix(in srgb, #000 45%, transparent);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  overflow-y: auto;
+}
+.ws-modal {
+  width: 100%;
+  max-width: 640px;
+  padding: 20px;
+  border-radius: var(--r-modal, 8px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 60px -12px color-mix(in srgb, var(--shadow-c) 55%, transparent);
+}
+.ws-modal h3 { display: flex; align-items: center; gap: 8px; font-size: 1.05rem; }
+.ws-modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 10px; }
+.ws-x { background: none; border: none; color: var(--muted); cursor: pointer; padding: 6px; border-radius: 6px; display: inline-flex; }
+.ws-x:hover { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
+.ws-toast {
+  position: fixed;
+  top: calc(var(--safe-top) + 78px);
+  right: 16px;
+  left: 16px;
+  margin-left: auto;
+  max-width: 380px;
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--shadow-c) 40%, transparent);
+}
+.ws-toast.ok { background: #107c10; }
+.ws-toast.err { background: #d13438; }
+.btn.sm { padding: 6px 12px; min-height: 34px; font-size: 0.78rem; font-weight: 600; }
+.btn.danger { color: #d13438; }
+.btn.danger:not(:disabled):hover { background: rgba(209, 52, 56, 0.1); border-color: rgba(209, 52, 56, 0.4); }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: var(--r-chip);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--a2);
+  background: color-mix(in srgb, var(--a2) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--a2) 28%, transparent);
+  white-space: nowrap;
+}
+.chip.warn { color: #9d5d00; background: rgba(255, 185, 0, 0.16); border-color: rgba(255, 185, 0, 0.4); }
+.chip.muted { color: var(--muted); background: color-mix(in srgb, var(--text) 6%, transparent); border-color: var(--border); }
+.code-block {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: var(--r-input, 6px);
+  background: color-mix(in srgb, var(--text) 5%, var(--surface));
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  white-space: pre;
+  overflow: auto;
+  color: var(--text);
+  tab-size: 2;
+}
+textarea.input { resize: vertical; min-height: 120px; line-height: 1.5; }

@@ -1,12 +1,12 @@
 /**
- * NEXUS OS // Konfigurasi PUBLIK (aman diimpor dari kode klien).
+ * Wudysoft // Konfigurasi PUBLIK (aman diimpor dari kode klien).
  * Tidak ada rahasia di sini — rahasia ada di configs/apiConfig.cjs (khusus server).
  * Semua nilai ditulis langsung; proyek ini TIDAK membaca .env sama sekali.
  */
 const DOMAIN_URL = "api-wudysoft.netlify.app";
 
 module.exports = {
-  APP_NAME: "NEXUS OS",
+  APP_NAME: "Wudysoft",
   APP_TAGLINE: "Cyber Dashboard Platform",
   DOMAIN_URL,
   SITE_URL: `https://${DOMAIN_URL}`,

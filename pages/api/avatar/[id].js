@@ -1,10 +1,9 @@
-import { withApiLog } from "@/lib/apiLogger.cjs";
 import mongoose from "mongoose";
 import connectMongo from "@/lib/mongoose";
 import User from "@/models/User";
 
 /** Menyajikan foto profil unggahan dari MongoDB: GET /api/avatar/<userId>?v=<versi> */
-async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== "GET" && req.method !== "HEAD") return res.status(405).end();
   const { id } = req.query;
   if (!mongoose.isValidObjectId(id)) return res.status(404).end();
@@ -24,5 +23,3 @@ async function handler(req, res) {
     return res.status(503).end();
   }
 }
-
-export default withApiLog(handler);

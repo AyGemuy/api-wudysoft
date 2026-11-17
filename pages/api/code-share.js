@@ -1,6 +1,8 @@
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import connectMongo from "@/lib/mongoose";
 import Code from "@/models/CodeShare";
+import mongoose from "mongoose";
+const badId = id => !mongoose.isValidObjectId(id);
 async function handler(req, res) {
   try {
     await connectMongo();
@@ -14,20 +16,23 @@ async function handler(req, res) {
         } = req.query;
         let filter = {};
         if (id) {
+          if (badId(id)) return res.status(400).json({
+            message: "Invalid id format!"
+          });
           filter._id = id;
         } else {
           if (search) {
             filter.fileName = {
-              $regex: search,
+              $regex: String(search).slice(0, 100).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
               $options: "i"
             };
           }
           if (tag) {
-            filter.tag = tag;
+            filter.tag = String(tag);
           }
         }
         const codes = await Code.find(filter).sort({
-          [sortBy || "createdAt"]: -1
+          [["createdAt", "likes", "views", "fileName"].includes(sortBy) ? sortBy : "createdAt"]: -1
         }).lean();
         return res.status(200).json(codes);
       }
@@ -68,6 +73,9 @@ async function handler(req, res) {
             message: "Missing required fields: id and action!"
           });
         }
+        if (badId(id)) return res.status(400).json({
+          message: "Invalid id format!"
+        });
         let updateQuery = {};
         switch (action) {
           case "like":
@@ -110,10 +118,11 @@ async function handler(req, res) {
         });
       }
       case "DELETE": {
-        const {
-          id
-        } = req.body;
+        const id = (req.body && req.body.id) || req.query.id;
         if (id) {
+          if (badId(id)) return res.status(400).json({
+            message: "Invalid id format!"
+          });
           const deletedCode = await Code.findByIdAndDelete(id);
           if (!deletedCode) {
             return res.status(404).json({

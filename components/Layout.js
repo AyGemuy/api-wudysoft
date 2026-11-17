@@ -9,7 +9,7 @@ import InteractiveCanvas from './InteractiveCanvas';
 import CursorGlow from './CursorGlow';
 import BgLayer from './BgLayer';
 import SiteFooter from './SiteFooter';
-import NexusBrand from './NexusBrand';
+import WudysoftBrand from './WudysoftBrand';
 import { ThemeContext } from './ThemeContext';
 import { logout } from '@/src/lib/nav';
 import { loadSpecOps } from '@/src/lib/specIndex';
@@ -97,8 +97,8 @@ export default function Layout({ children }) {
 
   const openStudio = useCallback(() => setStudioOpen(true), []);
   useEffect(() => {
-    window.addEventListener('nexus:open-studio', openStudio);
-    return () => window.removeEventListener('nexus:open-studio', openStudio);
+    window.addEventListener('wudysoft:open-studio', openStudio);
+    return () => window.removeEventListener('wudysoft:open-studio', openStudio);
   }, [openStudio]);
 
   const themeCtx = useMemo(() => ({ config, setConfig, openStudio }), [config, openStudio]);
@@ -116,6 +116,8 @@ export default function Layout({ children }) {
       { type: 'Halaman', title: 'System & API Stats', sub: 'Telemetri realtime', action: '/stats' },
       { type: 'Halaman', title: 'Code Beautifier', sub: 'Tools', action: '/tools/beautify' },
       { type: 'Halaman', title: 'Multi-Host Uploader', sub: 'Tools', action: '/tools/upload' },
+      { type: 'Halaman', title: 'Pastes', sub: 'Tools · pastebin', action: '/tools/pastes' },
+      { type: 'Halaman', title: 'Code Share', sub: 'Tools · snippet kode', action: '/tools/code-share' },
       { type: 'Halaman', title: 'Cyber Rooms', sub: 'Komunikasi', action: '/rooms' },
       { type: 'Halaman', title: 'Masuk / Daftar', sub: 'Akun', action: '/auth' },
     ].filter((i) => !q || `${i.title} ${i.sub}`.toLowerCase().includes(q));
@@ -150,7 +152,7 @@ export default function Layout({ children }) {
       <header className="top-header-wrap">
         <nav className="top-header-nav" aria-label="Navigasi utama">
           <div className="hd-side">
-            <NexusBrand onClick={() => sound.playClick()} />
+            <WudysoftBrand onClick={() => sound.playClick()} />
           </div>
 
           <button

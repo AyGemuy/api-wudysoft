@@ -1,0 +1,179 @@
+/* =====================================================================
+   WUDYSOFT // Lapisan animasi
+   Durasi mengikuti --speed (Theme Studio). Semua mati bila data-anim="off"
+   atau prefers-reduced-motion (aturan global di globals.css).
+   ===================================================================== */
+:root {
+  --mo-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --mo-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --mo-fast: calc(0.18s / var(--speed, 1));
+  --mo-mid: calc(0.35s / var(--speed, 1));
+  --mo-slow: calc(0.7s / var(--speed, 1));
+}
+
+html { scroll-behavior: smooth; }
+::selection { background: color-mix(in srgb, var(--a2) 35%, transparent); }
+
+/* ---------- keyframes ---------- */
+@keyframes mo-float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes mo-float-x { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(10px); } }
+@keyframes mo-drift { 0% { transform: translate(0, 0) scale(1); } 33% { transform: translate(24px, -18px) scale(1.06); } 66% { transform: translate(-18px, 14px) scale(0.96); } 100% { transform: translate(0, 0) scale(1); } }
+@keyframes mo-pulse-ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--a2) 55%, transparent); } 100% { box-shadow: 0 0 0 14px transparent; } }
+@keyframes mo-glow { 0%, 100% { box-shadow: 0 0 0 0 transparent, 0 8px 24px -8px color-mix(in srgb, var(--a1) 55%, transparent); } 50% { box-shadow: 0 0 22px 2px color-mix(in srgb, var(--a2) 45%, transparent), 0 8px 24px -8px color-mix(in srgb, var(--a1) 70%, transparent); } }
+@keyframes mo-gradient-pan { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+@keyframes mo-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes mo-wiggle { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-8deg); } 40% { transform: rotate(7deg); } 60% { transform: rotate(-4deg); } 80% { transform: rotate(3deg); } }
+@keyframes mo-shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-7px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+@keyframes mo-pop-in { 0% { opacity: 0; transform: scale(0.7); } 60% { opacity: 1; transform: scale(1.06); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes mo-fade-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes mo-fade-down { from { opacity: 0; transform: translateY(-18px); } to { opacity: 1; transform: none; } }
+@keyframes mo-slide-left { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: none; } }
+@keyframes mo-slide-right { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: none; } }
+@keyframes mo-zoom-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: none; } }
+@keyframes mo-blur-in { from { opacity: 0; filter: blur(12px); } to { opacity: 1; filter: blur(0); } }
+@keyframes mo-flip-in { from { opacity: 0; transform: perspective(700px) rotateX(-60deg); } to { opacity: 1; transform: none; } }
+@keyframes mo-heartbeat { 0%, 100% { transform: scale(1); } 14% { transform: scale(1.14); } 28% { transform: scale(1); } 42% { transform: scale(1.1); } 70% { transform: scale(1); } }
+@keyframes mo-twinkle { 0%, 100% { opacity: 0.25; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.15); } }
+@keyframes mo-spin-slow { to { transform: rotate(360deg); } }
+@keyframes mo-sweep { 0% { transform: translateX(-120%) skewX(-18deg); } 100% { transform: translateX(260%) skewX(-18deg); } }
+@keyframes mo-bounce-soft { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-7px); } 60% { transform: translateY(-3px); } }
+@keyframes mo-marquee { to { transform: translateX(-50%); } }
+@keyframes mo-dot { 0%, 80%, 100% { transform: scale(0.5); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+@keyframes mo-toast-in { from { opacity: 0; transform: translateY(-14px) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes mo-menu-in { from { opacity: 0; transform: translateY(-8px) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes mo-ripple { to { transform: scale(3.2); opacity: 0; } }
+@keyframes mo-underline { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* ---------- utilitas (pakai class langsung) ---------- */
+.mo-float { animation: mo-float-y calc(5s / var(--speed, 1)) ease-in-out infinite; }
+.mo-float-x { animation: mo-float-x calc(6s / var(--speed, 1)) ease-in-out infinite; }
+.mo-drift { animation: mo-drift calc(14s / var(--speed, 1)) ease-in-out infinite; }
+.mo-glow { animation: mo-glow calc(3s / var(--speed, 1)) ease-in-out infinite; }
+.mo-pulse { animation: mo-pulse-ring calc(1.8s / var(--speed, 1)) ease-out infinite; border-radius: inherit; }
+.mo-heartbeat { animation: mo-heartbeat calc(2.4s / var(--speed, 1)) ease-in-out infinite; }
+.mo-twinkle { animation: mo-twinkle calc(2.6s / var(--speed, 1)) ease-in-out infinite; }
+.mo-spin { animation: mo-spin-slow calc(12s / var(--speed, 1)) linear infinite; }
+.mo-bounce { animation: mo-bounce-soft calc(2.2s / var(--speed, 1)) ease-in-out infinite; }
+.mo-wiggle:hover { animation: mo-wiggle 0.6s ease; }
+.mo-shake { animation: mo-shake 0.45s ease; }
+.mo-gradient-text {
+  background: linear-gradient(100deg, var(--a1), var(--a2), var(--a3), var(--a1));
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  animation: mo-gradient-pan calc(6s / var(--speed, 1)) linear infinite;
+}
+.mo-skeleton {
+  background: linear-gradient(100deg, transparent 20%, color-mix(in srgb, var(--text) 10%, transparent) 50%, transparent 80%), color-mix(in srgb, var(--text) 6%, transparent);
+  background-size: 200% 100%;
+  animation: mo-shimmer 1.4s linear infinite;
+  border-radius: 10px;
+}
+.mo-dots span { display: inline-block; width: 6px; height: 6px; margin: 0 2px; border-radius: 50%; background: currentColor; animation: mo-dot 1.2s ease-in-out infinite; }
+.mo-dots span:nth-child(2) { animation-delay: 0.15s; }
+.mo-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+/* Masuk bertahap murni CSS: <ul class="mo-stagger" style="--stagger:70ms"> anak otomatis berurutan */
+.mo-in, .mo-stagger > * { animation: mo-fade-up var(--mo-slow) var(--mo-ease) both; }
+.mo-in-down { animation: mo-fade-down var(--mo-slow) var(--mo-ease) both; }
+.mo-in-left { animation: mo-slide-left var(--mo-slow) var(--mo-ease) both; }
+.mo-in-right { animation: mo-slide-right var(--mo-slow) var(--mo-ease) both; }
+.mo-in-zoom { animation: mo-zoom-in var(--mo-slow) var(--mo-ease) both; }
+.mo-in-blur { animation: mo-blur-in var(--mo-slow) var(--mo-ease) both; }
+.mo-in-flip { animation: mo-flip-in var(--mo-slow) var(--mo-ease) both; }
+.mo-in-pop { animation: mo-pop-in var(--mo-slow) var(--mo-spring) both; }
+.mo-stagger > *:nth-child(1) { animation-delay: calc(var(--stagger, 70ms) * 0); }
+.mo-stagger > *:nth-child(2) { animation-delay: calc(var(--stagger, 70ms) * 1); }
+.mo-stagger > *:nth-child(3) { animation-delay: calc(var(--stagger, 70ms) * 2); }
+.mo-stagger > *:nth-child(4) { animation-delay: calc(var(--stagger, 70ms) * 3); }
+.mo-stagger > *:nth-child(5) { animation-delay: calc(var(--stagger, 70ms) * 4); }
+.mo-stagger > *:nth-child(6) { animation-delay: calc(var(--stagger, 70ms) * 5); }
+.mo-stagger > *:nth-child(7) { animation-delay: calc(var(--stagger, 70ms) * 6); }
+.mo-stagger > *:nth-child(8) { animation-delay: calc(var(--stagger, 70ms) * 7); }
+.mo-stagger > *:nth-child(n+9) { animation-delay: calc(var(--stagger, 70ms) * 8); }
+
+/* Kilau menyapu saat hover */
+.mo-shine { position: relative; overflow: hidden; isolation: isolate; }
+.mo-shine::after {
+  content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 38%;
+  background: linear-gradient(100deg, transparent, color-mix(in srgb, #fff 32%, transparent), transparent);
+  transform: translateX(-120%) skewX(-18deg); pointer-events: none; z-index: 1;
+}
+.mo-shine:hover::after { animation: mo-sweep calc(0.9s / var(--speed, 1)) ease; }
+
+/* Garis bawah yang meluncur untuk tautan */
+.mo-link { position: relative; text-decoration: none; }
+.mo-link::after { content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: linear-gradient(90deg, var(--a1), var(--a2)); transform: scaleX(0); transform-origin: left; transition: transform var(--mo-mid) var(--mo-ease); }
+.mo-link:hover::after, .mo-link:focus-visible::after { transform: scaleX(1); }
+
+/* Kartu yang terangkat halus saat hover (opt-in) */
+.mo-lift { transition: transform var(--mo-mid) var(--mo-ease), box-shadow var(--mo-mid) var(--mo-ease), border-color var(--mo-mid) ease; will-change: transform; }
+@media (hover: hover) and (pointer: fine) {
+  .mo-lift:hover { transform: translateY(-4px); border-color: color-mix(in srgb, var(--a2) 55%, var(--border)); box-shadow: 0 22px 40px -18px color-mix(in srgb, var(--a1) 45%, transparent); }
+}
+
+/* ---------- penyempurnaan global ---------- */
+/* Tombol: transisi halus, kilau saat hover, ripple saat ditekan */
+.btn { position: relative; overflow: hidden; isolation: isolate; transition: transform var(--mo-fast) var(--mo-ease), box-shadow var(--mo-mid) var(--mo-ease), background-color var(--mo-mid) ease, border-color var(--mo-mid) ease, opacity var(--mo-mid) ease, filter var(--mo-mid) ease; -webkit-tap-highlight-color: transparent; }
+.btn::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; background: linear-gradient(100deg, transparent, color-mix(in srgb, #fff 26%, transparent), transparent); transform: translateX(-130%) skewX(-18deg); pointer-events: none; }
+@media (hover: hover) and (pointer: fine) {
+  .btn:not(:disabled):hover { transform: translateY(-2px); }
+  .btn:not(:disabled):hover::after { animation: mo-sweep calc(0.8s / var(--speed, 1)) ease; }
+  .btn.primary:not(:disabled):hover { filter: brightness(1.08); box-shadow: 0 12px 30px -8px var(--a1); }
+}
+.btn:not(:disabled):active { transform: scale(0.96); }
+.btn.primary:not(:disabled) { background-size: 160% 100%; }
+.mo-ripple-dot { position: absolute; border-radius: 50%; pointer-events: none; background: color-mix(in srgb, #fff 45%, transparent); transform: scale(0); animation: mo-ripple 0.65s ease-out forwards; z-index: 0; }
+
+/* Input: fokus bernapas */
+.input { transition: border-color var(--mo-mid) ease, box-shadow var(--mo-mid) ease, background-color var(--mo-mid) ease, transform var(--mo-fast) ease; }
+.input:focus { transform: translateY(-1px); }
+
+/* Badge & chip */
+.badge { transition: transform var(--mo-fast) var(--mo-ease), background-color var(--mo-mid) ease; }
+.badge.ok::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; margin-right: 7px; animation: mo-twinkle 2s ease-in-out infinite; }
+.badge.ok:has(svg)::before { display: none; }
+@media (hover: hover) { .badge:hover { transform: translateY(-1px); } }
+
+/* Peringatan & toast */
+.alert { animation: mo-shake 0.45s ease, mo-fade-down var(--mo-mid) var(--mo-ease) both; }
+.alert.ok-alert { animation: mo-pop-in var(--mo-mid) var(--mo-spring) both; }
+[class*='-toast'] { animation: mo-toast-in var(--mo-mid) var(--mo-ease) both; }
+
+/* Dropdown & modal */
+.dropdown, .profile-dropdown-solid, [role='menu'] { animation: mo-menu-in var(--mo-mid) var(--mo-ease) both; transform-origin: top right; }
+.dropdown-item { transition: background-color var(--mo-fast) ease, padding-left var(--mo-fast) var(--mo-ease), color var(--mo-fast) ease; }
+@media (hover: hover) { .dropdown-item:hover { padding-left: calc(var(--dd-pad, 12px) + 4px); } }
+
+/* Kartu kaca: masuk halus + hover lembut di perangkat dengan mouse */
+.glass { transition: border-color var(--mo-mid) ease, box-shadow var(--mo-mid) var(--mo-ease), transform var(--mo-mid) var(--mo-ease); }
+@media (hover: hover) and (pointer: fine) {
+  .glass.card:hover { border-color: color-mix(in srgb, var(--a2) 40%, var(--border)); }
+}
+
+/* Bilah progres gulir */
+.mo-scroll-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 10000; transform-origin: 0 50%; background: linear-gradient(90deg, var(--a1), var(--a2), var(--a3)); pointer-events: none; box-shadow: 0 0 12px color-mix(in srgb, var(--a2) 60%, transparent); }
+
+/* Tombol kembali ke atas */
+.mo-totop { position: fixed; right: 16px; bottom: calc(var(--safe-bottom, 0px) + 96px); z-index: 90; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; color: var(--on-accent); background: linear-gradient(135deg, var(--a1), var(--a3)); border: none; box-shadow: 0 10px 24px -8px var(--a1); opacity: 0; transform: translateY(16px) scale(0.8); pointer-events: none; transition: opacity var(--mo-mid) ease, transform var(--mo-mid) var(--mo-spring); }
+.mo-totop.show { opacity: 1; transform: none; pointer-events: auto; }
+.mo-totop:hover { transform: translateY(-3px); }
+
+/* Dekorasi melayang di latar (dipakai komponen <Orbs />) */
+.mo-orbs { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.mo-orb { position: absolute; border-radius: 50%; filter: blur(40px); opacity: 0.35; background: radial-gradient(circle at 30% 30%, var(--a2), transparent 70%); animation: mo-drift calc(16s / var(--speed, 1)) ease-in-out infinite; }
+.mo-orb:nth-child(2) { background: radial-gradient(circle at 30% 30%, var(--a1), transparent 70%); animation-duration: calc(21s / var(--speed, 1)); animation-direction: reverse; }
+.mo-orb:nth-child(3) { background: radial-gradient(circle at 30% 30%, var(--a3), transparent 70%); animation-duration: calc(26s / var(--speed, 1)); }
+
+/* Matikan bagian-bagian sesuai Theme Studio */
+[data-anim-btn='off'] .btn::after, [data-anim-btn='off'] .mo-ripple-dot { display: none !important; }
+[data-anim='off'] .mo-ripple-dot, [data-anim='off'] .mo-scroll-progress { display: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .mo-ripple-dot, .mo-scroll-progress { display: none !important; }
+}
+
+/* Perangkat sentuh: kurangi gerak berat agar hemat baterai */
+@media (hover: none) {
+  .mo-orb { animation-duration: calc(30s / var(--speed, 1)); filter: blur(30px); }
+}

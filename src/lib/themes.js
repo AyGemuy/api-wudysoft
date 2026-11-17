@@ -1,6 +1,6 @@
 /**
- * NEXUS Theme Engine
- * - 17 preset (gelap & terang) + override warna bebas
+ * Wudysoft Theme Engine
+ * - 19 preset (gelap & terang) + override warna bebas
  * - Bentuk (radius, blur, gaya kartu), efek (partikel, blob, grid, spotlight, tilt),
  *   tipografi (font, skala), animasi (kecepatan / mati), kepadatan, ukuran kartu
  * - Semua jadi CSS variable / data-attribute di <html>, disimpan di localStorage
@@ -56,6 +56,9 @@ const P = (id, name, a1, a2, a3, bg1, bg2, extra = {}) => ({
 });
 
 export const PRESETS = [
+  // Microsoft / Fluent — tema bawaan Wudysoft
+  P('microsoft', 'Microsoft', '#0067b8', '#0078d4', '#00a4ef', '#f3f3f3', '#ffffff', { text: '#1b1b1b', muted: '#5e5e5e' }),
+  P('microsoft-dark', 'Microsoft Dark', '#0078d4', '#4cc2ff', '#2899f5', '#1b1b1b', '#2b2b2b', { text: '#ffffff', muted: '#adadad' }),
   P('stealth', 'Stealth', '#0284c7', '#38bdf8', '#6366f1', '#07090e', '#0f172a'),
   P('cyberpunk', 'Cyberpunk', '#f43f5e', '#fbbf24', '#d946ef', '#0c0814', '#1e102a'),
   P('matrix', 'Matrix', '#059669', '#10b981', '#34d399', '#030d07', '#091f14'),
@@ -81,6 +84,7 @@ const F = (id, name, cat, family, weights, fallback) => ({
   stack: `'${family}', ${fallback}`,
 });
 const SANS = 'system-ui, -apple-system, sans-serif';
+const SEGOE = "'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif";
 const SERIF = "Georgia, 'Times New Roman', serif";
 const MONO = 'ui-monospace, monospace';
 
@@ -93,6 +97,8 @@ export const FONT_CATS = [
 ];
 
 export const FONTS = [
+  // Microsoft (font sistem Windows; di perangkat lain otomatis memakai font sistem terdekat)
+  { id: 'segoe', name: 'Segoe UI', cat: 'sans', family: null, gf: null, stack: SEGOE },
   // sans modern
   F('jakarta', 'Plus Jakarta', 'sans', 'Plus Jakarta Sans', '400;500;600;700;800', SANS),
   F('inter', 'Inter', 'sans', 'Inter', '400;500;600;700;800', SANS),
@@ -123,6 +129,7 @@ export const FONTS = [
   F('lora', 'Lora', 'serif', 'Lora', '400;500;600;700', SERIF),
   F('dmserif', 'DM Serif Display', 'serif', 'DM Serif Display', '', SERIF),
   // mono
+  { id: 'cascadia', name: 'Cascadia Code', cat: 'mono', family: null, gf: null, stack: "'Cascadia Code', 'Cascadia Mono', Consolas, 'JetBrains Mono', ui-monospace, monospace" },
   F('jetbrains', 'JetBrains Mono', 'mono', 'JetBrains Mono', '400;600', MONO),
   F('firacode', 'Fira Code', 'mono', 'Fira Code', '400;600', MONO),
   F('spacemono', 'Space Mono', 'mono', 'Space Mono', '400;700', MONO),
@@ -196,35 +203,35 @@ export const RADIUS_PRESETS = [
 ];
 
 export const DEFAULT_CONFIG = {
-  theme: 'stealth',
+  theme: 'microsoft',
   custom: {},
   // bentuk (60 = pill)
-  radius: 24, // kartu
-  rBtn: 14,
-  rInput: 14,
-  rChip: 60,
-  rDockTop: 40, // header & navbar melayang: sudut atas
-  rDockBottom: 40, // sudut bawah
-  rDockBtn: 60, // ikon di dalam dock
-  rModal: 24,
-  blur: 26,
-  glass: 0.75,
-  border: 0.12,
-  card: 'glass',
+  radius: 8, // kartu (Fluent: 8px)
+  rBtn: 4,
+  rInput: 4,
+  rChip: 4,
+  rDockTop: 12, // header & navbar melayang: sudut atas
+  rDockBottom: 12, // sudut bawah
+  rDockBtn: 6, // ikon di dalam dock
+  rModal: 8,
+  blur: 20,
+  glass: 0.8,
+  border: 0.1,
+  card: 'solid',
   density: 'normal', // compact | normal | spacious
   cardSize: 'm', // s | m | l
   // efek latar
-  particle: 'rain',
-  blobs: true,
-  blobIntensity: 0.35,
+  particle: 'off',
+  blobs: false,
+  blobIntensity: 0.2,
   grid: false,
-  spotlight: true,
+  spotlight: false,
   // animasi
   anim: 'on', // master on | off
   speed: 1,
-  animPage: 'slide', // slide | fade | zoom | none
+  animPage: 'fade', // slide | fade | zoom | none
   animEntrance: true,
-  animHover: 'tilt', // lift | tilt | glow | none
+  animHover: 'lift', // lift | tilt | glow | none
   animPreview: true,
   animBlobs: true,
   animBtn: true,
@@ -239,15 +246,15 @@ export const DEFAULT_CONFIG = {
   bgBlur: 0,
   bgDim: 0.45,
   // teks
-  font: 'jakarta',
+  font: 'segoe',
   fontHeading: 'same',
-  fontMono: 'jetbrains',
+  fontMono: 'cascadia',
   fontScale: 100,
   soundEnabled: true,
 };
 
-export const STORAGE_KEY = 'nexus_theme_config_v2';
-export const BOOT_KEY = 'nexus_theme_boot';
+export const STORAGE_KEY = 'wudysoft_theme_config_v1';
+export const BOOT_KEY = 'wudysoft_theme_boot';
 
 const FONT_ALIASES = { mono: 'jetbrains' };
 
@@ -271,13 +278,13 @@ export function sanitizeConfig(raw) {
   c.anim = c.anim === 'off' ? 'off' : 'on';
   c.animPage = pick(c.animPage, ['slide', 'fade', 'zoom', 'none'], 'slide');
   // migrasi: `tilt` (boolean) → animHover
-  c.animHover = pick(r.animHover !== undefined ? c.animHover : r.tilt === false ? 'lift' : 'tilt', ['lift', 'tilt', 'glow', 'none'], 'tilt');
+  c.animHover = pick(r.animHover !== undefined ? c.animHover : r.tilt === false ? 'lift' : 'tilt', ['lift', 'tilt', 'glow', 'none'], 'lift');
   ['animEntrance', 'animPreview', 'animBlobs', 'animBtn', 'animSplash', 'animBar'].forEach((k) => { c[k] = bool(c[k], DEFAULT_CONFIG[k]); });
 
   ['radius', 'rBtn', 'rInput', 'rChip', 'rDockTop', 'rDockBottom', 'rDockBtn', 'rModal'].forEach((k) => { c[k] = Math.round(num(c[k], 0, 60, DEFAULT_CONFIG[k])); });
-  c.blur = num(c.blur, 0, 50, 26);
-  c.glass = num(c.glass, 0.1, 1, 0.75);
-  c.border = num(c.border, 0, 0.6, 0.12);
+  c.blur = num(c.blur, 0, 50, 20);
+  c.glass = num(c.glass, 0.1, 1, 0.8);
+  c.border = num(c.border, 0, 0.6, 0.1);
   c.blobIntensity = num(c.blobIntensity, 0, 0.7, 0.35);
   c.speed = num(c.speed, 0.5, 2, 1);
   c.fontScale = num(c.fontScale, 85, 120, 100);
@@ -398,11 +405,11 @@ export function computeTheme(input) {
 }
 
 function ensureFontLink(href) {
-  let el = document.getElementById('nexus-fonts');
+  let el = document.getElementById('wudysoft-fonts');
   if (!href) { el?.remove(); return; }
   if (!el) {
     el = document.createElement('link');
-    el.id = 'nexus-fonts';
+    el.id = 'wudysoft-fonts';
     el.rel = 'stylesheet';
     document.head.appendChild(el);
   }
@@ -430,8 +437,6 @@ export function loadConfig() {
   try {
     const v2 = localStorage.getItem(STORAGE_KEY);
     if (v2) return sanitizeConfig(JSON.parse(v2));
-    const old = localStorage.getItem('nexus_theme_config'); // migrasi versi lama
-    if (old) return sanitizeConfig(JSON.parse(old));
   } catch {}
   return { ...DEFAULT_CONFIG };
 }
@@ -466,4 +471,4 @@ export function randomPalette(lightMode = false) {
 }
 
 /** Script kecil di <head> supaya tema tersimpan langsung terpasang sebelum paint */
-export const THEME_BOOT_SCRIPT = `(function(){try{var d=JSON.parse(localStorage.getItem('${BOOT_KEY}')||'null');if(!d)return;var r=document.documentElement;for(var k in d.vars)r.style.setProperty(k,d.vars[k]);for(var a in d.attrs)r.setAttribute(a,d.attrs[a]);r.style.colorScheme=d.attrs['data-mode'];if(d.font){var l=document.createElement('link');l.id='nexus-fonts';l.rel='stylesheet';l.href=d.font;document.head.appendChild(l);}}catch(e){}})();`;
+export const THEME_BOOT_SCRIPT = `(function(){try{var d=JSON.parse(localStorage.getItem('${BOOT_KEY}')||'null');if(!d)return;var r=document.documentElement;for(var k in d.vars)r.style.setProperty(k,d.vars[k]);for(var a in d.attrs)r.setAttribute(a,d.attrs[a]);r.style.colorScheme=d.attrs['data-mode'];if(d.font){var l=document.createElement('link');l.id='wudysoft-fonts';l.rel='stylesheet';l.href=d.font;document.head.appendChild(l);}}catch(e){}})();`;

@@ -21,7 +21,7 @@ async function findPort(start, tries = 100) {
   for (let p = start; p < start + tries; p++) {
     if (await isFree(p)) return p;
   }
-  throw new Error(`[NEXUS-ERR] Tidak ada port kosong mulai dari ${start}`);
+  throw new Error(`[WUDYSOFT-ERR] Tidak ada port kosong mulai dari ${start}`);
 }
 const lanIPs = () => Object.values(os.networkInterfaces()).flat().filter(i => i && i.family === "IPv4" && !i.internal).map(i => i.address);
 app.prepare().then(async () => {
@@ -53,7 +53,7 @@ app.prepare().then(async () => {
   });
   server.listen(port, "0.0.0.0", () => {
     console.log("\n[36m╔══════════════════════════════════════════════════════════╗[0m");
-    console.log(`\x1b[36m║  \x1b[1m\x1b[37mNEXUS OS // CYBER GLASS PLATFORM ONLINE\x1b[0m                 \x1b[36m║\x1b[0m`);
+    console.log(`\x1b[36m║  \x1b[1m\x1b[37mWUDYSOFT // PLATFORM ONLINE\x1b[0m                 \x1b[36m║\x1b[0m`);
     console.log(`\x1b[36m║  Mode: \x1b[32m${(dev ? "DEVELOPMENT (LIVE RELOAD)" : "PRODUCTION (COMPILED)").padEnd(46)}\x1b[36m║\x1b[0m`);
     console.log("[36m╠══════════════════════════════════════════════════════════╣[0m");
     console.log(`\x1b[36m║\x1b[0m  \x1b[33m► Local Host\x1b[0m   : \x1b[4mhttp://localhost:${port}\x1b[0m`);
@@ -70,7 +70,7 @@ app.prepare().then(async () => {
     console.log("[36m╚══════════════════════════════════════════════════════════╝[0m\n");
   });
   const shutdown = () => {
-    console.log("\n[33m⚡ Mematikan instance Nexus Node...[0m");
+    console.log("\n[33m⚡ Mematikan instance Wudysoft Node...[0m");
     server.close(() => {
       console.log("[32m✔ Node berhasil dimatikan dengan aman.[0m");
       process.exit(0);
@@ -79,7 +79,7 @@ app.prepare().then(async () => {
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);
 }).catch(err => {
-  console.error("[31m[NEXUS FATAL ERROR][0m Gagal memulai engine server:");
+  console.error("[31m[WUDYSOFT FATAL ERROR][0m Gagal memulai engine server:");
   console.error(err);
   process.exit(1);
 });

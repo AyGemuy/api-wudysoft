@@ -114,8 +114,8 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
   useEffect(() => {
     if (!isOpen || tab !== 'text') return;
     const href = fontPreviewHref();
-    let el = document.getElementById('nexus-font-previews');
-    if (!el) { el = document.createElement('link'); el.id = 'nexus-font-previews'; el.rel = 'stylesheet'; document.head.appendChild(el); }
+    let el = document.getElementById('wudysoft-font-previews');
+    if (!el) { el = document.createElement('link'); el.id = 'wudysoft-font-previews'; el.rel = 'stylesheet'; document.head.appendChild(el); }
     if (el.getAttribute('href') !== href) el.setAttribute('href', href);
   }, [isOpen, tab]);
 

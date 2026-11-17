@@ -10,8 +10,8 @@ export default function BgLayer({ config }) {
   useEffect(() => {
     const read = () => setUpload(readBackground());
     read();
-    window.addEventListener('nexus:bg-upload', read);
-    return () => window.removeEventListener('nexus:bg-upload', read);
+    window.addEventListener('wudysoft:bg-upload', read);
+    return () => window.removeEventListener('wudysoft:bg-upload', read);
   }, []);
 
   const { bgType, bgUrl, bgFit, bgPos, bgBlur, bgDim } = config;

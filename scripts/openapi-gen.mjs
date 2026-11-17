@@ -14,7 +14,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const API_DIR = path.join(ROOT, 'pages', 'api');
 const OUT = path.join(ROOT, 'src', 'generated', 'openapi.json');
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
-const SKIP = new Set(['[[...path]].js', 'socket.js']);
+const SKIP = new Set(['[[...path]].js', 'socket.js', 'og.js']);
 const SKIP_ROUTES = new Set(['/api/playground/endpoints', '/api/routes', '/api/live']); // internal/usang
 
 /* ---------------- util ---------------- */
@@ -62,7 +62,7 @@ function guess(name, def) {
   if (/(^id$|_id$|Id$)/.test(name)) return { type: 'string', example: '65f1a2b3c4d5e6f7a8b9c0d1' };
   if (/(prompt|query|search|^q$|text|message|content|body)/.test(n)) return { type: 'string', example: 'halo' };
   if (/(title)/.test(n)) return { type: 'string', example: 'Judul contoh' };
-  if (/(name|author|username|user)/.test(n)) return { type: 'string', example: 'Nexus' };
+  if (/(name|author|username|user)/.test(n)) return { type: 'string', example: 'Wudysoft' };
   if (/(password|pass|secret|token|key)/.test(n)) return { type: 'string', example: 'string' };
   return { type: 'string', example: 'string' };
 }
@@ -283,7 +283,7 @@ export function generateSpec() {
   return {
     openapi: '3.0.3',
     info: {
-      title: `${pkg.name || 'NEXUS'} API`,
+      title: `${pkg.name || 'Wudysoft'} API`,
       version: pkg.version || '1.0.0',
       description: `Dokumen dibuat otomatis dari \`pages/api\` (${opCount} operasi pada ${pathCount} path). Detail akurat ditambahkan lewat \`scripts/openapi-registry.mjs\`.\n\n**Auth:** sesi browser (cookie NextAuth) atau \`Authorization: Bearer <apiToken>\`.`,
     },

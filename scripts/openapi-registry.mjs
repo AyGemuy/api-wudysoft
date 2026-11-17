@@ -19,10 +19,33 @@ const sessionUser = obj({
 
 const echoBody = json(
   { type: 'object', additionalProperties: true },
-  { hello: 'nexus', items: [1, 2, 3] }
+  { hello: 'wudysoft', items: [1, 2, 3] }
 );
 
 export const REGISTRY = {
+  'GET /api/tools/paste/v1': {
+    summary: 'Paste: ambil / daftar',
+    description: 'action=get (key atau title), action=list (search, limit, summary=true). output=json|text|html atau raw=true. Crawler pratinjau link otomatis menerima halaman OG.',
+    tags: ['Pastes'],
+  },
+  'POST /api/tools/paste/v1': {
+    summary: 'Paste: buat / ubah / hapus',
+    description: 'Body JSON dengan action: create (title, content, syntax, key, expireIn detik) · update (key + field yang diubah) · delete (key) · get · list.',
+    tags: ['Pastes'],
+    requestBody: {
+      required: true,
+      content: json(
+        obj({
+          action: str({ enum: ['create', 'get', 'update', 'delete', 'list', 'clear'], example: 'create' }),
+          key: str({ example: 'abc123' }),
+          title: str({ example: 'Catatan saya' }),
+          content: str({ example: 'console.log(1)' }),
+          syntax: str({ example: 'javascript' }),
+          expireIn: { type: 'integer', description: 'Detik; 0 = tidak pernah kedaluwarsa', example: 3600 },
+        }, ['action'])
+      ),
+    },
+  },
   'GET /api/health': {
     summary: 'Health check',
     description: 'Cek apakah API hidup dan konfigurasi dasar termuat.',

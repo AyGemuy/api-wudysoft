@@ -16,7 +16,7 @@ import { EnvModal, ImportModal, CodeModal, RunnerModal } from './Modals';
 import { MethodBadge, Empty, Portal, useMedia, cx } from './ui';
 import s from '@/styles/playground.module.css';
 
-const SPEC_KEY = 'nexus_pg_spec';
+const SPEC_KEY = 'wudysoft_pg_spec';
 const MAX_TABS = 10;
 const MAX_HISTORY = 40;
 const DEFAULT_ENV = () => [{ id: 'local', name: 'Local', vars: [row({ key: 'baseUrl', value: '' })] }];
@@ -81,7 +81,7 @@ export default function Playground() {
     try {
       let raw; let label = '/api/openapi';
       try {
-        const saved = JSON.parse(localStorage.getItem(SPEC_KEY) || 'null');
+        const saved = JSON.parse(localStorage.getItem(SPEC_KEY) || localStorage.getItem('nexus_pg_spec') || 'null');
         if (saved?.raw) { raw = saved.raw; label = saved.label || 'Impor'; }
       } catch {}
       if (!raw) {
