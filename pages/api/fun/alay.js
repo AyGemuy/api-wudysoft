@@ -1,4 +1,7 @@
-export default function handler(req, res) {
+import { withRateLimit } from "@/src/lib/rateLimit";
+import { withApiLog } from "@/lib/apiLogger.cjs";
+
+function handler(req, res) {
   const {
     text
   } = req.method === "GET" ? req.query : req.body;
@@ -32,3 +35,5 @@ export default function handler(req, res) {
     result: result
   });
 }
+
+export default withApiLog(withRateLimit(handler));

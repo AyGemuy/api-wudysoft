@@ -53,7 +53,7 @@ app.prepare().then(async () => {
   });
   server.listen(port, "0.0.0.0", () => {
     console.log("\n[36m╔══════════════════════════════════════════════════════════╗[0m");
-    console.log(`\x1b[36m║  \x1b[1m\x1b[37mWUDYSOFT // PLATFORM ONLINE\x1b[0m                 \x1b[36m║\x1b[0m`);
+    console.log(`\x1b[36m║  \x1b[1m\x1b[37mWudysoft // CYBER GLASS PLATFORM ONLINE\x1b[0m                 \x1b[36m║\x1b[0m`);
     console.log(`\x1b[36m║  Mode: \x1b[32m${(dev ? "DEVELOPMENT (LIVE RELOAD)" : "PRODUCTION (COMPILED)").padEnd(46)}\x1b[36m║\x1b[0m`);
     console.log("[36m╠══════════════════════════════════════════════════════════╣[0m");
     console.log(`\x1b[36m║\x1b[0m  \x1b[33m► Local Host\x1b[0m   : \x1b[4mhttp://localhost:${port}\x1b[0m`);

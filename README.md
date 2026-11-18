@@ -1,227 +1,144 @@
 <div align="center">
 
-<!-- Ganti URL/path gambar banner di bawah jika ingin memakai URL absolut -->
-<img src="./public/og.png" alt="Wudysoft Banner" width="100%" style="border-radius: 16px;" />
+<img src="public/icons/icon-512.png" alt="Wudysoft" width="112" height="112" />
 
-# ✨ Wudysoft
+# Wudysoft
 
-**Starter Next.js bergaya Glassmorphism — lengkap dengan Auth (OAuth + Guest), Playground, Middleware Anti-Limit, PWA, Realtime API Log, & Auto Link Preview.**
+**API, Tools & Developer Platform** — satu dasbor kaca (glassmorphism) untuk menguji API, berbagi kode, menyimpan teks, dan ngobrol realtime.
 
-![Status](https://img.shields.io/badge/Status-Active-10b981?style=for-the-badge&logo=vercel&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-Fullstack-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
-![Zero ENV](https://img.shields.io/badge/Config-Zero_.env-38bdf8?style=for-the-badge&logo=dotenv&logoColor=white)
-![PWA](https://img.shields.io/badge/PWA-Ready-8b5cf6?style=for-the-badge&logo=pwa&logoColor=white)
-![Netlify](https://img.shields.io/badge/Deploy-Netlify_Ready-00c7b7?style=for-the-badge&logo=netlify&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![NextAuth](https://img.shields.io/badge/NextAuth-v4-8B5CF6?style=for-the-badge&logo=auth0&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-11-FF0055?style=for-the-badge&logo=framer&logoColor=white)
+![Netlify](https://img.shields.io/badge/Deploy-Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)
+![PWA](https://img.shields.io/badge/PWA-ready-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
 
-[🚀 Mulai Cepat](#-tutorial-instalasi--menjalankan) •
-[🧩 Fitur & Status](#-status-fitur--modul) •
-[🔐 Setup OAuth](#-tutorial-setup-oauth) •
-[☁️ Deploy Netlify](#-panduan-deploy-ke-netlify) •
-[🛠️ Halaman & API Baru](#-halaman--endpoint-baru)
+[Fitur](#-fitur) · [Mulai cepat](#-mulai-cepat) · [Konfigurasi](#-konfigurasi-tanpa-env) · [Struktur](#-struktur-proyek) · [Deploy](#-deploy) · [Kustomisasi](#-kustomisasi)
 
 </div>
 
 ---
 
-## 📊 Status Fitur & Modul
+## ✨ Fitur
 
-| Modul / Fitur | Status | Keterangan Singkat |
-| :--- | :---: | :--- |
-| **Auth System (OAuth + Guest)** | 🟢 Aktif | Login GitHub, Google (NextAuth), & sesi tamu (`/api/auth/*`) |
-| **Middleware Anti-Limit & Security** | 🟢 Aktif | Rate limit `/api/*`, proteksi `/playground`, & security header |
-| **Auto Port Finder** | ⚡ Otomatis | Pindah ke port kosong berikutnya jika `PORT` sedang dipakai |
-| **Realtime API Logger & `/stats`** | 🟢 Aktif | Stream via Socket.IO & auto-fallback ke polling di serverless |
-| **Dynamic OG & Link Preview** | ⚡ Otomatis | Generate OG 1200×630 + meta otomatis untuk crawler sosmed |
-| **OpenAPI Generator** | ⚡ Otomatis | Spesifikasi API dibuat otomatis sebelum `dev` & `build` |
-| **PWA Support** | 🟢 Aktif | Tersedia `manifest.json`, `sw.js`, dan aset ikon lengkap |
+| | |
+|---|---|
+| 🔐 **Autentikasi lengkap** | Email + password, daftar akun, login tamu instan, serta OAuth **Google** & **GitHub** lewat NextAuth v4 (JWT). Password di-hash `bcrypt`, sesi disinkronkan dengan database. |
+| 🧪 **API Playground** | Endpoint terdeteksi otomatis dari spesifikasi **OpenAPI** yang dibuat oleh `scripts/openapi-gen.mjs`. Jalankan request seperti Postman langsung di browser, lengkap dengan tab Params/Headers/Body/Auth, koleksi, dan generator kode. |
+| 📡 **Live Stats** | Telemetri realtime: request, latensi, status, dan sistem. Memakai **Socket.IO**, otomatis turun ke *polling* di hosting tanpa WebSocket (mis. Netlify). |
+| 💬 **Chat Rooms** | Ruang obrolan realtime dengan daftar grup, gelembung berefek pegas, dan layout khusus mobile. |
+| 📋 **Pastes** | CRUD paste (judul, sintaks, kedaluwarsa) dengan pencarian di server dan pagination. |
+| 🧩 **Code Share** | Bagikan potongan kode: tag bahasa, suka/tidak suka, hitungan lihat, urut & filter, pagination. |
+| 🛠️ **Tools** | Code Beautifier dan Multi-Host Uploader. |
+| 👤 **Profil** | Ringkasan akun, kelengkapan profil, foto, sesi & perangkat, plus kartu **GitHub** pengembang (repo, bintang, bahasa). |
+| 🎨 **Theme Studio** | Puluhan preset + editor tema: warna, latar, partikel, blur, kecepatan animasi, transisi halaman. Ekspor/impor JSON. |
+| 🎞️ **Animasi halus & bervariasi** | 11 gaya masuk, transisi halaman otomatis per rute, hitung naik, tombol magnetik, ripple, progres gulir. Semua menghormati `prefers-reduced-motion` dan pengaturan tema. |
+| 🎵 **Audio** | BGM dari **link YouTube** (video/playlist), efek suara sintetis untuk welcome, login berhasil/gagal, logout, dan 404 — tanpa file audio. |
+| 🧭 **UI modern** | Sidebar melengkung glass, bottom dock dengan menu cepat ⚡, tombol tema & audio menempel di tepi kanan, 404 interaktif, ikon besar di halaman login. |
+| 🔎 **SEO & preview otomatis** | Meta lengkap, JSON-LD, `robots.txt` & `sitemap.xml` dinamis, dan gambar OG 1200×630 dibuat otomatis (`/api/og`) dari isi tiap halaman. |
+| 📱 **PWA & responsif** | Dapat dipasang, manifest dengan *shortcuts*, diuji tanpa overflow dari 320px sampai 1440px. |
+| 🪵 **Log API otomatis** | Semua `pages/api/**` dibungkus loader webpack: method, path, status, durasi, ukuran; data sensitif disamarkan. |
+| 🛡️ **Middleware** | Rate limit `/api`, proteksi halaman, security header, dan pengalihan preview untuk bot media sosial. |
 
-> [!NOTE]
-> **Tanpa `.env`!** Semua konfigurasi proyek (domain, database, OAuth, dan opsi build) dikelola terpusat secara hardcoded di `configs/apiConfig.cjs` dan `configs/siteConfig.cjs`.
+## 🚀 Mulai cepat
 
----
-
-## 🚀 Tutorial Instalasi & Menjalankan
-
-Ikuti langkah-langkah berikut untuk menjalankan **Wudysoft** di komputer lokal Anda:
-
-### Step 1 — Clone & Install Dependensi
 ```bash
-git clone <url-repo-anda>
-cd wudysoft
 npm install
+npm run dev         # pengembangan  → http://localhost:3000
+npm run build       # build production (menjalankan openapi-gen lebih dulu)
+npm run start       # production dengan server kustom + Socket.IO
 ```
 
-### Step 2 — Atur Konfigurasi (Opsional)
-Buka file konfigurasi berikut sebelum menjalankan server jika ingin menyesuaikan domain, secret OAuth, atau fitur build:
-- `configs/apiConfig.cjs` → Pengaturan API, DB, & `GITHUB_SECRET`
-- `configs/siteConfig.cjs` → Pengaturan tampilan, domain, & opsi `OBFUSCATE_CLIENT`
+> Tidak perlu file `.env`. Semua konfigurasi ada di `configs/*.cjs`.
+> Jika `PORT` terpakai, server otomatis pindah ke port kosong berikutnya dan mencetak URL-nya.
 
-### Step 3 — Build & Jalankan Server
-Pilih mode sesuai kebutuhan Anda:
+**Prasyarat:** Node.js 18+ dan sebuah database MongoDB (URI diisi di `configs/apiConfig.cjs`).
 
+## ⚙️ Konfigurasi (tanpa `.env`)
+
+| File | Isi | Dipakai di |
+|---|---|---|
+| `configs/siteConfig.cjs` | Konfigurasi **publik**: nama, domain, target deploy, `GITHUB_USER`, `DEFAULT_BGM_URL`, obfuscator | Klien & server |
+| `configs/apiConfig.cjs` | Konfigurasi **rahasia**: URI MongoDB, secret NextAuth, client ID/secret OAuth | Hanya server |
+
+Isi penting:
+
+- `DOMAIN_URL` / `SITE_URL` — domain situs (dipakai canonical, sitemap, OG).
+- `DEPLOY_TARGET` — `"netlify"` (serverless) atau `"vps"` (Node biasa, output `standalone`).
+- `GITHUB_USER` — akun yang ditampilkan pada kartu GitHub di profil.
+- `DEFAULT_BGM_URL` — BGM bawaan (link YouTube); kosongkan bila tidak ingin musik otomatis.
+- `OBFUSCATE_CLIENT` — obfuscate JS klien saat build (menambah ±11% ukuran).
+
+**Callback OAuth:** `{URL}/api/auth/callback/github` dan `{URL}/api/auth/callback/google`.
+
+## 🗂️ Struktur proyek
+
+```
+.
+├─ pages/
+│  ├─ index.js · playground.js · profile.js · 404.js
+│  ├─ auth/            hub masuk/daftar, tamu, OAuth
+│  ├─ rooms/           chat realtime
+│  ├─ stats/           live stats
+│  ├─ tools/           beautify · upload · pastes · code-share
+│  ├─ robots.txt.js · sitemap.xml.js        (SSR)
+│  └─ api/             auth, profile, rooms, code-share, github, og, preview,
+│                      stats, tools/paste/v1, openapi, health, …
+├─ components/
+│  ├─ Layout.js · CurvedSidebar.js · ThemeFab.js · AudioControl.js
+│  ├─ AuthHero.js · Pagination.js · GithubCard.js · Seo.js
+│  ├─ CustomThemeStudio.js · PageTransition.js · WudysoftBrand.js
+│  └─ motion/          Reveal, Stagger, CountUp, Magnetic, GlobalEffects
+├─ lib/                auth, users, mongoose, apiLogger, liveData
+├─ models/             User · ApiLog · Room · Paste · CodeShare
+├─ src/
+│  ├─ index.js         server kustom + auto port + log live
+│  └─ lib/             audio, interactiveEffects (sound), themes, nav, rateLimit, …
+├─ scripts/            openapi-gen, api-log-loader, trace-size, prepare-standalone
+├─ styles/             globals.css · motion.css
+├─ configs/            siteConfig · apiConfig
+└─ public/             manifest.json · sw.js · icons · og.png
+```
+
+## 🌐 Deploy
+
+### Netlify
+1. Atur `DEPLOY_TARGET: "netlify"` di `configs/siteConfig.cjs` (bawaan).
+2. Hubungkan repo, build command `npm run build`.
+3. Jika muncul *"The function exceeds the maximum size of 250 MB"*, jalankan `npm run build && npm run size` untuk melihat paket terbesar. `next.config.js` sudah mengecualikan alat build lewat `experimental.outputFileTracingExcludes`.
+
+Di Netlify tidak ada WebSocket, jadi Live Stats memakai *polling* (`/api/stats/live`) otomatis.
+
+### VPS / server Node
 ```bash
-# 🛠️ Mode Development (otomatis generate OpenAPI sebelum jalan)
-npm run dev
-
-# 🚀 Mode Production (Custom Server + Auto Live Log)
+# set DEPLOY_TARGET: "vps"
 npm run build
-npm run start
-
-# 📦 Mode Standalone (menyalin aset statis & jalankan server standalone)
-npm run start:standalone
+npm run start:standalone     # menyalin aset statis lalu menjalankan .next/standalone/server.js
 ```
 
-> [!TIP]
-> **Auto Port Detection:** Jika `PORT` default sudah dipakai aplikasi lain, `src/index.js` akan otomatis mencari port kosong berikutnya dan menampilkan URL aktifnya di terminal.
+## 🎛️ Kustomisasi
 
----
+- **Tema:** tombol ⚙️ di tepi kanan membuka Theme Studio. Pilihan tersimpan di browser.
+- **Audio:** tombol 🎵 di bawahnya. Tempel link YouTube (video / playlist / youtu.be / Shorts) lalu **Setel**. BGM mulai setelah interaksi pertama (aturan autoplay browser). Tiap efek suara bisa dimatikan atau dites satu per satu.
+- **Animasi:** semua bisa dimatikan dari Theme Studio atau otomatis mati saat perangkat meminta *reduced motion*.
+- **Halaman baru:** tambahkan ke `pages/` dan daftarkan di `src/lib/siteMap.js` (sitemap) dan `components/CurvedSidebar.js` (menu).
+- **Endpoint baru:** letakkan di `pages/api/**`; log dibuat otomatis oleh loader. Spesifikasi OpenAPI diperbarui oleh `npm run openapi`.
 
-## 📁 Struktur Proyek
+## 📈 Log realtime API
 
-<details>
-<summary><b>📂 Klik untuk melihat peta direktori lengkap</b></summary>
+Semua request `/api/*` dicatat oleh `lib/apiLogger.cjs` (method, path, query, status, durasi, ukuran, pratinjau body; password/token/cookie disamarkan). Halaman `/stats` menerima aliran data hanya untuk pengguna yang login.
 
-<br>
+## 📝 Catatan
 
-```text
-wudysoft/
-├── configs/
-│   ├── apiConfig.cjs         # Konfigurasi API, DB, & OAuth Secret
-│   └── siteConfig.cjs        # Konfigurasi situs & obfuscator client
-├── scripts/
-│   └── openapi-gen.mjs       # Generator spesifikasi OpenAPI otomatis
-├── src/
-│   ├── index.js              # Custom server + auto port + live API log
-│   └── lib/                  # Session, rateLimit, oauth, seoMap, linkPreview
-├── middleware.js             # Rate limit /api, proteksi /playground, security header
-├── pages/
-│   ├── api/
-│   │   ├── auth/*            # guest, me, logout
-│   │   ├── oauth/*           # redirect + callback (github, google)
-│   │   ├── playground/*      # echo
-│   │   ├── tools/paste/v1.js # API CRUD Paste
-│   │   ├── code-share.js     # API Code Share
-│   │   └── og.js             # Edge OG Image Generator (1200×630)
-│   ├── auth/*                # hub, oauth, guest
-│   ├── tools/                # pastes, code-share
-│   ├── stats.js              # Dashboard log API realtime
-│   ├── rooms.js              # Daftar channel (horizontal strip di mobile)
-│   └── playground.js         # API Playground interaktif
-├── components/               # Seo, Background, Navbar, ThemePanel, Layout
-└── public/                   # manifest.json, sw.js, icons, og.png
-```
-
-</details>
-
----
-
-## 🔐 Tutorial Setup OAuth
-
-Untuk mengaktifkan login menggunakan **GitHub** dan **Google** via NextAuth:
-
-1. **Siapkan Callback URL** di dashboard OAuth Provider Anda:
-
-| Provider | Callback URL | File Konfigurasi |
-| :--- | :--- | :--- |
-| **GitHub** | `{URL}/api/auth/callback/github` | Isi `GITHUB_SECRET` di `configs/apiConfig.cjs` |
-| **Google** | `{URL}/api/auth/callback/google` | Atur credential di `configs/apiConfig.cjs` |
-
-2. **Host Detection Otomatis:** NextAuth membaca host langsung dari request (`AUTH_TRUST_HOST` sudah diatur di `lib/auth.js`), sehingga Anda tidak perlu mengatur `NEXTAUTH_URL` di `.env`.
-
-> [!WARNING]
-> **Catatan Rate Limit:** Rate limiter bawaan menggunakan memori proses (cocok untuk 1 instance). Jika Anda melakukan scale ke banyak instance/server, ganti penyimpanan rate limit ke **Redis**.
-
----
-
-## 🛠️ Halaman & Endpoint Baru
-
-Berikut adalah halaman tools dan endpoint terbaru yang siap digunakan:
-
-| Halaman / Fitur | Endpoint Terkait | Tautan Bagikan | Keterangan |
-| :--- | :--- | :--- | :--- |
-| **Pastes CRUD** (`/tools/pastes`) | `pages/api/tools/paste/v1.js` | `/paste/[key]` | Mendukung action: `create \| get \| update \| delete \| list` |
-| **Code Share** (`/tools/code-share`) | `pages/api/code-share.js` | `/code/[id]` | Berbagi snippet kode dengan preview meta otomatis |
-| **Rooms** (`/rooms`) | — | `/rooms` | Daftar channel tampil sebagai **strip horizontal** di mobile |
-
----
-
-## 📡 Realtime Log API & Statistik (`/stats`)
-
-<details>
-<summary><b>📊 Klik untuk melihat cara kerja Logging & Streaming Realtime</b></summary>
-
-<br>
-
-1. **Pencatatan Otomatis (`lib/apiLogger.cjs`)**
-   - Setiap request ke `/api/*` dicatat lengkap: `method`, `path`, `query`, `status`, `durasi`, `ukuran`, serta pratinjau body request & respons.
-   - Data sensitif seperti `password`, `token`, dan `cookie` otomatis **disamarkan**.
-
-2. **Streaming & Auto-Fallback**
-   - Halaman `/stats` menerima stream realtime melalui **Socket.IO** (`/api/live` → `/api/live-socket`).
-   - Pada hosting tanpa dukungan WebSocket (seperti **Netlify**), sistem otomatis turun ke mode **polling** (`/api/stats/live`).
-   - Akses stream log hanya tersedia untuk **pengguna yang sudah login**.
-
-3. **Cakupan Rekaman**
-   - Menggunakan custom server (`npm start`): **semua route** direkam otomatis.
-   - Tanpa custom server (serverless): route yang dibungkus wrapper `withApiLog` yang akan terekam.
-
-</details>
-
----
-
-## 🔗 Pratinjau Link Otomatis (SEO & Dynamic OG)
-
-<details>
-<summary><b>🖼️ Klik untuk melihat mekanisme Meta Tag & Crawler Link Preview</b></summary>
-
-<br>
-
-- **Global SEO Otomatis:** `components/Seo.js` menghasilkan tag `title`, `description`, `canonical`, Open Graph, Twitter Card, hingga `JSON-LD`. Default per rute diatur di `src/lib/seoMap.js` dan dipasang di `_app.js` agar tidak ada halaman tanpa meta.
-- **Generator Gambar OG:** Endpoint `/api/og?title=&desc=&tag=` berjalan di Edge (`next/og`) untuk membuat gambar **1200×630** secara dinamis.
-- **SSR Halaman Dinamis:** Halaman `/paste/[key]` dan `/code/[id]` di-render di server dengan meta yang diambil langsung dari isi konten.
-- **Smart Crawler API Preview (`lib/linkPreview.cjs`):**
-  - Jika endpoint `/api/*` (yang dibungkus `withApiLog`) diakses oleh bot/crawler (**WhatsApp, Telegram, Discord, X, Facebook, Slack**, dll), respons JSON/teks otomatis diubah menjadi halaman HTML ber-meta OG dari isi respons.
-  - Klien/aplikasi API biasa tetap menerima **JSON asli**.
-  - **Uji Manual di Browser:** Tambahkan parameter `?__preview=1` pada URL endpoint API Anda, contoh:
-    ```text
-    https://domain-anda.com/api/playground/echo?msg=halo&__preview=1
-    ```
-
-</details>
-
----
-
-## ☁️ Panduan Deploy ke Netlify
-
-<details>
-<summary><b>🚀 Klik untuk melihat panduan deploy, optimasi ukuran, & troubleshooting</b></summary>
-
-<br>
-
-### 1. Konfigurasi Tanpa Environment Variable
-- Tidak ada `.env` yang perlu diisi di dashboard Netlify.
-- Cukup ubah domain, DB, dan credential OAuth di `configs/*.cjs`.
-- Mode `output: "standalone"` dimatikan otomatis saat build di lingkungan Netlify.
-
-### 2. Mengatasi Error Ukuran Serverless (`> 250 MB`)
-Jika muncul error `The function exceeds the maximum size of 250 MB`:
-1. Jalankan perintah audit ukuran paket terbesar:
-   ```bash
-   npm run build && npm run size
-   ```
-2. `next.config.js` sudah mengecualikan alat build berat (`SWC`, `esbuild`, `typescript`, `eslint`, `sharp`, dll.) melalui `experimental.outputFileTracingExcludes`.
-
-### 3. Optimasi Ukuran JS Klien (Build)
-- Secara default obfuscator menambah sekitar **±11%** ukuran JS klien.
-- Untuk mematikannya demi ukuran bundle yang lebih ringan, ubah di `configs/siteConfig.cjs`:
-  ```js
-  OBFUSCATE_CLIENT: false
-  ```
-
-</details>
+- Rate limit memakai memori proses (cocok untuk 1 instance). Untuk banyak instance, ganti dengan Redis.
+- BGM memuat pemutar tersembunyi dari YouTube; video yang melarang embed akan menampilkan pesan error di panel Audio.
+- Gambar OG dibuat di *edge runtime* (`/api/og`) dan di-*rewrite* otomatis untuk user-agent bot media sosial.
 
 ---
 
 <div align="center">
-  <sub>Dibuat dengan ❤️ menggunakan <b>Wudysoft Starter</b> — Next.js Glassmorphism</sub>
+
+Dibuat dengan ❤️ oleh **[AyGemuy](https://github.com/AyGemuy)**
+
 </div>

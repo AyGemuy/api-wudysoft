@@ -7,6 +7,7 @@ import Seo from '@/components/Seo';
 import { sound } from '@/src/lib/interactiveEffects';
 import { timeAgo, fmtDateTime, copyText } from '@/src/lib/timeAgo';
 import { Reveal, Stagger, Item, TextReveal, Magnetic } from '@/components/motion';
+import Pagination from '@/components/Pagination';
 
 const API = '/api/tools/paste/v1';
 const SYNTAXES = ['text', 'markdown', 'javascript', 'typescript', 'json', 'html', 'css', 'python', 'php', 'java', 'c', 'cpp', 'go', 'rust', 'bash', 'sql', 'yaml'];
@@ -35,6 +36,10 @@ export default function PastesPage() {
   const router = useRouter();
   const formRef = useRef(null);
   const [list, setList] = useState([]);
+  const [pg, setPg] = useState({ page: 1, pages: 1, total: 0, limit: 12 });
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(12);
+  const listRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState('');
   const [q, setQ] = useState('');
@@ -54,31 +59,46 @@ export default function PastesPage() {
     setLoading(true);
     setLoadErr('');
     try {
-      const d = await call('GET', { action: 'list' });
-      setList(Array.isArray(d) ? d : []);
+      const d = await call('GET', { action: 'list', page, limit, q: q.trim() });
+      setList(Array.isArray(d?.items) ? d.items : []);
+      setPg({ page: d.page, pages: d.pages, total: d.total, limit: d.limit });
+      if (d.page !== page) setPage(d.page); // halaman terakhir menyusut (mis. setelah hapus)
     } catch (e) {
       setLoadErr(e.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, limit, q]);
 
-  useEffect(() => { load(); }, [load]);
+  // debounce pencarian & muat ulang saat halaman/ukuran berubah
+  useEffect(() => {
+    const t = setTimeout(load, q ? 250 : 0);
+    return () => clearTimeout(t);
+  }, [load, q]);
 
-  const startEdit = useCallback((p) => {
-    setEditing(p.key);
-    setCreated(null);
-    setForm({ title: p.title, content: p.content, syntax: p.syntax || 'text', expireIn: '__keep', key: p.key });
-    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  const goPage = (n) => {
+    setPage(n);
+    setTimeout(() => listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30);
+  };
+
+  const startEdit = useCallback(async (p) => {
+    try {
+      const full = p.length > (p.content || '').length ? await call('GET', { action: 'get', key: p.key, strict: 'true' }) : p;
+      setEditing(p.key);
+      setCreated(null);
+      setForm({ title: full.title, content: full.content, syntax: full.syntax || 'text', expireIn: '__keep', key: p.key });
+      setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    } catch (e) {
+      flash(e.message, 'err');
+    }
   }, []);
 
   // /tools/pastes?edit=KEY dari halaman detail
   useEffect(() => {
     const k = router.query.edit;
-    if (!k || !list.length || editing === k) return;
-    const p = list.find((x) => x.key === k);
-    if (p) startEdit(p);
-  }, [router.query.edit, list, editing, startEdit]);
+    if (!k || editing === k) return;
+    startEdit({ key: k, length: 1, content: '' });
+  }, [router.query.edit, editing, startEdit]);
 
   const reset = () => { setEditing(null); setForm(EMPTY); if (router.query.edit) router.replace('/tools/pastes', undefined, { shallow: true }); };
 
@@ -93,7 +113,7 @@ export default function PastesPage() {
         const body = { action: 'update', key: editing, title: form.title.trim(), content: form.content, syntax: form.syntax };
         if (form.expireIn !== '__keep') body.expireIn = form.expireIn || '0';
         const d = await call('POST', body);
-        setList((l) => l.map((x) => (x.key === editing ? d : x)));
+        setList((l) => l.map((x) => (x.key === editing ? { ...d, content: d.content.slice(0, 600), length: d.content.length } : x)));
         flash('Paste diperbarui.');
         reset();
       } else {
@@ -101,7 +121,8 @@ export default function PastesPage() {
         if (form.key.trim()) body.key = form.key.trim().replace(/[^\w-]/g, '').slice(0, 64);
         if (form.expireIn) body.expireIn = form.expireIn;
         const d = await call('POST', body);
-        setList((l) => [d, ...l]);
+        setPage(1); setQ('');
+        if (page === 1 && !q) load();
         setCreated(d);
         setForm(EMPTY);
         flash('Paste dibuat.');
@@ -118,7 +139,7 @@ export default function PastesPage() {
     sound.playClick();
     try {
       await call('POST', { action: 'delete', key });
-      setList((l) => l.filter((x) => x.key !== key));
+      load();
       if (editing === key) reset();
       flash('Paste dihapus.');
     } catch (err) {
@@ -131,10 +152,7 @@ export default function PastesPage() {
   const link = (key) => `${typeof window !== 'undefined' ? window.location.origin : ''}/tools/pastes/${key}`;
   const doCopy = async (text, msg) => flash((await copyText(text)) ? msg : 'Tidak bisa menyalin.', 'ok');
 
-  const shown = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    return s ? list.filter((p) => `${p.title} ${p.key} ${p.syntax} ${p.content.slice(0, 400)}`.toLowerCase().includes(s)) : list;
-  }, [list, q]);
+  const shown = list;
 
   return (
     <>
@@ -216,10 +234,10 @@ export default function PastesPage() {
         </Reveal>
 
         {/* ---- daftar ---- */}
-        <section className="pp-list-head">
+        <section className="pp-list-head" ref={listRef}>
           <div className="pp-search">
             <Search size={15} />
-            <input className="input" placeholder="Cari judul, kunci, atau isi…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Cari paste" />
+            <input className="input" placeholder="Cari judul, kunci, atau isi…" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} aria-label="Cari paste" />
           </div>
           <button className="btn" onClick={() => { sound.playClick(); load(); }} disabled={loading}><RefreshCw size={14} /> Muat ulang</button>
         </section>
@@ -237,7 +255,7 @@ export default function PastesPage() {
                 <FileText size={16} color="var(--a2)" />
                 <Link href={`/tools/pastes/${p.key}`} className="pp-title">{p.title}</Link>
               </div>
-              <pre className="pp-snippet">{p.content.slice(0, 220)}{p.content.length > 220 ? '…' : ''}</pre>
+              <pre className="pp-snippet">{p.content.slice(0, 220)}{(p.length || p.content.length) > 220 ? '…' : ''}</pre>
               <div className="pp-meta">
                 <span className="badge">{p.syntax || 'text'}</span>
                 <code>{p.key}</code>
@@ -260,6 +278,8 @@ export default function PastesPage() {
             </Item>
           ))}
         </Stagger>
+
+        <Pagination page={pg.page} pages={pg.pages} total={pg.total} limit={limit} loading={loading} onPage={goPage} onLimit={(n) => { setLimit(n); setPage(1); }} label="paste" />
       </div>
 
       <style jsx>{`

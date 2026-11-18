@@ -1,3 +1,5 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { sysInfo } from "@/lib/sysInfo";
@@ -10,7 +12,7 @@ import { liveSnapshot } from "@/lib/liveData";
  * Data dibaca dari MongoDB (+ event yang belum tersimpan di memori), jadi konsisten walau
  * request ditangani instance serverless yang berbeda-beda.
  */
-export default async function handler(req, res) {
+async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user) return res.status(401).json({ ok: false, error: "Belum login" });
   res.setHeader("Cache-Control", "no-store");
@@ -27,3 +29,5 @@ export default async function handler(req, res) {
     serverTime: Date.now(),
   });
 }
+
+export default withApiLog(withRateLimit(handler));

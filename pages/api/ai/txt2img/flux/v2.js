@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const endpoints = ["generate_image", "RealtimeFlux", "generate_image_1", "realtime_generation", "realtime_generation_1", "realtime_generation_2", "realtime_generation_3"];
@@ -78,4 +79,4 @@ async function handler(req, res) {
   }
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

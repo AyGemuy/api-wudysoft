@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const getId = url => url.match(/(?:https?:\/\/)?(?:www\.|m\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\/?\?v=|\/embed\/|\/)([^\s&\?\/\#]+)/)[1];
@@ -42,4 +43,4 @@ async function handler(req, res) {
   }
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

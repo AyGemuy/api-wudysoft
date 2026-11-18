@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const encodeKey = "c2stc3ZjcDBtWUZwaDgzaGJnYVBVRDhhMXdrdVdBTDZ3WHBrRlI4SVRyeEpnY1ZnbEQ4";
@@ -44,4 +45,4 @@ async function handler(req, res) {
   }
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

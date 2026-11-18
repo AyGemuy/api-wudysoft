@@ -8,6 +8,9 @@ import { safeNext } from "./src/lib/safeNext";
 const PROTECTED = ["/playground", "/profile"];
 const DEFAULT_AFTER_LOGIN = "/";
 
+// User-Agent crawler pembuat preview tautan
+const BOT_UA = /(facebookexternalhit|facebot|whatsapp|telegrambot|twitterbot|discordbot|slackbot|linkedinbot|skypeuripreview|redditbot|pinterest|embedly|vkshare|line-poker|signal|mastodon|bluesky|iframely)/i;
+
 // NextAuth memilih nama cookie (secure / biasa) dari protokol request (AUTH_TRUST_HOST di lib/auth.js);
 // di sini kita ikuti protokol yang sama, lalu coba mode lain sebagai cadangan.
 const isHttps = (req) => (req.headers.get("x-forwarded-proto") || req.nextUrl.protocol.replace(":", "")).split(",")[0].trim() === "https";
@@ -68,6 +71,20 @@ export async function middleware(req) {
         }
       );
     }
+  }
+
+  // 1b. Crawler link-preview (WhatsApp, Telegram, Discord, dst.) yang membuka route API → kartu preview
+  //     sesuai isi respons (lihat pages/api/preview.js). Klien biasa tetap mendapat JSON seperti semula.
+  if (
+    req.method === "GET" &&
+    pathname.startsWith("/api/") &&
+    !/^\/api\/(auth|avatar|og|preview|live|socket|stats)/.test(pathname) &&
+    BOT_UA.test(req.headers.get("user-agent") || "")
+  ) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/api/preview";
+    url.search = `?p=${encodeURIComponent(`${pathname}${search}`)}`;
+    return NextResponse.rewrite(url);
   }
 
   // 2. Guard halaman terproteksi & halaman /auth

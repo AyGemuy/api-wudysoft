@@ -81,7 +81,7 @@ export default function Playground() {
     try {
       let raw; let label = '/api/openapi';
       try {
-        const saved = JSON.parse(localStorage.getItem(SPEC_KEY) || localStorage.getItem('nexus_pg_spec') || 'null');
+        const saved = JSON.parse(localStorage.getItem(SPEC_KEY) || 'null');
         if (saved?.raw) { raw = saved.raw; label = saved.label || 'Impor'; }
       } catch {}
       if (!raw) {

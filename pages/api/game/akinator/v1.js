@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import dbConnect from "@/lib/mongoose";
 import akiSession from "@/models/Akinator";
@@ -566,4 +567,4 @@ async function handler(req, res) {
   }
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

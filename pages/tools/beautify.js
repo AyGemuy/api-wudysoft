@@ -131,7 +131,7 @@ export default function BeautifyPage() {
 
   return (
     <>
-      <Seo title="Code Beautifier & Unpacker" path="/tools/beautify" />
+      <Seo title="Code Beautifier & Unpacker" path="/tools/beautify" label="TOOL" description="Rapikan, minify, dan buka bungkusan kode JavaScript, HTML, dan CSS dari file atau URL dalam hitungan detik." />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '22px', maxWidth: '800px', margin: '0 auto' }}>
         {/* Toast Notification */}

@@ -21,13 +21,20 @@ const TABS = [
 
 function Slider({ label, value, min, max, step = 1, unit = '', onChange, format, pill }) {
   const isPill = pill && value >= max;
+  const dec = (String(step).split('.')[1] || '').length;
+  const nudge = (d) => onChange(Math.min(max, Math.max(min, Number((value + d * step).toFixed(dec)))));
+  const pct = max > min ? ((value - min) / (max - min)) * 100 : 0;
   return (
     <div className="cfg">
       <div className="cfg-row">
         <span className="cfg-label">{label}</span>
         <span className="cfg-value">{isPill ? 'Pill' : format ? format(value) : `${value}${unit}`}</span>
       </div>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} aria-label={label} />
+      <div className="sl-row">
+        <button type="button" className="sl-step" aria-label={`Kurangi ${label}`} onClick={() => nudge(-1)} disabled={value <= min}><Icons.Minus size={15} /></button>
+        <input className="sl-range" type="range" min={min} max={max} step={step} value={value} style={{ '--p': `${pct}%` }} onChange={(e) => onChange(Number(e.target.value))} aria-label={label} />
+        <button type="button" className="sl-step" aria-label={`Tambah ${label}`} onClick={() => nudge(1)} disabled={value >= max}><Icons.Plus size={15} /></button>
+      </div>
     </div>
   );
 }
@@ -290,7 +297,7 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
                     <Slider label="Kecepatan" value={config.speed} min={0.5} max={2} step={0.1} format={(v) => `${v.toFixed(1)}×`} onChange={(v) => set({ speed: v }, true)} />
                   </Section>
                   <Section title="TRANSISI HALAMAN">
-                    <Segmented value={config.animPage} options={[{ id: 'slide', label: 'Geser' }, { id: 'fade', label: 'Pudar' }, { id: 'zoom', label: 'Zoom' }, { id: 'none', label: 'Mati' }]} onChange={(v) => set({ animPage: v })} />
+                    <Segmented value={config.animPage} options={[{ id: 'auto', label: 'Auto' }, { id: 'slide', label: 'Geser' }, { id: 'slideX', label: 'Samping' }, { id: 'fade', label: 'Pudar' }, { id: 'zoom', label: 'Zoom' }, { id: 'blur', label: 'Blur' }, { id: 'rise', label: 'Naik' }, { id: 'flip', label: 'Flip' }, { id: 'drop', label: 'Turun' }, { id: 'skew', label: 'Miring' }, { id: 'none', label: 'Mati' }]} onChange={(v) => set({ animPage: v })} />
                     <Toggle label="Animasi masuk konten" hint="Kartu & hero muncul bertahap" value={config.animEntrance} onChange={(v) => set({ animEntrance: v })} />
                   </Section>
                   <Section title="INTERAKSI">
@@ -559,10 +566,19 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
           font-size: 0.78rem;
         }
 
-        .studio-panel-solid input[type='range'] {
-          width: 100%;
-          accent-color: var(--a2);
-        }
+        .studio-panel-solid .sl-row { display: flex; align-items: center; gap: 10px; }
+        .studio-panel-solid .sl-step { width: 34px; height: 34px; flex-shrink: 0; display: grid; place-items: center; border-radius: 11px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); cursor: pointer; transition: border-color .2s, color .2s, transform .15s; }
+        .studio-panel-solid .sl-step:hover:not(:disabled) { border-color: var(--a2); color: var(--a2); }
+        .studio-panel-solid .sl-step:active:not(:disabled) { transform: scale(.9); }
+        .studio-panel-solid .sl-step:disabled { opacity: .4; cursor: not-allowed; }
+        .studio-panel-solid input[type='range'].sl-range { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; width: auto; height: 6px; margin: 0; border: none; border-radius: 99px; outline: none; cursor: pointer;
+          background: linear-gradient(90deg, var(--a2) var(--p, 50%), var(--surface-3) var(--p, 50%)); }
+        .studio-panel-solid .sl-range::-webkit-slider-runnable-track { -webkit-appearance: none; background: transparent; height: 6px; border: none; }
+        .studio-panel-solid .sl-range::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; margin-top: -7px; border-radius: 50%; background: #fff; border: 3px solid var(--a2); box-shadow: 0 2px 8px rgba(0,0,0,.5), 0 0 0 4px color-mix(in srgb, var(--a2) 18%, transparent); cursor: grab; transition: transform .15s; }
+        .studio-panel-solid .sl-range::-moz-range-track { background: transparent; height: 6px; border: none; }
+        .studio-panel-solid .sl-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid var(--a2); box-shadow: 0 2px 8px rgba(0,0,0,.5); cursor: grab; }
+        .studio-panel-solid .sl-range:active::-webkit-slider-thumb { transform: scale(1.15); cursor: grabbing; }
+        .studio-panel-solid .sl-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 5px color-mix(in srgb, var(--a2) 40%, transparent); }
 
         .studio-panel-solid .palette-grid {
           display: grid;
@@ -704,6 +720,7 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
 
         .studio-panel-solid .seg {
           display: flex;
+          flex-wrap: wrap;
           padding: 3px;
           gap: 3px;
           border-radius: 12px;
@@ -712,7 +729,8 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
         }
 
         .studio-panel-solid .seg-btn {
-          flex: 1;
+          flex: 1 1 auto;
+          min-width: 52px;
           padding: 8px 4px;
           border-radius: 9px;
           border: none;

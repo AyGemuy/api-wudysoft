@@ -1,3 +1,5 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import {
   Server
 } from "socket.io";
@@ -127,7 +129,7 @@ async function handleSkipChat(socket) {
     message: "Anda telah meninggalkan chat."
   });
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (!res.socket.server.io) {
     await dbConnect();
     io = new Server(res.socket.server, {
@@ -187,3 +189,5 @@ export default async function handler(req, res) {
   }
   res.end();
 }
+
+export default withApiLog(withRateLimit(handler));

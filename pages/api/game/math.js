@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 const modes = {
   noob: [-3, 3, -3, 3, "+-", 15e3, 10],
@@ -53,4 +54,4 @@ async function handler(req, res) {
   return res.status(200).json(mathProblem);
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

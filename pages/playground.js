@@ -18,7 +18,7 @@ export async function getServerSideProps(context) {
 export default function PlaygroundPage() {
   return (
     <>
-      <Seo title="API Playground" />
+      <Seo title="API Playground" path="/playground" label="PLAYGROUND" description="Terminal interaktif untuk mencoba endpoint OpenAPI, mengirim request, dan melihat respons secara real-time." noindex />
       <Playground />
     </>
   );

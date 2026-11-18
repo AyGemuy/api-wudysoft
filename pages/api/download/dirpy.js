@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
@@ -41,4 +42,4 @@ async function handler(req, res) {
   return res.status(200).json(typeof result === "object" ? result : result);
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const FREE_MODELS = ["google/gemini-2.5-flash-lite", "google/gemma-3-27b-it", "google/gemma-3-27b-it:free"];
@@ -166,4 +167,4 @@ async function handler(req, res) {
   }
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

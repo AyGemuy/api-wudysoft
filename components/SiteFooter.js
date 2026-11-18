@@ -25,7 +25,7 @@ export default function SiteFooter() {
             <span className="brand-badge-f">
               <Icons.Zap size={16} />
             </span>
-            <strong>Wudysoft</strong>
+            <strong>WUDYSOFT</strong>
             <span className="online">
               <i /> online
             </span>

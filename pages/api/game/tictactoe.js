@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import crypto from "crypto";
 import connectMongo from "@/lib/mongoose";
@@ -127,4 +128,4 @@ function checkWinner(board) {
   return null;
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

@@ -106,7 +106,7 @@ export default function StatsPage() {
 
   return (
     <>
-      <Seo title="System & API Stats" />
+      <Seo title="System & API Stats" path="/stats" label="LIVE STATS" description="Telemetri penggunaan API, log permintaan realtime, latensi, dan kesehatan sistem Wudysoft." />
       <div className={s.page}>
         <div className={s.head}>
           <div>

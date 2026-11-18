@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const themeIds = ["vercel", "rabbit", "supabase", "tailwind", "openai", "mintlify", "prisma", "clerk", "elevenlabs", "resend", "triggerdev", "nuxt", "browserbase", "cloudflare", "gemini", "stripe", "wrapped", "bitmap", "noir", "ice", "sand", "forest", "mono", "breeze", "candy", "crimson", "falcon", "meadow", "midnight", "raindrop", "sunset"];
@@ -87,4 +88,4 @@ async function handler(req, res) {
   }
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

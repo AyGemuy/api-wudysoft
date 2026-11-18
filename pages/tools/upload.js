@@ -212,7 +212,7 @@ export default function UploadPage() {
 
   return (
     <>
-      <Seo title="Multi-Host File Uploader" path="/tools/upload" />
+      <Seo title="Multi-Host File Uploader" path="/tools/upload" label="TOOL" description="Unggah file ke beberapa host sekaligus dan dapatkan tautan siap bagikan." />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
         {/* Toast Notifikasi */}

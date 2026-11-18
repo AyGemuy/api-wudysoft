@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import apiConfig from "@/configs/apiConfig";
 import axios from "axios";
@@ -43,4 +44,4 @@ function formatUptime(seconds) {
   return `${days}d ${hours}h ${minutes}m ${secs}s`;
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

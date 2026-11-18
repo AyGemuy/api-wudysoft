@@ -10,6 +10,9 @@ import CursorGlow from './CursorGlow';
 import BgLayer from './BgLayer';
 import SiteFooter from './SiteFooter';
 import WudysoftBrand from './WudysoftBrand';
+import CurvedSidebar from './CurvedSidebar';
+import ThemeFab from './ThemeFab';
+import { FileText, FileCode, MessageSquare, Wand2, UploadCloud, Terminal as TermIcon } from 'lucide-react';
 import { ThemeContext } from './ThemeContext';
 import { logout } from '@/src/lib/nav';
 import { loadSpecOps } from '@/src/lib/specIndex';
@@ -27,6 +30,13 @@ function Avatar({ user }) {
   return <span>{(user?.name || 'U').trim()[0]?.toUpperCase() || 'U'}</span>;
 }
 
+const DIAL = [
+  { href: '/playground', label: 'Playground', Icon: TermIcon },
+  { href: '/tools/pastes', label: 'Pastes', Icon: FileText },
+  { href: '/tools/code-share', label: 'Code', Icon: FileCode },
+  { href: '/rooms', label: 'Rooms', Icon: MessageSquare },
+];
+
 export default function Layout({ children }) {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -35,6 +45,13 @@ export default function Layout({ children }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [studioOpen, setStudioOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dialOpen, setDialOpen] = useState(false);
+
+  // tombol melayang di tepi (audio) disembunyikan saat panel/sidebar penuh terbuka
+  useEffect(() => {
+    document.documentElement.toggleAttribute('data-overlay', studioOpen || sidebarOpen);
+  }, [studioOpen, sidebarOpen]);
   const [endpoints, setEndpoints] = useState([]);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
@@ -58,6 +75,8 @@ export default function Layout({ children }) {
   useEffect(() => {
     setProfileOpen(false);
     setSearchOpen(false);
+    setSidebarOpen(false);
+    setDialOpen(false);
   }, [router.asPath]);
 
   // Shortcut ⌘K / Ctrl+K dan Esc untuk pencarian
@@ -116,9 +135,9 @@ export default function Layout({ children }) {
       { type: 'Halaman', title: 'System & API Stats', sub: 'Telemetri realtime', action: '/stats' },
       { type: 'Halaman', title: 'Code Beautifier', sub: 'Tools', action: '/tools/beautify' },
       { type: 'Halaman', title: 'Multi-Host Uploader', sub: 'Tools', action: '/tools/upload' },
-      { type: 'Halaman', title: 'Pastes', sub: 'Tools · pastebin', action: '/tools/pastes' },
-      { type: 'Halaman', title: 'Code Share', sub: 'Tools · snippet kode', action: '/tools/code-share' },
-      { type: 'Halaman', title: 'Cyber Rooms', sub: 'Komunikasi', action: '/rooms' },
+      { type: 'Halaman', title: 'Chat Rooms', sub: 'Komunikasi', action: '/rooms' },
+      { type: 'Halaman', title: 'Pastes', sub: 'Tools · simpan & bagikan teks', action: '/tools/pastes' },
+      { type: 'Halaman', title: 'Code Share', sub: 'Tools · bagikan potongan kode', action: '/tools/code-share' },
       { type: 'Halaman', title: 'Masuk / Daftar', sub: 'Akun', action: '/auth' },
     ].filter((i) => !q || `${i.title} ${i.sub}`.toLowerCase().includes(q));
     const eps = endpoints
@@ -152,6 +171,9 @@ export default function Layout({ children }) {
       <header className="top-header-wrap">
         <nav className="top-header-nav" aria-label="Navigasi utama">
           <div className="hd-side">
+            <button className="hd-btn hd-menu" aria-label="Buka menu" aria-expanded={sidebarOpen} title="Menu" onClick={() => { sound.playClick(); setSidebarOpen(true); }}>
+              <Icons.Menu size={18} />
+            </button>
             <WudysoftBrand onClick={() => sound.playClick()} />
           </div>
 
@@ -170,18 +192,6 @@ export default function Layout({ children }) {
           </button>
 
           <div className="hd-side hd-tools">
-            <button
-              className="hd-btn"
-              aria-label="Theme Studio"
-              title="Theme Studio"
-              onClick={() => {
-                sound.playClick();
-                setStudioOpen(true);
-              }}
-            >
-              <Icons.Sliders size={17} />
-            </button>
-
             {status === 'loading' ? (
               <div className="skeleton hd-btn" aria-hidden="true" />
             ) : user ? (
@@ -317,6 +327,8 @@ export default function Layout({ children }) {
         )}
       </AnimatePresence>
 
+      <a href="#konten" className="skip-link">Lewati ke konten</a>
+
       <CustomThemeStudio
         isOpen={studioOpen}
         onClose={() => setStudioOpen(false)}
@@ -324,11 +336,26 @@ export default function Layout({ children }) {
         setConfig={setConfig}
       />
 
-      <main className="wrap app-main">{children}</main>
+      <CurvedSidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        user={user}
+        pathname={router.pathname}
+        onSearch={() => setSearchOpen(true)}
+        onTheme={() => setStudioOpen(true)}
+        onLogout={() => logout('/')}
+      />
+      <ThemeFab hidden={studioOpen || sidebarOpen} onClick={() => setStudioOpen(true)} />
+
+      <main id="konten" className="wrap app-main" tabIndex={-1}>{children}</main>
 
       <div className="wrap footer-wrap">
         <SiteFooter />
       </div>
+
+      <AnimatePresence>
+        {dialOpen && <motion.div className="dial-scrim" onClick={() => setDialOpen(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />}
+      </AnimatePresence>
 
       {/* FLOATING BOTTOM NAVBAR */}
       <div className="floating-navbar-wrap">
@@ -343,15 +370,41 @@ export default function Layout({ children }) {
             {router.pathname === '/playground' && <motion.div layoutId="navDot" className="nav-active-dot" />}
           </Link>
 
-          <button
-            className="nav-center-action"
-            onClick={() => {
-              sound.playBeep();
-              router.push('/playground');
-            }}
-          >
-            <Icons.Zap size={24} />
-          </button>
+          <div className="dial-slot">
+            <AnimatePresence>
+              {dialOpen && (
+                <>
+                  {DIAL.map((d, i) => {
+                    const ang = (-150 + (i * 120) / (DIAL.length - 1)) * (Math.PI / 180);
+                    const R = 96;
+                    return (
+                      <motion.button
+                        key={d.href}
+                        className="dial-chip"
+                        aria-label={d.label}
+                        initial={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
+                        animate={{ x: Math.cos(ang) * R, y: Math.sin(ang) * R, scale: 1, opacity: 1 }}
+                        exit={{ x: 0, y: 0, scale: 0.2, opacity: 0, transition: { duration: 0.15 } }}
+                        transition={{ type: 'spring', stiffness: 380, damping: 22, delay: i * 0.04 }}
+                        onClick={() => { sound.playClick(); setDialOpen(false); router.push(d.href); }}
+                      >
+                        <d.Icon size={19} />
+                        <span>{d.label}</span>
+                      </motion.button>
+                    );
+                  })}
+                </>
+              )}
+            </AnimatePresence>
+            <button
+              className={`nav-center-action ${dialOpen ? 'open' : ''}`}
+              aria-label={dialOpen ? 'Tutup menu cepat' : 'Menu cepat'}
+              aria-expanded={dialOpen}
+              onClick={() => { sound.playBeep(); setDialOpen((o) => !o); }}
+            >
+              {dialOpen ? <Icons.Close key="x" size={24} strokeWidth={2.4} className="dock-ico" /> : <Icons.Zap key="z" size={26} strokeWidth={2.2} fill="currentColor" className="dock-ico dock-zap" />}
+            </button>
+          </div>
 
           <button
             className="nav-tab"

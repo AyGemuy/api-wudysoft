@@ -7,9 +7,12 @@ import { Icons } from '@/components/Icons';
 import { sound } from '@/src/lib/interactiveEffects';
 import { logout } from '@/src/lib/nav';
 import { passwordStrength } from '@/src/lib/authErrors';
+import { Reveal, CountUp } from '@/components/motion';
+import GithubCard from '@/components/GithubCard';
 
 const STRENGTH_LABEL = ['Terlalu lemah', 'Lemah', 'Cukup', 'Kuat', 'Sangat kuat'];
 const fmtDate = (v) => (v ? new Date(v).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '—');
+const daysSince = (v) => (v ? Math.max(0, Math.floor((Date.now() - new Date(v)) / 864e5)) : 0);
 const pwProblem = (pw) =>
   pw.length < 8 ? 'Minimal 8 karakter' : pw.length > 72 ? 'Maksimal 72 karakter' : !/[A-Za-z]/.test(pw) || !/\d/.test(pw) ? 'Harus ada huruf dan angka' : '';
 
@@ -168,8 +171,8 @@ export default function ProfilePage() {
   if (sUser.isGuest) {
     return (
       <>
-        <Seo title="Profil" path="/profile" noindex />
-        <div className="center">
+        <Seo title="Profil" path="/profile" label="PROFIL" description="Kelola profil akun Wudysoft." noindex />
+        <div className="center" style={{ flexDirection: 'column', alignItems: 'center', gap: 18, justifyContent: 'flex-start' }}>
           <motion.div className="glass auth-card text-center" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'center' }}><Avatar name={sUser.name} /></div>
             <h3 style={{ marginTop: 10 }}>{sUser.name}</h3>
@@ -180,6 +183,7 @@ export default function ProfilePage() {
               <button className="btn full" style={{ color: '#f87171' }} onClick={() => logout('/auth')}><Icons.LogOut size={16} /> Keluar</button>
             </div>
           </motion.div>
+          <div style={{ width: 'min(680px, 100%)' }}><GithubCard variant="up" /></div>
         </div>
       </>
     );
@@ -189,12 +193,25 @@ export default function ProfilePage() {
   const strength = passwordStrength(pw.next);
   const dirty = profile && (name.trim() !== (profile.name || '') || bio.trim() !== (profile.bio || ''));
   const hasUploaded = (p.image || '').startsWith('/api/avatar/');
+  const checks = [
+    ['Nama', !!p.name],
+    ['Bio', !!p.bio],
+    ['Foto', !!p.image],
+    ['Password', !!p.hasPassword],
+    ['Email terverifikasi', !!p.emailVerified],
+  ];
+  const done = checks.filter((c) => c[1]).length;
+  const pct = Math.round((done / checks.length) * 100);
+  const methods = [p.provider, ...(p.providers || []).map((x) => x.provider)].filter((v, i, a) => a && a.indexOf(v) === i);
+  const env = typeof window !== 'undefined'
+    ? { tz: Intl.DateTimeFormat().resolvedOptions().timeZone, lang: navigator.language, scr: `${window.screen.width}×${window.screen.height}` }
+    : { tz: '—', lang: '—', scr: '—' };
 
   return (
     <>
-      <Seo title="Profil Saya" path="/profile" noindex />
+      <Seo title="Profil Saya" path="/profile" label="PROFIL" description="Kelola profil, foto, password, dan token API akun Wudysoft." noindex />
       <div className="pf-page">
-        <motion.section className="glass pf-card pf-hero" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
+        <Reveal as="section" variant="zoom" className="glass pf-card pf-hero">
           <div className="pf-avatar-wrap">
             <Avatar src={p.image} name={p.name} size={96} />
             <button type="button" className="pf-cam" onClick={() => fileRef.current?.click()} disabled={!!busy} aria-label="Ganti foto profil" title="Ganti foto profil">
@@ -205,6 +222,7 @@ export default function ProfilePage() {
           <div className="pf-id">
             <h2>{p.name}</h2>
             <p className="pf-mail">{p.email}</p>
+            {p.bio && <p className="pf-bio">{p.bio}</p>}
             <div className="pf-badges">
               <span className="badge ok">{p.provider}</span>
               <span className="badge">{p.role}</span>
@@ -216,13 +234,20 @@ export default function ProfilePage() {
               </button>
             )}
           </div>
-        </motion.section>
+        </Reveal>
+
+        <Reveal as="section" variant="up" className="pf-stats" aria-label="Ringkasan akun">
+          <div className="glass pf-stat"><b><CountUp to={daysSince(p.createdAt)} duration={0.9} /></b><span>Hari bergabung</span></div>
+          <div className="glass pf-stat"><b><CountUp to={methods.length} duration={0.9} /></b><span>Metode masuk</span></div>
+          <div className="glass pf-stat"><b>{p.role}</b><span>Peran</span></div>
+          <div className="glass pf-stat"><b>{pct}%</b><span>Profil lengkap</span></div>
+        </Reveal>
 
         {(msg.text || loadErr) && (
           <div className={(msg.type === 'ok' ? 'alert ok-alert' : 'alert')} role={msg.type === 'ok' ? 'status' : 'alert'}>{msg.text || loadErr}</div>
         )}
 
-        <section className="glass pf-card">
+        <Reveal as="section" variant="blur" className="glass pf-card">
           <h3><Icons.User size={16} color="var(--a2)" /> Informasi profil</h3>
           <form
             className="pf-form"
@@ -240,20 +265,34 @@ export default function ProfilePage() {
               {busy === 'profile' ? 'Menyimpan…' : 'Simpan perubahan'}
             </button>
           </form>
-        </section>
+        </Reveal>
 
-        <section className="glass pf-card">
+        {pct < 100 && (
+          <Reveal as="section" variant="right" className="glass pf-card">
+            <h3><Icons.ShieldCheck size={16} color="var(--a2)" /> Kelengkapan profil · {pct}%</h3>
+            <div className="pf-meter" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${pct}%` }} /></div>
+            <div className="pf-checks">
+              {checks.map(([l, ok]) => <span key={l} className={ok ? 'badge ok' : 'badge'}>{ok ? '✓' : '○'} {l}</span>)}
+            </div>
+          </Reveal>
+        )}
+
+        <Reveal as="section" variant="left" className="glass pf-card">
           <h3><Icons.Server size={16} color="var(--a2)" /> Akun</h3>
           <dl className="pf-dl">
             <div><dt>Email</dt><dd>{p.email}</dd></div>
-            <div><dt>Metode masuk</dt><dd>{[p.provider, ...(p.providers || []).map((x) => x.provider)].filter((v, i, a) => a.indexOf(v) === i).join(', ')}</dd></div>
+            <div><dt>Nama</dt><dd>{p.name}</dd></div>
+            <div><dt>Metode masuk</dt><dd>{methods.join(', ')}</dd></div>
+            <div><dt>Status email</dt><dd>{p.emailVerified ? 'Terverifikasi' : 'Belum diverifikasi'}</dd></div>
+            <div><dt>Password</dt><dd>{p.hasPassword ? 'Sudah dibuat' : 'Belum dibuat'}</dd></div>
             <div><dt>Bergabung</dt><dd>{fmtDate(p.createdAt)}</dd></div>
+            <div><dt>Diperbarui</dt><dd>{fmtDate(p.updatedAt)}</dd></div>
             <div><dt>Login terakhir</dt><dd>{fmtDate(p.lastLoginAt)}</dd></div>
             <div><dt>ID</dt><dd className="mono">{p.id}</dd></div>
           </dl>
-        </section>
+        </Reveal>
 
-        <section className="glass pf-card">
+        <Reveal as="section" variant="flip" className="glass pf-card">
           <h3><Icons.Key size={16} color="var(--a2)" /> {p.hasPassword ? 'Ganti password' : 'Buat password'}</h3>
           {!p.hasPassword && <p className="pf-note">Akun ini masuk lewat {p.provider}. Buat password agar bisa juga masuk dengan email.</p>}
           <form className="pf-form" onSubmit={changePw}>
@@ -277,10 +316,10 @@ export default function ProfilePage() {
               {busy === 'pw' ? 'Menyimpan…' : p.hasPassword ? 'Perbarui password' : 'Simpan password'}
             </button>
           </form>
-        </section>
+        </Reveal>
 
         {sUser.apiToken && (
-          <section className="glass pf-card">
+          <Reveal as="section" variant="right" className="glass pf-card">
             <h3><Icons.Terminal size={16} color="var(--a2)" /> Token API</h3>
             <p className="pf-note">Dipakai untuk endpoint yang membutuhkan Bearer token. Berlaku 7 hari sejak login. Jangan dibagikan.</p>
             <div className="pf-token">
@@ -288,17 +327,29 @@ export default function ProfilePage() {
               <button type="button" className="btn" onClick={() => setShowToken((v) => !v)}>{showToken ? 'Sembunyi' : 'Lihat'}</button>
               <button type="button" className="btn" onClick={copyToken}>{copied ? 'Tersalin' : 'Salin'}</button>
             </div>
-          </section>
+          </Reveal>
         )}
+
+        <Reveal as="section" variant="zoom" className="glass pf-card">
+          <h3><Icons.Shield size={16} color="var(--a2)" /> Sesi &amp; perangkat</h3>
+          <dl className="pf-dl">
+            <div><dt>Sesi berakhir</dt><dd>{fmtDate(session?.expires)}</dd></div>
+            <div><dt>Zona waktu</dt><dd>{env.tz}</dd></div>
+            <div><dt>Bahasa</dt><dd>{env.lang}</dd></div>
+            <div><dt>Layar</dt><dd>{env.scr}</dd></div>
+          </dl>
+        </Reveal>
+
+        <GithubCard variant="up" />
 
         <button className="btn full pf-logout" onClick={() => logout('/')}><Icons.LogOut size={16} /> Keluar</button>
       </div>
 
       <style jsx>{`
         .pf-page { width: min(680px, 100%); margin: 0 auto; display: grid; gap: 16px; padding-bottom: 24px; }
-        .pf-card { padding: clamp(16px, 4vw, 24px); border-radius: var(--radius); display: grid; gap: 14px; }
-        .pf-card h3 { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
-        .pf-hero { grid-template-columns: auto 1fr; align-items: center; gap: 18px; }
+        :global(.pf-card) { padding: clamp(16px, 4vw, 24px); border-radius: var(--radius); display: grid; gap: 14px; }
+        :global(.pf-card) h3 { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+        :global(.pf-hero) { grid-template-columns: auto 1fr; align-items: center; gap: 18px; }
         .pf-avatar-wrap { position: relative; }
         :global(.pf-avatar) {
           border-radius: 50%; overflow: hidden; display: grid; place-items: center; font-weight: 800;
@@ -313,6 +364,14 @@ export default function ProfilePage() {
           background: var(--a1); border: 2px solid var(--surface);
         }
         .pf-cam:disabled { opacity: 0.6; cursor: wait; }
+        :global(.pf-stats) { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        :global(.pf-stat) { display: grid; gap: 2px; text-align: center; padding: 12px 6px; border-radius: var(--radius); }
+        :global(.pf-stat) b { font-size: 1.15rem; color: var(--a2); text-transform: capitalize; overflow-wrap: anywhere; }
+        :global(.pf-stat) span { font-size: 0.68rem; color: var(--muted); }
+        .pf-bio { font-size: 0.8rem; color: var(--muted); overflow-wrap: anywhere; }
+        .pf-meter { height: 8px; border-radius: 99px; background: var(--border); overflow: hidden; }
+        .pf-meter i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--a1), var(--a3)); transition: width 0.8s cubic-bezier(.22,1,.36,1); }
+        .pf-checks { display: flex; flex-wrap: wrap; gap: 6px; }
         .pf-id { min-width: 0; display: grid; gap: 4px; }
         .pf-id h2 { font-size: 1.25rem; overflow-wrap: anywhere; }
         .pf-mail { font-size: 0.78rem; font-family: var(--font-mono); color: var(--muted); overflow-wrap: anywhere; }
@@ -331,7 +390,7 @@ export default function ProfilePage() {
         .pf-token { display: flex; gap: 8px; flex-wrap: wrap; }
         .pf-token .input { flex: 1 1 200px; min-width: 0; }
         .pf-logout { color: #f87171; }
-        @media (max-width: 480px) { .pf-hero { grid-template-columns: 1fr; justify-items: center; text-align: center; } .pf-badges { justify-content: center; } .pf-link { justify-self: center; } }
+        @media (max-width: 480px) { :global(.pf-stats) { grid-template-columns: repeat(2, 1fr); } :global(.pf-hero) { grid-template-columns: 1fr; justify-items: center; text-align: center; } .pf-badges { justify-content: center; } .pf-link { justify-self: center; } }
       `}</style>
     </>
   );

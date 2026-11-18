@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 const ALL = ["spx", "anteraja", "jne", "jnt", "sicepat", "tiki", "pos", "lion", "sap", "ninja", "lex", "ide", "wahana"];
@@ -142,4 +143,4 @@ async function handler(req, res) {
   }
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

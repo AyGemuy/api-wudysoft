@@ -1,21 +1,60 @@
 {
   "name": "Wudysoft",
   "short_name": "Wudysoft",
-  "description": "Wudysoft — platform API, tools, dan komunikasi bergaya Microsoft Fluent.",
+  "description": "Platform API, tools developer, paste & code share, dan chat realtime.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#f3f3f3",
-  "theme_color": "#0067b8",
+  "background_color": "#0b0d11",
+  "theme_color": "#0b0d11",
   "lang": "id",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Playground", "url": "/playground" },
-    { "name": "Masuk", "url": "/auth" }
+    {
+      "name": "Playground",
+      "url": "/playground"
+    },
+    {
+      "name": "Pastes",
+      "url": "/tools/pastes"
+    },
+    {
+      "name": "Code Share",
+      "url": "/tools/code-share"
+    },
+    {
+      "name": "Chat Rooms",
+      "url": "/rooms"
+    }
+  ],
+  "id": "/",
+  "categories": [
+    "developer",
+    "productivity",
+    "utilities"
+  ],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
   ]
 }

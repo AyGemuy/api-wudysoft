@@ -5,9 +5,10 @@ import { useSession, signIn } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Seo from '@/components/Seo';
 import { Zap, User, RefreshCw, ArrowRight, ArrowLeft } from 'lucide-react';
+import AuthHero, { AuthScene } from '@/components/AuthHero';
 import { sound } from '@/src/lib/interactiveEffects';
 import { safeNext } from '@/src/lib/safeNext';
-import { hardGo } from '@/src/lib/nav';
+import { hardGo, goAfterLogin } from '@/src/lib/nav';
 import { authErrorMessage } from '@/src/lib/authErrors';
 
 export default function GuestPage() {
@@ -47,9 +48,9 @@ export default function GuestPage() {
         throw new Error(authErrorMessage(res.error) || 'Gagal memulai sesi tamu');
       }
 
-      sound.playBeep();
-      hardGo(targetDestination);
+      goAfterLogin(targetDestination);
     } catch (err) {
+      sound.play('fail');
       setError(err.message || 'Terjadi gangguan jaringan');
       setBusy(false);
     }
@@ -60,6 +61,7 @@ export default function GuestPage() {
       <Seo title="Masuk Sebagai Tamu" path="/auth/guest" description="Eksplorasi tanpa mendaftar akun." noindex />
 
       <div className="center">
+        <AuthScene>
         <motion.div
           className="auth-card glass"
           initial={{ opacity: 0, scale: 0.94, y: 20 }}
@@ -68,22 +70,7 @@ export default function GuestPage() {
         >
           {/* Top Icon HUD */}
           <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-            <motion.div
-              style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '50%',
-                background: 'rgba(56, 189, 248, 0.12)',
-                border: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 10px',
-              }}
-              whileHover={{ rotate: 12, scale: 1.05 }}
-            >
-              <Zap size={28} color="var(--a2)" />
-            </motion.div>
+            <AuthHero mode="guest" />
             <h2>Sesi Tamu Instan</h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>
               Inisialisasi akses cepat tanpa email & kata sandi.
@@ -158,6 +145,7 @@ export default function GuestPage() {
             </Link>
           </div>
         </motion.div>
+        </AuthScene>
       </div>
     </>
   );

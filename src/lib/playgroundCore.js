@@ -344,7 +344,7 @@ export function tokenizeJson(text) {
 /* ---------------- persistensi ---------------- */
 const KEY = 'wudysoft_pg_v2';
 export function loadState() {
-  try { return JSON.parse(localStorage.getItem(KEY) || localStorage.getItem('nexus_pg_v2') || 'null'); } catch { return null; }
+  try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; }
 }
 export function saveState(state) {
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}

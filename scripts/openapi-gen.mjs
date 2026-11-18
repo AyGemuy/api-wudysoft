@@ -14,7 +14,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const API_DIR = path.join(ROOT, 'pages', 'api');
 const OUT = path.join(ROOT, 'src', 'generated', 'openapi.json');
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
-const SKIP = new Set(['[[...path]].js', 'socket.js', 'og.js']);
+const SKIP = new Set(['[[...path]].js', 'socket.js']);
 const SKIP_ROUTES = new Set(['/api/playground/endpoints', '/api/routes', '/api/live']); // internal/usang
 
 /* ---------------- util ---------------- */
@@ -283,7 +283,7 @@ export function generateSpec() {
   return {
     openapi: '3.0.3',
     info: {
-      title: `${pkg.name || 'Wudysoft'} API`,
+      title: `${pkg.name || 'WUDYSOFT'} API`,
       version: pkg.version || '1.0.0',
       description: `Dokumen dibuat otomatis dari \`pages/api\` (${opCount} operasi pada ${pathCount} path). Detail akurat ditambahkan lewat \`scripts/openapi-registry.mjs\`.\n\n**Auth:** sesi browser (cookie NextAuth) atau \`Authorization: Bearer <apiToken>\`.`,
     },

@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 class Brainly {
@@ -91,4 +92,4 @@ async function handler(req, res) {
   res.status(405).end(`Method ${req.method} Not Allowed`);
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

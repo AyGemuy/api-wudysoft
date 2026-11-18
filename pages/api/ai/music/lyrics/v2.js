@@ -1,3 +1,5 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import SpoofHead from "@/lib/spoof-head";
 class SnonLyricGenerator {
@@ -47,7 +49,7 @@ class SnonLyricGenerator {
     }
   }
 }
-export default async function SnonLyricHandler(req, res) {
+async function SnonLyricHandler(req, res) {
   const params = req.method === "POST" ? req.body : req.query;
   if (!params.prompt) {
     return res.status(400).json({
@@ -65,3 +67,5 @@ export default async function SnonLyricHandler(req, res) {
     });
   }
 }
+
+export default withApiLog(withRateLimit(SnonLyricHandler));

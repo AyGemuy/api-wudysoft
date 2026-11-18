@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const AVAILABLE_MODELS = ["llama-3-70b", "llama-3-405b", "gpt-3.5-turbo", "gpt-4o"];
@@ -58,4 +59,4 @@ async function handler(req, res) {
   });
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

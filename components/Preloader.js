@@ -207,7 +207,7 @@ export default function Preloader() {
               </div>
             </div>
 
-            <div className="boot-title">Wudysoft</div>
+            <div className="boot-title">WUDYSOFT</div>
 
             <div className="boot-progress" aria-hidden="true">
               <div className="boot-progress-fill" style={{ width: `${Math.round(progress)}%` }} />

@@ -1,3 +1,5 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import os from "os";
 
 function toSnakeCase(str) {
@@ -173,7 +175,7 @@ function getSystemInfo() {
     }
   };
 }
-export default function handler(req, res) {
+function handler(req, res) {
   try {
     const systemInfo = getSystemInfo();
     const formattedInfo = formatToSnakeCase(systemInfo);
@@ -204,3 +206,5 @@ export default function handler(req, res) {
     });
   }
 }
+
+export default withApiLog(withRateLimit(handler));

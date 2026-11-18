@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Seo from '@/components/Seo';
-import Modal from '@/components/Modal';
 import {
   MessageSquare,
   Users,
@@ -35,8 +34,11 @@ export default function RoomsPage() {
 
   const messagesEndRef = useRef(null);
 
+  // Gulir hanya area pesan (scrollIntoView menggulir seluruh halaman → di HP loncat ke footer)
+  const streamRef = useRef(null);
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = streamRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   };
 
   // 1. Fetch Room List
@@ -78,23 +80,9 @@ export default function RoomsPage() {
     return () => clearInterval(timer);
   }, [activeRoom]);
 
-  // Gulir ke bawah hanya saat ada pesan baru / ganti channel (polling 3,5 dtk tidak menyentak scroll)
-  const lastMsgRef = useRef({ room: null, id: null });
   useEffect(() => {
-    const lastId = messages.length ? messages[messages.length - 1]._id : null;
-    const prev = lastMsgRef.current;
-    if (prev.room !== activeRoom || prev.id !== lastId) {
-      lastMsgRef.current = { room: activeRoom, id: lastId };
-      scrollToBottom();
-    }
-  }, [messages, activeRoom]);
-
-  // Channel aktif selalu terlihat di daftar horizontal (mobile)
-  const channelsRef = useRef(null);
-  useEffect(() => {
-    const el = channelsRef.current?.querySelector('.channel-btn.active');
-    el?.scrollIntoView?.({ block: 'nearest', inline: 'center', behavior: 'smooth' });
-  }, [activeRoom, rooms]);
+    scrollToBottom();
+  }, [messages]);
 
   // 3. Send Message
   const handleSendMessage = async (e) => {
@@ -189,7 +177,7 @@ export default function RoomsPage() {
 
   // 6. Delete Message
   const handleDeleteMessage = async (messageId) => {
-    if (!confirm('Hapus pesan ini dari cluster?')) return;
+    if (!confirm('Hapus pesan ini?')) return;
     sound.playClick();
     try {
       await fetch('/api/rooms', {
@@ -207,7 +195,7 @@ export default function RoomsPage() {
 
   return (
     <>
-      <Seo title="Cyber Rooms" path="/rooms" />
+      <Seo title="Chat Rooms" description="Ruang obrolan realtime multi-channel: buat channel, kirim pesan, dan beri reaksi." path="/rooms" label="CHAT" />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* Header */}
@@ -215,10 +203,10 @@ export default function RoomsPage() {
           <div>
             <div className="badge ok" style={{ marginBottom: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <Sparkles size={14} color="var(--a2)" />
-              <span>COMMUNICATION MESH NETWORK</span>
+              <span>REALTIME CHAT</span>
             </div>
-            <h1>Cyber Rooms & Mesh Chat</h1>
-            <p>Saluran komunikasi terenkripsi antar-node cluster.</p>
+            <h1>Chat Rooms</h1>
+            <p>Ngobrol realtime di banyak channel.</p>
           </div>
 
           <motion.button
@@ -236,68 +224,78 @@ export default function RoomsPage() {
         </header>
 
         {/* Modal Buat Room */}
-        <Modal open={createModal} onClose={() => setCreateModal(false)} title="Buat Group Channel" icon={<Users size={18} color="var(--a2)" />} maxWidth="440px">
-          <form onSubmit={handleCreateGroup} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div className="field">
-              <label>Nama Channel (Tanpa Spasi)</label>
-              <input
-                required
-                className="input"
-                placeholder="contoh: developer-zone"
-                value={newRoomName}
-                onChange={(e) => setNewRoomName(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                autoFocus
-              />
-            </div>
-            <motion.button type="submit" className="btn primary full" whileTap={{ scale: 0.98 }}>
-              Inisialisasi Channel
-            </motion.button>
-          </form>
-        </Modal>
+        <AnimatePresence>
+          {createModal && (
+            <motion.div
+              className="search-modal-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setCreateModal(false)}
+            >
+              <motion.div
+                className="search-modal glass"
+                initial={{ scale: 0.95, y: -20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.95, y: -20 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Users size={18} color="var(--a2)" /> Buat Group Channel
+                  </h3>
+                  <button onClick={() => setCreateModal(false)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}>
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreateGroup} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div className="field">
+                    <label>Nama Channel (Tanpa Spasi)</label>
+                    <input
+                      required
+                      className="input"
+                      placeholder="contoh: developer-zone"
+                      value={newRoomName}
+                      onChange={(e) => setNewRoomName(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                      autoFocus
+                    />
+                  </div>
+                  <motion.button type="submit" className="btn primary full" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    Inisialisasi Channel ⚡
+                  </motion.button>
+                </form>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Chat Layout Box */}
         <div className="rooms-container glass">
-          {/* Daftar channel: sidebar di desktop, strip horizontal di mobile */}
-          <aside className="rooms-sidebar" aria-label="Daftar channel">
+          {/* Sidebar Channels */}
+          <aside className="rooms-sidebar">
             <div className="sidebar-head">
               <MessageSquare size={16} color="var(--a2)" />
               <span>ACTIVE CHANNELS</span>
-              <span className="sidebar-count">{rooms.length}</span>
-              <button
-                type="button"
-                className="sidebar-add"
-                aria-label="Buat channel baru"
-                onClick={() => {
-                  sound.playClick();
-                  setCreateModal(true);
-                }}
-              >
-                <Plus size={15} />
-              </button>
             </div>
 
-            <div className="channels-list" ref={channelsRef} role="tablist" aria-label="Channel">
-              {loadingRooms && rooms.length === 0
-                ? [0, 1, 2].map((i) => <div key={i} className="skeleton channel-skeleton" />)
-                : rooms.map((r) => {
-                    const isActive = activeRoom === r.roomName;
-                    return (
-                      <motion.button
-                        key={r.roomName}
-                        role="tab"
-                        aria-selected={isActive}
-                        className={`channel-btn ${isActive ? 'active' : ''}`}
-                        onClick={() => {
-                          sound.playClick();
-                          setActiveRoom(r.roomName);
-                        }}
-                        whileTap={{ scale: 0.97 }}
-                      >
-                        <Hash size={16} color={isActive ? 'var(--a2)' : 'var(--muted)'} />
-                        <span className="channel-name">{r.roomName}</span>
-                      </motion.button>
-                    );
-                  })}
+            <div className="channels-list">
+              {rooms.map((r) => {
+                const isActive = activeRoom === r.roomName;
+                return (
+                  <motion.button
+                    key={r.roomName}
+                    className={`channel-btn ${isActive ? 'active' : ''}`}
+                    onClick={() => {
+                      sound.playClick();
+                      setActiveRoom(r.roomName);
+                    }}
+                  >
+                    <Hash size={16} color={isActive ? 'var(--a2)' : 'var(--muted)'} />
+                    <span className="channel-name">{r.roomName}</span>
+                  </motion.button>
+                );
+              })}
             </div>
           </aside>
 
@@ -315,7 +313,7 @@ export default function RoomsPage() {
             </div>
 
             {/* Message History */}
-            <div className="messages-stream">
+            <div className="messages-stream" ref={streamRef}>
               {messages.length === 0 ? (
                 <div style={{ textAlign: 'center', margin: 'auto', color: 'var(--muted)', fontSize: '0.85rem' }}>
                   Belum ada transmisi pesan di channel #{activeRoom}. Mulai percakapan pertama!
@@ -327,8 +325,11 @@ export default function RoomsPage() {
                     <motion.div
                       key={msg._id}
                       className={`chat-bubble-wrap ${isMe ? 'mine' : ''}`}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      layout="position"
+                      initial={{ opacity: 0, x: isMe ? 28 : -28, scale: 0.9 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                      style={{ transformOrigin: isMe ? 'right bottom' : 'left bottom' }}
                     >
                       <div className="bubble-head">
                         <span className="bubble-author">{msg.name}</span>
@@ -439,35 +440,9 @@ export default function RoomsPage() {
           color: var(--text);
         }
         :global(.channel-btn.active) {
-          background: color-mix(in srgb, var(--a2) 14%, transparent);
-          border-color: color-mix(in srgb, var(--a2) 32%, transparent);
+          background: rgba(56, 189, 248, 0.14);
+          border-color: rgba(56, 189, 248, 0.3);
           color: var(--a2);
-        }
-        :global(.channel-skeleton) {
-          height: 40px;
-          border-radius: 12px;
-          flex: 0 0 auto;
-          min-width: 110px;
-        }
-        .sidebar-count {
-          margin-left: auto;
-          padding: 1px 8px;
-          border-radius: 999px;
-          background: color-mix(in srgb, var(--text) 8%, transparent);
-          font-size: 0.7rem;
-        }
-        .sidebar-add {
-          display: none;
-          align-items: center;
-          justify-content: center;
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
-          border: 1px solid var(--border);
-          background: color-mix(in srgb, var(--text) 4%, transparent);
-          color: var(--a2);
-          cursor: pointer;
-          flex-shrink: 0;
         }
         .channel-name {
           white-space: nowrap;
@@ -533,8 +508,8 @@ export default function RoomsPage() {
           word-break: break-word;
         }
         :global(.chat-bubble-wrap.mine) .bubble-body {
-          background: color-mix(in srgb, var(--a2) 18%, transparent);
-          border-color: color-mix(in srgb, var(--a2) 45%, transparent);
+          background: linear-gradient(135deg, rgba(2, 132, 199, 0.35), rgba(99, 102, 241, 0.35));
+          border-color: rgba(56, 189, 248, 0.4);
         }
         .bubble-actions {
           display: flex;
@@ -571,72 +546,43 @@ export default function RoomsPage() {
         .chat-input-field {
           flex: 1;
         }
+        .chat-viewport { min-height: 0; }
         @media (max-width: 768px) {
           .rooms-container {
-            grid-template-columns: minmax(0, 1fr);
+            grid-template-columns: 1fr;
             grid-template-rows: auto minmax(0, 1fr);
             height: min(640px, calc(100dvh - 190px));
-            min-height: 440px;
+            min-height: 460px;
           }
-          /* Daftar group tampil sebagai strip horizontal di atas chat */
+          /* HP: daftar channel tampil sebagai strip horizontal di atas chat */
           .rooms-sidebar {
-            display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            align-items: center;
             border-right: none;
             border-bottom: 1px solid var(--border);
             min-width: 0;
           }
-          .sidebar-head {
-            padding: 10px 12px 6px;
-            border-bottom: none;
-          }
-          .sidebar-add {
-            display: inline-flex;
-          }
-          .sidebar-count {
-            margin-left: 0;
-          }
-          .sidebar-head .sidebar-add {
-            margin-left: auto;
-          }
+          .sidebar-head { padding: 0 6px 0 14px; border-bottom: none; flex-shrink: 0; }
+          .sidebar-head span { display: none; }
           .channels-list {
             flex-direction: row;
-            align-items: center;
-            gap: 8px;
+            gap: 6px;
+            padding: 8px 12px 8px 4px;
             overflow-x: auto;
             overflow-y: hidden;
-            padding: 4px 12px 12px;
-            -webkit-overflow-scrolling: touch;
-            scroll-snap-type: x proximity;
+            min-width: 0;
+            flex: 1;
             scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
           }
-          .channels-list::-webkit-scrollbar {
-            display: none;
-          }
-          :global(.channel-btn) {
-            flex: 0 0 auto;
-            max-width: 180px;
-            scroll-snap-align: center;
-            border-color: var(--border);
-            padding: 8px 14px;
-            border-radius: 999px;
-            min-height: 40px;
-          }
-          :global(.channel-btn:hover) {
-            transform: none;
-          }
-          .chat-top-bar {
-            padding: 10px 12px;
-          }
-          .messages-stream {
-            padding: 12px;
-          }
-          :global(.chat-bubble-wrap) {
-            max-width: 90%;
-          }
-          .chat-input-bar {
-            padding: 10px 12px calc(10px + var(--safe-bottom, 0px) * 0);
-          }
+          .channels-list::-webkit-scrollbar { display: none; }
+          :global(.channel-btn) { flex-shrink: 0; padding: 8px 12px; border-radius: var(--r-chip, 8px); border-color: var(--border); }
+          :global(.channel-btn:hover) { transform: none; }
+          .channel-name { max-width: 110px; }
+          :global(.chat-bubble-wrap) { max-width: 88%; }
+          .chat-top-bar { padding: 10px 14px; }
+          .messages-stream { padding: 14px; }
+          .chat-input-bar { padding: 10px 12px; }
         }
       `}</style>
     </>

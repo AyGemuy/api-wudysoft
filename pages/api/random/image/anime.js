@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const availableFiles = ["aesthetic", "ahegao", "akira", "akiyama", "ana", "anjing", "ass", "asuna", "ayuzawa", "bdsm", "blackpink", "blowjob", "boneka", "boruto", "cecan", "cecan2", "cecan3", "cecan4", "cecan5", "chiho", "china", "chitoge", "cogan", "cogan2", "cosplay", "cosplayloli", "cosplaysagiri", "cuckold", "cum", "cyberspace", "deidara", "doraemon", "eba", "elaina", "emilia", "ero", "erza", "femdom", "foot", "gangbang", "gifs", "glasses", "gremory", "hekel", "hentai", "hestia", "hinata", "inori", "Islamic", "isuzu", "itachi", "itori", "jahy", "jeni", "jiso", "justina", "kaga", "kagura", "kakasih", "kaori", "kartun", "katakata", "keneki", "kotori", "kpop", "kucing", "kurumi", "lisa", "loli", "madara", "manga", "masturbation", "megumin", "mikasa", "miku", "minato", "mobil", "montor", "mountain", "naruto", "neko", "neko2", "nekonime", "nezuko", "nsfwloli", "onepiece", "orgy", "panties", "pentol", "pokemon", "ppcouple", "programing", "profilwa", "pubg", "pussy", "rize", "rose", "ryujin", "sagiri", "sakura", "sasuke", "satanic", "shina", "shinka", "shinomiya", "shizuka", "shota", "tatasurya", "tejina", "technology", "tentacles", "thighs", "toukachan", "tsunade", "waifu", "waifu2", "wallhp", "yotsuba", "yuki", "yulibocil", "yumeko", "yuri", "zettai"];
@@ -33,4 +34,4 @@ async function handler(req, res) {
   }
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

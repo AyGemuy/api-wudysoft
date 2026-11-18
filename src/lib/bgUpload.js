@@ -35,10 +35,10 @@ export async function saveBackgroundFile(file) {
 }
 
 export function readBackground() {
-  try { return localStorage.getItem(BG_UPLOAD_KEY) || localStorage.getItem('nexus_bg_upload') || ''; } catch { return ''; }
+  try { return localStorage.getItem(BG_UPLOAD_KEY) || ''; } catch { return ''; }
 }
 
 export function clearBackground() {
-  try { localStorage.removeItem(BG_UPLOAD_KEY); localStorage.removeItem('nexus_bg_upload'); } catch {}
+  try { localStorage.removeItem(BG_UPLOAD_KEY); } catch {}
   window.dispatchEvent(new Event('wudysoft:bg-upload'));
 }

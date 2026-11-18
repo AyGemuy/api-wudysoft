@@ -88,7 +88,7 @@ const nextConfig = {
     if (isServer) {
       config.module.rules.unshift({
         test: /[\\/]pages[\\/]api[\\/].+\.js$/,
-        exclude: /[\\/]pages[\\/]api[\\/](auth[\\/]\[\.\.\.nextauth\]|stats|live|socket|avatar|og\.js$)/,
+        exclude: /[\\/]pages[\\/]api[\\/](auth[\\/]\[\.\.\.nextauth\]|stats|live|socket|avatar|og|preview)/,
         enforce: "pre",
         use: [{ loader: require("path").join(__dirname, "scripts", "api-log-loader.js") }],
       });
@@ -130,6 +130,13 @@ const nextConfig = {
         key: "Service-Worker-Allowed",
         value: "/"
       }]
+    }, {
+      // Respons API (JSON) tidak perlu diindeks mesin pencari; gambar preview /api/og dikecualikan
+      source: "/api/:path((?!og$).*)",
+      headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }]
+    }, {
+      source: "/_next/static/:path*",
+      headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }]
     }];
   }
 };

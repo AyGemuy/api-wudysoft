@@ -1,6 +1,6 @@
 /**
- * Wudysoft Theme Engine
- * - 19 preset (gelap & terang) + override warna bebas
+ * WUDYSOFT Theme Engine
+ * - 17 preset (gelap & terang) + override warna bebas
  * - Bentuk (radius, blur, gaya kartu), efek (partikel, blob, grid, spotlight, tilt),
  *   tipografi (font, skala), animasi (kecepatan / mati), kepadatan, ukuran kartu
  * - Semua jadi CSS variable / data-attribute di <html>, disimpan di localStorage
@@ -56,9 +56,9 @@ const P = (id, name, a1, a2, a3, bg1, bg2, extra = {}) => ({
 });
 
 export const PRESETS = [
-  // Microsoft / Fluent — tema bawaan Wudysoft
-  P('microsoft', 'Microsoft', '#0067b8', '#0078d4', '#00a4ef', '#f3f3f3', '#ffffff', { text: '#1b1b1b', muted: '#5e5e5e' }),
-  P('microsoft-dark', 'Microsoft Dark', '#0078d4', '#4cc2ff', '#2899f5', '#1b1b1b', '#2b2b2b', { text: '#ffffff', muted: '#adadad' }),
+  // Tema bawaan: bahasa visual Fluent (biru #0078D4, permukaan netral, sudut halus)
+  P('fluent', 'Fluent Dark', '#0078d4', '#4cc2ff', '#8764b8', '#0b0d11', '#16191f', { text: '#f3f2f1', muted: '#a19f9d' }),
+  P('fluentlight', 'Fluent Light', '#0f6cbd', '#0078d4', '#8764b8', '#f3f2f1', '#ffffff', { text: '#201f1e', muted: '#605e5c' }),
   P('stealth', 'Stealth', '#0284c7', '#38bdf8', '#6366f1', '#07090e', '#0f172a'),
   P('cyberpunk', 'Cyberpunk', '#f43f5e', '#fbbf24', '#d946ef', '#0c0814', '#1e102a'),
   P('matrix', 'Matrix', '#059669', '#10b981', '#34d399', '#030d07', '#091f14'),
@@ -84,7 +84,6 @@ const F = (id, name, cat, family, weights, fallback) => ({
   stack: `'${family}', ${fallback}`,
 });
 const SANS = 'system-ui, -apple-system, sans-serif';
-const SEGOE = "'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif";
 const SERIF = "Georgia, 'Times New Roman', serif";
 const MONO = 'ui-monospace, monospace';
 
@@ -97,8 +96,6 @@ export const FONT_CATS = [
 ];
 
 export const FONTS = [
-  // Microsoft (font sistem Windows; di perangkat lain otomatis memakai font sistem terdekat)
-  { id: 'segoe', name: 'Segoe UI', cat: 'sans', family: null, gf: null, stack: SEGOE },
   // sans modern
   F('jakarta', 'Plus Jakarta', 'sans', 'Plus Jakarta Sans', '400;500;600;700;800', SANS),
   F('inter', 'Inter', 'sans', 'Inter', '400;500;600;700;800', SANS),
@@ -113,6 +110,7 @@ export const FONTS = [
   F('space', 'Space Grotesk', 'sans', 'Space Grotesk', '400;500;600;700', SANS),
   F('poppins', 'Poppins', 'sans', 'Poppins', '400;500;600;700;800', SANS),
   F('ibmplex', 'IBM Plex Sans', 'sans', 'IBM Plex Sans', '400;500;600;700', SANS),
+  { id: 'segoe', name: 'Segoe UI', cat: 'sans', family: 'Open Sans', gf: GF('Open Sans', '400;500;600;700;800'), stack: "'Segoe UI Variable Text', 'Segoe UI', 'Selawik', 'Open Sans', system-ui, -apple-system, sans-serif" },
   { id: 'system', name: 'System UI', cat: 'sans', family: null, gf: null, stack: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
   // display / cyber
   F('orbitron', 'Orbitron', 'display', 'Orbitron', '400;500;600;700;800', SANS),
@@ -129,7 +127,6 @@ export const FONTS = [
   F('lora', 'Lora', 'serif', 'Lora', '400;500;600;700', SERIF),
   F('dmserif', 'DM Serif Display', 'serif', 'DM Serif Display', '', SERIF),
   // mono
-  { id: 'cascadia', name: 'Cascadia Code', cat: 'mono', family: null, gf: null, stack: "'Cascadia Code', 'Cascadia Mono', Consolas, 'JetBrains Mono', ui-monospace, monospace" },
   F('jetbrains', 'JetBrains Mono', 'mono', 'JetBrains Mono', '400;600', MONO),
   F('firacode', 'Fira Code', 'mono', 'Fira Code', '400;600', MONO),
   F('spacemono', 'Space Mono', 'mono', 'Space Mono', '400;700', MONO),
@@ -141,7 +138,7 @@ export const FONTS = [
   F('kalam', 'Kalam', 'fun', 'Kalam', '400;700', 'cursive'),
 ];
 
-const DEFAULT_LOADED = new Set(['jakarta', 'jetbrains']); // sudah dimuat di _document.js
+const DEFAULT_LOADED = new Set(['jakarta', 'jetbrains', 'segoe']); // sudah dimuat di _document.js
 export const getFont = (id) => FONTS.find((f) => f.id === id) || FONTS[0];
 
 /** URL Google Fonts hanya untuk font terpilih yang belum dimuat default. */
@@ -203,35 +200,35 @@ export const RADIUS_PRESETS = [
 ];
 
 export const DEFAULT_CONFIG = {
-  theme: 'microsoft',
+  theme: 'fluent',
   custom: {},
-  // bentuk (60 = pill)
-  radius: 8, // kartu (Fluent: 8px)
-  rBtn: 4,
-  rInput: 4,
-  rChip: 4,
-  rDockTop: 12, // header & navbar melayang: sudut atas
-  rDockBottom: 12, // sudut bawah
-  rDockBtn: 6, // ikon di dalam dock
-  rModal: 8,
-  blur: 20,
-  glass: 0.8,
-  border: 0.1,
-  card: 'solid',
+  // bentuk (60 = pill) — sudut halus ala Fluent
+  radius: 10, // kartu
+  rBtn: 6,
+  rInput: 6,
+  rChip: 6,
+  rDockTop: 14, // header & navbar melayang: sudut atas
+  rDockBottom: 14, // sudut bawah
+  rDockBtn: 8, // ikon di dalam dock
+  rModal: 12,
+  blur: 28,
+  glass: 0.75,
+  border: 0.12,
+  card: 'glass',
   density: 'normal', // compact | normal | spacious
   cardSize: 'm', // s | m | l
   // efek latar
   particle: 'off',
-  blobs: false,
-  blobIntensity: 0.2,
+  blobs: true,
+  blobIntensity: 0.22,
   grid: false,
   spotlight: false,
   // animasi
   anim: 'on', // master on | off
   speed: 1,
-  animPage: 'fade', // slide | fade | zoom | none
+  animPage: 'auto', // auto | slide | fade | zoom | blur | slideX | rise | flip | drop | skew | none
   animEntrance: true,
-  animHover: 'lift', // lift | tilt | glow | none
+  animHover: 'tilt', // lift | tilt | glow | none
   animPreview: true,
   animBlobs: true,
   animBtn: true,
@@ -248,12 +245,12 @@ export const DEFAULT_CONFIG = {
   // teks
   font: 'segoe',
   fontHeading: 'same',
-  fontMono: 'cascadia',
+  fontMono: 'jetbrains',
   fontScale: 100,
   soundEnabled: true,
 };
 
-export const STORAGE_KEY = 'wudysoft_theme_config_v1';
+export const STORAGE_KEY = 'wudysoft_theme_config_v2';
 export const BOOT_KEY = 'wudysoft_theme_boot';
 
 const FONT_ALIASES = { mono: 'jetbrains' };
@@ -276,15 +273,15 @@ export function sanitizeConfig(raw) {
   c.density = pick(c.density, ['compact', 'normal', 'spacious'], 'normal');
   c.cardSize = pick(c.cardSize, ['s', 'm', 'l'], 'm');
   c.anim = c.anim === 'off' ? 'off' : 'on';
-  c.animPage = pick(c.animPage, ['slide', 'fade', 'zoom', 'none'], 'slide');
+  c.animPage = pick(c.animPage, ['auto', 'slide', 'fade', 'zoom', 'blur', 'slideX', 'rise', 'flip', 'drop', 'skew', 'none'], 'auto');
   // migrasi: `tilt` (boolean) → animHover
-  c.animHover = pick(r.animHover !== undefined ? c.animHover : r.tilt === false ? 'lift' : 'tilt', ['lift', 'tilt', 'glow', 'none'], 'lift');
+  c.animHover = pick(r.animHover !== undefined ? c.animHover : r.tilt === false ? 'lift' : 'tilt', ['lift', 'tilt', 'glow', 'none'], 'tilt');
   ['animEntrance', 'animPreview', 'animBlobs', 'animBtn', 'animSplash', 'animBar'].forEach((k) => { c[k] = bool(c[k], DEFAULT_CONFIG[k]); });
 
   ['radius', 'rBtn', 'rInput', 'rChip', 'rDockTop', 'rDockBottom', 'rDockBtn', 'rModal'].forEach((k) => { c[k] = Math.round(num(c[k], 0, 60, DEFAULT_CONFIG[k])); });
-  c.blur = num(c.blur, 0, 50, 20);
-  c.glass = num(c.glass, 0.1, 1, 0.8);
-  c.border = num(c.border, 0, 0.6, 0.1);
+  c.blur = num(c.blur, 0, 50, 26);
+  c.glass = num(c.glass, 0.1, 1, 0.75);
+  c.border = num(c.border, 0, 0.6, 0.12);
   c.blobIntensity = num(c.blobIntensity, 0, 0.7, 0.35);
   c.speed = num(c.speed, 0.5, 2, 1);
   c.fontScale = num(c.fontScale, 85, 120, 100);
@@ -437,6 +434,8 @@ export function loadConfig() {
   try {
     const v2 = localStorage.getItem(STORAGE_KEY);
     if (v2) return sanitizeConfig(JSON.parse(v2));
+    const old = localStorage.getItem('wudysoft_theme_config'); // migrasi versi lama
+    if (old) return sanitizeConfig(JSON.parse(old));
   } catch {}
   return { ...DEFAULT_CONFIG };
 }

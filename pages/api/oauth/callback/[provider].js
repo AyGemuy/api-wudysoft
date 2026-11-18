@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import { PROVIDERS, isConfigured, baseUrl } from '../../../../src/lib/oauth';
 import { parseCookies, startSession, cookie } from '../../../../src/lib/session';
@@ -36,4 +37,4 @@ async function handler(req, res) {
   }
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

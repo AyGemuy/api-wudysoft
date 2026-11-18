@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const modelNames = ["Cristiano Ronaldo", "Lionel Messi", "Ataturk", "Albert Einstein", "Aristotle", "Carl Sagan", "Isaac Asimov", "Confucius", "Frida Kahlo", "G.G. Marquez", "Ernest Miller Hemingway", "Lucius Annaeus Seneca", "Steve Jobs", "Nikola Tesla", "Socrates", "Thomas Edison", "Rosalind Franklin", "Gary Vaynerchuk", "Amelia Earhart", "Elon Musk", "Marcus Aurelius", "Ludwig van Beethoven", "Jane Goodall", "Rumi"];
@@ -42,4 +43,4 @@ async function handler(req, res) {
   });
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

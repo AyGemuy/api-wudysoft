@@ -1,8 +1,8 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import connectMongo from "@/lib/mongoose";
 import Code from "@/models/CodeShare";
-import mongoose from "mongoose";
-const badId = id => !mongoose.isValidObjectId(id);
+import apiConfig from "@/configs/apiConfig";
 async function handler(req, res) {
   try {
     await connectMongo();
@@ -16,25 +16,34 @@ async function handler(req, res) {
         } = req.query;
         let filter = {};
         if (id) {
-          if (badId(id)) return res.status(400).json({
-            message: "Invalid id format!"
-          });
           filter._id = id;
         } else {
           if (search) {
             filter.fileName = {
-              $regex: String(search).slice(0, 100).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+              $regex: String(search).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
               $options: "i"
             };
           }
           if (tag) {
-            filter.tag = String(tag);
+            filter.tag = tag;
           }
         }
-        const codes = await Code.find(filter).sort({
-          [["createdAt", "likes", "views", "fileName"].includes(sortBy) ? sortBy : "createdAt"]: -1
-        }).lean();
-        return res.status(200).json(codes);
+        const SORTABLE = ["createdAt", "likes", "views", "dislikes", "fileName"];
+        const sort = {
+          [SORTABLE.includes(sortBy) ? sortBy : "createdAt"]: -1,
+          _id: -1
+        };
+        // Dengan `page` → terpaginasi {items,total,page,pages,limit}. Tanpa `page` → array lama (maks 300).
+        if (req.query.page === undefined || id) {
+          const codes = await Code.find(filter).sort(sort).limit(300).lean();
+          return res.status(200).json(codes);
+        }
+        const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 12));
+        const total = await Code.countDocuments(filter);
+        const pages = Math.max(1, Math.ceil(total / limit));
+        const page = Math.min(pages, Math.max(1, parseInt(req.query.page, 10) || 1));
+        const items = await Code.find(filter).sort(sort).skip((page - 1) * limit).limit(limit).lean();
+        return res.status(200).json({ items, total, page, pages, limit });
       }
       case "POST": {
         const {
@@ -73,9 +82,6 @@ async function handler(req, res) {
             message: "Missing required fields: id and action!"
           });
         }
-        if (badId(id)) return res.status(400).json({
-          message: "Invalid id format!"
-        });
         let updateQuery = {};
         switch (action) {
           case "like":
@@ -118,11 +124,10 @@ async function handler(req, res) {
         });
       }
       case "DELETE": {
-        const id = (req.body && req.body.id) || req.query.id;
+        const {
+          id
+        } = req.body;
         if (id) {
-          if (badId(id)) return res.status(400).json({
-            message: "Invalid id format!"
-          });
           const deletedCode = await Code.findByIdAndDelete(id);
           if (!deletedCode) {
             return res.status(404).json({
@@ -133,6 +138,10 @@ async function handler(req, res) {
             message: "Code deleted successfully!"
           });
         } else {
+          // hapus massal hanya untuk admin (adminKey = PASSWORD di configs/apiConfig.cjs)
+          if (!req.body?.adminKey || req.body.adminKey !== apiConfig.PASSWORD) {
+            return res.status(403).json({ message: "adminKey is required to clear all codes!" });
+          }
           await Code.deleteMany({});
           return res.status(200).json({
             message: "All codes cleared!"
@@ -152,4 +161,4 @@ async function handler(req, res) {
   }
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

@@ -5,11 +5,13 @@ import { SessionProvider } from 'next-auth/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import Preloader from '@/components/Preloader';
-import Seo from '@/components/Seo';
 import PageTransition from '@/components/PageTransition';
 import { sound } from '@/src/lib/interactiveEffects';
 import { lockZoom } from '@/src/lib/lockZoom';
+import GlobalEffects from '@/components/motion/GlobalEffects';
+import AudioControl from '@/components/AudioControl';
 import '@/styles/globals.css';
+import '@/styles/motion.css';
 
 export default function App({ Component, pageProps: { session, ...pageProps } }) {
   const router = useRouter();
@@ -40,18 +42,18 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
           name="viewport"
           content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
         />
+        <title>Wudysoft — API, Tools & Developer Platform</title>
       </Head>
-
-      {/* Meta bawaan dari peta rute; <Seo /> milik halaman menimpanya (tag ber-key sama) */}
-      <Seo />
 
       {/* Splash awal + indikator loading antar halaman */}
       <Preloader />
+      <GlobalEffects />
 
       <Layout>
         <PageTransition>
           <Component {...pageProps} />
         </PageTransition>
+        <AudioControl />
       </Layout>
     </SessionProvider>
   );

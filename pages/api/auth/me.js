@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
@@ -15,4 +16,4 @@ async function handler(req, res) {
   return res.status(200).json({ authenticated: Boolean(user), user });
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

@@ -1,3 +1,5 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 import SpoofHead from "@/lib/spoof-head";
 class AimusicLyricsGenerator {
@@ -39,7 +41,7 @@ class AimusicLyricsGenerator {
     }
   }
 }
-export default async function AimusicLyricsHandler(req, res) {
+async function handler(req, res) {
   const params = req.method === "POST" ? req.body : req.query;
   const prompt = params.prompt;
   if (!prompt) {
@@ -58,3 +60,5 @@ export default async function AimusicLyricsHandler(req, res) {
     });
   }
 }
+
+export default withApiLog(withRateLimit(handler));

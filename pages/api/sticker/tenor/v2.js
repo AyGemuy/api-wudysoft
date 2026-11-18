@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const TENOR_API_KEY = "QUl6YVN5Q0JWYmVHZTRSZTZidlAyTmdlQVZ5SEQ4T1pMd1NjbnJv";
@@ -56,4 +57,4 @@ async function handler(req, res) {
   }
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

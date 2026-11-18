@@ -64,11 +64,10 @@ import {
   Users,
   Send,
   Plus,
+  Minus,
   ThumbsUp,
   ThumbsDown,
-  Hash,
-  ClipboardList,
-  Code2
+  Hash
 } from "lucide-react";
 export const Icons = {
   Terminal: Terminal,
@@ -136,10 +135,9 @@ export const Icons = {
   Users: Users,
   Send: Send,
   Plus: Plus,
+  Minus: Minus,
   ThumbsUp: ThumbsUp,
   ThumbsDown: ThumbsDown,
-  Hash: Hash,
-  ClipboardList: ClipboardList,
-  Code2: Code2
+  Hash: Hash
 };
 export default Icons;

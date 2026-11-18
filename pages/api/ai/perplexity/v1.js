@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import axios from "axios";
 import ApiKey from "@/configs/api-key";
@@ -322,4 +323,4 @@ chunk: chunk
   }
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

@@ -1,3 +1,5 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import os from "os";
 import dbConnect from "@/lib/mongoose";
 import { getServerSession } from "next-auth/next";
@@ -124,4 +126,4 @@ async function handler(req, res) {
   });
 }
 
-export default handler;
+export default withApiLog(withRateLimit(handler));

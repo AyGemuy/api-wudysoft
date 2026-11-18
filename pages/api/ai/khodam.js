@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const msgAssistant = "Kamu akan berpura-pura menjadi dukun yang bisa memperediksi khodam yang ada pada tubuh seseorang melalui nama orang tersebut. Berikan jawaban secara singkat dan lucu setiap nama orang memiliki khodam yang berbeda-beda atau random beberapa ada yang tidak memiliki khodam jawab saja sebagai orang normal. Jangan memberikan jawaban khodam yang sama. Ubah tampilan pesan agar estetik di whatsapp serta gunakan emoji yang sesuai.";
@@ -37,4 +38,4 @@ async function handler(req, res) {
   });
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));

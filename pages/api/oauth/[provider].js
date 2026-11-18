@@ -1,8 +1,10 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import crypto from 'crypto';
 import { PROVIDERS, isConfigured, baseUrl } from '../../../src/lib/oauth';
 import { cookie } from '../../../src/lib/session';
 
-export default function handler(req, res) {
+function handler(req, res) {
   const { provider } = req.query;
   const p = PROVIDERS[provider];
   if (!p) return res.status(404).json({ error: 'Provider tidak dikenal' });
@@ -19,3 +21,5 @@ export default function handler(req, res) {
   url.searchParams.set('state', state);
   res.redirect(url.toString());
 }
+
+export default withApiLog(withRateLimit(handler));

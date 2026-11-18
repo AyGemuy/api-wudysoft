@@ -61,37 +61,39 @@ export const Reveal = forwardRef(function Reveal({ as = 'div', variant = 'up', d
 
 const StaggerCtx = createContext({ variant: 'up' });
 
-/** Kontainer yang memunculkan anak `<Item>` bergantian. `cycle` = tiap anak beda varian. */
+/**
+ * Kontainer yang memunculkan anak `<Item>` bergantian. `cycle` = tiap anak beda varian.
+ * Tiap Item memantau viewport-nya sendiri (bukan lewat varian induk), sehingga daftar dinamis —
+ * kosong saat memuat lalu terisi, atau berganti isi saat pindah halaman — tetap muncul dengan benar.
+ */
 export function Stagger({ as = 'div', gap = 0.07, delay = 0, variant = 'up', cycle = false, once = true, amount = 0.1, className, style, children, ...rest }) {
-  const { entrance, speed } = useMotionOk();
-  const Tag = motion[as] || motion.div;
-  const ctx = useMemo(() => ({ variant, cycle, entrance }), [variant, cycle, entrance]);
-  if (!entrance) return <StaggerCtx.Provider value={ctx}><Tag className={className} style={style} {...rest}>{children}</Tag></StaggerCtx.Provider>;
+  const { entrance } = useMotionOk();
+  const ctx = useMemo(() => ({ variant, cycle, entrance, gap, delay, once, amount }), [variant, cycle, entrance, gap, delay, once, amount]);
+  const Tag = as;
   return (
     <StaggerCtx.Provider value={ctx}>
-      <Tag
-        className={className}
-        style={style}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once, amount, margin: '0px 0px -6% 0px' }}
-        variants={{ hidden: {}, show: { transition: { staggerChildren: gap / speed, delayChildren: delay / speed } } }}
-        {...rest}
-      >
-        {children}
-      </Tag>
+      <Tag className={className} style={style} {...rest}>{children}</Tag>
     </StaggerCtx.Provider>
   );
 }
 
 export function Item({ as = 'div', index = 0, variant, duration = 0.55, className, style, children, ...rest }) {
-  const { variant: base, cycle, entrance } = useContext(StaggerCtx);
+  const { variant: base, cycle, entrance, gap = 0.07, delay = 0, once = true, amount = 0.1 } = useContext(StaggerCtx);
   const { speed } = useMotionOk();
   const Tag = motion[as] || motion.div;
   if (!entrance) return <Tag className={className} style={style} {...rest}>{children}</Tag>;
   const name = variant || (cycle ? cycleVariant(index) : base);
   return (
-    <Tag className={className} style={style} variants={VARIANTS[name] || VARIANTS.up} transition={{ duration: duration / speed, ease: EASE }} {...rest}>
+    <Tag
+      className={className}
+      style={style}
+      variants={VARIANTS[name] || VARIANTS.up}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once, amount: Math.min(amount, 0.1), margin: '0px 0px -4% 0px' }}
+      transition={{ duration: duration / speed, ease: EASE, delay: (delay + (index % 8) * gap) / speed }}
+      {...rest}
+    >
       {children}
     </Tag>
   );

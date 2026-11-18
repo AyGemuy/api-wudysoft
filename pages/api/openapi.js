@@ -1,3 +1,5 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import spec from "@/src/generated/openapi.json";
 import apiConfig from "@/configs/apiConfig";
 
@@ -6,7 +8,7 @@ import apiConfig from "@/configs/apiConfig";
  * saat `dev`/`build`, tidak lagi bergantung pada request ke domain produksi).
  * Bisa diimpor langsung ke Postman, Insomnia, atau Swagger UI.
  */
-export default function handler(req, res) {
+function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
   if (req.method === "OPTIONS") return res.status(200).end();
@@ -30,3 +32,5 @@ export default function handler(req, res) {
   res.setHeader("Cache-Control", "public, max-age=60");
   return res.status(200).json({ ...spec, servers });
 }
+
+export default withApiLog(withRateLimit(handler));

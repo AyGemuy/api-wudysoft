@@ -10,6 +10,7 @@ import {
   useSpring,
 } from 'framer-motion';
 import Seo from '@/components/Seo';
+import { CountUp } from '@/components/motion';
 import { Icons } from '@/components/Icons';
 import { useTheme } from '@/components/ThemeContext';
 import { sound } from '@/src/lib/interactiveEffects';
@@ -369,7 +370,7 @@ export default function Home() {
 
   return (
     <>
-      <Seo title="Command Deck" />
+      <Seo title="Command Deck" label="DASHBOARD" description="Pusat kendali Wudysoft: API Playground, statistik realtime, chat rooms, paste, code share, dan tools developer dalam satu dasbor." />
 
       {/* ============ HERO ============ */}
       <section className="hx-hero">
@@ -458,7 +459,7 @@ export default function Home() {
                 variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }}
               >
                 <span className="hx-stat-ico"><SIcon size={15} /></span>
-                <strong>{st.v}</strong>
+                <strong><CountUp to={Number(st.v) || 0} duration={1.1} /></strong>
                 <span className="hx-stat-label">{st.k}</span>
               </motion.div>
             );

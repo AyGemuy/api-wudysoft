@@ -7,6 +7,7 @@ import Seo from '@/components/Seo';
 import { sound } from '@/src/lib/interactiveEffects';
 import { timeAgo, copyText } from '@/src/lib/timeAgo';
 import { Reveal, Stagger, Item, TextReveal, Magnetic } from '@/components/motion';
+import Pagination from '@/components/Pagination';
 
 const API = '/api/code-share';
 const TAGS = ['JavaScript', 'TypeScript', 'Python', 'PHP', 'HTML', 'CSS', 'JSON', 'Bash', 'SQL', 'Java', 'C/C++', 'Go', 'Rust', 'Other'];
@@ -40,6 +41,10 @@ export default function CodeSharePage() {
   const formRef = useRef(null);
 
   const [items, setItems] = useState([]);
+  const [pg, setPg] = useState({ page: 1, pages: 1, total: 0 });
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(12);
+  const listRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState('');
   const [search, setSearch] = useState('');
@@ -62,17 +67,24 @@ export default function CodeSharePage() {
     setLoading(true);
     setLoadErr('');
     try {
-      const qs = { sortBy };
+      const qs = { sortBy, page, limit };
       if (search.trim()) qs.search = search.trim();
       if (tag) qs.tag = tag;
       const d = await req('GET', null, qs);
-      setItems(Array.isArray(d) ? d : []);
+      setItems(Array.isArray(d?.items) ? d.items : []);
+      setPg({ page: d.page, pages: d.pages, total: d.total });
+      if (d.page !== page) setPage(d.page);
     } catch (e) {
       setLoadErr(e.message);
     } finally {
       setLoading(false);
     }
-  }, [search, tag, sortBy]);
+  }, [search, tag, sortBy, page, limit]);
+
+  const goPage = (n) => {
+    setPage(n);
+    setTimeout(() => listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30);
+  };
 
   // debounce pencarian
   useEffect(() => {
@@ -91,7 +103,8 @@ export default function CodeSharePage() {
       const d = await req('POST', { author, fileName: form.fileName.trim(), tag: form.tag, code: form.code });
       const next = { ...mine, [d.code._id]: 1 };
       setMine(next); store.set('wd_cs_mine', next);
-      setItems((l) => [d.code, ...l]);
+      setPage(1); setSearch(''); setTag('');
+      if (page === 1 && !search && !tag) load();
       setForm({ ...EMPTY, author: form.author });
       setShowForm(false);
       sound.playBeep();
@@ -131,7 +144,7 @@ export default function CodeSharePage() {
   const remove = async (id) => {
     try {
       await req('DELETE', { id });
-      setItems((l) => l.filter((x) => x._id !== id));
+      load();
       flash('Kode dihapus.');
     } catch (err) {
       flash(err.message, 'err');
@@ -214,19 +227,19 @@ export default function CodeSharePage() {
           )}
         </AnimatePresence>
 
-        <section className="cs-filters">
+        <section className="cs-filters" ref={listRef}>
           <div className="cs-search">
             <Search size={15} />
-            <input className="input" placeholder="Cari nama file…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Cari kode" />
+            <input className="input" placeholder="Cari nama file…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} aria-label="Cari kode" />
           </div>
-          <select className="input cs-sort" value={sortBy} onChange={(e) => setSortBy(e.target.value)} aria-label="Urutkan">
+          <select className="input cs-sort" value={sortBy} onChange={(e) => { setSortBy(e.target.value); setPage(1); }} aria-label="Urutkan">
             {SORTS.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}
           </select>
           <button className="btn" onClick={() => { sound.playClick(); load(); }} disabled={loading} aria-label="Muat ulang"><RefreshCw size={14} /></button>
         </section>
         <div className="cs-tags">
           {['', ...TAGS].map((t) => (
-            <button key={t || 'all'} className={`cs-chip ${tag === t ? 'on' : ''}`} onClick={() => setTag(t)}>{t || 'Semua'}</button>
+            <button key={t || 'all'} className={`cs-chip ${tag === t ? 'on' : ''}`} onClick={() => { setTag(t); setPage(1); }}>{t || 'Semua'}</button>
           ))}
         </div>
 
@@ -272,6 +285,8 @@ export default function CodeSharePage() {
             </Item>
           ))}
         </Stagger>
+
+        <Pagination page={pg.page} pages={pg.pages} total={pg.total} limit={limit} loading={loading} onPage={goPage} onLimit={(n) => { setLimit(n); setPage(1); }} label="kode" />
       </div>
 
       <style jsx>{`

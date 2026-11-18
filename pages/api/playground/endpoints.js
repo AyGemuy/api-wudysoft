@@ -1,3 +1,5 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
+import { withApiLog } from "@/lib/apiLogger.cjs";
 import fs from 'fs';
 import path from 'path';
 
@@ -22,7 +24,7 @@ function scanApiDirectory(dir, currentRoute = '/api') {
   return routes;
 }
 
-export default function handler(req, res) {
+function handler(req, res) {
   const apiDirectory = path.join(process.cwd(), 'pages', 'api');
   let list = scanApiDirectory(apiDirectory);
 
@@ -38,3 +40,5 @@ export default function handler(req, res) {
     endpoints: cleanList,
   });
 }
+
+export default withApiLog(withRateLimit(handler));

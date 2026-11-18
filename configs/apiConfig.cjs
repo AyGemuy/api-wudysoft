@@ -15,10 +15,9 @@ const apiConfig = {
     "mongodb+srv://Wudysoft:wudysoft@wudysoft.2hm26ic.mongodb.net/Api?retryWrites=true&w=majority&appName=Wudysoft",
 
   // Domain & URL publik
-  DOMAIN_URL: "api-wudysoft.netlify.app",
-  DOMAIN_CF: "api.paxsenix.biz.id",
+  DOMAIN_URL: site.DOMAIN_URL,
   DOMAIN_KOYEB: "wudysoft.koyeb.app",
-  DOMAIN_VERCEL: "koyeb-api-beta.vercel.app",
+  DOMAIN_VERCEL: "koyeb-api-ebon.vercel.app",
   EMAIL: "wudysoft@mail.com",
   PORT: site.PORT,
 
@@ -34,7 +33,9 @@ const apiConfig = {
   GOOGLE_CLIENT_ID: "944945631984-bo92nme2or2biuns93i8ai9j4g2gj34c.apps.googleusercontent.com",
   GOOGLE_CLIENT_SECRET: "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",
 
-  // OAuth GitHub
+  // OAuth GitHub — ISI GITHUB_SECRET dengan Client Secret dari GitHub OAuth App.
+  // (Nilai sebelumnya identik dengan secret Google sehingga login GitHub pasti ditolak;
+  //  selama kosong, tombol GitHub otomatis disembunyikan.)
   GITHUB_ID: "Ov23litwcoA0MkgF5vLW",
   GITHUB_SECRET: "8a82a0c5cd7dfc35a2c43a65ec6adcc25eec940d",
 

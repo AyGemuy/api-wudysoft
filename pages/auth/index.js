@@ -6,9 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Seo from '@/components/Seo';
 import { Icons } from '@/components/Icons';
 import { PROVIDER_ICONS, PROVIDER_LABELS } from '@/components/ProviderIcons';
+import AuthHero, { AuthScene } from '@/components/AuthHero';
 import { sound } from '@/src/lib/interactiveEffects';
 import { safeNext } from '@/src/lib/safeNext';
-import { hardGo, logout } from '@/src/lib/nav';
+import { hardGo, logout, goAfterLogin } from '@/src/lib/nav';
 import { authErrorMessage, passwordStrength } from '@/src/lib/authErrors';
 
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]+\.[^\s@]{2,}$/;
@@ -43,7 +44,7 @@ export default function AuthPage() {
   // sinkronkan mode & error dari URL
   useEffect(() => {
     if (!router.isReady) return;
-    if (router.query.error) setErr(authErrorMessage(router.query.error));
+    if (router.query.error) { setErr(authErrorMessage(router.query.error)); sound.playWhenReady('fail'); }
   }, [router.isReady, router.query.error]);
 
   // sudah login → arahkan
@@ -90,10 +91,8 @@ export default function AuthPage() {
     password.length > 0 &&
     (!isSignup || (!pwProblem(password) && confirm === password));
 
-  const finish = (target) => {
-    sound.playBeep();
-    hardGo(target);
-  };
+  const finish = (target) => goAfterLogin(target);
+  const failed = (msg) => { sound.play('fail'); setErr(msg); };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -111,14 +110,14 @@ export default function AuthPage() {
         ...(isSignup ? { name: name.trim() } : {}),
       });
       if (res?.error) {
-        setErr(authErrorMessage(res.error));
+        failed(authErrorMessage(res.error));
         setBusy('');
         return;
       }
       setInfo(isSignup ? 'Akun dibuat! Mengalihkan…' : 'Berhasil masuk. Mengalihkan…');
       finish(nextUrl);
     } catch {
-      setErr('Gagal menghubungi server. Periksa koneksi lalu coba lagi.');
+      failed('Gagal menghubungi server. Periksa koneksi lalu coba lagi.');
       setBusy('');
     }
   };
@@ -131,11 +130,11 @@ export default function AuthPage() {
     try {
       const res = await signIn('guest', { redirect: false, callbackUrl: nextUrl });
       if (res?.error) {
-        setErr(authErrorMessage(res.error));
+        failed(authErrorMessage(res.error));
         setBusy('');
       } else finish(nextUrl);
     } catch {
-      setErr('Terjadi gangguan saat membuat sesi tamu.');
+      failed('Terjadi gangguan saat membuat sesi tamu.');
       setBusy('');
     }
   };
@@ -158,12 +157,10 @@ export default function AuthPage() {
   if (session?.user) {
     return (
       <>
-        <Seo title="Sesi Terverifikasi" path="/auth" noindex />
+        <Seo title="Sesi Aktif" path="/auth" label="AKUN" description="Anda sudah masuk ke Wudysoft." noindex />
         <div className="center">
           <motion.div className="glass auth-card text-center" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-              <Icons.ShieldCheck size={44} color="var(--a2)" />
-            </div>
+            <AuthHero mode="active" />
             <div className="badge ok" style={{ margin: '4px auto 10px' }}>SESSION ACTIVE</div>
             <h3>{session.user.name}</h3>
             <p style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)', color: 'var(--muted)', wordBreak: 'break-all' }}>
@@ -186,13 +183,18 @@ export default function AuthPage() {
 
   return (
     <>
-      <Seo title={isSignup ? 'Daftar Akun' : 'Otorisasi Akses'} path="/auth" noindex />
+      <Seo
+        title={isSignup ? 'Daftar Akun' : 'Masuk'}
+        path="/auth"
+        label="AKUN"
+        description={isSignup ? 'Buat akun Wudysoft dengan email atau GitHub/Google. Password disimpan terenkripsi.' : 'Masuk ke Wudysoft dengan email & password, GitHub, Google, atau sesi tamu instan.'}
+        noindex
+      />
       <div className="center">
+        <AuthScene>
         <motion.div className="glass auth-card" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
           <div style={{ textAlign: 'center', marginBottom: 4 }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
-              {isSignup ? <Icons.Sparkles size={34} color="var(--a2)" /> : <Icons.Lock size={34} color="var(--a2)" />}
-            </div>
+            <AuthHero mode={isSignup ? 'signup' : 'signin'} />
             <h2>{isSignup ? 'Buat Akun Baru' : 'Otorisasi Akses'}</h2>
             <p style={{ fontSize: '0.8rem' }}>
               {isSignup ? 'Daftar dengan email, atau lanjutkan dengan GitHub / Google.' : 'Masuk ke cluster API atau via OAuth.'}
@@ -366,6 +368,7 @@ export default function AuthPage() {
             </p>
           )}
         </motion.div>
+        </AuthScene>
       </div>
 
       <style jsx>{`

@@ -1,3 +1,4 @@
+import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import fetch from "node-fetch";
 const GEMINI_API_KEY = ["global-xXbQMjv2j0omw2123PDmPQu2", "global-xZbQMjv2j0omw2EznPDmPQuw"];
@@ -271,4 +272,4 @@ async function handler(req, res) {
   }
 }
 
-export default withApiLog(handler);
+export default withApiLog(withRateLimit(handler));
