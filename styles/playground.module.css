@@ -325,3 +325,11 @@ select.in option { background: var(--surface); color: var(--text); }
 .runBar i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--a1), var(--a2)); transition: width .25s; }
 
 @media (prefers-reduced-motion: reduce) { .spin, .skel i, .dotBusy { animation: none; } }
+
+.opMethods { display: flex; flex-direction: column; gap: 3px; align-items: stretch; flex-shrink: 0; min-width: 38px; }
+.opMethods > span { text-align: center; }
+
+.langPick { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.langBtn { flex-shrink: 0; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--muted); font: inherit; font-size: .74rem; font-weight: 600; cursor: pointer; transition: color .15s, border-color .15s, background .15s; }
+.langBtn:hover { color: var(--text); border-color: var(--a2); }
+.langOn { color: var(--on-accent); background: linear-gradient(135deg, var(--a1), var(--a3)); border-color: transparent; }

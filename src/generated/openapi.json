@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "glass-next API",
+    "title": "Wudysoft API",
     "version": "1.0.0",
-    "description": "Dokumen dibuat otomatis dari `pages/api` (35 operasi pada 17 path). Detail akurat ditambahkan lewat `scripts/openapi-registry.mjs`.\n\n**Auth:** sesi browser (cookie NextAuth) atau `Authorization: Bearer <apiToken>`."
+    "description": "Dokumen dibuat otomatis dari `pages/api` (45 operasi pada 24 path). Detail akurat ditambahkan lewat `scripts/openapi-registry.mjs`.\n\n**Auth:** sesi browser (cookie NextAuth) atau `Authorization: Bearer <apiToken>`."
   },
   "servers": [
     {
@@ -19,6 +19,9 @@
       "name": "Auth"
     },
     {
+      "name": "Avatar"
+    },
+    {
       "name": "Cache"
     },
     {
@@ -28,7 +31,13 @@
       "name": "Comments"
     },
     {
+      "name": "Github"
+    },
+    {
       "name": "Health"
+    },
+    {
+      "name": "Og"
     },
     {
       "name": "Openapi"
@@ -40,6 +49,12 @@
       "name": "Posts"
     },
     {
+      "name": "Preview"
+    },
+    {
+      "name": "Profile"
+    },
+    {
       "name": "Rooms"
     },
     {
@@ -47,6 +62,9 @@
     },
     {
       "name": "System"
+    },
+    {
+      "name": "Tools"
     }
   ],
   "paths": {
@@ -573,6 +591,60 @@
         "security": []
       }
     },
+    "/api/avatar/{id}": {
+      "get": {
+        "tags": [
+          "Avatar"
+        ],
+        "summary": "Ambil Avatar",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "get_api_avatar_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Path parameter",
+            "example": "1"
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f1a2b3c4d5e6f7a8b9c0d1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      }
+    },
     "/api/cache": {
       "get": {
         "tags": [
@@ -728,6 +800,26 @@
               "type": "string"
             },
             "example": "65f1a2b3c4d5e6f7a8b9c0d1"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 10
           }
         ],
         "responses": {
@@ -912,11 +1004,15 @@
                 "properties": {
                   "id": {
                     "type": "string"
+                  },
+                  "adminKey": {
+                    "type": "string"
                   }
                 }
               },
               "example": {
-                "id": "65f1a2b3c4d5e6f7a8b9c0d1"
+                "id": "65f1a2b3c4d5e6f7a8b9c0d1",
+                "adminKey": "string"
               }
             }
           }
@@ -1115,6 +1211,39 @@
         }
       }
     },
+    "/api/github": {
+      "get": {
+        "tags": [
+          "Github"
+        ],
+        "summary": "Ambil Github",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "get_api_github",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "tags": [
@@ -1150,6 +1279,39 @@
                       "additionalProperties": true
                     }
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      }
+    },
+    "/api/og": {
+      "get": {
+        "tags": [
+          "Og"
+        ],
+        "summary": "Ambil Og",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "get_api_og",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
                 }
               }
             }
@@ -1803,6 +1965,193 @@
         }
       }
     },
+    "/api/preview": {
+      "get": {
+        "tags": [
+          "Preview"
+        ],
+        "summary": "Ambil Preview",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "get_api_preview",
+        "parameters": [
+          {
+            "name": "p",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      }
+    },
+    "/api/profile": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Ambil Profile",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "get_api_profile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Belum login"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Ubah Profile",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "patch_api_profile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Belum login"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Kirim Profile",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "post_api_profile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Belum login"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      }
+    },
     "/api/rooms": {
       "get": {
         "tags": [
@@ -1952,13 +2301,21 @@
           "400": {
             "description": "Permintaan tidak valid"
           },
+          "401": {
+            "description": "Belum login"
+          },
           "429": {
             "description": "Terlalu banyak permintaan (rate limit)"
           },
           "500": {
             "description": "Kesalahan server"
           }
-        }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
       },
       "get": {
         "tags": [
@@ -1983,13 +2340,21 @@
           "400": {
             "description": "Permintaan tidak valid"
           },
+          "401": {
+            "description": "Belum login"
+          },
           "429": {
             "description": "Terlalu banyak permintaan (rate limit)"
           },
           "500": {
             "description": "Kesalahan server"
           }
-        }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
       }
     },
     "/api/stats/live": {
@@ -2002,7 +2367,7 @@
         "operationId": "get_api_stats_live",
         "parameters": [
           {
-            "name": "since",
+            "name": "after",
             "in": "query",
             "required": false,
             "description": "Terdeteksi otomatis dari kode.",
@@ -2073,6 +2438,172 @@
           },
           "500": {
             "description": "Kesalahan server"
+          }
+        }
+      }
+    },
+    "/api/tools/paste/v1": {
+      "post": {
+        "tags": [
+          "Tools"
+        ],
+        "summary": "Kirim Tools Paste V1",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "post_api_tools_paste_v1",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 10
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "halo"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {}
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Tools"
+        ],
+        "summary": "Ambil Tools Paste V1",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "get_api_tools_paste_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      }
+    },
+    "/api/tools/run": {
+      "post": {
+        "tags": [
+          "Tools"
+        ],
+        "summary": "Kirim Tools Run",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "post_api_tools_run",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "lang": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "stdin": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "lang": "string",
+                "code": "string",
+                "stdin": "string"
+              }
+            }
           }
         }
       }

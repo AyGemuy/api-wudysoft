@@ -1,4 +1,4 @@
-const CACHE = 'glass-next-v1';
+const CACHE = 'wudysoft-v2';
 const SHELL = ['/', '/manifest.json', '/icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {

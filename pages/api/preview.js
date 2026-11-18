@@ -1,5 +1,3 @@
-import { withRateLimit } from "@/src/lib/rateLimit";
-import { withApiLog } from "@/lib/apiLogger.cjs";
 import spec from "@/src/generated/openapi.json";
 import site from "@/configs/siteConfig";
 
@@ -48,7 +46,7 @@ function summarize(pathname, data, status) {
   return null;
 }
 
-async function handler(req, res) {
+export default async function handler(req, res) {
   const origin = (() => {
     const host = req.headers["x-forwarded-host"] || req.headers.host;
     const proto = String(req.headers["x-forwarded-proto"] || "").split(",")[0] || (/^(localhost|127\.)/.test(host || "") ? "http" : "https");
@@ -103,5 +101,3 @@ async function handler(req, res) {
 <meta name="twitter:description" content="${esc(desc)}"><meta name="twitter:image" content="${esc(img)}">
 </head><body><h1>${esc(title)}</h1><p>${esc(desc)}</p></body></html>`);
 }
-
-export default withApiLog(withRateLimit(handler));

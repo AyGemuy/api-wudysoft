@@ -251,61 +251,8 @@ function crossOriginHint(url, err) {
   return err?.message || 'Periksa koneksi dan URL.';
 }
 
-/* ---------------- snippet kode ---------------- */
-const q1 = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
-
-export function toCurl(req) {
-  const parts = [`curl -X ${req.method} ${q1(req.url)}`];
-  for (const [k, v] of Object.entries(req.headers)) parts.push(`-H ${q1(`${k}: ${v}`)}`);
-  const d = req.desc || { kind: 'none' };
-  if (d.kind === 'json' || d.kind === 'raw' || d.kind === 'urlencoded') parts.push(`--data-raw ${q1(d.text)}`);
-  if (d.kind === 'form') d.entries.forEach((e) => parts.push(`-F ${q1(e.file ? `${e.key}=@${e.file}` : `${e.key}=${e.value}`)}`));
-  return parts.join(' \\\n  ');
-}
-
-export function toFetch(req) {
-  const d = req.desc || { kind: 'none' };
-  const lines = [`const res = await fetch(${JSON.stringify(req.url)}, {`, `  method: ${JSON.stringify(req.method)},`];
-  if (Object.keys(req.headers).length) lines.push(`  headers: ${JSON.stringify(req.headers, null, 2).replace(/\n/g, '\n  ')},`);
-  if (d.kind === 'json') {
-    let pretty = d.text;
-    try { pretty = JSON.stringify(JSON.parse(d.text), null, 2).replace(/\n/g, '\n  '); lines.push(`  body: JSON.stringify(${pretty}),`); } catch { lines.push(`  body: ${JSON.stringify(d.text)},`); }
-  } else if (d.kind === 'raw' || d.kind === 'urlencoded') lines.push(`  body: ${JSON.stringify(d.text)},`);
-  else if (d.kind === 'form') lines.push('  body: formData, // new FormData() dengan field sesuai request');
-  lines.push('});', 'const data = await res.json();', 'console.log(res.status, data);');
-  return lines.join('\n');
-}
-
-export function toAxios(req) {
-  const d = req.desc || { kind: 'none' };
-  const cfg = { method: req.method.toLowerCase(), url: req.url };
-  if (Object.keys(req.headers).length) cfg.headers = req.headers;
-  if (d.kind === 'json') { try { cfg.data = JSON.parse(d.text); } catch { cfg.data = d.text; } }
-  else if (d.kind === 'raw' || d.kind === 'urlencoded') cfg.data = d.text;
-  return `import axios from 'axios';\n\nconst res = await axios(${JSON.stringify(cfg, null, 2)});\nconsole.log(res.status, res.data);`;
-}
-
-export function toPython(req) {
-  const d = req.desc || { kind: 'none' };
-  const lines = ['import requests', '', `url = ${JSON.stringify(req.url)}`];
-  if (Object.keys(req.headers).length) lines.push(`headers = ${JSON.stringify(req.headers, null, 2)}`);
-  let args = `${JSON.stringify(req.method)}, url`;
-  if (Object.keys(req.headers).length) args += ', headers=headers';
-  if (d.kind === 'json') {
-    try { lines.push(`payload = ${JSON.stringify(JSON.parse(d.text), null, 2).replace(/\btrue\b/g, 'True').replace(/\bfalse\b/g, 'False').replace(/\bnull\b/g, 'None')}`); args += ', json=payload'; }
-    catch { lines.push(`payload = ${JSON.stringify(d.text)}`); args += ', data=payload'; }
-  } else if (d.kind === 'raw' || d.kind === 'urlencoded') { lines.push(`payload = ${JSON.stringify(d.text)}`); args += ', data=payload'; }
-  else if (d.kind === 'form') { lines.push('files = {}  # isi dengan file/field sesuai request'); args += ', files=files'; }
-  lines.push('', `res = requests.request(${args})`, 'print(res.status_code, res.text)');
-  return lines.join('\n');
-}
-
-export const SNIPPETS = [
-  { id: 'curl', label: 'cURL', fn: toCurl },
-  { id: 'fetch', label: 'fetch', fn: toFetch },
-  { id: 'axios', label: 'axios', fn: toAxios },
-  { id: 'python', label: 'Python', fn: toPython },
-];
+/* ---------------- snippet kode: lihat src/lib/codegen.js ---------------- */
+export { SNIPPETS, toCurl, toFetch, toAxios, toPython } from '@/src/lib/codegen';
 
 /* ---------------- tampilan respons ---------------- */
 export function formatBytes(n) {

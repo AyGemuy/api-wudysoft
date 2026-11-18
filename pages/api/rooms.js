@@ -1,4 +1,3 @@
-import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import dbConnect from "@/lib/mongoose";
 import Room from "@/models/Room";
@@ -205,4 +204,4 @@ async function handler(req, res) {
   return res.status(405).json({ success: false, message: "Method Not Allowed" });
 }
 
-export default withApiLog(withRateLimit(handler));
+export default withApiLog(handler);

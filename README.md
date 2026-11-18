@@ -81,7 +81,7 @@ Isi penting:
 │  ├─ auth/            hub masuk/daftar, tamu, OAuth
 │  ├─ rooms/           chat realtime
 │  ├─ stats/           live stats
-│  ├─ tools/           beautify · upload · pastes · code-share
+│  ├─ tools/           beautify · compiler · upload · pastes · code-share
 │  ├─ robots.txt.js · sitemap.xml.js        (SSR)
 │  └─ api/             auth, profile, rooms, code-share, github, og, preview,
 │                      stats, tools/paste/v1, openapi, health, …
@@ -142,3 +142,9 @@ Semua request `/api/*` dicatat oleh `lib/apiLogger.cjs` (method, path, query, st
 Dibuat dengan ❤️ oleh **[AyGemuy](https://github.com/AyGemuy)**
 
 </div>
+
+## Compiler & Kode request
+
+- `/tools/compiler`: JS/TS/Python/HTML jalan di browser (Web Worker, Pyodide, iframe sandbox); C, C++, Java, Go, Rust, PHP, Ruby, dll. lewat `pages/api/tools/run.js` (proxy ke Wandbox, tanpa akses internet).
+- Modal **Kode** di Playground: 18 bahasa/klien dengan syntax highlighting (`src/lib/codegen.js`, `src/lib/highlight.js`).
+- Endpoint di Playground digabung per path; metode dipilih di dropdown request.

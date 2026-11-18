@@ -1,5 +1,5 @@
 {
-  "name": "glass-next",
+  "name": "wudysoft",
   "version": "1.0.0",
   "private": true,
   "description": "Next.js glassmorphism starter: auth, OAuth, guest, playground, PWA",
@@ -41,6 +41,7 @@
     "form-data": "latest",
     "formdata-node": "latest",
     "framer-motion": "^11.11.17",
+    "highlight.js": "^11.10.0",
     "image-size": "latest",
     "javascript-obfuscator": "latest",
     "js-beautify": "latest",

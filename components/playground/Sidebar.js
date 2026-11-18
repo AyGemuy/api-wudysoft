@@ -4,23 +4,27 @@ import { MethodBadge, Seg, cx } from './ui';
 import { statusTone } from '@/src/lib/playgroundCore';
 import s from '@/styles/playground.module.css';
 
-export default function Sidebar({ parsed, activeKey, onOpen, history, onOpenHistory, onClearHistory, onClose, specLabel }) {
+export default function Sidebar({ parsed, activeKey, activePath, onOpen, history, onOpenHistory, onClearHistory, onClose, specLabel }) {
   const [view, setView] = useState('endpoints');
   const [q, setQ] = useState('');
   const [openMap, setOpenMap] = useState({}); // grup tertutup secara default
   const activeTag = useMemo(() => parsed.operations.find((o) => o.key === activeKey)?.tags[0], [parsed, activeKey]);
+  const pathCount = useMemo(() => new Set(parsed.operations.map((o) => o.path)).size, [parsed]);
 
   const groups = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    const map = new Map();
+    const map = new Map(); // tag → Map(path → { path, ops[] })
     for (const op of parsed.operations) {
       if (needle && !`${op.method} ${op.path} ${op.summary} ${op.tags.join(' ')}`.toLowerCase().includes(needle)) continue;
-      for (const t of op.tags.slice(0, 1)) {
-        if (!map.has(t)) map.set(t, []);
-        map.get(t).push(op);
-      }
+      const t = op.tags[0];
+      if (!map.has(t)) map.set(t, new Map());
+      const byPath = map.get(t);
+      if (!byPath.has(op.path)) byPath.set(op.path, { path: op.path, ops: [] });
+      byPath.get(op.path).ops.push(op);
     }
-    return [...map.entries()];
+    // satu entri per path; metode GET diutamakan sebagai pembuka
+    const ORDER = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+    return [...map.entries()].map(([t, byPath]) => [t, [...byPath.values()].map((e) => ({ ...e, ops: e.ops.sort((a, b) => ORDER.indexOf(a.method) - ORDER.indexOf(b.method)) }))]);
   }, [parsed, q]);
 
   return (
@@ -30,7 +34,7 @@ export default function Sidebar({ parsed, activeKey, onOpen, history, onOpenHist
           <Icons.BookOpen size={16} />
           <div>
             <strong>{parsed.info.title || 'API'}</strong>
-            <small>{specLabel} · v{parsed.info.version || '—'} · {parsed.operations.length} operasi</small>
+            <small>{specLabel} · v{parsed.info.version || '—'} · {pathCount} endpoint · {parsed.operations.length} metode</small>
           </div>
         </div>
         <button type="button" className={cx(s.iconBtn, s.onlyDrawer)} onClick={onClose} aria-label="Tutup daftar"><Icons.Close size={18} /></button>
@@ -69,18 +73,22 @@ export default function Sidebar({ parsed, activeKey, onOpen, history, onOpenHist
                   </button>
                   {isOpen && (
                     <ul className={s.opList}>
-                      {ops.map((op) => (
-                        <li key={op.key}>
-                          <button type="button" className={cx(s.op, activeKey === op.key && s.opOn, op.deprecated && s.opDep)} onClick={() => onOpen(op)}>
-                            <MethodBadge m={op.method} tiny />
-                            <span className={s.opText}>
-                              <b>{op.summary || op.path}</b>
-                              <small>{op.path}</small>
-                            </span>
-                            {op.secure && <Icons.Lock size={12} className={s.opLock} />}
-                          </button>
-                        </li>
-                      ))}
+                      {ops.map((e) => {
+                        const main = e.ops[0];
+                        const on = activePath === e.path;
+                        return (
+                          <li key={e.path}>
+                            <button type="button" className={cx(s.op, on && s.opOn, main.deprecated && s.opDep)} onClick={() => onOpen(e.ops.find((o) => o.key === activeKey) || main)}>
+                              <span className={s.opMethods}>{e.ops.map((o) => <MethodBadge key={o.key} m={o.method} tiny />)}</span>
+                              <span className={s.opText}>
+                                <b>{e.path}</b>
+                                <small>{(main.summary || '').replace(/^(Ambil|Kirim)\s+/i, '') || main.tags[0]}</small>
+                              </span>
+                              {e.ops.some((o) => o.secure) && <Icons.Lock size={12} className={s.opLock} />}
+                            </button>
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>

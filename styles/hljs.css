@@ -1,0 +1,12 @@
+/* Tema syntax highlighter mengikuti variabel tema (--a1/--a2/--a3, --text, --muted). */
+.hl { --hl-kw: color-mix(in srgb, var(--a1) 70%, #c084fc); --hl-str: color-mix(in srgb, #10b981 75%, var(--text)); --hl-num: color-mix(in srgb, #f59e0b 82%, var(--text)); --hl-fn: var(--a2); --hl-ty: color-mix(in srgb, var(--a3) 80%, var(--text)); --hl-cm: color-mix(in srgb, var(--muted) 85%, transparent); --hl-at: color-mix(in srgb, #f472b6 70%, var(--text)); }
+.hl .hljs-keyword, .hl .hljs-selector-tag, .hl .hljs-literal, .hl .hljs-doctag, .hl .hljs-meta .hljs-keyword { color: var(--hl-kw); font-weight: 600; }
+.hl .hljs-string, .hl .hljs-regexp, .hl .hljs-addition, .hl .hljs-meta .hljs-string { color: var(--hl-str); }
+.hl .hljs-number, .hl .hljs-symbol, .hl .hljs-bullet { color: var(--hl-num); }
+.hl .hljs-title, .hl .hljs-title.function_, .hl .hljs-section, .hl .hljs-built_in { color: var(--hl-fn); }
+.hl .hljs-title.class_, .hl .hljs-type, .hl .hljs-class .hljs-title { color: var(--hl-ty); }
+.hl .hljs-attr, .hl .hljs-attribute, .hl .hljs-variable, .hl .hljs-template-variable, .hl .hljs-params, .hl .hljs-property { color: var(--hl-at); }
+.hl .hljs-comment, .hl .hljs-quote { color: var(--hl-cm); font-style: italic; }
+.hl .hljs-meta, .hl .hljs-tag, .hl .hljs-name, .hl .hljs-selector-class, .hl .hljs-selector-id { color: var(--hl-ty); }
+.hl .hljs-deletion { color: #f87171; }
+.hl .hljs-emphasis { font-style: italic; } .hl .hljs-strong { font-weight: 700; }

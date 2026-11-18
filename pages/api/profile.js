@@ -1,4 +1,3 @@
-import { withRateLimit } from "@/src/lib/rateLimit";
 import { withApiLog } from "@/lib/apiLogger.cjs";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
@@ -69,4 +68,4 @@ async function handler(req, res) {
   }
 }
 
-export default withApiLog(withRateLimit(handler));
+export default withApiLog(handler);

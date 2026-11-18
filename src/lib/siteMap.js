@@ -66,6 +66,18 @@ export const SITE_PAGES = [
     tags: ['JS', 'HTML', 'CSS'],
   },
   {
+    id: 'compiler',
+    title: 'Compiler',
+    href: '/tools/compiler',
+    category: 'tools',
+    icon: 'Terminal',
+    accent: 'a3',
+    preview: 'terminal',
+    status: 'NEW',
+    desc: 'Jalankan kode langsung: JavaScript, TypeScript, Python, HTML di browser; C, Java, Go, Rust, PHP dan lainnya via server.',
+    tags: ['Run', 'Python', 'JS'],
+  },
+  {
     id: 'upload',
     title: 'Multi-Host Uploader',
     href: '/tools/upload',
@@ -180,6 +192,7 @@ export const FOOTER_COLUMNS = [
     title: 'Tools',
     links: [
       { label: 'Code Beautifier', href: '/tools/beautify' },
+      { label: 'Compiler', href: '/tools/compiler' },
       { label: 'Multi-Host Uploader', href: '/tools/upload' },
       { label: 'Pastes', href: '/tools/pastes' },
       { label: 'Code Share', href: '/tools/code-share' },

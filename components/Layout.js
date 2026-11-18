@@ -134,6 +134,7 @@ export default function Layout({ children }) {
       { type: 'Halaman', title: 'API Playground', sub: 'Uji endpoint dari OpenAPI', action: '/playground' },
       { type: 'Halaman', title: 'System & API Stats', sub: 'Telemetri realtime', action: '/stats' },
       { type: 'Halaman', title: 'Code Beautifier', sub: 'Tools', action: '/tools/beautify' },
+      { type: 'Halaman', title: 'Compiler', sub: 'Tools · jalankan kode langsung', action: '/tools/compiler' },
       { type: 'Halaman', title: 'Multi-Host Uploader', sub: 'Tools', action: '/tools/upload' },
       { type: 'Halaman', title: 'Chat Rooms', sub: 'Komunikasi', action: '/rooms' },
       { type: 'Halaman', title: 'Pastes', sub: 'Tools · simpan & bagikan teks', action: '/tools/pastes' },
@@ -141,9 +142,9 @@ export default function Layout({ children }) {
       { type: 'Halaman', title: 'Masuk / Daftar', sub: 'Akun', action: '/auth' },
     ].filter((i) => !q || `${i.title} ${i.sub}`.toLowerCase().includes(q));
     const eps = endpoints
-      .filter((o) => !q || `${o.method} ${o.path} ${o.summary} ${o.tag}`.toLowerCase().includes(q))
+      .filter((o) => !q || `${(o.methods || [o.method]).join(' ')} ${o.path} ${o.summary} ${o.tag}`.toLowerCase().includes(q))
       .slice(0, 40)
-      .map((o) => ({ type: 'Endpoint', method: o.method, title: o.path, sub: o.summary, secure: o.secure, action: `/playground?op=${encodeURIComponent(o.key)}` }));
+      .map((o) => ({ type: 'Endpoint', method: o.method, methods: o.methods, title: o.path, sub: o.summary, secure: o.secure, action: `/playground?op=${encodeURIComponent(o.key)}` }));
     return [...pages, ...eps];
   }, [searchQuery, endpoints, user]);
 
@@ -312,7 +313,7 @@ export default function Layout({ children }) {
                     }}
                     onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.click()}
                   >
-                    {item.method ? <span className={`si-badge m-${item.method}`}>{item.method === 'DELETE' ? 'DEL' : item.method}</span> : <span className="si-badge si-page">{item.type}</span>}
+                    {item.method ? <span className="si-badges">{(item.methods || [item.method]).map((mm) => <span key={mm} className={`si-badge m-${mm}`}>{mm === 'DELETE' ? 'DEL' : mm}</span>)}</span> : <span className="si-badge si-page">{item.type}</span>}
                     <span className="si-text">
                       <b className={item.method ? 'si-path' : ''}>{item.title}</b>
                       {item.sub ? <small>{item.sub}</small> : null}
@@ -725,6 +726,7 @@ export default function Layout({ children }) {
           color: var(--muted);
           text-align: center;
         }
+        .si-badges { display: flex; gap: 4px; flex-shrink: 0; flex-wrap: wrap; max-width: 104px; }
         .si-badge {
           flex-shrink: 0;
           min-width: 44px;

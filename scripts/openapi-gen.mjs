@@ -283,7 +283,7 @@ export function generateSpec() {
   return {
     openapi: '3.0.3',
     info: {
-      title: `${pkg.name || 'WUDYSOFT'} API`,
+      title: 'Wudysoft API',
       version: pkg.version || '1.0.0',
       description: `Dokumen dibuat otomatis dari \`pages/api\` (${opCount} operasi pada ${pathCount} path). Detail akurat ditambahkan lewat \`scripts/openapi-registry.mjs\`.\n\n**Auth:** sesi browser (cookie NextAuth) atau \`Authorization: Bearer <apiToken>\`.`,
     },

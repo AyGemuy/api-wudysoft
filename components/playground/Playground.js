@@ -141,7 +141,7 @@ export default function Playground() {
     setActiveId(d.id); setMobileView('request'); setDrawer(false);
   };
   const openOp = (o) => {
-    const ex = tabs.find((t) => t.opKey === o.key);
+    const ex = tabs.find((t) => t.opKey === o.key) || tabs.find((t) => t.opKey && parsed.operations.find((x) => x.key === t.opKey)?.path === o.path);
     if (ex) { setActiveId(ex.id); setMobileView('request'); setDrawer(false); return; }
     sound.playClick();
     addTab(syncPathVars(draftFromOperation(o, parsed)));
@@ -211,6 +211,7 @@ export default function Playground() {
             parsed={parsed}
             specLabel={specLabel}
             activeKey={active?.opKey}
+            activePath={op?.path}
             onOpen={openOp}
             onClose={() => setDrawer(false)}
             history={history}
@@ -302,6 +303,7 @@ export default function Playground() {
                     key={active.id}
                     draft={active}
                     op={op}
+                    siblings={op ? parsed.operations.filter((x) => x.path === op.path) : []}
                     parsed={parsed}
                     update={update}
                     sending={isSending}

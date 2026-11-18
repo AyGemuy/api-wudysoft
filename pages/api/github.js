@@ -1,5 +1,3 @@
-import { withRateLimit } from "@/src/lib/rateLimit";
-import { withApiLog } from "@/lib/apiLogger.cjs";
 import site from "@/configs/siteConfig";
 
 /**
@@ -46,7 +44,7 @@ async function load() {
   };
 }
 
-async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== "GET") {
     res.setHeader("Allow", ["GET"]);
     return res.status(405).json({ ok: false, message: "Method not allowed" });
@@ -65,5 +63,3 @@ async function handler(req, res) {
     return res.status(200).json({ ok: false, message: "GitHub tidak terjangkau", fallback: { login: USER, url: `https://github.com/${USER}` } });
   }
 }
-
-export default withApiLog(withRateLimit(handler));

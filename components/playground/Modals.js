@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import { Icons } from '@/components/Icons';
 import { Modal, MethodBadge, Seg, KVTable, CopyBtn, CodeView, cx } from './ui';
+import CodeBlock from '@/components/CodeBlock';
+import CodeRunner from '@/components/CodeRunner';
 import { row, uid, draftFromOperation, syncPathVars, buildRequest, sendRequest, validateResponse, SNIPPETS, statusTone } from '@/src/lib/playgroundCore';
 import s from '@/styles/playground.module.css';
 
@@ -97,17 +99,35 @@ export function ImportModal({ onImport, onReset, current, onClose }) {
 /* ================= Kode ================= */
 export function CodeModal({ req, onClose }) {
   const [id, setId] = useState('curl');
-  const code = useMemo(() => (req ? SNIPPETS.find((x) => x.id === id).fn(req) : ''), [req, id]);
+  const [running, setRunning] = useState(false);
+  const snip = SNIPPETS.find((x) => x.id === id) || SNIPPETS[0];
+  const code = useMemo(() => (req ? snip.fn(req) : ''), [req, snip]);
+  const openCompiler = () => {
+    try { sessionStorage.setItem('wudysoft_compiler_seed', JSON.stringify({ lang: snip.run || 'javascript', code })); } catch {}
+    window.open('/tools/compiler', '_blank', 'noopener');
+  };
   return (
     <Modal title="Kode request" onClose={onClose} wide>
       {!req ? <p className={s.hint}>Tidak ada request.</p> : (
         <>
           {req.errors?.length > 0 && <div className={s.errInline}><Icons.AlertCircle size={14} /> {req.errors.join('; ')}</div>}
-          <div className={s.rowBetween}>
-            <Seg small value={id} onChange={setId} options={SNIPPETS.map((x) => ({ id: x.id, label: x.label }))} />
-            <CopyBtn text={code} />
+          <div className={s.langPick} role="tablist" aria-label="Bahasa">
+            {SNIPPETS.map((x) => (
+              <button key={x.id} type="button" role="tab" aria-selected={x.id === id} className={cx(s.langBtn, x.id === id && s.langOn)} onClick={() => { setId(x.id); setRunning(false); }}>{x.label}</button>
+            ))}
           </div>
-          <CodeView wrap text={code} />
+          {running && snip.run ? (
+            <CodeRunner key={snip.id} lang={snip.run} hideLangPicker initialCode={code} minHeight={200} compact />
+          ) : (
+            <CodeBlock code={code} lang={snip.lang} label={snip.label} />
+          )}
+          <div className={s.rowBetween}>
+            <span className={s.hint}>{snip.run ? 'Bisa dijalankan langsung di browser (request cross-origin tunduk pada CORS).' : 'Salin ke proyek Anda, atau buka di Compiler untuk mencoba kode JS/Python.'}</span>
+            <div className={s.paneActions}>
+              {snip.run && <button type="button" className={s.primary} onClick={() => setRunning((v) => !v)}><Icons.Play size={14} /> {running ? 'Kembali ke kode' : 'Edit & jalankan'}</button>}
+              <button type="button" className={s.ghost} onClick={openCompiler}><Icons.Terminal size={13} /> Compiler</button>
+            </div>
+          </div>
         </>
       )}
     </Modal>

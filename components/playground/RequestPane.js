@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Icons } from '@/components/Icons';
 import { MethodBadge, Tabs, Seg, KVTable, CopyBtn, CodeView, cx } from './ui';
-import { BODY_MODES, row, syncPathVars } from '@/src/lib/playgroundCore';
+import { BODY_MODES, row, syncPathVars, draftFromOperation } from '@/src/lib/playgroundCore';
 import s from '@/styles/playground.module.css';
 
 const METHOD_LIST = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
@@ -13,7 +13,7 @@ const AUTH_TYPES = [
   { id: 'apikey', label: 'API key' },
 ];
 
-export default function RequestPane({ draft, op, parsed, update, sending, onSend, onCancel, files, onCode, sessionToken, collapsedHint }) {
+export default function RequestPane({ draft, op, siblings = [], parsed, update, sending, onSend, onCancel, files, onCode, sessionToken, collapsedHint }) {
   const [tab, setTab] = useState('params');
   const enabled = (rows) => rows.filter((r) => r.on && r.key).length;
   const b = draft.body;
@@ -33,6 +33,19 @@ export default function RequestPane({ draft, op, parsed, update, sending, onSend
       return syncPathVars({ ...d, url: base, query: [...d.query, ...add] });
     });
   };
+
+  // ganti metode: jika path punya operasi dengan metode itu di spesifikasi, muat params/body-nya
+  const changeMethod = (m) => {
+    const sib = siblings.find((x) => x.method === m);
+    update((d) => {
+      if (!sib) return { ...d, method: m };
+      const nd = draftFromOperation(sib, parsed);
+      const keep = (oldRows, newRows) => newRows.map((r) => { const o = oldRows.find((x) => x.key === r.key && x.value !== ''); return o ? { ...r, value: o.value, on: true } : r; });
+      return syncPathVars({ ...nd, id: d.id, auth: d.auth, query: keep(d.query, nd.query), pathVars: keep(d.pathVars, nd.pathVars), headers: keep(d.headers, nd.headers), url: d.url.includes('{{baseUrl}}') ? nd.url : d.url });
+    });
+    if (sib) setTab('params');
+  };
+  const hasOp = (m) => siblings.some((x) => x.method === m);
 
   const bodyContents = op?.body?.contents || {};
   const jsonMime = Object.keys(bodyContents).find((m) => /json/.test(m));
@@ -63,8 +76,8 @@ export default function RequestPane({ draft, op, parsed, update, sending, onSend
 
       {/* Bar URL */}
       <div className={s.urlBar}>
-        <select className={cx(s.methodSel, s[`m_${draft.method}`])} value={draft.method} onChange={(e) => update((d) => ({ ...d, method: e.target.value }))} aria-label="Method">
-          {METHOD_LIST.map((m) => <option key={m} value={m}>{m}</option>)}
+        <select className={cx(s.methodSel, s[`m_${draft.method}`])} value={draft.method} onChange={(e) => changeMethod(e.target.value)} aria-label="Method" title={siblings.length > 1 ? `Metode tersedia di spesifikasi: ${siblings.map((x) => x.method).join(', ')}` : undefined}>
+          {METHOD_LIST.map((m) => <option key={m} value={m}>{m}{hasOp(m) && siblings.length > 1 ? ' ●' : ''}</option>)}
         </select>
         <input
           className={s.urlIn}
