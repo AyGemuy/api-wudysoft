@@ -86,6 +86,12 @@ export default function AudioControl() {
   }, []);
 
   useEffect(() => {
+    const f = () => setOpen(true);
+    window.addEventListener('wudysoft:open-audio', f);
+    return () => window.removeEventListener('wudysoft:open-audio', f);
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
     const onKey = (e) => e.key === 'Escape' && setOpen(false);
     window.addEventListener('keydown', onKey);
@@ -201,7 +207,7 @@ export default function AudioControl() {
         .au-root { position: static; }
         /* tab di tepi kanan tepat di bawah tombol Tema (gaya sama) */
         .au-fab { position: fixed; z-index: 1500; right: 0; top: calc(46% + 70px); width: 46px; height: 58px; padding: 0 0 0 4px; display: grid; place-items: center; cursor: pointer; color: var(--text);
-          border-radius: 30px 0 0 30px; border: 1px solid var(--dock-border); border-right: none;
+          border-radius: min(var(--r-modal, 16px), 22px) 0 0 min(var(--r-modal, 16px), 22px); border: 1px solid var(--dock-border); border-right: none;
           background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 78%, transparent), color-mix(in srgb, var(--a3) 22%, transparent));
           backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
           box-shadow: -8px 10px 28px -10px rgba(0,0,0,.65), inset 1px 1px 0 color-mix(in srgb, #fff 20%, transparent);
@@ -211,9 +217,9 @@ export default function AudioControl() {
         .au-ico { display: grid; place-items: center; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--a2) 60%, transparent)); animation: au-sway 3.4s ease-in-out infinite; }
         .au-fab.live .au-ico { animation: none; }
         .au-fab:hover .au-ico { animation: au-sway 0.9s ease-in-out infinite; }
-        .au-ring { position: absolute; inset: 6px 4px 6px 8px; border-radius: 24px 0 0 24px; border: 1px dashed color-mix(in srgb, var(--a3) 45%, transparent); border-right: none; opacity: .5; pointer-events: none; }
+        .au-ring { position: absolute; inset: 6px 4px 6px 8px; border-radius: max(min(var(--r-modal, 16px), 22px) - 6px, 2px) 0 0 max(min(var(--r-modal, 16px), 22px) - 6px, 2px); border: 1px dashed color-mix(in srgb, var(--a3) 45%, transparent); border-right: none; opacity: .5; pointer-events: none; }
         .au-fab.live .au-ring { opacity: .9; border-style: solid; border-color: color-mix(in srgb, var(--a2) 60%, transparent); }
-        .au-tip { position: absolute; right: calc(100% + 10px); top: 50%; transform: translate(8px, -50%); padding: 5px 10px; border-radius: 10px; background: var(--dock-bg); border: 1px solid var(--dock-border); font-size: .72rem; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+        .au-tip { position: absolute; right: calc(100% + 10px); top: 50%; transform: translate(8px, -50%); padding: 5px 10px; border-radius: var(--r-chip, 10px); background: var(--dock-bg); border: 1px solid var(--dock-border); font-size: .72rem; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
         .au-fab:hover .au-tip, .au-fab:focus-visible .au-tip { opacity: 1; transform: translate(0, -50%); }
         @keyframes au-sway { 0%, 100% { transform: rotate(-8deg) scale(1); } 50% { transform: rotate(8deg) scale(1.1); } }
         .au-backdrop { position: fixed; inset: 0; z-index: 99999; display: flex; justify-content: flex-end; background: color-mix(in srgb, var(--shadow-c) 60%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }

@@ -177,3 +177,122 @@ html { scroll-behavior: smooth; }
 @media (hover: none) {
   .mo-orb { animation-duration: calc(30s / var(--speed, 1)); filter: blur(30px); }
 }
+
+/* ==========================================================================
+   Efek kaca (glassy): kilau menyapu di card / tombol / header / fab / dock.
+   - hover: satu sapuan; header, fab, dock: kilau halus berkala (tiap ~8 dtk)
+   - tanpa transform → tidak butuh overflow:hidden; ikut radius tema
+   - mati otomatis bila data-anim="off" / prefers-reduced-motion
+   ========================================================================== */
+:where(.glass, .card, .rp-card, .sb-user) { position: relative; }
+.glass::after, .card::after, .top-header-nav::after, .floating-navbar::after, .nav-center-action::after,
+.tf-fab::after, .au-fab::after, .ai-fab::after, .dial-chip::after, .rp-card::after, .sb-user::after, .sb-quick button::after, .sb-item::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2;
+  background: linear-gradient(105deg, transparent 38%, color-mix(in srgb, #fff 20%, transparent) 50%, transparent 62%);
+  background-size: 260% 100%; background-position: 170% 0; background-repeat: no-repeat; opacity: 0;
+  mix-blend-mode: soft-light;
+}
+.sb-item, .sb-quick button { position: relative; }
+.glass:hover::after, .card:hover::after, .rp-card:hover::after, .dial-chip:hover::after, .sb-user:hover::after,
+.sb-quick button:hover::after, .sb-item:hover::after, .nav-center-action:hover::after, .tf-fab:hover::after, .au-fab:hover::after, .ai-fab:hover::after,
+.top-header-nav:hover::after, .floating-navbar:hover::after {
+  animation: glass-glint calc(1s / var(--speed, 1)) cubic-bezier(.4, .1, .2, 1) 1;
+}
+/* kilau berkala (ambient) */
+.top-header-nav::after { animation: glass-glint-loop 9s ease-in-out 1.2s infinite; }
+.floating-navbar::after { animation: glass-glint-loop 9s ease-in-out 5.5s infinite; }
+.nav-center-action::after { animation: glass-glint-loop 7s ease-in-out 3s infinite; }
+.tf-fab::after { animation: glass-glint-loop 8s ease-in-out 2.4s infinite; }
+.au-fab::after, .ai-fab::after { animation: glass-glint-loop 8s ease-in-out 4.6s infinite; }
+.top-header-nav:hover::after, .floating-navbar:hover::after, .nav-center-action:hover::after, .tf-fab:hover::after, .au-fab:hover::after, .ai-fab:hover::after { animation: glass-glint calc(1s / var(--speed, 1)) cubic-bezier(.4, .1, .2, 1) 1; }
+@keyframes glass-glint { 0% { background-position: 170% 0; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { background-position: -70% 0; opacity: 0; } }
+@keyframes glass-glint-loop { 0% { background-position: 170% 0; opacity: 0; } 4% { opacity: 1; } 16% { background-position: -70% 0; opacity: 1; } 18%, 100% { background-position: -70% 0; opacity: 0; } }
+[data-anim='off'] .glass::after, [data-anim='off'] .card::after, [data-anim='off'] .rp-card::after, [data-anim='off'] .top-header-nav::after,
+[data-anim='off'] .floating-navbar::after, [data-anim='off'] .nav-center-action::after, [data-anim='off'] .tf-fab::after, [data-anim='off'] .au-fab::after, .ai-fab::after,
+[data-anim='off'] .dial-chip::after, [data-anim='off'] .sb-user::after, [data-anim='off'] .sb-quick button::after, [data-anim='off'] .sb-item::after { display: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .glass::after, .card::after, .rp-card::after, .top-header-nav::after, .floating-navbar::after, .nav-center-action::after,
+  .tf-fab::after, .au-fab::after, .ai-fab::after, .dial-chip::after, .sb-user::after, .sb-quick button::after, .sb-item::after { display: none; }
+}
+
+/* ==========================================================================
+   Hover kartu "trending": tilt 3D + spotlight mengikuti kursor + bayangan berwarna
+   (variabel --mx/--my/--rx/--ry diisi GlobalEffects; hanya untuk mouse)
+   ========================================================================== */
+@media (hover: hover) and (pointer: fine) {
+  .card::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1; opacity: 0; transition: opacity .3s ease;
+    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--a2) 20%, transparent), transparent 65%);
+  }
+  .card:hover::before { opacity: 1; }
+  .card:hover {
+    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-4px);
+    border-color: color-mix(in srgb, var(--a2) 55%, var(--border));
+    box-shadow: 0 26px 50px -22px color-mix(in srgb, var(--a1) 60%, transparent), 0 0 0 1px color-mix(in srgb, var(--a2) 18%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent);
+  }
+  .card { transition: transform .18s ease-out, border-color .25s ease, box-shadow .3s ease; will-change: auto; }
+}
+[data-anim='off'] .card::before { display: none; }
+[data-anim='off'] .card:hover { transform: none; }
+
+/* Tombol kembali ke atas: kaca, mengikuti radius tema, dengan ikon melayang */
+.mo-totop { right: 14px; width: 46px; height: 46px; border-radius: min(var(--r-dock-btn, 12px) + 4px, 20px); color: var(--a2);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 78%, transparent), color-mix(in srgb, var(--a1) 24%, transparent));
+  border: 1px solid var(--dock-border); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--a1) 70%, transparent), inset 1px 1px 0 color-mix(in srgb, #fff 20%, transparent); }
+.mo-totop svg { animation: mo-totop-bob 2.2s ease-in-out infinite; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--a2) 60%, transparent)); }
+.mo-totop:hover { color: var(--text); border-color: var(--a2); transform: translateY(-3px); }
+.mo-totop::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(105deg, transparent 38%, color-mix(in srgb, #fff 22%, transparent) 50%, transparent 62%); background-size: 260% 100%; background-position: 170% 0; background-repeat: no-repeat; opacity: 0; }
+.mo-totop:hover::after { animation: glass-glint 1s ease 1; }
+@keyframes mo-totop-bob { 0%, 100% { transform: translateY(1px); } 50% { transform: translateY(-2px); } }
+[data-anim='off'] .mo-totop svg { animation: none; }
+
+/* Tab kanan (Tema, Musik, AI): rata di tengah vertikal, jarak sama */
+:root { --fab-h: 58px; --fab-gap: 14px; --fab-step: calc(var(--fab-h) + var(--fab-gap)); }
+.tf-fab { top: calc(50% - var(--fab-h) / 2 - var(--fab-step)) !important; height: var(--fab-h) !important; }
+.au-fab { top: calc(50% - var(--fab-h) / 2) !important; height: var(--fab-h) !important; }
+.ai-fab { top: calc(50% - var(--fab-h) / 2 + var(--fab-step)) !important; height: var(--fab-h) !important; }
+
+/* =====================================================================
+   Hover tambahan (selain angkat / 3D / glow): magnet, ring gelombang,
+   fokus-redup saudara, ikon bereaksi, garis tautan menyapu
+   ===================================================================== */
+@media (hover: hover) and (pointer: fine) {
+  /* 1. magnet: tombol tertarik ke kursor (properti `translate` terpisah dari transform) */
+  .btn, .dial-chip, .sb-quick button, .nav-center-action {
+    translate: var(--tx, 0) var(--ty, 0);
+    transition: translate 0.25s var(--mo-spring), transform var(--mo-mid) var(--mo-ease), background var(--mo-mid), border-color var(--mo-mid), box-shadow var(--mo-mid);
+  }
+
+  /* 2. ring gelombang: cincin menyebar keluar dari kartu */
+  .card:hover { animation: mo-ring-out calc(0.9s / var(--speed, 1)) var(--mo-ease) 1; }
+
+  /* 3. fokus: kartu lain dalam grid meredup & mengecil sedikit */
+  .grid:has(> .card:hover) > .card:not(:hover), .hx-grid:has(> .card:hover) > .card:not(:hover),
+  .rp-grid:has(> .rp-card:hover) > .rp-card:not(:hover) {
+    opacity: 0.62; filter: saturate(0.7); scale: 0.985;
+  }
+  .grid > .card, .hx-grid > .card, .rp-grid > .rp-card { transition: opacity var(--mo-mid), filter var(--mo-mid), scale var(--mo-mid) var(--mo-ease), transform var(--mo-mid) var(--mo-ease), box-shadow var(--mo-mid), border-color var(--mo-mid); }
+
+  /* 4. ikon bereaksi: membesar + berputar kecil */
+  .btn svg, .card h2 svg, .card h3 svg, .sb-item svg { transition: transform var(--mo-mid) var(--mo-spring); }
+  .btn:hover svg { transform: scale(1.18) rotate(-8deg); }
+  .card:hover h2 svg, .card:hover h3 svg { transform: scale(1.2) rotate(10deg); }
+  .sb-item:hover svg { transform: translateX(2px) scale(1.12); }
+
+  /* 5. tautan teks: garis bawah menyapu dari kiri */
+  .card a:not([class]), .md a, .prose a {
+    background: linear-gradient(var(--a2), var(--a2)) 0 100% / 0% 1.5px no-repeat;
+    text-decoration: none; transition: background-size var(--mo-mid) var(--mo-ease), color var(--mo-fast);
+  }
+  .card a:not([class]):hover, .md a:hover, .prose a:hover { background-size: 100% 1.5px; color: var(--a2); }
+
+  /* 6. tombol utama: gradasi bergeser */
+  .btn.primary { background-size: 180% 100%; background-position: 0% 50%; transition: background-position 0.5s var(--mo-ease), translate 0.25s var(--mo-spring), transform var(--mo-mid) var(--mo-ease), box-shadow var(--mo-mid); }
+  .btn.primary:hover { background-position: 100% 50%; }
+}
+@keyframes mo-ring-out {
+  0% { outline: 2px solid color-mix(in srgb, var(--a2) 55%, transparent); outline-offset: 0; }
+  100% { outline: 2px solid transparent; outline-offset: 10px; }
+}
+[data-anim='off'] .card:hover { animation: none; }

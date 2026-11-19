@@ -119,6 +119,10 @@ export default function Layout({ children }) {
     window.addEventListener('wudysoft:open-studio', openStudio);
     return () => window.removeEventListener('wudysoft:open-studio', openStudio);
   }, [openStudio]);
+  useEffect(() => {
+    window.addEventListener('wudysoft:open-studio', openStudio);
+    return () => window.removeEventListener('wudysoft:open-studio', openStudio);
+  }, [openStudio]);
 
   const themeCtx = useMemo(() => ({ config, setConfig, openStudio }), [config, openStudio]);
 

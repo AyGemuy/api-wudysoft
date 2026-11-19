@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { RotateCcw } from 'lucide-react';
 import { Icons } from './Icons';
 import { sound } from '@/src/lib/interactiveEffects';
 import {
@@ -111,6 +112,7 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
   const [linkErr, setLinkErr] = useState('');
   const [upload, setUpload] = useState('');
   const [busy, setBusy] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const fileRef = useRef(null);
   const colors = useMemo(() => resolveColors(config), [config]);
 
@@ -129,6 +131,11 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
   const set = (patch, silent) => {
     if (!silent) sound.playClick();
     setConfig((prev) => sanitizeConfig({ ...prev, ...patch }));
+  };
+  const resetDefault = () => {
+    if (!confirmReset) { sound.playClick(); setConfirmReset(true); setTimeout(() => setConfirmReset(false), 3500); return; }
+    sound.playBeep(); clearBackground(); setUpload(''); setLinkDraft('');
+    setConfig({ ...DEFAULT_CONFIG }); setConfirmReset(false); flash('Tema dikembalikan ke default');
   };
   const setColor = (key, value) => {
     if (!hexToRgb(value)) return;
@@ -195,6 +202,9 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
                 <div className="mini-swatches" aria-hidden="true">
                   {['a1', 'a2', 'a3'].map((k) => <span key={k} style={{ background: colors[k] }} />)}
                 </div>
+                <button className={`reset-btn ${confirmReset ? 'confirm' : ''}`} onClick={resetDefault} aria-label="Reset tema ke default" title="Reset tema ke default">
+                  <RotateCcw size={15} /><span>{confirmReset ? 'Yakin? Ketuk lagi' : 'Reset'}</span>
+                </button>
                 <button className="close-btn" onClick={onClose} aria-label="Tutup"><Icons.Close size={20} /></button>
               </div>
             </div>
@@ -447,6 +457,11 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
           flex-direction: column;
         }
 
+        .reset-btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: var(--r-btn, 10px); border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; font-size: .74rem; font-weight: 600; cursor: pointer; transition: border-color .2s, color .2s, background .2s; }
+        .reset-btn:hover { border-color: var(--a2); color: var(--a2); }
+        .reset-btn.confirm { border-color: #ef4444; color: #fff; background: #ef4444; }
+        .reset-btn svg { transition: transform .4s; } .reset-btn:hover svg { transform: rotate(-200deg); }
+        @media (max-width: 380px) { .reset-btn span { display: none; } }
         .studio-panel-solid .studio-head {
           display: flex;
           align-items: center;

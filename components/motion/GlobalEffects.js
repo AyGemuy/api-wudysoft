@@ -12,6 +12,58 @@ export default function GlobalEffects() {
   const { ok } = useMotionOk();
   const [showTop, setShowTop] = useState(false);
 
+  // efek magnet: tombol sedikit tertarik ke arah kursor (hanya mouse/pen)
+  useEffect(() => {
+    if (!ok) return undefined;
+    let cur = null;
+    const SEL = '.btn, .dial-chip, .sb-quick button, .nav-center-action';
+    const clear = (el) => { el.style.removeProperty('--tx'); el.style.removeProperty('--ty'); };
+    const onMove = (e) => {
+      if (e.pointerType === 'touch' || document.documentElement.dataset.anim === 'off') return;
+      const el = e.target.closest?.(SEL);
+      if (cur && cur !== el) { clear(cur); cur = null; }
+      if (!el || el.disabled) return;
+      cur = el;
+      const r = el.getBoundingClientRect();
+      const dx = (e.clientX - (r.left + r.width / 2)) / r.width;
+      const dy = (e.clientY - (r.top + r.height / 2)) / r.height;
+      el.style.setProperty('--tx', `${(dx * 8).toFixed(1)}px`);
+      el.style.setProperty('--ty', `${(dy * 6).toFixed(1)}px`);
+    };
+    const onOut = (e) => { if (cur && !cur.contains(e.relatedTarget)) { clear(cur); cur = null; } };
+    document.addEventListener('pointermove', onMove, { passive: true });
+    document.addEventListener('pointerout', onOut, { passive: true });
+    return () => { document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerout', onOut); };
+  }, [ok]);
+
+  // spotlight mengikuti kursor + tilt 3D ringan pada kartu (hanya mouse/pen)
+  useEffect(() => {
+    if (!ok) return undefined;
+    let raf = 0; let cur = null;
+    const reset = (el) => { ['--mx', '--my', '--rx', '--ry'].forEach((k) => el.style.removeProperty(k)); };
+    const onMove = (e) => {
+      if (e.pointerType === 'touch' || document.documentElement.dataset.anim === 'off') return;
+      const el = e.target.closest?.('.card, .rp-card');
+      if (cur && cur !== el) { reset(cur); cur = null; }
+      if (!el) return;
+      cur = el;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const r = el.getBoundingClientRect();
+        const x = e.clientX - r.left; const y = e.clientY - r.top;
+        el.style.setProperty('--mx', `${x}px`); el.style.setProperty('--my', `${y}px`);
+        const small = r.width * r.height < 420000 && !el.classList.contains('rp-card');
+        const k = small ? 7 : 0;
+        el.style.setProperty('--ry', `${((x / r.width) - 0.5) * k}deg`);
+        el.style.setProperty('--rx', `${-((y / r.height) - 0.5) * k}deg`);
+      });
+    };
+    const onOut = (e) => { if (cur && !cur.contains(e.relatedTarget)) { reset(cur); cur = null; } };
+    document.addEventListener('pointermove', onMove, { passive: true });
+    document.addEventListener('pointerout', onOut, { passive: true });
+    return () => { document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerout', onOut); cancelAnimationFrame(raf); };
+  }, [ok]);
+
   useEffect(() => {
     if (!ok) return;
     const onDown = (e) => {
