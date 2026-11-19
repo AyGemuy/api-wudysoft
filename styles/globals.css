@@ -917,13 +917,20 @@ html[data-anim='off'] .dock-ico { animation: none !important; }
 
 .dial-scrim { position: fixed; inset: 0; z-index: 999; background: radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--a1) 22%, rgba(2, 6, 16, 0.55)), rgba(2, 6, 16, 0.5)); backdrop-filter: blur(3px); cursor: default; }
 .dial-chip {
-  position: absolute; left: 50%; top: 50%; margin: -29px 0 0 -29px; z-index: 1; width: 58px; height: 58px; border-radius: 50%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; cursor: pointer; color: var(--text);
-  background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(14px);
-  border: 1px solid color-mix(in srgb, var(--a2) 40%, transparent); box-shadow: 0 12px 26px -10px rgba(0, 0, 0, 0.7), 0 0 18px -4px color-mix(in srgb, var(--a2) 50%, transparent);
+  position: absolute; left: 50%; top: 50%; margin: -35px 0 0 -35px; z-index: 1; width: 70px; height: 70px; border-radius: min(var(--r-modal, 18px), 26px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; color: var(--text);
+  border: 1px solid var(--dock-border); border-top-color: color-mix(in srgb, #fff 28%, var(--dock-border));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 80%, transparent), color-mix(in srgb, var(--a3) 22%, transparent));
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.7), inset 1px 1px 0 color-mix(in srgb, #fff 20%, transparent);
+  transition: border-color .2s, color .2s, box-shadow .2s;
 }
-.dial-chip span { font-size: 0.52rem; font-weight: 700; letter-spacing: 0.02em; color: var(--muted); }
-.dial-chip:hover { color: var(--a2); border-color: var(--a2); }
+.dial-chip::before { content: ''; position: absolute; inset: 5px; border-radius: max(min(var(--r-modal, 18px), 26px) - 5px, 3px); border: 1px dashed color-mix(in srgb, var(--a2) 40%, transparent); opacity: .55; pointer-events: none; }
+.dial-chip .dc-ico { color: var(--a2); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--a2) 60%, transparent)); transition: transform .3s cubic-bezier(.34,1.56,.64,1); }
+.dial-chip span { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.01em; color: var(--text); }
+.dial-chip:hover, .dial-chip:focus-visible { border-color: var(--a2); box-shadow: 0 14px 30px -10px rgba(0,0,0,.7), 0 0 22px -4px color-mix(in srgb, var(--a2) 60%, transparent), inset 1px 1px 0 color-mix(in srgb, #fff 20%, transparent); }
+.dial-chip:hover .dc-ico { transform: translateY(-2px) scale(1.15) rotate(-6deg); }
+html[data-anim='off'] .dial-chip .dc-ico { transition: none; }
 
 @media (max-width: 380px) {
   .floating-navbar { padding: 7px 8px; gap: 2px; }

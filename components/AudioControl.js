@@ -59,6 +59,7 @@ export default function AudioControl() {
   const a = useStore(audioStore);
   const [b, setB] = useState(bgm.get());
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState('bgm');
   const [url, setUrl] = useState('');
   const [urlErr, setUrlErr] = useState('');
   const box = useRef(null);
@@ -87,10 +88,8 @@ export default function AudioControl() {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => e.key === 'Escape' && setOpen(false);
-    const onDown = (e) => { if (!box.current?.contains(e.target)) setOpen(false); };
     window.addEventListener('keydown', onKey);
-    document.addEventListener('pointerdown', onDown);
-    return () => { window.removeEventListener('keydown', onKey); document.removeEventListener('pointerdown', onDown); };
+    return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
   const apply = useCallback((e) => {
@@ -118,21 +117,35 @@ export default function AudioControl() {
     <div className="au-root" ref={box}>
       <AnimatePresence>
         {open && (
+          <div className="au-backdrop" onClick={() => setOpen(false)}>
           <motion.section
-            className="au-panel glass"
+            className="au-panel"
             role="dialog"
             aria-label="Pengaturan audio"
-            initial={{ opacity: 0, y: 14, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
           >
             <header className="au-head">
-              <h3><Music size={16} /> Audio</h3>
-              <button className="au-x" onClick={() => setOpen(false)} aria-label="Tutup"><X size={16} /></button>
+              <div className="au-head-t"><Music size={18} color="var(--a2)" /><h3>Audio</h3></div>
+              <div className="au-head-r">
+                <span className={`au-badge ${playing ? 'on' : ''}`}>{playing ? 'Memutar' : 'Siap'}</span>
+                <button className="au-x" onClick={() => setOpen(false)} aria-label="Tutup"><X size={20} /></button>
+              </div>
             </header>
+            <div className="au-tabs" role="tablist">
+              {[['bgm', 'Musik'], ['sfx', 'Efek'], ['cues', 'Suara']].map(([id, label]) => (
+                <button key={id} role="tab" aria-selected={tab === id} className={`au-tab ${tab === id ? 'active' : ''}`} onClick={() => { sound.playClick(); setTab(id); }}>
+                  {label}
+                  {tab === id && <span className="au-tab-line" />}
+                </button>
+              ))}
+            </div>
+            <div className="au-body">
 
-            <div className="au-sec">
+            {tab === 'bgm' && <div className="au-sec">
               <div className="au-title">Musik latar (BGM)</div>
               <Switch id="au-bgm" on={a.bgmOn} label="BGM" hint={a.bgmUrl ? 'Putar musik latar' : 'Tempel link dulu'} onChange={(v) => { if (!a.bgmUrl) return setUrlErr('Tempel link YouTube di bawah dulu.'); sound.playClick(); bgm.setOn(v); }} />
               <form className="au-url" onSubmit={apply}>
@@ -151,12 +164,16 @@ export default function AudioControl() {
                 )}
               </div>
               <Volume label="Volume BGM" icon={<Music size={13} />} value={a.bgmVol} onChange={(v) => bgm.setVolume(v)} />
-            </div>
+            </div>}
 
-            <div className="au-sec">
+            {tab === 'sfx' && <div className="au-sec">
               <div className="au-title">Efek suara</div>
               <Switch on={sfxOn} label="Efek suara" hint="Klik, login, logout, 404" onChange={(v) => { setConfig({ ...config, soundEnabled: v }); if (v) { sound.enabled = true; sound.playBeep(); } }} />
               <Volume label="Volume efek" icon={<Volume2 size={13} />} value={a.sfxVol} onChange={(v) => audioStore.set({ sfxVol: v })} onCommit={() => sound.playBeep()} />
+            </div>}
+
+            {tab === 'cues' && <div className="au-sec">
+              <div className="au-title">Suara per kejadian</div>
               <ul className="au-cues">
                 {CUES.map((c) => (
                   <li key={c.id}>
@@ -165,8 +182,10 @@ export default function AudioControl() {
                   </li>
                 ))}
               </ul>
+            </div>}
             </div>
           </motion.section>
+          </div>
         )}
       </AnimatePresence>
 
@@ -179,7 +198,7 @@ export default function AudioControl() {
       </button>
 
       <style jsx global>{`
-        .au-root { position: relative; z-index: 1600; }
+        .au-root { position: static; }
         /* tab di tepi kanan tepat di bawah tombol Tema (gaya sama) */
         .au-fab { position: fixed; z-index: 1500; right: 0; top: calc(46% + 70px); width: 46px; height: 58px; padding: 0 0 0 4px; display: grid; place-items: center; cursor: pointer; color: var(--text);
           border-radius: 30px 0 0 30px; border: 1px solid var(--dock-border); border-right: none;
@@ -197,14 +216,23 @@ export default function AudioControl() {
         .au-tip { position: absolute; right: calc(100% + 10px); top: 50%; transform: translate(8px, -50%); padding: 5px 10px; border-radius: 10px; background: var(--dock-bg); border: 1px solid var(--dock-border); font-size: .72rem; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
         .au-fab:hover .au-tip, .au-fab:focus-visible .au-tip { opacity: 1; transform: translate(0, -50%); }
         @keyframes au-sway { 0%, 100% { transform: rotate(-8deg) scale(1); } 50% { transform: rotate(8deg) scale(1.1); } }
-        .au-panel { position: fixed; right: 62px; top: clamp(70px, 12vh, 130px); width: min(340px, calc(100vw - 80px)); max-height: min(78vh, 640px); overflow: auto; padding: 14px; border-radius: var(--radius); display: grid; gap: 14px; transform-origin: right center; overscroll-behavior: contain; z-index: 1600; }
-        @media (max-width: 560px) { .au-fab { top: calc(40% + 62px); width: 40px; height: 52px; } .au-fab:hover { width: 40px; } .au-tip { display: none; }
-          .au-panel { right: 12px; left: 12px; width: auto; top: 78px; max-height: calc(100dvh - 190px); } }
+        .au-backdrop { position: fixed; inset: 0; z-index: 99999; display: flex; justify-content: flex-end; background: color-mix(in srgb, var(--shadow-c) 60%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+        .au-panel { width: 100%; max-width: 380px; height: 100%; height: 100dvh; display: flex; flex-direction: column; background: var(--surface); color: var(--text); border-left: 1px solid var(--border); box-shadow: -10px 0 30px color-mix(in srgb, var(--shadow-c) 55%, transparent); }
+        .au-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 18px; align-content: start; }
+        @media (max-width: 560px) { .au-fab { top: calc(40% + 62px); width: 40px; height: 52px; } .au-fab:hover { width: 40px; } .au-tip { display: none; } }
         html[data-anim='off'] .au-ico { animation: none; }
-        .au-head { display: flex; justify-content: space-between; align-items: center; }
-        .au-head h3 { display: flex; align-items: center; gap: 8px; font-size: .95rem; }
-        .au-x { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; border-radius: 8px; }
+        .au-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+        .au-head-t, .au-head-r { display: flex; align-items: center; gap: 8px; }
+        .au-head h3 { font-size: 1rem; }
+        .au-badge { font-family: var(--font-mono); font-size: .66rem; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+        .au-badge.on { color: var(--a2); border-color: var(--a2); }
+        .au-x { background: none; border: none; color: var(--muted); cursor: pointer; display: flex; }
         .au-x:hover { color: var(--text); }
+        .au-tabs { display: flex; overflow-x: auto; gap: 2px; padding: 0 10px; border-bottom: 1px solid var(--border); scrollbar-width: none; }
+        .au-tab { position: relative; flex: 1 0 auto; padding: 12px; background: none; border: none; color: var(--muted); font-family: var(--font-mono); font-size: .74rem; cursor: pointer; white-space: nowrap; }
+        .au-tab.active { color: var(--a2); }
+        .au-tab-line { animation: au-line .25s ease-out; position: absolute; left: 8px; right: 8px; bottom: 0; height: 2px; border-radius: 2px; background: var(--a2); box-shadow: 0 0 8px var(--a2); }
+        @keyframes au-line { from { transform: scaleX(.2); opacity: 0; } to { transform: none; opacity: 1; } }
         .au-sec { display: grid; gap: 10px; }
         .au-title { font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: var(--font-mono); }
         /* saklar & slider: gaya yang sama dengan Theme Studio */

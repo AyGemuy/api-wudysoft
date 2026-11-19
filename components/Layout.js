@@ -12,7 +12,7 @@ import SiteFooter from './SiteFooter';
 import WudysoftBrand from './WudysoftBrand';
 import CurvedSidebar from './CurvedSidebar';
 import ThemeFab from './ThemeFab';
-import { FileText, FileCode, MessageSquare, Wand2, UploadCloud, Terminal as TermIcon } from 'lucide-react';
+import { FileText, MessageSquare, Wand2, UploadCloud, TerminalSquare, Terminal as TermIcon } from 'lucide-react';
 import { ThemeContext } from './ThemeContext';
 import { logout } from '@/src/lib/nav';
 import { loadSpecOps } from '@/src/lib/specIndex';
@@ -32,8 +32,8 @@ function Avatar({ user }) {
 
 const DIAL = [
   { href: '/playground', label: 'Playground', Icon: TermIcon },
+  { href: '/tools/compiler', label: 'Compiler', Icon: TerminalSquare },
   { href: '/tools/pastes', label: 'Pastes', Icon: FileText },
-  { href: '/tools/code-share', label: 'Code', Icon: FileCode },
   { href: '/rooms', label: 'Rooms', Icon: MessageSquare },
 ];
 
@@ -376,20 +376,20 @@ export default function Layout({ children }) {
               {dialOpen && (
                 <>
                   {DIAL.map((d, i) => {
-                    const ang = (-150 + (i * 120) / (DIAL.length - 1)) * (Math.PI / 180);
-                    const R = 96;
+                    const ang = (-158 + (i * 136) / (DIAL.length - 1)) * (Math.PI / 180);
+                    const R = 140;
                     return (
                       <motion.button
                         key={d.href}
                         className="dial-chip"
                         aria-label={d.label}
                         initial={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
-                        animate={{ x: Math.cos(ang) * R, y: Math.sin(ang) * R, scale: 1, opacity: 1 }}
+                        animate={{ x: Math.cos(ang) * R, y: Math.sin(ang) * R - 48, scale: 1, opacity: 1 }}
                         exit={{ x: 0, y: 0, scale: 0.2, opacity: 0, transition: { duration: 0.15 } }}
                         transition={{ type: 'spring', stiffness: 380, damping: 22, delay: i * 0.04 }}
                         onClick={() => { sound.playClick(); setDialOpen(false); router.push(d.href); }}
                       >
-                        <d.Icon size={19} />
+                        <d.Icon size={22} className="dc-ico" />
                         <span>{d.label}</span>
                       </motion.button>
                     );

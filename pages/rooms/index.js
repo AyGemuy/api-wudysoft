@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession, signIn } from 'next-auth/react';
+import { useRouter } from 'next/router';
+import RoomPicker, { GroupAvatar } from '@/components/rooms/RoomPicker';
 import { motion, AnimatePresence } from 'framer-motion';
 import Seo from '@/components/Seo';
 import {
@@ -15,7 +17,8 @@ import {
   Sparkles,
   User,
   ShieldAlert,
-  ArrowRight
+  ArrowRight,
+  ArrowLeft
 } from 'lucide-react';
 import { sound } from '@/src/lib/interactiveEffects';
 
@@ -23,14 +26,16 @@ export default function RoomsPage() {
   const { data: session } = useSession();
   const user = session?.user;
 
-  const [rooms, setRooms] = useState([]);
-  const [activeRoom, setActiveRoom] = useState('general');
+  const router = useRouter();
+  const [activeMeta, setActiveMeta] = useState(null);
+  // sumber kebenaran = URL (?room=): null = pilih grup dari daftar dulu
+  const activeRoom = router.isReady && typeof router.query.room === 'string' && router.query.room ? router.query.room : null;
+  const [listKey, setListKey] = useState(0);
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState('');
   const [sending, setSending] = useState(false);
   const [createModal, setCreateModal] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
-  const [loadingRooms, setLoadingRooms] = useState(true);
 
   const messagesEndRef = useRef(null);
 
@@ -41,21 +46,11 @@ export default function RoomsPage() {
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   };
 
-  // 1. Fetch Room List
-  const fetchRooms = async () => {
-    try {
-      const res = await fetch('/api/rooms');
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-        setRooms(json.data);
-      } else {
-        setRooms([{ roomName: 'general', isGroup: true }]);
-      }
-    } catch {
-      setRooms([{ roomName: 'general', isGroup: true }]);
-    } finally {
-      setLoadingRooms(false);
-    }
+  // Buka / tutup grup; ?room= menjaga pilihan saat refresh & bisa dibagikan
+  const openRoom = (r) => {
+    setMessages([]);
+    setActiveMeta(r || null);
+    router.push({ pathname: '/rooms', query: r ? { room: r.roomName } : {} }, undefined, { shallow: true, scroll: false });
   };
 
   // 2. Fetch Messages from Active Room
@@ -71,10 +66,7 @@ export default function RoomsPage() {
   };
 
   useEffect(() => {
-    fetchRooms();
-  }, []);
-
-  useEffect(() => {
+    if (!activeRoom) return undefined;
     fetchMessages();
     const timer = setInterval(fetchMessages, 3500); // Polling realtime
     return () => clearInterval(timer);
@@ -138,6 +130,8 @@ export default function RoomsPage() {
         body: JSON.stringify({
           action: 'createGroup',
           roomName: newRoomName.trim(),
+          createdBy: user?.name || '',
+          avatar: user?.image || '',
         }),
       });
 
@@ -146,8 +140,8 @@ export default function RoomsPage() {
         sound.playBeep();
         setNewRoomName('');
         setCreateModal(false);
-        fetchRooms();
-        setActiveRoom(json.data.roomName);
+        setListKey((k) => k + 1);
+        openRoom(json.data);
       } else {
         alert(json.message);
       }
@@ -206,7 +200,7 @@ export default function RoomsPage() {
               <span>REALTIME CHAT</span>
             </div>
             <h1>Chat Rooms</h1>
-            <p>Ngobrol realtime di banyak channel.</p>
+            <p>{activeRoom ? `Channel #${activeRoom}` : 'Pilih grup dari daftar untuk mulai ngobrol.'}</p>
           </div>
 
           <motion.button
@@ -270,42 +264,25 @@ export default function RoomsPage() {
           )}
         </AnimatePresence>
 
-        {/* Chat Layout Box */}
+        <AnimatePresence mode="wait" initial={false}>
+        {!activeRoom ? (
+          <motion.div key="picker" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.22 }}>
+            <RoomPicker onPick={openRoom} refreshKey={listKey} />
+          </motion.div>
+        ) : (
+        <motion.div key="chat" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }}>
         <div className="rooms-container glass">
-          {/* Sidebar Channels */}
-          <aside className="rooms-sidebar">
-            <div className="sidebar-head">
-              <MessageSquare size={16} color="var(--a2)" />
-              <span>ACTIVE CHANNELS</span>
-            </div>
-
-            <div className="channels-list">
-              {rooms.map((r) => {
-                const isActive = activeRoom === r.roomName;
-                return (
-                  <motion.button
-                    key={r.roomName}
-                    className={`channel-btn ${isActive ? 'active' : ''}`}
-                    onClick={() => {
-                      sound.playClick();
-                      setActiveRoom(r.roomName);
-                    }}
-                  >
-                    <Hash size={16} color={isActive ? 'var(--a2)' : 'var(--muted)'} />
-                    <span className="channel-name">{r.roomName}</span>
-                  </motion.button>
-                );
-              })}
-            </div>
-          </aside>
-
           {/* Main Chat Stream */}
           <section className="chat-viewport">
             {/* Active Header */}
             <div className="chat-top-bar">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Hash size={18} color="var(--a2)" />
-                <strong style={{ fontSize: '1rem', textTransform: 'uppercase' }}>{activeRoom}</strong>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                <button onClick={() => { sound.playClick(); openRoom(null); }} className="btn back-btn" aria-label="Kembali ke daftar grup"><ArrowLeft size={15} /><span>Daftar</span></button>
+                <GroupAvatar room={activeMeta || { roomName: activeRoom }} size={34} />
+                <div style={{ minWidth: 0 }}>
+                  <strong style={{ fontSize: '0.98rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>#{activeRoom}</strong>
+                  {activeMeta?.createdBy && <small style={{ color: 'var(--muted)', fontSize: '0.68rem' }}>oleh {activeMeta.createdBy}</small>}
+                </div>
               </div>
               <button onClick={fetchMessages} className="btn" style={{ padding: '6px 12px', fontSize: '0.75rem' }}>
                 <RefreshCw size={13} /> Refresh
@@ -385,12 +362,15 @@ export default function RoomsPage() {
             </form>
           </section>
         </div>
+        </motion.div>
+        )}
+        </AnimatePresence>
       </div>
 
       <style jsx>{`
         .rooms-container {
           display: grid;
-          grid-template-columns: 240px 1fr;
+          grid-template-columns: 1fr;
           height: min(620px, calc(100dvh - 220px));
           min-height: 440px;
           border-radius: var(--radius);
@@ -547,10 +527,12 @@ export default function RoomsPage() {
           flex: 1;
         }
         .chat-viewport { min-height: 0; }
+        :global(.back-btn) { padding: 6px 10px; font-size: .75rem; gap: 6px; flex-shrink: 0; }
+        @media (max-width: 420px) { :global(.back-btn) span { display: none; } }
         @media (max-width: 768px) {
           .rooms-container {
             grid-template-columns: 1fr;
-            grid-template-rows: auto minmax(0, 1fr);
+            grid-template-rows: minmax(0, 1fr);
             height: min(640px, calc(100dvh - 190px));
             min-height: 460px;
           }

@@ -13,6 +13,9 @@ import {
   RefreshCw,
   Sparkles,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Search,
   Check
 } from 'lucide-react';
 import { sound } from '@/src/lib/interactiveEffects';
@@ -23,6 +26,9 @@ export default function UploadPage() {
   const [loadingHosts, setLoadingHosts] = useState(true);
   const [selectedHost, setSelectedHost] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [hostPage, setHostPage] = useState(1);
+  const [hostQuery, setHostQuery] = useState('');
+  const HOST_PER_PAGE = 8;
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState({});
   const [uploadResults, setUploadResults] = useState([]);
@@ -208,6 +214,10 @@ export default function UploadPage() {
     }
   };
 
+  const filteredHosts = hosts.filter((h) => !hostQuery.trim() || `${h.label} ${h.id}`.toLowerCase().includes(hostQuery.trim().toLowerCase()));
+  const hostPages = Math.max(1, Math.ceil(filteredHosts.length / HOST_PER_PAGE));
+  const safeHostPage = Math.min(hostPage, hostPages);
+  const pagedHosts = filteredHosts.slice((safeHostPage - 1) * HOST_PER_PAGE, safeHostPage * HOST_PER_PAGE);
   const currentHostObj = hosts.find((h) => h.id === selectedHost) || { label: selectedHost || 'PILIH HOST' };
 
   return (
@@ -283,6 +293,11 @@ export default function UploadPage() {
               className="dropdown-trigger glass"
               onClick={() => {
                 sound.playClick();
+                if (!dropdownOpen) {
+                  const i = hosts.findIndex((h) => h.id === selectedHost);
+                  setHostQuery('');
+                  setHostPage(i >= 0 ? Math.floor(i / HOST_PER_PAGE) + 1 : 1);
+                }
                 setDropdownOpen(!dropdownOpen);
               }}
               whileTap={{ scale: 0.99 }}
@@ -308,7 +323,19 @@ export default function UploadPage() {
                   exit={{ opacity: 0, y: -8, scale: 0.98 }}
                   transition={{ duration: 0.18 }}
                 >
-                  {hosts.map((h) => {
+                  <div className="dd-search">
+                    <Search size={14} />
+                    <input
+                      value={hostQuery}
+                      onChange={(e) => { setHostQuery(e.target.value); setHostPage(1); }}
+                      placeholder={`Cari dari ${hosts.length} server…`}
+                      aria-label="Cari server"
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                  </div>
+                  {pagedHosts.length === 0 && <div className="dd-empty">Tidak ada server yang cocok</div>}
+                  {pagedHosts.map((h) => {
                     const isSelected = selectedHost === h.id;
                     return (
                       <div
@@ -325,6 +352,13 @@ export default function UploadPage() {
                       </div>
                     );
                   })}
+                  {hostPages > 1 && (
+                    <div className="dd-pager">
+                      <button type="button" onClick={() => setHostPage((p) => Math.max(1, p - 1))} disabled={safeHostPage <= 1} aria-label="Halaman sebelumnya"><ChevronLeft size={16} /></button>
+                      <span>Hal. {safeHostPage} / {hostPages} <small>· {filteredHosts.length} server</small></span>
+                      <button type="button" onClick={() => setHostPage((p) => Math.min(hostPages, p + 1))} disabled={safeHostPage >= hostPages} aria-label="Halaman berikutnya"><ChevronRight size={16} /></button>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -558,7 +592,7 @@ export default function UploadPage() {
           z-index: 50;
           padding: 6px;
           border-radius: 16px;
-          background: #0d121d !important;
+          background: var(--surface) !important;
           border: 1px solid var(--border);
           box-shadow: 0 16px 36px color-mix(in srgb, var(--shadow-c) 70%, transparent);
           display: flex;
@@ -578,6 +612,15 @@ export default function UploadPage() {
         .dropdown-option:hover {
           background: rgba(56, 189, 248, 0.12);
         }
+        .dd-search { display: flex; align-items: center; gap: 8px; padding: 0 10px; height: 38px; border-radius: var(--r-input, 10px); border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); margin-bottom: 2px; }
+        .dd-search input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--text); font: inherit; font-size: .8rem; font-family: var(--font-mono); }
+        .dd-search:focus-within { border-color: var(--a2); }
+        .dd-empty { padding: 14px; text-align: center; color: var(--muted); font-size: .8rem; }
+        .dd-pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 2px 2px; border-top: 1px solid var(--border); margin-top: 2px; font-family: var(--font-mono); font-size: .74rem; color: var(--text); }
+        .dd-pager small { color: var(--muted); }
+        .dd-pager button { width: 34px; height: 34px; display: grid; place-items: center; border-radius: var(--r-btn, 10px); border: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer; }
+        .dd-pager button:hover:not(:disabled) { border-color: var(--a2); color: var(--a2); }
+        .dd-pager button:disabled { opacity: .4; cursor: not-allowed; }
         .dropdown-option.selected {
           background: rgba(56, 189, 248, 0.18);
           color: var(--a2);

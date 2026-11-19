@@ -28,8 +28,29 @@ async function handler(req, res) {
       }
     } else {
       try {
-        const rooms = await Room.find({}, "roomName isGroup createdAt updatedAt").sort({ updatedAt: -1 });
-        return res.status(200).json({ success: true, data: rooms || [] });
+        // Daftar grup: ringkasan per grup (total pesan, pembuat, dll.) + pagination/pencarian/urutan
+        const q = String(req.query.q || "").trim().slice(0, 60);
+        const paged = req.query.page !== undefined || req.query.limit !== undefined;
+        const limit = Math.min(48, Math.max(1, parseInt(req.query.limit, 10) || 12));
+        const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+        const sortKey = { updated: { updatedAt: -1 }, created: { createdAt: -1 }, oldest: { createdAt: 1 }, name: { roomName: 1 }, total: { total: -1, updatedAt: -1 } }[req.query.sort] || { updatedAt: -1 };
+        const match = q ? { roomName: { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } } : {};
+        const [out] = await Room.aggregate([
+          { $match: match },
+          {
+            $project: {
+              roomName: 1, isGroup: 1, createdAt: 1, updatedAt: 1, createdBy: 1, avatar: 1,
+              total: { $size: { $filter: { input: { $ifNull: ["$messages", []] }, as: "m", cond: { $ne: ["$$m.isDeleted", true] } } } },
+              firstAuthor: { $arrayElemAt: [{ $ifNull: ["$messages.name", []] }, 0] },
+              lastAt: { $max: "$messages.timestamp" },
+            },
+          },
+          { $sort: sortKey },
+          { $facet: { items: paged ? [{ $skip: (page - 1) * limit }, { $limit: limit }] : [], count: [{ $count: "n" }] } },
+        ]);
+        const total = out?.count?.[0]?.n || 0;
+        const data = (out?.items || []).map((r) => ({ ...r, createdBy: r.createdBy || r.firstAuthor || "" }));
+        return res.status(200).json({ success: true, data, meta: { page, limit, total, pages: Math.max(1, Math.ceil(total / limit)) } });
       } catch (error) {
         return res.status(500).json({ success: false, message: "Error fetching rooms" });
       }
@@ -50,6 +71,7 @@ async function handler(req, res) {
       avatar,
       replyToMessageId,
       emoji,
+      createdBy,
     } = req.body || {};
 
     // 1. Send Message
@@ -178,6 +200,8 @@ async function handler(req, res) {
         const newRoom = await Room.create({
           roomName: cleanName,
           isGroup: true,
+          createdBy: String(createdBy || "").slice(0, 60),
+          avatar: /^https?:\/\//i.test(String(avatar || "")) ? String(avatar).slice(0, 500) : "",
           messages: [],
         });
         return res.status(201).json({ success: true, message: "Grup berhasil dibuat!", data: newRoom });

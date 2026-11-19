@@ -67,6 +67,15 @@ const RoomSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // opsional: pembuat & foto grup (grup lama tanpa field ini tetap valid)
+    createdBy: {
+      type: String,
+      default: "",
+    },
+    avatar: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,
