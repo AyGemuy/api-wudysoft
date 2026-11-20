@@ -4,12 +4,13 @@ import { RotateCcw } from 'lucide-react';
 import { Icons } from './Icons';
 import { sound } from '@/src/lib/interactiveEffects';
 import {
-  PRESETS, FONTS, FONT_CATS, GRADIENTS, RADIUS_PRESETS, PARTICLES, CARD_STYLES, COLOR_KEYS, DEFAULT_CONFIG,
+  PRESETS, TEMPLATES, BORDER_STYLES, BORDER_COLORS, GLINTS, FONTS, FONT_CATS, GRADIENTS, RADIUS_PRESETS, PARTICLES, CARD_STYLES, COLOR_KEYS, DEFAULT_CONFIG,
   resolveColors, sanitizeConfig, randomPalette, hexToRgb, isLight, fontPreviewHref,
 } from '@/src/lib/themes';
 import { saveBackgroundFile, clearBackground, readBackground } from '@/src/lib/bgUpload';
 
 const TABS = [
+  { id: 'template', label: 'Template' },
   { id: 'preset', label: 'Preset' },
   { id: 'color', label: 'Warna' },
   { id: 'shape', label: 'Bentuk' },
@@ -79,6 +80,77 @@ const Section = ({ title, hint, children }) => (
   </div>
 );
 
+
+/** Pratinjau mini tiap model kartu (gaya inline sederhana agar tidak bentrok dengan tema aktif). */
+function cardPreviewStyle(id, c) {
+  const light = isLight(c.bg1);
+  const surf = c.bg2 || c.bg1;
+  const txt = c.text || (light ? '#0f172a' : '#f8fafc');
+  const sh = light ? 'rgba(51,65,85,.35)' : 'rgba(0,0,0,.55)';
+  const base = { border: `1px solid ${txt}22`, background: `${surf}cc` };
+  switch (id) {
+    case 'solid': return { border: `1px solid ${txt}22`, background: surf, boxShadow: `0 6px 12px -6px ${sh}` };
+    case 'outline': return { border: `1.5px solid ${c.a2}88`, background: 'transparent' };
+    case 'neon': return { border: `1px solid ${c.a2}`, background: `${c.bg1}b8`, boxShadow: `0 0 10px ${c.a2}66, inset 0 0 8px ${c.a2}22` };
+    case 'liquid': return { border: '1px solid rgba(255,255,255,.35)', background: 'linear-gradient(135deg, rgba(255,255,255,.28), rgba(255,255,255,.06))', boxShadow: 'inset 0 1px 1px rgba(255,255,255,.6), inset 0 -1px 1px rgba(255,255,255,.15)', backdropFilter: 'blur(6px)' };
+    case 'neu': return { border: 'none', background: surf, boxShadow: `4px 4px 8px ${sh}, -4px -4px 8px ${light ? '#fff' : 'rgba(255,255,255,.07)'}` };
+    case 'brutal': return { border: `2px solid ${txt}`, background: surf, boxShadow: `4px 4px 0 ${txt}` };
+    case 'bevel': return { border: `1px solid ${txt}26`, background: `linear-gradient(180deg, ${txt}1c, ${surf} 45%)`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.25), inset 0 -3px 0 rgba(0,0,0,.28), 0 6px 8px -4px ${sh}` };
+    case 'gradient': return { border: '1.5px solid transparent', background: `linear-gradient(${surf}, ${surf}) padding-box, linear-gradient(135deg, ${c.a1}, ${c.a2}, ${c.a3}) border-box` };
+    case 'aurora': return { border: `1px solid ${txt}22`, background: `radial-gradient(80% 90% at 0 0, ${c.a1}55, transparent 70%), radial-gradient(80% 90% at 100% 100%, ${c.a3}55, transparent 70%), ${surf}b0` };
+    case 'frosted': return { border: `1px solid ${txt}2e`, background: `linear-gradient(180deg, ${txt}1f, ${txt}0a)`, boxShadow: `inset 0 1px 0 ${txt}33, 0 6px 12px -6px ${sh}`, backdropFilter: 'blur(8px)' };
+    case 'crystal': return { border: '1px solid rgba(255,255,255,.35)', borderRightColor: `${txt}18`, borderBottomColor: `${txt}18`, background: `linear-gradient(115deg, rgba(255,255,255,.34), transparent 38%, transparent 62%, rgba(255,255,255,.14)), ${surf}55`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.5), 0 6px 12px -6px ${sh}` };
+    case 'clay': return { border: 'none', background: `linear-gradient(145deg, ${txt}14, ${surf} 55%)`, boxShadow: `inset 3px 3px 6px rgba(255,255,255,${light ? '.8' : '.18'}), inset -4px -5px 8px rgba(0,0,0,.2), 0 7px 10px -4px ${sh}` };
+    case 'holo': return { border: '1.5px solid transparent', background: `linear-gradient(${surf}, ${surf}) padding-box, conic-gradient(from 40deg, ${c.a1}, ${c.a2}, ${c.a3}, ${c.a1}) border-box` };
+    case 'stack': return { border: `1px solid ${txt}22`, background: surf, boxShadow: `0 4px 0 -1px ${txt}18, 0 8px 0 -3px ${txt}0e, 0 11px 10px -5px ${sh}` };
+    case 'terminal': return { border: `1px solid ${c.a2}88`, background: `repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,.18) 2px 3px), ${c.bg1}` };
+    case 'minimal': return { border: '1px solid transparent', borderBottom: `1px solid ${txt}30`, background: `${surf}66` };
+    default: return base; // glass
+  }
+}
+
+function CardPicker({ value, colors, onChange }) {
+  return (
+    <div className="cfg">
+      <span className="cfg-label">Model kartu</span>
+      <div className="cp-grid">
+        {CARD_STYLES.map((s) => (
+          <button key={s.id} type="button" className={`cp-tile ${value === s.id ? 'active' : ''}`} onClick={() => onChange(s.id)} aria-pressed={value === s.id} style={{ background: `linear-gradient(135deg, ${colors.bg1}, ${colors.bg2})` }}>
+            <span className="cp-demo" style={{ borderRadius: 8, ...cardPreviewStyle(s.id, colors) }} />
+            <span className="cp-name" style={{ color: colors.text || (isLight(colors.bg1) ? '#0f172a' : '#f8fafc') }}>{s.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TemplateGrid({ current, onPick }) {
+  return (
+    <div className="tpl-grid">
+      {TEMPLATES.map((tp) => {
+        const pr = PRESETS.find((x) => x.id === tp.theme)?.colors || PRESETS[0].colors;
+        const txt = pr.text || (isLight(pr.bg1) ? '#0f172a' : '#f8fafc');
+        const active = current.theme === tp.v.theme && current.card === tp.v.card && current.radius === tp.v.radius && current.font === tp.v.font;
+        return (
+          <button key={tp.id} type="button" className={`tpl-card ${active ? 'active' : ''}`} onClick={() => onPick(tp)} style={{ background: `linear-gradient(145deg, ${pr.bg2}, ${pr.bg1})`, color: txt }}>
+            <span className="tpl-stage">
+              <i className="tpl-blob" style={{ background: pr.a1 }} />
+              <i className="tpl-blob b2" style={{ background: pr.a3 }} />
+              <span className="tpl-mock" style={{ borderRadius: Math.min(tp.v.radius, 18), ...cardPreviewStyle(tp.v.card, pr) }}>
+                <b style={{ background: pr.a2, borderRadius: Math.min(tp.v.rBtn, 8) }} />
+                <u style={{ background: `${txt}55` }} /><u style={{ background: `${txt}33`, width: '55%' }} />
+              </span>
+            </span>
+            <span className="tpl-name">{tp.name}{active && <Icons.Check size={12} color={pr.a2} />}</span>
+            <span className="tpl-desc" style={{ color: `${txt}aa` }}>{tp.desc}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Pilih font: tiap kotak dirender dengan fontnya sendiri. */
 function FontPicker({ value, onChange, cats }) {
   const [cat, setCat] = useState(cats?.[0] || 'sans');
@@ -105,7 +177,7 @@ function FontPicker({ value, onChange, cats }) {
 }
 
 export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }) {
-  const [tab, setTab] = useState('preset');
+  const [tab, setTab] = useState('template');
   const [importText, setImportText] = useState('');
   const [note, setNote] = useState('');
   const [linkDraft, setLinkDraft] = useState(config.bgUrl);
@@ -219,6 +291,13 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
             </div>
 
             <div className="studio-body">
+              {tab === 'template' && (
+                <>
+                  <span className="section-label">{TEMPLATES.length} TEMPLATE TRENDING</span>
+                  <small className="tpl-hint">Satu ketukan mengubah tema, model kartu, bentuk, efek, dan font. Setelah itu tiap pengaturan masih bisa diubah sendiri.</small>
+                  <TemplateGrid current={config} onPick={(tp) => { set({ ...tp.v, custom: {} }); flash(`Template ${tp.name} diterapkan`); }} />
+                </>
+              )}
               {tab === 'preset' && (
                 <>
                   <span className="section-label">{PRESETS.length} PRESET TEMA</span>
@@ -279,7 +358,12 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
                   </Section>
 
                   <Section title="KARTU & PANEL">
-                    <Segmented label="Gaya kartu" value={config.card} options={CARD_STYLES} onChange={(v) => set({ card: v })} />
+                    <CardPicker value={config.card} colors={colors} onChange={(v) => set({ card: v })} />
+                    <Segmented label="Gaya garis tepi" value={config.cardBorderStyle} options={BORDER_STYLES} onChange={(v) => set({ cardBorderStyle: v })} />
+                    <Segmented label="Warna garis tepi" value={config.cardBorderColor} options={BORDER_COLORS} onChange={(v) => set({ cardBorderColor: v })} />
+                    <Slider label="Tebal garis tepi" value={config.cardBorderW} min={0} max={4} step={1} format={(v) => (v === 0 ? 'Ikuti model' : `${v}px`)} onChange={(v) => set({ cardBorderW: v }, true)} />
+                    <Segmented label="Kilau kaca" value={config.cardGlint} options={GLINTS} onChange={(v) => set({ cardGlint: v })} />
+                    <Slider label="Kedalaman 3D" value={config.cardDepth} min={0} max={1} step={0.05} format={(v) => `${Math.round(v * 100)}%`} onChange={(v) => set({ cardDepth: v }, true)} />
                     <Slider label="Sudut kartu" value={config.radius} min={0} max={60} unit="px" pill onChange={(v) => set({ radius: v }, true)} />
                     <Slider label="Sudut modal / dialog" value={config.rModal} min={0} max={60} unit="px" pill onChange={(v) => set({ rModal: v }, true)} />
                     <Slider label="Blur kaca" value={config.blur} min={0} max={50} unit="px" onChange={(v) => set({ blur: v }, true)} />
@@ -311,7 +395,7 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
                     <Toggle label="Animasi masuk konten" hint="Kartu & hero muncul bertahap" value={config.animEntrance} onChange={(v) => set({ animEntrance: v })} />
                   </Section>
                   <Section title="INTERAKSI">
-                    <Segmented label="Efek hover kartu" value={config.animHover} options={[{ id: 'lift', label: 'Angkat' }, { id: 'tilt', label: 'Tilt 3D' }, { id: 'glow', label: 'Glow' }, { id: 'none', label: 'Mati' }]} onChange={(v) => set({ animHover: v })} />
+                    <Segmented label="Efek hover kartu" value={config.animHover} options={[{ id: 'lift', label: 'Angkat' }, { id: 'tilt', label: 'Tilt 3D' }, { id: 'glow', label: 'Kilau' }, { id: 'none', label: 'Mati' }]} onChange={(v) => set({ animHover: v })} />
                     <Toggle label="Animasi tombol" hint="Transisi hover & tekan" value={config.animBtn} onChange={(v) => set({ animBtn: v })} />
                     <Toggle label="Animasi pratinjau kartu" hint="Terminal, grafik, chat di kartu Home" value={config.animPreview} onChange={(v) => set({ animPreview: v })} />
                     <Toggle label="Cahaya kursor" hint="Mengikuti pointer (desktop)" value={config.spotlight} onChange={(v) => set({ spotlight: v })} />
@@ -594,6 +678,28 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
         .studio-panel-solid .sl-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid var(--a2); box-shadow: 0 2px 8px rgba(0,0,0,.5); cursor: grab; }
         .studio-panel-solid .sl-range:active::-webkit-slider-thumb { transform: scale(1.15); cursor: grabbing; }
         .studio-panel-solid .sl-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 5px color-mix(in srgb, var(--a2) 40%, transparent); }
+
+
+        .studio-panel-solid .tpl-hint { display: block; color: var(--muted); font-size: 0.74rem; line-height: 1.45; margin: 6px 0 12px; }
+        .studio-panel-solid .tpl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .studio-panel-solid .tpl-card { display: grid; gap: 4px; padding: 8px; text-align: left; border-radius: var(--r-btn, 12px); border: 1px solid var(--border); cursor: pointer; min-width: 0; font: inherit; transition: transform .25s var(--mo-spring, ease), border-color .2s, box-shadow .2s; }
+        .studio-panel-solid .tpl-card:hover { transform: translateY(-3px) scale(1.015); }
+        .studio-panel-solid .tpl-card:active { transform: scale(.97); }
+        .studio-panel-solid .tpl-card.active { border-color: var(--a2); box-shadow: 0 0 0 2px color-mix(in srgb, var(--a2) 35%, transparent); }
+        .studio-panel-solid .tpl-stage { position: relative; display: grid; place-items: center; height: 84px; overflow: hidden; border-radius: 8px; }
+        .studio-panel-solid .tpl-blob { position: absolute; width: 60px; height: 60px; border-radius: 50%; filter: blur(22px); opacity: .5; left: -10px; top: -14px; }
+        .studio-panel-solid .tpl-blob.b2 { left: auto; right: -12px; top: auto; bottom: -18px; }
+        .studio-panel-solid .tpl-mock { position: relative; width: 74%; height: 58px; padding: 8px; display: grid; align-content: center; gap: 5px; }
+        .studio-panel-solid .tpl-mock b { display: block; width: 26px; height: 9px; }
+        .studio-panel-solid .tpl-mock u { display: block; height: 5px; border-radius: 3px; text-decoration: none; width: 85%; }
+        .studio-panel-solid .tpl-name { display: flex; align-items: center; gap: 5px; font-weight: 800; font-size: .8rem; padding: 2px 2px 0; }
+        .studio-panel-solid .tpl-desc { font-size: .66rem; line-height: 1.35; padding: 0 2px 2px; }
+        .studio-panel-solid .cp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+        .studio-panel-solid .cp-tile { display: grid; gap: 6px; padding: 8px 6px 6px; justify-items: center; border-radius: var(--r-btn, 10px); border: 1px solid var(--border); cursor: pointer; font: inherit; transition: transform .2s var(--mo-spring, ease), border-color .2s; min-width: 0; }
+        .studio-panel-solid .cp-tile:hover { transform: translateY(-2px); }
+        .studio-panel-solid .cp-tile.active { border-color: var(--a2); box-shadow: 0 0 0 2px color-mix(in srgb, var(--a2) 35%, transparent); }
+        .studio-panel-solid .cp-demo { display: block; width: 100%; height: 34px; }
+        .studio-panel-solid .cp-name { font-family: var(--font-mono); font-size: .64rem; font-weight: 700; }
 
         .studio-panel-solid .palette-grid {
           display: grid;

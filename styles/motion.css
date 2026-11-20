@@ -148,7 +148,7 @@ html { scroll-behavior: smooth; }
 /* Kartu kaca: masuk halus + hover lembut di perangkat dengan mouse */
 .glass { transition: border-color var(--mo-mid) ease, box-shadow var(--mo-mid) var(--mo-ease), transform var(--mo-mid) var(--mo-ease); }
 @media (hover: hover) and (pointer: fine) {
-  .glass.card:hover { border-color: color-mix(in srgb, var(--a2) 40%, var(--border)); }
+  .glass.card:hover { border-color: color-mix(in srgb, var(--text) 24%, var(--border)); }
 }
 
 /* Bilah progres gulir */
@@ -222,13 +222,13 @@ html { scroll-behavior: smooth; }
 @media (hover: hover) and (pointer: fine) {
   .card::before {
     content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1; opacity: 0; transition: opacity .3s ease;
-    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--a2) 20%, transparent), transparent 65%);
+    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--text) 7%, transparent), transparent 65%);
   }
   .card:hover::before { opacity: 1; }
   .card:hover {
-    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-4px);
-    border-color: color-mix(in srgb, var(--a2) 55%, var(--border));
-    box-shadow: 0 26px 50px -22px color-mix(in srgb, var(--a1) 60%, transparent), 0 0 0 1px color-mix(in srgb, var(--a2) 18%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent);
+    transform: perspective(900px) rotateX(calc(var(--rx, 0deg) * var(--tilt-k, 1))) rotateY(calc(var(--ry, 0deg) * var(--tilt-k, 1))) translateY(-4px);
+    border-color: color-mix(in srgb, var(--text) 24%, var(--border));
+    box-shadow: 0 22px 40px -26px rgba(0, 0, 0, 0.45);
   }
   .card { transition: transform .18s ease-out, border-color .25s ease, box-shadow .3s ease; will-change: auto; }
 }
@@ -264,8 +264,7 @@ html { scroll-behavior: smooth; }
     transition: translate 0.25s var(--mo-spring), transform var(--mo-mid) var(--mo-ease), background var(--mo-mid), border-color var(--mo-mid), box-shadow var(--mo-mid);
   }
 
-  /* 2. ring gelombang: cincin menyebar keluar dari kartu */
-  .card:hover { animation: mo-ring-out calc(0.9s / var(--speed, 1)) var(--mo-ease) 1; }
+  /* 2. (cincin dihapus: tanpa garis/glow berwarna) */
 
   /* 3. fokus: kartu lain dalam grid meredup & mengecil sedikit */
   .grid:has(> .card:hover) > .card:not(:hover), .hx-grid:has(> .card:hover) > .card:not(:hover),
@@ -291,8 +290,60 @@ html { scroll-behavior: smooth; }
   .btn.primary { background-size: 180% 100%; background-position: 0% 50%; transition: background-position 0.5s var(--mo-ease), translate 0.25s var(--mo-spring), transform var(--mo-mid) var(--mo-ease), box-shadow var(--mo-mid); }
   .btn.primary:hover { background-position: 100% 50%; }
 }
-@keyframes mo-ring-out {
-  0% { outline: 2px solid color-mix(in srgb, var(--a2) 55%, transparent); outline-offset: 0; }
-  100% { outline: 2px solid transparent; outline-offset: 10px; }
+
+/* =====================================================================
+   Animasi panel (Theme Studio, Musik, Asisten): konten masuk bertahap,
+   header meluncur, tab berganti dengan pudar-geser, mikro-interaksi
+   ===================================================================== */
+@keyframes mo-pop-in { 0% { opacity: 0; transform: translateY(14px) scale(0.97); filter: blur(4px); } 100% { opacity: 1; transform: none; filter: none; } }
+@keyframes mo-slide-down { 0% { opacity: 0; transform: translateY(-10px); } 100% { opacity: 1; transform: none; } }
+@keyframes mo-backdrop-in { from { opacity: 0; backdrop-filter: blur(0); } }
+@keyframes mo-chip-in { 0% { opacity: 0; transform: scale(0.82); } 100% { opacity: 1; transform: none; } }
+
+.studio-overlay-backdrop, .au-backdrop { animation: mo-backdrop-in calc(0.35s / var(--speed, 1)) ease both; }
+.studio-head, .au-head { animation: mo-slide-down calc(0.5s / var(--speed, 1)) var(--mo-ease) 0.08s both; }
+.studio-tabs, .au-tabs { animation: mo-slide-down calc(0.5s / var(--speed, 1)) var(--mo-ease) 0.14s both; }
+
+.studio-body > *, .au-body > *, .au-body .au-sec > * {
+  animation: mo-pop-in calc(0.55s / var(--speed, 1)) var(--mo-spring) both;
+  animation-delay: calc(var(--i, 0) * 45ms + 0.12s);
 }
-[data-anim='off'] .card:hover { animation: none; }
+.studio-body > :nth-child(1), .au-body .au-sec > :nth-child(1) { --i: 0; }
+.studio-body > :nth-child(2), .au-body .au-sec > :nth-child(2) { --i: 1; }
+.studio-body > :nth-child(3), .au-body .au-sec > :nth-child(3) { --i: 2; }
+.studio-body > :nth-child(4), .au-body .au-sec > :nth-child(4) { --i: 3; }
+.studio-body > :nth-child(5), .au-body .au-sec > :nth-child(5) { --i: 4; }
+.studio-body > :nth-child(6), .au-body .au-sec > :nth-child(6) { --i: 5; }
+.studio-body > :nth-child(7), .au-body .au-sec > :nth-child(7) { --i: 6; }
+.studio-body > :nth-child(8), .au-body .au-sec > :nth-child(8) { --i: 7; }
+.studio-body > :nth-child(n+9), .au-body .au-sec > :nth-child(n+9) { --i: 8; }
+
+/* kotak preset / warna: muncul beruntun */
+.palette-box, .color-row { animation: mo-chip-in calc(0.45s / var(--speed, 1)) var(--mo-spring) both; }
+.palette-box:nth-child(3n+1) { animation-delay: 0.16s; } .palette-box:nth-child(3n+2) { animation-delay: 0.22s; } .palette-box:nth-child(3n) { animation-delay: 0.28s; }
+.color-row:nth-child(odd) { animation-delay: 0.16s; } .color-row:nth-child(even) { animation-delay: 0.24s; }
+
+@media (hover: hover) and (pointer: fine) {
+  .palette-box, .studio-panel-solid .mini-btn, .au-tab, .studio-tab, .as-cards button, .as-chips button, .as-acts button {
+    transition: transform var(--mo-mid) var(--mo-spring), border-color var(--mo-fast), background var(--mo-fast), color var(--mo-fast);
+  }
+  .palette-box:hover { transform: translateY(-3px) scale(1.03) rotate(-0.6deg); }
+  .studio-panel-solid .mini-btn:hover:not(:disabled) { transform: translateY(-2px); }
+  .palette-box:active, .studio-panel-solid .mini-btn:active { transform: scale(0.96); }
+  .au-tab:hover, .studio-tab:hover { transform: translateY(-2px); }
+}
+
+/* pesan asisten: sedikit memantul */
+.as-msg.bot .as-av { animation: mo-chip-in 0.5s var(--mo-spring) both; }
+.as-chips button { animation: mo-chip-in 0.45s var(--mo-spring) both; }
+.as-chips button:nth-child(2) { animation-delay: 0.06s; } .as-chips button:nth-child(3) { animation-delay: 0.12s; } .as-chips button:nth-child(4) { animation-delay: 0.18s; } .as-chips button:nth-child(n+5) { animation-delay: 0.24s; }
+
+[data-anim='off'] .studio-overlay-backdrop, [data-anim='off'] .au-backdrop, [data-anim='off'] .studio-head, [data-anim='off'] .au-head,
+[data-anim='off'] .studio-tabs, [data-anim='off'] .au-tabs, [data-anim='off'] .studio-body > *, [data-anim='off'] .au-body > *, [data-anim='off'] .au-body .au-sec > *,
+[data-anim='off'] .palette-box, [data-anim='off'] .color-row, [data-anim='off'] .as-chips button, [data-anim='off'] .as-msg.bot .as-av { animation: none; }
+
+/* Kilau kaca kartu: dari Theme Studio (Hover / Berkala / Mati) */
+[data-glint='off'] .glass::after, [data-glint='off'] .card::after, [data-glint='off'] .rp-card::after { display: none !important; }
+[data-glint='always'] .glass::after, [data-glint='always'] .card::after, [data-glint='always'] .rp-card::after { animation: glass-glint-loop 7s ease-in-out infinite; }
+[data-glint='always'] .glass:nth-of-type(2n)::after, [data-glint='always'] .card:nth-of-type(2n)::after { animation-delay: 2.2s; }
+[data-glint='always'] .glass:nth-of-type(3n)::after, [data-glint='always'] .card:nth-of-type(3n)::after { animation-delay: 4.1s; }

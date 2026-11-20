@@ -132,8 +132,8 @@ export default function RoomPicker({ onPick, refreshKey = 0 }) {
         .rp-list { display: grid; gap: 10px; }
         .rp-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
         .rp-card { position: relative; display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: var(--radius, 14px); border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 70%, transparent); backdrop-filter: blur(10px); cursor: pointer; min-width: 0; overflow: hidden; transition: border-color .2s, box-shadow .2s; }
-        .rp-card::before { content: ''; position: absolute; inset: 0; background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--a2) 22%, transparent), transparent 65%); opacity: 0; transition: opacity .25s; pointer-events: none; border-radius: inherit; }
-        .rp-card:hover, .rp-card:focus-visible { border-color: var(--a2); box-shadow: 0 14px 32px -16px var(--a1); outline: none; }
+        .rp-card::before { content: ''; position: absolute; inset: 0; background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--text) 7%, transparent), transparent 65%); opacity: 0; transition: opacity .25s; pointer-events: none; border-radius: inherit; }
+        .rp-card:hover, .rp-card:focus-visible { border-color: color-mix(in srgb, var(--text) 24%, var(--border)); box-shadow: 0 16px 30px -22px rgba(0, 0, 0, 0.45); outline: none; }
         .rp-card:hover::before { opacity: 1; }
         .rp-card.grid { flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px; }
         .rp-ava { display: grid; place-items: center; flex-shrink: 0; object-fit: cover; color: var(--on-accent); font-weight: 800; box-shadow: 0 8px 20px -8px var(--a1); }

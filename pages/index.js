@@ -888,9 +888,8 @@ export default function Home() {
           will-change: transform;
         }
         .hx-card:hover {
-          border-color: color-mix(in srgb, var(--ac) 70%, transparent);
-          box-shadow: 0 22px 50px -18px color-mix(in srgb, var(--ac) 55%, transparent),
-            0 0 0 1px color-mix(in srgb, var(--ac) 35%, transparent);
+          border-color: color-mix(in srgb, var(--text) 24%, var(--border));
+          box-shadow: 0 22px 40px -26px rgba(0, 0, 0, 0.45);
         }
         .hx-spot {
           position: absolute;
@@ -901,7 +900,7 @@ export default function Home() {
           transition: opacity 0.3s ease;
           background: radial-gradient(
             260px circle at var(--mx) var(--my),
-            color-mix(in srgb, var(--ac) 22%, transparent),
+            color-mix(in srgb, var(--text) 7%, transparent),
             transparent 65%
           );
         }

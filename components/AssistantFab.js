@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useRouter } from 'next/router';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, X, Send, Sparkles, Trash2, ArrowUpRight } from 'lucide-react';
+import { Bot, X, Send, Sparkles, Trash2, SlidersHorizontal, RotateCcw } from 'lucide-react';
 import { sound } from '@/src/lib/interactiveEffects';
-import { reply, QUICK } from '@/src/lib/assistant';
 import CodeBlock from '@/components/CodeBlock';
 
 const KEY = 'wudysoft_assistant_v1';
 const STATE_KEY = 'wudysoft_assistant_state';
+const CFG_KEY = 'wudysoft_assistant_cfg';
+const ACTIONS = ['chat', 'generate', 'init'];
+const DEFAULT_CFG = { endpoint: '/api/ai/loqal', method: 'POST', action: 'chat', media: '', extra: '' };
+const HELLO = { role: 'bot', text: 'Halo! Semua jawaban saya datang langsung dari API. Atur endpoint, metode, dan action lewat ikon ⚙ di atas.' };
+const QUICK = ['Halo, kamu siapa?', 'Jelaskan REST API singkat', 'Buatkan contoh fetch POST JSON'];
 
-/** Pecah teks balasan AI menjadi bagian teks & blok kode (```lang ... ```). */
+/** Pecah teks balasan menjadi bagian teks & blok kode (```lang ... ```). */
 function splitParts(s) {
   const out = []; const re = /```(\w*)\n?([\s\S]*?)```/g; let last = 0; let m;
   while ((m = re.exec(s))) {
@@ -22,36 +25,46 @@ function splitParts(s) {
   return out.filter((p) => p.t || p.code);
 }
 
-/** Tanya Loqal lewat /api/ai/loqal; sesi (state) disimpan di perangkat. */
-async function askLoqal(prompt) {
+function readLS(k, fb) { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); return v ?? fb; } catch { return fb; } }
+
+/** Semua jawaban berasal dari API; endpoint, metode, action & parameter diatur pengguna. */
+async function callApi(prompt, cfg) {
   let state = '';
   try { state = localStorage.getItem(STATE_KEY) || ''; } catch {}
-  const r = await fetch('/api/ai/loqal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'chat', prompt, state }) });
+  let extra = {};
+  if (cfg.extra.trim()) { try { extra = JSON.parse(cfg.extra); } catch { throw new Error('Parameter tambahan bukan JSON valid'); } }
+  const params = { action: cfg.action, prompt, state, ...(cfg.media.trim() ? { media: cfg.media.trim() } : {}), ...extra };
+  const isGet = cfg.method === 'GET';
+  const url = isGet ? `${cfg.endpoint}?${new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null).map(([k, v]) => [k, typeof v === 'object' ? JSON.stringify(v) : String(v)]))}` : cfg.endpoint;
+  const r = await fetch(url, isGet ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok || !j?.status || !j?.result?.text) throw new Error(j?.error || 'Loqal tidak merespons');
-  if (j.state) { try { localStorage.setItem(STATE_KEY, j.state); } catch {} }
-  return String(j.result.text);
+  if (!r.ok || j?.status === false) throw new Error(j?.error || j?.message || `HTTP ${r.status}`);
+  if (typeof j.state === 'string' && j.state) { try { localStorage.setItem(STATE_KEY, j.state); } catch {} }
+  const text = j?.result?.text ?? j?.text ?? j?.result?.message ?? (typeof j?.result === 'string' ? j.result : '');
+  return { text: String(text || ''), raw: j };
 }
-const HELLO = { role: 'bot', text: 'Halo! Saya asisten Wudysoft, didukung Loqal AI. Tanya apa saja — atau minta saya membuka fitur, mencari endpoint, dan membuat contoh kode.' };
 
 /** Tombol AI di tepi kanan (di bawah tombol Musik) + panel chat. Semua diproses di perangkat. */
 export default function AssistantFab() {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [msgs, setMsgs] = useState([HELLO]);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const [cfg, setCfg] = useState(DEFAULT_CFG);
+  const [showCfg, setShowCfg] = useState(false);
   const endRef = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
+    setCfg({ ...DEFAULT_CFG, ...readLS(CFG_KEY, {}) });
     try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (Array.isArray(s) && s.length) setMsgs(s.slice(-40)); } catch {}
     const f = () => setOpen(true);
     window.addEventListener('wudysoft:open-assistant', f);
     return () => window.removeEventListener('wudysoft:open-assistant', f);
   }, []);
+  useEffect(() => { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch {} }, [cfg]);
   useEffect(() => { try { localStorage.setItem(KEY, JSON.stringify(msgs.slice(-40))); } catch {} }, [msgs]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [msgs, busy, open]);
   useEffect(() => {
@@ -63,38 +76,25 @@ export default function AssistantFab() {
   }, [open]);
 
   const send = useCallback(async (value) => {
+    const needsPrompt = cfg.action !== 'init';
     const v = String(value ?? text).trim();
-    if (!v || busy) return;
+    if ((needsPrompt && !v) || busy) return;
     sound.playClick();
     setText('');
-    setMsgs((m) => [...m, { role: 'user', text: v }]);
+    setMsgs((m) => [...m, { role: 'user', text: needsPrompt ? v : `⚙ action: ${cfg.action}`, tag: cfg.action }]);
     setBusy(true);
     try {
-      const local = await reply(v, { origin: window.location.origin });
-      if (!local.fallback) {
-        await new Promise((ok) => setTimeout(ok, 300));
-        setMsgs((m) => [...m, { role: 'bot', src: 'lokal', ...local }]);
-      } else {
-        try {
-          const txt = await askLoqal(v);
-          setMsgs((m) => [...m, { role: 'bot', src: 'ai', ai: txt }]);
-        } catch (e) {
-          setMsgs((m) => [...m, { role: 'bot', src: 'lokal', ...local, text: `AI Loqal sedang tidak bisa dihubungi (${e.message}). ${local.text}` }]);
-        }
-      }
-    } catch {
-      setMsgs((m) => [...m, { role: 'bot', text: 'Terjadi kesalahan saat memproses. Coba lagi.' }]);
+      const [r] = await Promise.all([callApi(v, cfg), new Promise((ok) => setTimeout(ok, 300))]);
+      if (r.text) setMsgs((m) => [...m, { role: 'bot', ai: r.text, tag: cfg.action }]);
+      else setMsgs((m) => [...m, { role: 'bot', code: { code: JSON.stringify(r.raw, null, 2), lang: 'json' }, tag: cfg.action }]);
+    } catch (e) {
+      setMsgs((m) => [...m, { role: 'bot', text: `Gagal: ${e.message}`, err: true }]);
     }
     setBusy(false);
-  }, [text, busy]);
+  }, [text, busy, cfg]);
 
-  const act = (a) => {
-    sound.playClick();
-    if (a.ask) return send(a.label);
-    if (a.event) { setOpen(false); setTimeout(() => window.dispatchEvent(new Event(a.event)), 250); return undefined; }
-    if (a.href) { setOpen(false); router.push(a.href); }
-    return undefined;
-  };
+  const patch = (o) => setCfg((c) => ({ ...c, ...o }));
+  const newSession = () => { setMsgs([HELLO]); try { localStorage.removeItem(STATE_KEY); } catch {} };
 
   const ui = (
     <div className="as-root">
@@ -105,31 +105,43 @@ export default function AssistantFab() {
               <header className="au-head">
                 <div className="au-head-t"><Bot size={18} color="var(--a2)" /><h3>Asisten AI</h3></div>
                 <div className="au-head-r">
-                  <span className="au-badge on as-off"><Sparkles size={11} /> Loqal AI</span>
-                  <button className="au-x" onClick={() => { setMsgs([HELLO]); try { localStorage.removeItem(STATE_KEY); } catch {} }} aria-label="Hapus percakapan" title="Hapus percakapan"><Trash2 size={17} /></button>
+                  <span className="au-badge on as-off"><Sparkles size={11} /> {cfg.action}</span>
+                  <button className={`au-x ${showCfg ? 'as-on' : ''}`} onClick={() => setShowCfg((s) => !s)} aria-label="Pengaturan API" aria-pressed={showCfg} title="Pengaturan API"><SlidersHorizontal size={17} /></button>
+                  <button className="au-x" onClick={newSession} aria-label="Sesi baru" title="Sesi baru"><Trash2 size={17} /></button>
                   <button className="au-x" onClick={() => setOpen(false)} aria-label="Tutup"><X size={20} /></button>
                 </div>
               </header>
 
+              <AnimatePresence initial={false}>
+                {showCfg && (
+                  <motion.div className="as-cfg" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.28 }}>
+                    <div className="as-cfg-in">
+                      <label>Endpoint<input value={cfg.endpoint} onChange={(e) => patch({ endpoint: e.target.value })} spellCheck={false} /></label>
+                      <div className="as-row">
+                        <div className="as-seg" role="group" aria-label="Metode">{['POST', 'GET'].map((m) => <button key={m} type="button" className={cfg.method === m ? 'on' : ''} onClick={() => patch({ method: m })}>{m}</button>)}</div>
+                      </div>
+                      <div className="as-lbl">Action</div>
+                      <div className="as-seg wrap" role="group" aria-label="Action">
+                        {ACTIONS.map((a) => <button key={a} type="button" className={cfg.action === a ? 'on' : ''} onClick={() => patch({ action: a })}>{a}</button>)}
+                        <input className="as-custom" value={ACTIONS.includes(cfg.action) ? '' : cfg.action} placeholder="kustom…" onChange={(e) => patch({ action: e.target.value.trim() || 'chat' })} spellCheck={false} aria-label="Action kustom" />
+                      </div>
+                      <label>Media (URL/base64, opsional)<input value={cfg.media} onChange={(e) => patch({ media: e.target.value })} placeholder="https://…/gambar.png" spellCheck={false} /></label>
+                      <label>Parameter tambahan (JSON)<textarea rows={2} value={cfg.extra} onChange={(e) => patch({ extra: e.target.value })} placeholder='{"is_subscribed":"false"}' spellCheck={false} /></label>
+                      <button type="button" className="as-reset" onClick={() => setCfg(DEFAULT_CFG)}><RotateCcw size={13} /> Kembalikan pengaturan</button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <div className="as-log" aria-live="polite">
                 {msgs.map((m, i) => (
-                  <motion.div key={i} className={`as-msg ${m.role}`} initial={{ opacity: 0, y: 10, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 360, damping: 28 }}>
+                  <motion.div key={i} className={`as-msg ${m.role} ${m.err ? 'err' : ''}`} initial={{ opacity: 0, y: 10, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 360, damping: 28 }}>
                     {m.role === 'bot' && <span className="as-av"><Sparkles size={13} /></span>}
                     <div className="as-bub">
                       {m.text && <p>{m.text}</p>}
                       {m.ai && splitParts(m.ai).map((p, k) => (p.code != null ? <CodeBlock key={k} code={p.code} lang={p.lang} maxHeight={260} /> : <p key={k}>{p.t}</p>))}
-                      {m.src === 'ai' && <small className="as-src">via Loqal AI</small>}
+                      {m.tag && m.role === 'bot' && <small className="as-src">action: {m.tag}</small>}
                       {m.code && <CodeBlock code={m.code.code} lang={m.code.lang} label={m.code.label} maxHeight={260} />}
-                      {m.cards?.length > 0 && (
-                        <ul className="as-cards">
-                          {m.cards.map((c) => (
-                            <li key={c.title + c.href}><button type="button" onClick={() => act({ href: c.href })}><b>{c.title}</b><small>{c.sub}</small><ArrowUpRight size={14} /></button></li>
-                          ))}
-                        </ul>
-                      )}
-                      {m.actions?.length > 0 && (
-                        <div className="as-acts">{m.actions.map((a) => <button key={a.label} type="button" onClick={() => act(a)}>{a.label}</button>)}</div>
-                      )}
                     </div>
                   </motion.div>
                 ))}
@@ -138,12 +150,12 @@ export default function AssistantFab() {
               </div>
 
               <div className="as-foot">
-                {msgs.length <= 1 && <div className="as-chips">{QUICK.map((q) => <button key={q} type="button" onClick={() => send(q)}>{q}</button>)}</div>}
+                {msgs.length <= 1 && cfg.action !== 'init' && <div className="as-chips">{QUICK.map((q) => <button key={q} type="button" onClick={() => send(q)}>{q}</button>)}</div>}
                 <form onSubmit={(e) => { e.preventDefault(); send(); }}>
-                  <input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} placeholder="Tanya atau beri perintah…" aria-label="Pesan" autoComplete="off" maxLength={300} />
-                  <button type="submit" disabled={!text.trim() || busy} aria-label="Kirim"><Send size={16} /></button>
+                  <input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} placeholder={cfg.action === 'init' ? 'Tekan kirim untuk menjalankan init' : 'Tulis pesan…'} aria-label="Pesan" autoComplete="off" maxLength={300} />
+                  <button type="submit" disabled={(cfg.action !== 'init' && !text.trim()) || busy} aria-label="Kirim"><Send size={16} /></button>
                 </form>
-                <small>Didukung Loqal AI via /api/ai/loqal · perintah situs diproses lokal</small>
+                <small>Semua jawaban dari API · atur endpoint & action lewat ⚙</small>
               </div>
             </motion.section>
           </div>
@@ -204,6 +216,20 @@ export default function AssistantFab() {
         .as-foot input:focus { border-color: var(--a2); }
         .as-foot form button { width: 42px; height: 42px; display: grid; place-items: center; border-radius: var(--r-btn, 10px); border: 0; cursor: pointer; color: var(--on-accent); background: linear-gradient(135deg, var(--a1), var(--a3)); }
         .as-foot form button:disabled { opacity: .45; cursor: not-allowed; }
+        .as-cfg { overflow: hidden; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+        .as-cfg-in { padding: 12px 14px; display: grid; gap: 10px; max-height: 42vh; overflow-y: auto; overscroll-behavior: contain; }
+        .as-cfg label, .as-lbl { display: grid; gap: 4px; font-size: .68rem; font-family: var(--font-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+        .as-cfg input, .as-cfg textarea { width: 100%; padding: 8px 10px; border-radius: var(--r-input, 10px); border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: .8rem; text-transform: none; letter-spacing: 0; outline: none; resize: vertical; }
+        .as-cfg input:focus, .as-cfg textarea:focus { border-color: var(--a2); }
+        .as-seg { display: inline-flex; gap: 4px; padding: 3px; border-radius: var(--r-btn, 10px); border: 1px solid var(--border); background: var(--surface); }
+        .as-seg.wrap { flex-wrap: wrap; display: flex; }
+        .as-seg button { padding: 6px 12px; border-radius: max(calc(var(--r-btn, 10px) - 3px), 3px); border: 0; background: transparent; color: var(--muted); font: inherit; font-size: .74rem; font-weight: 700; cursor: pointer; }
+        .as-seg button.on { color: var(--on-accent); background: linear-gradient(135deg, var(--a1), var(--a3)); }
+        .as-seg .as-custom { flex: 1; min-width: 80px; padding: 5px 8px; border: 0; background: transparent; }
+        .as-reset { justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: var(--r-btn, 10px); border: 1px solid var(--border); background: transparent; color: var(--muted); font: inherit; font-size: .72rem; cursor: pointer; }
+        .as-reset:hover { color: var(--a2); border-color: var(--a2); }
+        .au-x.as-on { color: var(--a2); }
+        .as-msg.err .as-bub { border-color: #ef4444; color: #ef4444; }
         .as-src { color: var(--muted); font-size: .62rem; font-family: var(--font-mono); }
         .as-foot small { text-align: center; color: var(--muted); font-size: .64rem; font-family: var(--font-mono); }
       `}</style>

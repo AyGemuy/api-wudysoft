@@ -180,6 +180,63 @@ export const CARD_STYLES = [
   { id: 'solid', label: 'Solid' },
   { id: 'outline', label: 'Outline' },
   { id: 'neon', label: 'Neon' },
+  { id: 'liquid', label: 'Liquid' },
+  { id: 'neu', label: 'Neumorph' },
+  { id: 'brutal', label: 'Brutal' },
+  { id: 'bevel', label: 'Bevel 3D' },
+  { id: 'gradient', label: 'Gradien' },
+  { id: 'aurora', label: 'Aurora' },
+  { id: 'minimal', label: 'Minimal' },
+  { id: 'frosted', label: 'Frosted' },
+  { id: 'crystal', label: 'Crystal' },
+  { id: 'clay', label: 'Clay' },
+  { id: 'holo', label: 'Holo' },
+  { id: 'stack', label: 'Stack 3D' },
+  { id: 'terminal', label: 'Terminal' },
+];
+
+export const BORDER_COLORS = [
+  { id: 'theme', label: 'Tema' },
+  { id: 'accent', label: 'Aksen' },
+  { id: 'gradient', label: 'Gradien' },
+];
+
+export const GLINTS = [
+  { id: 'hover', label: 'Saat hover' },
+  { id: 'always', label: 'Berkala' },
+  { id: 'off', label: 'Mati' },
+];
+
+export const BORDER_STYLES = [
+  { id: 'solid', label: 'Solid' },
+  { id: 'dashed', label: 'Putus' },
+  { id: 'dotted', label: 'Titik' },
+  { id: 'double', label: 'Ganda' },
+  { id: 'none', label: 'Tanpa' },
+];
+
+const TPL_BASE = { custom: {}, card: 'glass', cardBorderStyle: 'solid', cardBorderW: 0, cardBorderColor: 'theme', cardGlint: 'hover', cardDepth: 0.5, radius: 10, rBtn: 6, rInput: 6, rChip: 6, rDockTop: 14, rDockBottom: 14, rDockBtn: 8, rModal: 12, blur: 28, glass: 0.75, border: 0.12, blobs: true, blobIntensity: 0.22, grid: false, particle: 'off', animHover: 'tilt', bgType: 'none', density: 'normal', font: 'segoe', fontHeading: 'same', fontMono: 'jetbrains' };
+const T = (id, name, desc, theme, v) => ({ id, name, desc, theme, v: { ...TPL_BASE, theme, ...v } });
+
+/** Template: satu klik menerapkan tema, model kartu, bentuk, efek, dan font sekaligus. */
+export const TEMPLATES = [
+  T('fluent', 'Fluent Klasik', 'Tampilan bawaan Wudysoft', 'fluent', {}),
+  T('liquid', 'Liquid Glass', 'Kaca cair bening ala iOS terbaru', 'aurora', { card: 'liquid', cardDepth: 0.6, radius: 28, rBtn: 20, rInput: 18, rChip: 60, rDockTop: 36, rDockBottom: 36, rDockBtn: 24, rModal: 30, blur: 38, glass: 0.5, border: 0.2, blobIntensity: 0.4, bgType: 'gradient', bgGradient: 'aurora', font: 'jakarta' }),
+  T('brutal', 'Neo Brutal', 'Garis tebal, bayangan keras, tajam', 'snow', { card: 'brutal', cardDepth: 0.5, radius: 4, rBtn: 4, rInput: 4, rChip: 4, rDockTop: 6, rDockBottom: 6, rDockBtn: 4, rModal: 6, blur: 0, glass: 1, border: 0.5, blobs: false, grid: true, animHover: 'lift', font: 'space', fontMono: 'spacemono' }),
+  T('neu', 'Soft Neumorph', 'Timbul lembut, menekan saat disentuh', 'snow', { card: 'neu', cardDepth: 0.6, radius: 26, rBtn: 18, rInput: 16, rChip: 60, rDockTop: 30, rDockBottom: 30, rDockBtn: 18, rModal: 28, blur: 0, glass: 1, border: 0, blobs: false, animHover: 'lift', font: 'manrope' }),
+  T('bevel', 'Bento 3D', 'Kartu tebal berlapis dengan kedalaman', 'stealth', { card: 'bevel', cardDepth: 0.8, radius: 18, rBtn: 12, rInput: 12, rChip: 10, rDockTop: 22, rDockBottom: 22, rDockBtn: 14, rModal: 22, blur: 12, glass: 0.9, border: 0.14, blobs: false, density: 'compact', font: 'inter' }),
+  T('aurora', 'Aurora Mesh', 'Kartu berwarna gradien mesh lembut', 'ocean', { card: 'aurora', cardDepth: 0.5, radius: 22, rBtn: 14, rInput: 14, rChip: 60, rDockTop: 30, rDockBottom: 30, rDockBtn: 16, rModal: 24, blur: 30, glass: 0.6, border: 0.16, blobIntensity: 0.35, bgType: 'gradient', bgGradient: 'mesh', font: 'outfit' }),
+  T('cyber', 'Cyber Neon', 'Neon gelap dengan grid & hujan kode', 'cyberpunk', { card: 'neon', radius: 6, rBtn: 4, rInput: 4, rChip: 4, rDockTop: 8, rDockBottom: 8, rDockBtn: 6, rModal: 8, blur: 16, glass: 0.7, border: 0.2, blobIntensity: 0.3, grid: true, particle: 'matrix', font: 'rajdhani', fontHeading: 'orbitron' }),
+  T('sakura', 'Sakura Gradien', 'Garis gradien pastel, salju lembut', 'sakura', { card: 'gradient', cardDepth: 0.4, radius: 24, rBtn: 16, rInput: 16, rChip: 60, rDockTop: 34, rDockBottom: 34, rDockBtn: 20, rModal: 26, blur: 24, particle: 'snow', font: 'figtree', fontHeading: 'fraunces' }),
+  T('minimal', 'Minimal Mono', 'Datar, bersih, garis tipis', 'mono', { card: 'minimal', cardDepth: 0.1, radius: 8, rBtn: 6, rInput: 6, rChip: 6, rDockTop: 12, rDockBottom: 12, rDockBtn: 8, rModal: 10, blur: 0, glass: 0.4, border: 0.1, blobs: false, animHover: 'lift', font: 'inter' }),
+  T('frost', 'Frosted Ice', 'Es beku buram, terang & bersih', 'snow', { card: 'frosted', cardDepth: 0.5, radius: 22, rBtn: 14, rInput: 14, rChip: 60, rDockTop: 30, rDockBottom: 30, rDockBtn: 16, rModal: 26, blur: 40, glass: 0.55, border: 0.18, blobIntensity: 0.3, bgType: 'gradient', bgGradient: 'dusk', font: 'jakarta' }),
+  T('crystal', 'Crystal Glass', 'Kaca kristal bersudut dengan kilau diagonal', 'ocean', { card: 'crystal', cardDepth: 0.6, cardGlint: 'always', radius: 16, rBtn: 10, rInput: 10, rChip: 10, rDockTop: 20, rDockBottom: 20, rDockBtn: 12, rModal: 20, blur: 34, glass: 0.5, border: 0.22, blobIntensity: 0.4, bgType: 'gradient', bgGradient: 'ocean', font: 'jakarta' }),
+  T('clay', 'Clay Pop', 'Kenyal ala tanah liat, lembut & ceria', 'mint', { card: 'clay', cardDepth: 0.7, radius: 30, rBtn: 22, rInput: 20, rChip: 60, rDockTop: 34, rDockBottom: 34, rDockBtn: 22, rModal: 32, blur: 0, glass: 1, border: 0, blobs: false, animHover: 'lift', font: 'figtree' }),
+  T('holo', 'Holo Chrome', 'Tepi holografis bergerak ala Y2K', 'dracula', { card: 'holo', cardDepth: 0.5, radius: 18, rBtn: 12, rInput: 12, rChip: 60, rDockTop: 24, rDockBottom: 24, rDockBtn: 14, rModal: 22, blur: 20, glass: 0.8, border: 0.14, blobIntensity: 0.3, grid: true, particle: 'stars', font: 'jakarta' }),
+  T('stack', 'Stack Deck', 'Kartu bertumpuk seperti setumpuk kartu', 'royal', { card: 'stack', cardDepth: 0.8, radius: 14, rBtn: 10, rInput: 10, rChip: 8, rDockTop: 18, rDockBottom: 18, rDockBtn: 10, rModal: 18, blur: 10, glass: 0.95, border: 0.14, blobIntensity: 0.25, animHover: 'lift' }),
+  T('terminal', 'Hacker Terminal', 'Monospace, siku sudut, garis pindai CRT', 'matrix', { card: 'terminal', cardDepth: 0.3, radius: 2, rBtn: 2, rInput: 2, rChip: 2, rDockTop: 4, rDockBottom: 4, rDockBtn: 2, rModal: 4, blur: 0, glass: 0.9, border: 0.3, blobs: false, grid: true, particle: 'matrix', animHover: 'none', font: 'jetbrains' }),
+  T('vapor', 'Vaporwave', 'Gradien senja neon, bintang berkelip', 'sunset', { card: 'gradient', cardBorderColor: 'gradient', cardDepth: 0.5, radius: 20, rBtn: 14, rInput: 14, rChip: 60, rDockTop: 28, rDockBottom: 28, rDockBtn: 16, rModal: 24, blur: 22, glass: 0.7, border: 0.16, blobIntensity: 0.45, particle: 'stars', bgType: 'gradient', bgGradient: 'neon', font: 'jakarta' }),
+  T('noir', 'Golden Noir', 'Hitam elegan, tepi emas, kaca buram', 'gold', { card: 'frosted', cardBorderColor: 'accent', cardDepth: 0.6, radius: 12, rBtn: 8, rInput: 8, rChip: 8, rDockTop: 16, rDockBottom: 16, rDockBtn: 10, rModal: 16, blur: 30, glass: 0.7, border: 0.2, blobIntensity: 0.2 }),
 ];
 
 export const COLOR_KEYS = [
@@ -215,6 +272,11 @@ export const DEFAULT_CONFIG = {
   glass: 0.75,
   border: 0.12,
   card: 'glass',
+  cardBorderStyle: 'solid', // solid | dashed | dotted | double | none
+  cardBorderW: 0, // 0 = ikuti model, 1..4 px
+  cardBorderColor: 'theme', // theme | accent | gradient
+  cardGlint: 'hover', // hover | always | off
+  cardDepth: 0.5, // 0..1 kedalaman bayangan & kemiringan 3D
   density: 'normal', // compact | normal | spacious
   cardSize: 'm', // s | m | l
   // efek latar
@@ -270,6 +332,11 @@ export function sanitizeConfig(raw) {
   if (!FONTS.some((f) => f.id === c.fontMono && f.cat === 'mono')) c.fontMono = DEFAULT_CONFIG.fontMono;
   if (!PARTICLES.some((p) => p.id === c.particle)) c.particle = DEFAULT_CONFIG.particle;
   if (!CARD_STYLES.some((x) => x.id === c.card)) c.card = DEFAULT_CONFIG.card;
+  c.cardBorderStyle = pick(c.cardBorderStyle, BORDER_STYLES.map((b) => b.id), 'solid');
+  c.cardBorderW = Math.round(num(c.cardBorderW, 0, 4, 0));
+  c.cardBorderColor = pick(c.cardBorderColor, BORDER_COLORS.map((b) => b.id), 'theme');
+  c.cardGlint = pick(c.cardGlint, GLINTS.map((g) => g.id), 'hover');
+  c.cardDepth = num(c.cardDepth, 0, 1, 0.5);
   c.density = pick(c.density, ['compact', 'normal', 'spacious'], 'normal');
   c.cardSize = pick(c.cardSize, ['s', 'm', 'l'], 'm');
   c.anim = c.anim === 'off' ? 'off' : 'on';
@@ -361,6 +428,10 @@ export function computeTheme(input) {
     '--dock-border': rgba(c.text, Math.max(0.1, cfg.border + 0.02)),
     '--shadow-c': c.light ? '#334155' : '#000000',
     '--blur': `${cfg.blur}px`,
+    '--card-depth': String(cfg.cardDepth),
+    '--card-bw': `${cfg.cardBorderW}px`,
+    '--tilt-k': String(cfg.cardDepth * 2),
+    '--neu-hi': c.light ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.07)',
     '--radius': rad(cfg.radius),
     '--r-btn': rad(cfg.rBtn),
     '--r-input': rad(cfg.rInput),
@@ -386,6 +457,10 @@ export function computeTheme(input) {
     'data-theme': cfg.theme,
     'data-mode': c.light ? 'light' : 'dark',
     'data-card': cfg.card,
+    'data-bstyle': cfg.cardBorderStyle,
+    'data-bw': cfg.cardBorderW ? 'on' : 'off',
+    'data-bcolor': cfg.cardBorderColor,
+    'data-glint': cfg.cardGlint,
     'data-density': cfg.density,
     'data-anim': cfg.anim,
     'data-grid': cfg.grid ? 'on' : 'off',
