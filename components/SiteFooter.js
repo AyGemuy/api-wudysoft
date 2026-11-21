@@ -112,7 +112,7 @@ export default function SiteFooter() {
         .brand-badge-f {
           width: 32px;
           height: 32px;
-          border-radius: 10px;
+          border-radius: var(--r-s);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -127,14 +127,14 @@ export default function SiteFooter() {
           font-family: var(--font-mono);
           font-size: 0.66rem;
           letter-spacing: 0;
-          color: #34d399;
+          color: var(--ok);
         }
         .online i {
           width: 7px;
           height: 7px;
           border-radius: 50%;
-          background: #34d399;
-          box-shadow: 0 0 8px #34d399;
+          background: var(--ok);
+          box-shadow: 0 0 8px var(--ok);
           animation: ping calc(1.8s / var(--speed)) ease-in-out infinite;
         }
         @keyframes ping {

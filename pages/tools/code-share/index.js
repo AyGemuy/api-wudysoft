@@ -312,18 +312,18 @@ export default function CodeSharePage() {
         .cs-titlebox :global(.cs-title) { font-weight: 700; color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
         .cs-titlebox :global(.cs-title:hover) { color: var(--a2); }
         .cs-titlebox small { color: var(--muted); font-size: 0.72rem; }
-        .cs-code { margin: 0; padding: 12px; border-radius: 10px; overflow: auto; max-height: 150px; font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.5; background: color-mix(in srgb, var(--bg1) 55%, transparent); border: 1px solid var(--border); tab-size: 2; }
+        .cs-code { margin: 0; padding: 12px; border-radius: var(--r-s); overflow: auto; max-height: 150px; font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.5; background: color-mix(in srgb, var(--bg1) 55%, transparent); border: 1px solid var(--border); tab-size: 2; }
         .cs-code.open { max-height: 480px; }
         .cs-more { justify-self: start; background: none; border: none; color: var(--a2); font-size: 0.76rem; cursor: pointer; padding: 0; }
         .cs-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
         .cs-stats { display: flex; gap: 8px; align-items: center; }
-        .cs-vote { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 0.76rem; cursor: pointer; }
+        .cs-vote { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: var(--r-s); border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 0.76rem; cursor: pointer; }
         .cs-vote.on { color: var(--a2); border-color: var(--a2); }
-        .cs-vote.on.bad { color: #f87171; border-color: #f87171; }
+        .cs-vote.on.bad { color: var(--err); border-color: var(--err); }
         .cs-views { display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; color: var(--muted); }
         .cs-empty { text-align: center; color: var(--muted); }
-        :global(.cs-danger) { color: #f87171; }
-        .cs-toast { position: fixed; top: 84px; right: 16px; z-index: 9999; display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 12px; color: #fff; font-size: 0.84rem; font-weight: 600; background: rgba(16, 124, 16, 0.95); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
+        :global(.cs-danger) { color: var(--err); }
+        .cs-toast { position: fixed; top: 84px; right: 16px; z-index: 9999; display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: var(--r-m); color: #fff; font-size: 0.84rem; font-weight: 600; background: rgba(16, 124, 16, 0.95); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
         .cs-toast.err { background: rgba(196, 43, 28, 0.95); }
       `}</style>
     </>

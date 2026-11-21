@@ -30,6 +30,7 @@ export default function Preloader() {
   const [timedOut, setTimedOut] = useState(false);
   const [booting, setBooting] = useState(true);
   const [progress, setProgress] = useState(6);
+  const [preview, setPreview] = useState(false); // pratinjau dari Theme Studio
 
   const [routeLoading, setRouteLoading] = useState(false);
   const [bar, setBar] = useState({ active: false, pct: 0 });
@@ -69,12 +70,25 @@ export default function Preloader() {
     return () => clearInterval(id);
   }, [allReady, booting]);
 
+  // --- Pratinjau splash dari Theme Studio ---
+  useEffect(() => {
+    let id; let end;
+    const run = () => {
+      clearInterval(id); clearTimeout(end);
+      setProgress(6); setPreview(true);
+      id = setInterval(() => setProgress((p) => Math.min(99, p + (100 - p) * 0.07)), 90);
+      end = setTimeout(() => { clearInterval(id); setProgress(100); setTimeout(() => setPreview(false), 350); }, 2600);
+    };
+    window.addEventListener('wudysoft:preview-splash', run);
+    return () => { window.removeEventListener('wudysoft:preview-splash', run); clearInterval(id); clearTimeout(end); };
+  }, []);
+
   // Kunci scroll selama splash
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.toggle('is-loading', booting);
+    root.classList.toggle('is-loading', booting || preview);
     return () => root.classList.remove('is-loading');
-  }, [booting]);
+  }, [booting, preview]);
 
   // --- ROUTE: loader saat pindah halaman ---
   const trickle = useRef(null);
@@ -151,7 +165,7 @@ export default function Preloader() {
 
       {/* Kartu loading halaman */}
       <AnimatePresence>
-        {!booting && routeLoading && (
+        {!booting && !preview && routeLoading && (
           <motion.div
             key="route-loader"
             className="route-loader"
@@ -170,7 +184,7 @@ export default function Preloader() {
 
       {/* Splash awal */}
       <AnimatePresence>
-        {booting && (
+        {(booting || preview) && (
           <motion.div
             key="boot"
             className="boot-overlay"
@@ -180,34 +194,29 @@ export default function Preloader() {
             initial={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 1.02, transition: { duration: 0.45, ease: 'easeOut' } }}
           >
-            <div className="boot-ring">
-              <motion.svg
-                width="96"
-                height="96"
-                viewBox="0 0 100 100"
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 1.6, ease: 'linear' }}
-                style={{ position: 'absolute', inset: 0 }}
-              >
-                <circle cx="50" cy="50" r="44" fill="none" stroke="color-mix(in srgb, var(--text) 8%, transparent)" strokeWidth="4" />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="44"
-                  fill="none"
-                  stroke="var(--a2)"
-                  strokeWidth="4"
-                  strokeDasharray="276"
-                  strokeDashoffset="190"
-                  strokeLinecap="round"
-                />
-              </motion.svg>
-              <div className="boot-core">
-                <Icons.Zap size={26} color="var(--on-accent)" />
+            <div className="boot-art" aria-hidden="true">
+              <div className="ba ba-ring">
+                <svg className="ba-spin" width="96" height="96" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="color-mix(in srgb, var(--text) 8%, transparent)" strokeWidth="4" />
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="var(--a2)" strokeWidth="4" strokeDasharray="276" strokeDashoffset="190" strokeLinecap="round" />
+                </svg>
+                <div className="boot-core"><Icons.Zap size={26} color="var(--on-accent)" /></div>
               </div>
+              <div className="ba ba-orbit">
+                <i /><i /><i />
+                <div className="boot-core"><Icons.Zap size={26} color="var(--on-accent)" /></div>
+              </div>
+              <div className="ba ba-bars"><i /><i /><i /><i /><i /><i /><i /></div>
+              <div className="ba ba-pulse">
+                <i /><i /><i />
+                <div className="boot-core"><Icons.Zap size={26} color="var(--on-accent)" /></div>
+              </div>
+              <div className="ba ba-morph"><div className="boot-core"><Icons.Zap size={26} color="var(--on-accent)" /></div></div>
+              <div className="ba ba-dots"><i /><i /><i /></div>
+              <div className="ba ba-typing"><i /></div>
             </div>
 
-            <div className="boot-title">WUDYSOFT</div>
+            <div className="boot-title" aria-label="Wudysoft" />
 
             <div className="boot-progress" aria-hidden="true">
               <div className="boot-progress-fill" style={{ width: `${Math.round(progress)}%` }} />

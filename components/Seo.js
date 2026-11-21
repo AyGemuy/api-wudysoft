@@ -18,7 +18,8 @@ const clip = (s, n) => {
  *
  * Props: title, description, path, image (opsional, URL/path), label (badge di gambar),
  *        meta (baris kecil di gambar), noindex, type ('website' | 'article'), publishedTime, keywords,
- *        breadcrumbs ([{name, path}]), jsonLd (objek schema.org tambahan).
+ *        breadcrumbs ([{name, path}]), jsonLd (objek schema.org tambahan),
+ *        theme (id preset tema untuk warna gambar preview; bawaan = tema default situs).
  */
 export default function Seo({
   title = `${NAME} — API, Tools & Developer Platform`,
@@ -33,6 +34,7 @@ export default function Seo({
   keywords,
   breadcrumbs,
   jsonLd,
+  theme,
 }) {
   const bare = title.replace(new RegExp(`\\s*[·—|-]\\s*${NAME}$`), '');
   const full = title.includes(NAME) ? title : `${title} · ${NAME}`;
@@ -44,6 +46,7 @@ export default function Seo({
     const q = new URLSearchParams({ title: clip(bare, 90), desc: clip(desc, 180) });
     if (label) q.set('label', label);
     if (meta) q.set('meta', meta);
+    if (theme) q.set('theme', theme);
     img = `/api/og?${q.toString()}`;
   }
   img = img.startsWith('http') ? img : `${URL_}${img}`;
@@ -66,34 +69,53 @@ export default function Seo({
 
   return (
     <Head>
-      <title>{full}</title>
-      <meta name="description" content={desc} />
-      <meta name="robots" content={noindex ? 'noindex,nofollow' : 'index,follow,max-image-preview:large'} />
-      <meta name="application-name" content={NAME} />
-      <meta name="theme-color" content="#0078d4" />
-      {keywords && <meta name="keywords" content={Array.isArray(keywords) ? keywords.join(', ') : keywords} />}
-      <link rel="canonical" href={url} />
+      <title key="title">{full}</title>
+      <meta key="description" name="description" content={desc} />
+      <meta key="robots" name="robots" content={noindex ? 'noindex,nofollow' : 'index,follow,max-image-preview:large'} />
+      <meta key="application-name" name="application-name" content={NAME} />
+      {keywords && <meta key="keywords" name="keywords" content={Array.isArray(keywords) ? keywords.join(', ') : keywords} />}
+      <meta key="author" name="author" content={NAME} />
+      <meta key="googlebot" name="googlebot" content={noindex ? 'noindex,nofollow' : 'index,follow,max-image-preview:large,max-snippet:-1'} />
+      <link key="canonical" rel="canonical" href={url} />
+      <link key="alt-id" rel="alternate" hrefLang="id" href={url} />
+      <link key="alt-x" rel="alternate" hrefLang="x-default" href={url} />
 
-      <meta property="og:type" content={type} />
-      <meta property="og:site_name" content={NAME} />
-      <meta property="og:title" content={full} />
-      <meta property="og:description" content={desc} />
-      <meta property="og:url" content={url} />
-      <meta property="og:image" content={img} />
-      <meta property="og:image:secure_url" content={img} />
-      {imgType && <meta property="og:image:type" content={imgType} />}
-      <meta property="og:image:width" content="1200" />
-      <meta property="og:image:height" content="630" />
-      <meta property="og:image:alt" content={full} />
-      <meta property="og:locale" content="id_ID" />
-      {publishedTime && <meta property="article:published_time" content={publishedTime} />}
+      <meta key="og:type" property="og:type" content={type} />
+      <meta key="og:site_name" property="og:site_name" content={NAME} />
+      <meta key="og:title" property="og:title" content={full} />
+      <meta key="og:description" property="og:description" content={desc} />
+      <meta key="og:url" property="og:url" content={url} />
+      <meta key="og:image" property="og:image" content={img} />
+      <meta key="og:image:secure_url" property="og:image:secure_url" content={img} />
+      {imgType && <meta key="og:image:type" property="og:image:type" content={imgType} />}
+      <meta key="og:image:width" property="og:image:width" content="1200" />
+      <meta key="og:image:height" property="og:image:height" content="630" />
+      <meta key="og:image:alt" property="og:image:alt" content={full} />
+      <meta key="og:locale" property="og:locale" content="id_ID" />
+      {publishedTime && <meta key="article:published_time" property="article:published_time" content={publishedTime} />}
 
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={full} />
-      <meta name="twitter:description" content={desc} />
-      <meta name="twitter:image" content={img} />
-      <meta name="twitter:image:alt" content={full} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ld }} />
+      <meta key="twitter:card" name="twitter:card" content="summary_large_image" />
+      <meta key="twitter:url" name="twitter:url" content={url} />
+      <meta key="twitter:title" name="twitter:title" content={full} />
+      <meta key="twitter:description" name="twitter:description" content={desc} />
+      <meta key="twitter:image" name="twitter:image" content={img} />
+      <meta key="twitter:image:alt" name="twitter:image:alt" content={full} />
+      <script key="ld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: ld }} />
+      <meta key="thumbnail" name="thumbnail" content={img} />
+      <link key="image_src" rel="image_src" href={img} />
+      <meta key="og:image:fallback" property="og:image" content={`${URL_}/og.jpg`} />
+      <meta key="og:updated_time" property="og:updated_time" content={new Date().toISOString().slice(0, 10)} />
+      <meta key="twitter:domain" name="twitter:domain" content={URL_.replace(/^https?:\/\//, '')} />
+      <meta key="twitter:label1" name="twitter:label1" content="Platform" />
+      <meta key="twitter:data1" name="twitter:data1" content={NAME} />
+      <meta key="referrer" name="referrer" content="strict-origin-when-cross-origin" />
+      <meta key="format-detection" name="format-detection" content="telephone=no" />
+      <meta key="generator" name="generator" content={`${NAME} · Next.js`} />
+      <meta key="category" name="category" content="technology" />
+      <meta key="rating" name="rating" content="general" />
+      <meta key="mobile-web-app-capable" name="mobile-web-app-capable" content="yes" />
+      <link key="me" rel="me" href={`https://github.com/${site.GITHUB_USER}`} />
+      <link key="sitemap" rel="sitemap" type="application/xml" href={`${URL_}/sitemap.xml`} />
     </Head>
   );
 }

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Music, Pause, Play, X, Volume2, VolumeX, Bell, Link2, Minus, Plus } from 'lucide-react';
 import { audioStore, bgm, CUES, parseYouTube } from '@/src/lib/audio';
-import { sound } from '@/src/lib/interactiveEffects';
+import { sound, PACKS, EVENTS } from '@/src/lib/interactiveEffects';
 import { useTheme } from '@/components/ThemeContext';
 
 function useStore(store) {
@@ -175,7 +175,24 @@ export default function AudioControl() {
             {tab === 'sfx' && <div className="au-sec">
               <div className="au-title">Efek suara</div>
               <Switch on={sfxOn} label="Efek suara" hint="Klik, login, logout, 404" onChange={(v) => { setConfig({ ...config, soundEnabled: v }); if (v) { sound.enabled = true; sound.playBeep(); } }} />
-              <Volume label="Volume efek" icon={<Volume2 size={13} />} value={a.sfxVol} onChange={(v) => audioStore.set({ sfxVol: v })} onCommit={() => sound.playBeep()} />
+              <Volume label="Volume efek" icon={<Volume2 size={13} />} value={a.sfxVol} onChange={(v) => audioStore.set({ sfxVol: v })} onCommit={() => sound.fx('tab')} />
+              <div className="au-title" style={{ marginTop: 14 }}>Paket suara</div>
+              <div className="au-packs" role="radiogroup" aria-label="Paket suara">
+                {PACKS.map((p) => (
+                  <button key={p.id} type="button" role="radio" aria-checked={(a.pack || 'pop') === p.id} data-sound="off" className={`au-pack ${(a.pack || 'pop') === p.id ? 'on' : ''}`}
+                    onClick={() => { audioStore.set({ pack: p.id }); sound.enabled = true; setTimeout(() => sound.fx('done'), 20); }}>
+                    <b>{p.label}</b><span>{p.hint}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="au-title" style={{ marginTop: 14 }}>Suara interaksi</div>
+              <ul className="au-cues">
+                {EVENTS.map((ev) => (
+                  <li key={ev.id}>
+                    <Switch on={(a.events?.[ev.id] ?? ev.def) !== false} label={ev.label} hint={ev.hint} onChange={(v) => audioStore.set({ events: { ...(a.events || {}), [ev.id]: v } })} />
+                  </li>
+                ))}
+              </ul>
             </div>}
 
             {tab === 'cues' && <div className="au-sec">
@@ -230,7 +247,7 @@ export default function AudioControl() {
         .au-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
         .au-head-t, .au-head-r { display: flex; align-items: center; gap: 8px; }
         .au-head h3 { font-size: 1rem; }
-        .au-badge { font-family: var(--font-mono); font-size: .66rem; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+        .au-badge { font-family: var(--font-mono); font-size: .66rem; padding: 3px 9px; border-radius: var(--r-l); border: 1px solid var(--border); color: var(--muted); }
         .au-badge.on { color: var(--a2); border-color: var(--a2); }
         .au-x { background: none; border: none; color: var(--muted); cursor: pointer; display: flex; }
         .au-x:hover { color: var(--text); }
@@ -242,11 +259,11 @@ export default function AudioControl() {
         .au-sec { display: grid; gap: 10px; }
         .au-title { font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: var(--font-mono); }
         /* saklar & slider: gaya yang sama dengan Theme Studio */
-        .au-panel .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 10px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; color: var(--text); text-align: left; cursor: pointer; font: inherit; transition: border-color .2s; }
+        .au-panel .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 10px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-m); color: var(--text); text-align: left; cursor: pointer; font: inherit; transition: border-color .2s; }
         .au-panel .switch-row:hover { border-color: var(--a2); }
         .au-panel .switch-text { display: flex; flex-direction: column; font-size: .84rem; min-width: 0; }
         .au-panel .switch-text small { color: var(--muted); font-size: .7rem; }
-        .au-panel .switch-knob { flex-shrink: 0; width: 40px; height: 22px; border-radius: 20px; background: var(--surface-3); position: relative; transition: background .2s; }
+        .au-panel .switch-knob { flex-shrink: 0; width: 40px; height: 22px; border-radius: var(--r-l); background: var(--surface-3); position: relative; transition: background .2s; }
         .au-panel .switch-knob.on { background: var(--a2); }
         .au-panel .circle { width: 16px; height: 16px; border-radius: 50%; background: #fff; position: absolute; top: 3px; left: 3px; transition: transform .2s; }
         .au-panel .switch-knob.on .circle { transform: translateX(18px); }
@@ -255,11 +272,11 @@ export default function AudioControl() {
         .au-panel .cfg-label { display: inline-flex; align-items: center; gap: 6px; font-size: .74rem; color: var(--muted); font-family: var(--font-mono); letter-spacing: .05em; }
         .au-panel .cfg-value { color: var(--a2); font-family: var(--font-mono); font-size: .78rem; }
         .au-vol-row { display: flex; align-items: center; gap: 10px; }
-        .au-step { width: 36px; height: 36px; flex-shrink: 0; display: grid; place-items: center; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); cursor: pointer; touch-action: none; user-select: none; transition: border-color .2s, color .2s, transform .15s; }
+        .au-step { width: 36px; height: 36px; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--r-m); background: var(--surface-2); border: 1px solid var(--border); color: var(--text); cursor: pointer; touch-action: none; user-select: none; transition: border-color .2s, color .2s, transform .15s; }
         .au-step:hover:not(:disabled) { border-color: var(--a2); color: var(--a2); }
         .au-step:active:not(:disabled) { transform: scale(.9); }
         .au-step:disabled { opacity: .4; cursor: not-allowed; }
-        .au-range { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 6px; border-radius: 99px; outline: none; cursor: pointer; margin: 0;
+        .au-range { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 6px; border-radius: var(--r-l); outline: none; cursor: pointer; margin: 0;
           background: linear-gradient(90deg, var(--a2) var(--p, 50%), var(--surface-3) var(--p, 50%)); }
         .au-range::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 3px solid var(--a2); box-shadow: 0 2px 8px rgba(0,0,0,.5), 0 0 0 4px color-mix(in srgb, var(--a2) 18%, transparent); cursor: grab; transition: transform .15s; }
         .au-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid var(--a2); box-shadow: 0 2px 8px rgba(0,0,0,.5); cursor: grab; }
@@ -270,9 +287,9 @@ export default function AudioControl() {
         .au-input .input { flex: 1; min-width: 0; font-size: .78rem; height: 38px; }
         .au-url .btn { height: 38px; padding: 0 14px; }
         .au-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-        .au-err { font-size: .72rem; color: #f87171; }
-        .au-status { display: flex; align-items: center; gap: 8px; font-size: .74rem; color: var(--muted); padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 60%, transparent); border: 1px solid var(--border); min-width: 0; }
-        .au-status.error { color: #f87171; border-color: color-mix(in srgb, #f87171 40%, var(--border)); }
+        .au-err { font-size: .72rem; color: var(--err); }
+        .au-status { display: flex; align-items: center; gap: 8px; font-size: .74rem; color: var(--muted); padding: 8px 10px; border-radius: var(--r-s); background: color-mix(in srgb, var(--surface) 60%, transparent); border: 1px solid var(--border); min-width: 0; }
+        .au-status.error { color: var(--err); border-color: color-mix(in srgb, var(--err) 40%, var(--border)); }
         .au-status.playing { color: var(--text); }
         .au-status-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .au-play { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; flex-shrink: 0; }
@@ -280,7 +297,7 @@ export default function AudioControl() {
         .au-cues { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
         .au-cues li { display: flex; gap: 6px; align-items: stretch; }
         .au-cues li .switch-row { flex: 1; min-width: 0; }
-        .au-test { width: 40px; flex-shrink: 0; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); cursor: pointer; display: grid; place-items: center; }
+        .au-test { width: 40px; flex-shrink: 0; border-radius: var(--r-m); border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); cursor: pointer; display: grid; place-items: center; }
         .au-test:hover { color: var(--a2); border-color: var(--a2); }
         .au-eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
         .au-eq.big { height: 16px; gap: 3px; }
@@ -292,7 +309,14 @@ export default function AudioControl() {
         .au-eq i { transform-origin: bottom; }
         html[data-anim='off'] .au-eq i { animation: none; }
         @media (prefers-reduced-motion: reduce) { .au-eq i, .au-ico { animation: none; } }
-      `}</style>
+        .au-packs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .au-pack { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 9px 11px; border-radius: min(var(--r-btn, 10px), 14px); border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 70%, transparent); color: var(--text); cursor: pointer; transition: border-color .2s, background .2s, translate .2s; }
+        .au-pack b { font-size: 12.5px; }
+        .au-pack span { font-size: 10.5px; color: var(--muted); line-height: 1.3; }
+        .au-pack:hover { translate: 0 -2px; border-color: color-mix(in srgb, var(--a2) 50%, var(--border)); }
+        .au-pack.on { border-color: var(--a2); background: color-mix(in srgb, var(--a1) 16%, var(--surface)); }
+      `}
+      </style>
     </div>
   );
   return mounted ? createPortal(ui, document.body) : null;

@@ -22,6 +22,13 @@
   --shadow-c: #000000;
   --dock-shadow: 0 18px 40px color-mix(in srgb, var(--shadow-c) 75%, transparent);
   --on-accent: #ffffff;
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --err: #f87171;
+  --info: #60a5fa;
+  --r-s: 8px;
+  --r-m: 14px;
+  --r-l: 22px;
   --surface: #0b111e;
   --surface-2: #151e2f;
   --surface-3: #334155;
@@ -353,13 +360,13 @@ p {
 
 .badge.ok {
   background: rgba(16, 185, 129, 0.18);
-  color: #34d399;
+  color: var(--ok);
   border-color: rgba(16, 185, 129, 0.35);
 }
 
 .badge.err {
   background: rgba(239, 68, 68, 0.18);
-  color: #f87171;
+  color: var(--err);
   border-color: rgba(239, 68, 68, 0.35);
 }
 
@@ -442,7 +449,7 @@ html.is-loading {
 .boot-core {
   width: 52px;
   height: 52px;
-  border-radius: 16px;
+  border-radius: var(--r-m);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -514,7 +521,7 @@ html.is-loading {
   justify-content: center;
   gap: 10px;
   padding: 9px 14px;
-  border-radius: 999px;
+  border-radius: var(--r-l);
   font-size: 0.76rem;
   font-family: var(--font-mono);
   color: var(--text);
@@ -545,7 +552,7 @@ html.is-loading {
   position: relative;
   overflow: hidden;
   background: color-mix(in srgb, var(--text) 6%, transparent);
-  border-radius: 12px;
+  border-radius: var(--r-m);
 }
 
 .skeleton::after {
@@ -582,6 +589,7 @@ p {
   font-size: 0.92rem;
 }
 
+html { accent-color: var(--a2); caret-color: var(--a2); }
 ::selection {
   background: color-mix(in srgb, var(--a2) 35%, transparent);
   color: var(--text);
@@ -607,7 +615,7 @@ p {
 }
 *::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--text) 16%, transparent);
-  border-radius: 8px;
+  border-radius: var(--r-s);
 }
 *::-webkit-scrollbar-track {
   background: transparent;
@@ -841,6 +849,63 @@ h1, h2, h3, h4 {
 [data-hover='glow'] .hx-card:hover {
   box-shadow: none;
 }
+/* ---------- Gaya loading (Theme Studio → Animasi → Loading) ---------- */
+.boot-title::before { content: var(--splash-title, 'WUDYSOFT'); }
+.boot-title { font-family: var(--font-heading); min-height: 1.4em; }
+.boot-art { position: relative; width: 96px; height: 96px; display: grid; place-items: center; }
+.ba { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; }
+:root:not([data-splash-style]) .ba-ring, html[data-splash-style='ring'] .ba-ring,
+html[data-splash-style='orbit'] .ba-orbit, html[data-splash-style='bars'] .ba-bars, html[data-splash-style='pulse'] .ba-pulse,
+html[data-splash-style='morph'] .ba-morph, html[data-splash-style='dots'] .ba-dots, html[data-splash-style='typing'] .ba-typing { display: flex; }
+.ba-spin { position: absolute; inset: 0; animation: ba-rot calc(1.6s / var(--splash-speed, 1)) linear infinite; }
+@keyframes ba-rot { to { transform: rotate(360deg); } }
+
+.ba-orbit i { position: absolute; width: 12px; height: 12px; border-radius: 50%; top: 50%; left: 50%; margin: -6px; background: var(--a2);
+  animation: ba-orb calc(2s / var(--splash-speed, 1)) linear infinite; }
+.ba-orbit i:nth-child(2) { background: var(--a1); animation-delay: calc(-0.66s / var(--splash-speed, 1)); }
+.ba-orbit i:nth-child(3) { background: var(--a3); animation-delay: calc(-1.33s / var(--splash-speed, 1)); }
+@keyframes ba-orb { from { transform: rotate(0) translateX(44px) rotate(0); } to { transform: rotate(360deg) translateX(44px) rotate(-360deg); } }
+
+.ba-bars { gap: 6px; }
+.ba-bars i { width: 7px; height: 56px; border-radius: min(var(--r-chip, 6px), 4px); background: linear-gradient(180deg, var(--a2), var(--a1));
+  animation: ba-bar calc(1s / var(--splash-speed, 1)) ease-in-out infinite; transform-origin: 50% 50%; }
+.ba-bars i:nth-child(2) { animation-delay: -0.15s; } .ba-bars i:nth-child(3) { animation-delay: -0.3s; } .ba-bars i:nth-child(4) { animation-delay: -0.45s; }
+.ba-bars i:nth-child(5) { animation-delay: -0.6s; } .ba-bars i:nth-child(6) { animation-delay: -0.75s; } .ba-bars i:nth-child(7) { animation-delay: -0.9s; }
+@keyframes ba-bar { 0%, 100% { transform: scaleY(0.25); opacity: 0.5; } 50% { transform: scaleY(1); opacity: 1; } }
+
+.ba-pulse i { position: absolute; inset: 20px; border-radius: var(--r-m); border: 2px solid var(--a2); opacity: 0;
+  animation: ba-pulse calc(2.1s / var(--splash-speed, 1)) cubic-bezier(.2, .6, .3, 1) infinite; }
+.ba-pulse i:nth-child(2) { animation-delay: calc(0.7s / var(--splash-speed, 1)); border-color: var(--a1); }
+.ba-pulse i:nth-child(3) { animation-delay: calc(1.4s / var(--splash-speed, 1)); border-color: var(--a3); }
+@keyframes ba-pulse { 0% { transform: scale(0.6); opacity: 0.9; } 100% { transform: scale(1.9); opacity: 0; } }
+
+.ba-morph .boot-core { animation: ba-morph calc(2.4s / var(--splash-speed, 1)) ease-in-out infinite; }
+@keyframes ba-morph {
+  0%, 100% { border-radius: var(--r-m); transform: rotate(0) scale(1); }
+  35% { border-radius: 50%; transform: rotate(180deg) scale(1.12); }
+  70% { border-radius: 8px; transform: rotate(360deg) scale(0.92); }
+}
+
+.ba-dots { gap: 12px; }
+.ba-dots i { width: 16px; height: 16px; border-radius: 50%; background: var(--a2); animation: ba-dot calc(1.1s / var(--splash-speed, 1)) ease-in-out infinite; }
+.ba-dots i:nth-child(2) { background: var(--a1); animation-delay: -0.18s; } .ba-dots i:nth-child(3) { background: var(--a3); animation-delay: -0.36s; }
+@keyframes ba-dot { 0%, 80%, 100% { transform: translateY(0) scale(0.7); opacity: 0.5; } 40% { transform: translateY(-16px) scale(1.1); opacity: 1; } }
+
+html[data-splash-style='typing'] .boot-art { height: 8px; width: 40px; }
+.ba-typing i { width: 28px; height: 3px; border-radius: 3px; background: var(--a2); animation: ba-blink calc(0.9s / var(--splash-speed, 1)) steps(2, jump-none) infinite; }
+@keyframes ba-blink { 50% { opacity: 0; } }
+html[data-splash-style='typing'] .boot-title { display: inline-block; font-family: var(--font-mono); overflow: hidden; white-space: nowrap; clip-path: inset(0 100% 0 0);
+  animation: ba-type calc(1.6s / var(--splash-speed, 1)) steps(14, end) infinite alternate; }
+@keyframes ba-type { to { clip-path: inset(0 0 0 0); } }
+
+html[data-splash-bar='off'] .boot-progress { display: none; }
+html[data-splash-bg='gradient'] .boot-overlay { background: linear-gradient(135deg, color-mix(in srgb, var(--a1) 38%, var(--bg1)), color-mix(in srgb, var(--a3) 34%, var(--bg2))); }
+html[data-splash-bg='mesh'] .boot-overlay { background: radial-gradient(60% 50% at 15% 15%, color-mix(in srgb, var(--a1) 45%, transparent), transparent 70%),
+  radial-gradient(60% 50% at 85% 85%, color-mix(in srgb, var(--a3) 45%, transparent), transparent 70%), radial-gradient(40% 40% at 80% 20%, color-mix(in srgb, var(--a2) 30%, transparent), transparent 70%), var(--bg1); }
+html[data-splash-bg='glass'] .boot-overlay { background: color-mix(in srgb, var(--bg1) 45%, transparent); backdrop-filter: blur(26px) saturate(1.5); -webkit-backdrop-filter: blur(26px) saturate(1.5); }
+.boot-progress, .boot-progress-fill { border-radius: min(var(--r-chip, 4px), 6px); }
+.route-loader .spinner { border-color: color-mix(in srgb, var(--text) 14%, transparent); border-top-color: var(--a2); }
+
 html[data-splash='off'] .boot-overlay {
   display: none !important;
 }
@@ -865,7 +930,7 @@ p, li, dd, dt, td, th, label, h1, h2, h3, h4 {
   top: -60px;
   z-index: 100000;
   padding: 10px 16px;
-  border-radius: 10px;
+  border-radius: var(--r-s);
   background: var(--a1);
   color: var(--on-accent);
   font-weight: 700;
@@ -1096,3 +1161,192 @@ html[data-anim='off'] .floating-navbar .nav-center-action { animation: none; }
 
 [data-anim='off'] [data-card] .glass:not(#_):hover { transform: none; }
 [data-anim='off'] [data-card='holo'] .glass { animation: none; }
+
+/* =====================================================================
+   MODEL KARTU TAMBAHAN — seri dasbor kaca
+   tint (koral berwarna) · soft (putih lembut) · smoke (abu monokrom) · refract (tepi pelangi)
+   ===================================================================== */
+[data-card='tint'] .glass {
+  background: linear-gradient(150deg, color-mix(in srgb, var(--a1) 48%, transparent), color-mix(in srgb, var(--a1) 22%, transparent)),
+    color-mix(in srgb, var(--surface) 30%, transparent);
+  backdrop-filter: blur(calc(var(--blur, 28px) * 1.1)) saturate(1.5); -webkit-backdrop-filter: blur(calc(var(--blur, 28px) * 1.1)) saturate(1.5);
+  border: 1px solid color-mix(in srgb, #fff 24%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 38%, transparent), inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 calc(8px + 22px * var(--card-depth)) calc(18px + 30px * var(--card-depth)) -16px color-mix(in srgb, var(--a1) 45%, transparent);
+}
+
+[data-card='soft'] .glass {
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+  border: 1px solid color-mix(in srgb, var(--text) 6%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 60%, transparent),
+    0 calc(1px + 3px * var(--card-depth)) calc(4px + 6px * var(--card-depth)) -1px color-mix(in srgb, var(--shadow-c) 16%, transparent),
+    0 calc(10px + 18px * var(--card-depth)) calc(22px + 24px * var(--card-depth)) -18px color-mix(in srgb, var(--shadow-c) 34%, transparent);
+}
+
+[data-card='smoke'] .glass {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text) 10%, transparent), color-mix(in srgb, var(--text) 2%, transparent) 60%),
+    color-mix(in srgb, var(--surface) 34%, transparent);
+  backdrop-filter: blur(calc(var(--blur, 28px) * 1.6)) saturate(0.85) brightness(1.05); -webkit-backdrop-filter: blur(calc(var(--blur, 28px) * 1.6)) saturate(0.85) brightness(1.05);
+  border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 24%, transparent), inset 0 0 0 1px rgba(0, 0, 0, 0.18),
+    0 calc(8px + 22px * var(--card-depth)) calc(18px + 30px * var(--card-depth)) -16px color-mix(in srgb, var(--shadow-c) 60%, transparent);
+}
+
+[data-card='refract'] .glass {
+  border: 1.5px solid transparent;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 80%, transparent), color-mix(in srgb, var(--surface) 70%, transparent)) padding-box,
+    conic-gradient(from 210deg, #ff5a3c, #ffc94d, #5ee6a8, #4d8dff, #b36bff, #ff5a3c) border-box;
+  backdrop-filter: blur(calc(var(--blur, 28px) * 1.4)) saturate(1.6); -webkit-backdrop-filter: blur(calc(var(--blur, 28px) * 1.4)) saturate(1.6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 calc(8px + 22px * var(--card-depth)) calc(18px + 30px * var(--card-depth)) -16px color-mix(in srgb, var(--shadow-c) 60%, transparent);
+}
+
+/* =====================================================================
+   MODEL TOMBOL NAV TAB  (Theme Studio → Nav)
+   html[data-nav]        classic | notch | beam | bubble | label
+   html[data-nav-labels] on | off  (teks di bawah ikon)
+   Penanda tab aktif = satu elemen .nav-ind yang meluncur antar tab (framer layoutId).
+   ===================================================================== */
+.floating-navbar { --nav-w: 48px; --nav-h: 46px; }
+html[data-nav-labels='on'] .floating-navbar { --nav-w: 56px; --nav-h: 54px; }
+html[data-nav='label'][data-nav-labels='on'] .floating-navbar { --nav-h: 58px; }
+.floating-navbar .nav-tab { width: var(--nav-w); height: var(--nav-h); }
+.dial-slot { height: var(--nav-h); }
+
+.nav-tab > svg, .nav-tab .nav-lbl, .nav-center-action > svg, .nav-center-action .nav-lbl { position: relative; z-index: 1; }
+.nav-lbl { display: none; font-size: 0.62rem; font-weight: 700; line-height: 1; letter-spacing: 0.01em; white-space: nowrap; }
+html[data-nav-labels='on'] .nav-tab .nav-lbl { display: block; }
+html[data-nav-labels='on'] .floating-navbar .nav-tab { flex-direction: column; gap: 4px; }
+.floating-navbar .nav-center-action .nav-lbl { display: none; }
+
+/* penanda dasar = titik kecil (classic) */
+.nav-ind { position: absolute; z-index: 0; pointer-events: none; left: 50%; margin-left: -2px; bottom: 3px; width: 4px; height: 4px; border-radius: var(--r-dock-btn); background: var(--a2); box-shadow: 0 0 10px var(--a2); }
+html[data-nav-labels='on'][data-nav='classic'] .nav-ind { bottom: 2px; }
+
+/* --- model selain classic: tombol tengah jadi tab biasa --- */
+html:is([data-nav='notch'], [data-nav='beam'], [data-nav='bubble'], [data-nav='label']) .floating-navbar { gap: 2px; padding: 8px 10px; }
+html:is([data-nav='notch'], [data-nav='beam'], [data-nav='bubble'], [data-nav='label']) .dial-slot { width: var(--nav-w); }
+html:is([data-nav='notch'], [data-nav='beam'], [data-nav='bubble'], [data-nav='label']) .floating-navbar .nav-center-action {
+  position: relative; left: auto; bottom: auto; transform: none; margin: 0; width: 100%; height: 100%; border: none; border-radius: var(--r-dock-btn);
+  background: transparent; box-shadow: none; color: var(--muted);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+}
+html:is([data-nav='notch'], [data-nav='beam'], [data-nav='bubble'], [data-nav='label']) .floating-navbar .nav-center-action:hover { transform: none; color: var(--a2); }
+html:is([data-nav='notch'], [data-nav='beam'], [data-nav='bubble'], [data-nav='label']) .floating-navbar .nav-center-action:active { transform: scale(0.94); }
+html:is([data-nav='notch'], [data-nav='beam'], [data-nav='bubble'], [data-nav='label']) .floating-navbar .nav-center-action.open { color: var(--a2); }
+html:is([data-nav='notch'], [data-nav='beam'], [data-nav='bubble'], [data-nav='label'])[data-nav-labels='on'] .floating-navbar .nav-center-action .nav-lbl { display: block; }
+html:is([data-nav='notch'], [data-nav='beam'], [data-nav='bubble'], [data-nav='label']) .floating-navbar .nav-tab.active { background: transparent; color: var(--text); }
+html:is([data-nav='notch'], [data-nav='beam'], [data-nav='bubble'], [data-nav='label']) .nav-ind { margin: 0; }
+
+/* --- notch: garis tepi melengkung naik mengitari tab aktif, garis bawah menyala --- */
+html[data-nav='notch'] .floating-navbar {
+  border-color: color-mix(in srgb, var(--a2) 28%, transparent);
+  box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.55), 0 6px 22px -12px var(--a2), inset 0 -2px 0 color-mix(in srgb, var(--a2) 85%, transparent);
+}
+html[data-nav='notch'] .nav-ind {
+  left: -6px; right: -6px; top: -18px; bottom: -8px; width: auto; height: auto;
+  border: 1.5px solid var(--a2); border-bottom: none; border-radius: 28px 28px 0 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--a2) 14%, var(--surface)), color-mix(in srgb, var(--surface) 94%, transparent));
+  box-shadow: 0 -6px 18px -8px var(--a2);
+}
+html[data-nav='notch'] .nav-tab.active > svg { color: var(--a2); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--a2) 70%, transparent)); }
+
+/* --- beam: garis terang di tepi atas + kerucut cahaya jatuh ke tab aktif --- */
+html[data-nav='beam'] .nav-ind { left: -4px; right: -4px; top: -9px; bottom: -9px; width: auto; height: auto; background: none; box-shadow: none; border-radius: 0; }
+html[data-nav='beam'] .nav-ind::before { content: ''; position: absolute; top: 0; left: 22%; right: 22%; height: 3px; border-radius: 0 0 4px 4px; background: var(--a2); box-shadow: 0 0 14px 2px var(--a2); }
+html[data-nav='beam'] .nav-ind::after { content: ''; position: absolute; inset: 0; clip-path: polygon(22% 0, 78% 0, 100% 100%, 0 100%); background: linear-gradient(180deg, color-mix(in srgb, var(--a2) 50%, transparent), color-mix(in srgb, var(--a2) 8%, transparent) 70%, transparent); }
+html[data-nav='beam'] .nav-tab.active > svg { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--a2) 80%, transparent)); }
+
+/* --- bubble: ikon aktif menyembul di dalam bola berwarna --- */
+html[data-nav='bubble'] .floating-navbar .nav-tab, html[data-nav='bubble'] .floating-navbar .nav-center-action { flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; padding-top: 12px; }
+html[data-nav='bubble'] .nav-tab > svg { transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s; }
+html[data-nav='bubble'] .nav-tab.active > svg { transform: translateY(-23px); color: var(--on-accent); }
+html[data-nav='bubble'] .nav-ind {
+  left: 50%; margin-left: -23px; top: -23px; bottom: auto; width: 46px; height: 46px; border-radius: 50%;
+  background: linear-gradient(145deg, var(--a2), var(--a1) 60%, var(--a3));
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--surface) 90%, transparent), 0 10px 20px -8px var(--a1), inset 0 2px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* --- label: bar bernuansa aksen, ikon + teks, titik di bawah tab aktif --- */
+html[data-nav='label'] .floating-navbar {
+  padding: 8px 12px; gap: 4px;
+  background: color-mix(in srgb, var(--a3) 26%, var(--surface));
+  border-color: color-mix(in srgb, var(--a3) 40%, transparent);
+}
+html[data-nav='label'] .nav-tab, html[data-nav='label'] .floating-navbar .nav-center-action { color: color-mix(in srgb, var(--text) 66%, transparent); }
+html[data-nav='label'] .nav-tab:hover, html[data-nav='label'] .nav-tab.active { color: var(--text); }
+html[data-nav='label'] .nav-ind { bottom: 3px; background: var(--a1); box-shadow: 0 0 8px color-mix(in srgb, var(--a1) 70%, transparent); }
+html[data-nav='label'][data-nav-labels='on'] .nav-ind { bottom: 2px; }
+
+@media (max-width: 380px) {
+  .floating-navbar { --nav-w: 42px; }
+  html[data-nav-labels='on'] .floating-navbar { --nav-w: 48px; }
+  html:is([data-nav='notch'], [data-nav='beam'], [data-nav='bubble'], [data-nav='label']) .floating-navbar { padding: 7px 6px; }
+  html[data-nav-labels='on'] .nav-lbl { font-size: 0.58rem; }
+}
+html[data-anim='off'] .nav-tab > svg { transition: none; }
+
+/* =====================================================================
+   MODEL KARTU HUD & PANEL (seri sci-fi) + HURUF JUDUL KAPITAL
+   ===================================================================== */
+[data-card='hud'] .glass {
+  background:
+    linear-gradient(var(--a2), var(--a2)) top 3px left 3px / 18px 2px no-repeat, linear-gradient(var(--a2), var(--a2)) top 3px left 3px / 2px 18px no-repeat,
+    linear-gradient(var(--a2), var(--a2)) top 3px right 3px / 18px 2px no-repeat, linear-gradient(var(--a2), var(--a2)) top 3px right 3px / 2px 18px no-repeat,
+    linear-gradient(var(--a2), var(--a2)) bottom 3px left 3px / 18px 2px no-repeat, linear-gradient(var(--a2), var(--a2)) bottom 3px left 3px / 2px 18px no-repeat,
+    linear-gradient(var(--a2), var(--a2)) bottom 3px right 3px / 18px 2px no-repeat, linear-gradient(var(--a2), var(--a2)) bottom 3px right 3px / 2px 18px no-repeat,
+    linear-gradient(180deg, color-mix(in srgb, var(--a2) 9%, transparent), transparent 45%),
+    color-mix(in srgb, var(--bg1) 66%, transparent);
+  backdrop-filter: blur(calc(var(--blur, 28px) * 0.9)) saturate(1.3); -webkit-backdrop-filter: blur(calc(var(--blur, 28px) * 0.9)) saturate(1.3);
+  border: 1px solid color-mix(in srgb, var(--a2) 28%, transparent);
+  box-shadow: inset 0 0 22px color-mix(in srgb, var(--a1) 10%, transparent), 0 0 calc(10px + 20px * var(--card-depth)) -6px color-mix(in srgb, var(--a1) 45%, transparent),
+    0 calc(8px + 18px * var(--card-depth)) calc(16px + 24px * var(--card-depth)) -18px color-mix(in srgb, var(--shadow-c) 60%, transparent);
+}
+
+[data-card='panel'] .glass {
+  background:
+    linear-gradient(var(--a1), var(--a1)) left 0 top 14px / 3px calc(100% - 28px) no-repeat,
+    linear-gradient(180deg, color-mix(in srgb, var(--text) 5%, transparent), transparent 40%),
+    color-mix(in srgb, var(--bg2) 88%, transparent);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+  border: 1px solid color-mix(in srgb, var(--text) 11%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 9%, transparent),
+    0 calc(6px + 16px * var(--card-depth)) calc(14px + 22px * var(--card-depth)) -16px color-mix(in srgb, var(--shadow-c) 70%, transparent);
+}
+
+[data-hcase='upper'] :is(h1, h2, h3, h4) { text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* ---------- Efek hover kartu tambahan (CSS murni; memakai properti scale/translate/rotate
+   agar tidak bentrok dengan transform inline milik framer-motion) ---------- */
+:is([data-hover='pop'], [data-hover='jelly'], [data-hover='float'], [data-hover='press']) :is(.hx-card, .rp-card) {
+  transition: scale 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), translate 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), rotate 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.25s ease, box-shadow 0.3s ease;
+}
+[data-hover='pop'] :is(.hx-card, .rp-card):hover { scale: 1.035; rotate: -0.7deg; }
+[data-hover='press'] :is(.hx-card, .rp-card):hover { scale: 0.975; translate: 0 3px; box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.18); }
+[data-hover='jelly'] :is(.hx-card, .rp-card):hover { animation: hv-jelly 0.7s both; }
+[data-hover='float'] :is(.hx-card, .rp-card):hover { animation: hv-float 2.2s ease-in-out infinite; }
+@keyframes hv-jelly {
+  0% { scale: 1 1; } 30% { scale: 1.07 0.94; } 50% { scale: 0.96 1.05; } 70% { scale: 1.03 0.98; } 100% { scale: 1.02 1.02; }
+}
+@keyframes hv-float {
+  0%, 100% { translate: 0 -4px; rotate: -0.25deg; } 50% { translate: 0 -10px; rotate: 0.25deg; }
+}
+/* Sorot: cahaya lebar mengikuti kursor */
+[data-hover='spotlight'] :is(.hx-card, .rp-card):hover { border-color: color-mix(in srgb, var(--a2) 45%, var(--border)); }
+[data-hover='spotlight'] .hx-card:hover .hx-spot {
+  background: radial-gradient(420px circle at var(--mx) var(--my), color-mix(in srgb, var(--a2) 22%, transparent), transparent 62%);
+}
+/* Kilat: kilau diagonal menyapu kartu */
+[data-hover='shine'] :is(.hx-card, .rp-card) { position: relative; overflow: hidden; }
+[data-hover='shine'] :is(.hx-card, .rp-card)::after {
+  content: ''; position: absolute; inset: -20% auto -20% -60%; width: 40%; pointer-events: none; z-index: 4;
+  background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--text) 18%, transparent), transparent);
+  transform: skewX(-18deg); transition: none;
+}
+[data-hover='shine'] :is(.hx-card, .rp-card):hover::after { animation: hv-shine 0.9s ease; }
+@keyframes hv-shine { from { left: -60%; } to { left: 130%; } }
+[data-anim='off'] :is(.hx-card, .rp-card), [data-anim='off'] :is(.hx-card, .rp-card)::after { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  :is(.hx-card, .rp-card), :is(.hx-card, .rp-card)::after { animation: none !important; scale: none !important; translate: none !important; rotate: none !important; }
+}

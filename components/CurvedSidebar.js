@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Home, Terminal, Activity, MessageSquare, FileText, FileCode, Wand2, UploadCloud, User, LogIn, LogOut, Search, Sliders, X, TerminalSquare, BookOpen, ExternalLink } from 'lucide-react';
+import { Home, Terminal, Activity, MessageSquare, FileText, FileCode, Wand2, UploadCloud, User, LogIn, LogOut, Search, Sliders, X, TerminalSquare, BookOpen, ExternalLink, Gauge, KeyRound, Webhook } from 'lucide-react';
 import WudysoftBrand from '@/components/WudysoftBrand';
 import { sound } from '@/src/lib/interactiveEffects';
 
@@ -20,7 +20,11 @@ const GROUPS = [
     { href: '/tools/upload', label: 'Multi-Host Upload', Icon: UploadCloud },
   ] },
   { title: 'Developer', items: [
-    { href: '/api/openapi', label: 'OpenAPI Spec', Icon: BookOpen, external: true },
+    { href: '/docs', label: 'Dokumentasi API', Icon: BookOpen },
+    { href: '/status', label: 'Status Layanan', Icon: Gauge },
+    { href: '/keys', label: 'API Keys', Icon: KeyRound },
+    { href: '/webhooks', label: 'Webhook Inspector', Icon: Webhook },
+    { href: '/api/openapi', label: 'OpenAPI Spec', Icon: ExternalLink, external: true },
   ] },
 ];
 
@@ -145,7 +149,7 @@ export default function CurvedSidebar({ open, onClose, user, pathname, onSearch,
         .sb-quick { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; }
         .sb-quick button { display: flex; align-items: center; justify-content: center; gap: 6px; height: 38px; border-radius: var(--r-btn, 10px); background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font: inherit; font-size: .74rem; font-weight: 600; cursor: pointer; transition: border-color .2s, transform .2s; }
         .sb-quick button:hover { border-color: var(--a2); transform: translateY(-2px); }
-        .sb-quick button.danger { color: #f87171; }
+        .sb-quick button.danger { color: var(--err); }
         .sb-spacer { position: relative; flex-shrink: 0; height: 52px; display: flex; align-items: flex-end; justify-content: flex-end; padding: 0 28px 6px 0; }
         .sb-spacer small { font-family: var(--font-mono); font-size: .62rem; color: var(--muted); opacity: .7; }
         .sb-user { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: var(--r-btn, 10px); background: var(--surface-2); border: 1px solid var(--border); min-width: 0; }
@@ -154,7 +158,7 @@ export default function CurvedSidebar({ open, onClose, user, pathname, onSearch,
         .sb-uinfo { min-width: 0; flex: 1; display: grid; }
         .sb-uinfo b { font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .sb-uinfo small { font-size: .68rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .sb-out-unused { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: transparent; border: 1px solid var(--border); color: #f87171; cursor: pointer; flex-shrink: 0; }
+        .sb-out-unused { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: transparent; border: 1px solid var(--border); color: var(--err); cursor: pointer; flex-shrink: 0; }
         .sb-login { display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border-radius: var(--r-btn, 10px); background: linear-gradient(135deg, var(--a1), var(--a3)); color: var(--on-accent); font-weight: 700; font-size: .85rem; text-decoration: none; box-shadow: 0 10px 24px -8px var(--a1); }
         @supports not (backdrop-filter: blur(1px)) { .sb-panel { background: var(--bg2); } }
       `}</style>

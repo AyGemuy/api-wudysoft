@@ -40,10 +40,10 @@ export default function CompilerPage() {
       <style jsx>{`
         .cp { max-width: 960px; margin: 0 auto; display: grid; gap: 16px; }
         .cp-h { display: flex; align-items: center; gap: 14px; }
-        .cp-ico { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: linear-gradient(135deg, var(--a1), var(--a3)); color: var(--on-accent); flex-shrink: 0; }
+        .cp-ico { width: 52px; height: 52px; border-radius: var(--r-m); display: grid; place-items: center; background: linear-gradient(135deg, var(--a1), var(--a3)); color: var(--on-accent); flex-shrink: 0; }
         h1 { margin: 0; font-size: clamp(1.4rem, 4vw, 2rem); }
         p { margin: 4px 0 0; color: var(--muted); font-size: .9rem; }
-        .cp-card { padding: 14px; border-radius: 20px; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 60%, transparent); backdrop-filter: blur(14px); }
+        .cp-card { padding: 14px; border-radius: var(--r-l); border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 60%, transparent); backdrop-filter: blur(14px); }
         .cp-note { font-size: .76rem; }
       `}</style>
     </>

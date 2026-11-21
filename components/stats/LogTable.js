@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Pagination from '@/components/Pagination';
 import { Icons } from '@/components/Icons';
 import { MethodBadge, cx } from '@/components/playground/ui';
 import { formatBytes, statusTone } from '@/src/lib/playgroundCore';
@@ -13,6 +14,8 @@ export default function LogTable({ events, now, onOpen, empty }) {
   const [q, setQ] = useState('');
   const [methods, setMethods] = useState(new Set());
   const [classes, setClasses] = useState(new Set());
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
 
   const toggle = (set, setSet, v) => setSet((p) => { const n = new Set(p); n.has(v) ? n.delete(v) : n.add(v); return n; });
 
@@ -25,6 +28,10 @@ export default function LogTable({ events, now, onOpen, empty }) {
       return true;
     }).slice(0, 200);
   }, [events, q, methods, classes]);
+  const pages = Math.max(1, Math.ceil(rows.length / limit));
+  const cur = Math.min(page, pages);
+  useEffect(() => { setPage(1); }, [q, methods, classes, limit]);
+  const paged = rows.slice((cur - 1) * limit, cur * limit);
 
   return (
     <div className={s.logBox}>
@@ -48,7 +55,7 @@ export default function LogTable({ events, now, onOpen, empty }) {
 
       <div className={s.rows} role="list">
         {rows.length === 0 && <div className={s.noRows}>{empty}</div>}
-        {rows.map((e) => {
+        {paged.map((e) => {
           const fresh = now - e.ts < 1600;
           const tone = statusTone(e.status);
           return (
@@ -64,6 +71,7 @@ export default function LogTable({ events, now, onOpen, empty }) {
           );
         })}
       </div>
+      <Pagination page={cur} pages={pages} total={rows.length} limit={limit} onPage={setPage} onLimit={setLimit} label="log" sizes={[20, 50, 100]} />
     </div>
   );
 }

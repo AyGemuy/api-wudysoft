@@ -38,6 +38,7 @@ export default function RoomsPage() {
   const [newRoomName, setNewRoomName] = useState('');
 
   const messagesEndRef = useRef(null);
+  const prevCount = useRef(null);
 
   // Gulir hanya area pesan (scrollIntoView menggulir seluruh halaman → di HP loncat ke footer)
   const streamRef = useRef(null);
@@ -49,6 +50,7 @@ export default function RoomsPage() {
   // Buka / tutup grup; ?room= menjaga pilihan saat refresh & bisa dibagikan
   const openRoom = (r) => {
     setMessages([]);
+    prevCount.current = null;
     setActiveMeta(r || null);
     router.push({ pathname: '/rooms', query: r ? { room: r.roomName } : {} }, undefined, { shallow: true, scroll: false });
   };
@@ -60,6 +62,12 @@ export default function RoomsPage() {
       const res = await fetch(`/api/rooms?roomName=${encodeURIComponent(activeRoom)}`);
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
+        // suara pesan masuk dari orang lain (bukan saat pertama memuat)
+        const prev = prevCount.current;
+        const last = json.data[json.data.length - 1];
+        const mine = last && user && (user.id === last.userId || user.name === last.name);
+        if (prev !== null && json.data.length > prev && last && !mine) sound.fx('receive');
+        prevCount.current = json.data.length;
         setMessages(json.data);
       }
     } catch {}
@@ -107,7 +115,7 @@ export default function RoomsPage() {
       });
 
       if (res.ok) {
-        sound.playBeep();
+        sound.fx('send');
         fetchMessages();
       }
     } catch {
@@ -264,13 +272,14 @@ export default function RoomsPage() {
           )}
         </AnimatePresence>
 
-        <AnimatePresence mode="wait" initial={false}>
+        {/* tanpa AnimatePresence mode="wait": exit yang tidak selesai membuat daftar kosong sampai refresh */}
+        <>
         {!activeRoom ? (
-          <motion.div key="picker" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.22 }}>
+          <motion.div key="picker" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }}>
             <RoomPicker onPick={openRoom} refreshKey={listKey} />
           </motion.div>
         ) : (
-        <motion.div key="chat" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }}>
+        <motion.div key="chat" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }}>
         <div className="rooms-container glass">
           {/* Main Chat Stream */}
           <section className="chat-viewport">
@@ -364,7 +373,7 @@ export default function RoomsPage() {
         </div>
         </motion.div>
         )}
-        </AnimatePresence>
+        </>
       </div>
 
       <style jsx>{`
@@ -407,7 +416,7 @@ export default function RoomsPage() {
           padding: 10px 12px;
           background: transparent;
           border: 1px solid transparent;
-          border-radius: 12px;
+          border-radius: var(--r-m);
           color: var(--muted);
           cursor: pointer;
           font-family: var(--font-mono);
@@ -480,7 +489,7 @@ export default function RoomsPage() {
         }
         .bubble-body {
           padding: 10px 14px;
-          border-radius: 16px;
+          border-radius: var(--r-m);
           background: color-mix(in srgb, var(--text) 6%, transparent);
           border: 1px solid var(--border);
           font-size: 0.88rem;
@@ -501,7 +510,7 @@ export default function RoomsPage() {
           gap: 4px;
           background: color-mix(in srgb, var(--text) 4%, transparent);
           border: 1px solid var(--border);
-          border-radius: 8px;
+          border-radius: var(--r-s);
           color: var(--muted);
           font-size: 0.7rem;
           padding: 2px 8px;
@@ -512,8 +521,8 @@ export default function RoomsPage() {
           border-color: var(--a2);
         }
         .action-btn-mini.del:hover {
-          color: #f87171;
-          border-color: #f87171;
+          color: var(--err);
+          border-color: var(--err);
         }
         .chat-input-bar {
           display: flex;

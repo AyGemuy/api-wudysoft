@@ -82,12 +82,12 @@ export default function GithubCard({ variant = 'left' }) {
         .gh-btn { font-size: 0.78rem; }
         .gh-bio, .gh-note { font-size: 0.8rem; color: var(--muted); }
         .gh-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-        .gh-stats div { display: grid; text-align: center; padding: 10px 4px; border: 1px solid var(--border); border-radius: 10px; background: color-mix(in srgb, var(--surface) 60%, transparent); }
+        .gh-stats div { display: grid; text-align: center; padding: 10px 4px; border: 1px solid var(--border); border-radius: var(--r-s); background: color-mix(in srgb, var(--surface) 60%, transparent); }
         .gh-stats b { font-size: 1.05rem; color: var(--a2); }
         .gh-stats span { font-size: 0.68rem; color: var(--muted); }
         .gh-langs { display: flex; flex-wrap: wrap; gap: 6px; }
         .gh-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 10px; }
-        .gh-repo { display: grid; gap: 6px; align-content: start; padding: 12px; border: 1px solid var(--border); border-radius: 12px; text-decoration: none; color: inherit; min-width: 0; background: color-mix(in srgb, var(--surface) 55%, transparent); }
+        .gh-repo { display: grid; gap: 6px; align-content: start; padding: 12px; border: 1px solid var(--border); border-radius: var(--r-m); text-decoration: none; color: inherit; min-width: 0; background: color-mix(in srgb, var(--surface) 55%, transparent); }
         .gh-repo strong { font-size: 0.85rem; color: var(--a2); overflow-wrap: anywhere; }
         .gh-desc { font-size: 0.74rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .gh-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.68rem; color: var(--muted); font-family: var(--font-mono); }

@@ -203,7 +203,7 @@ export default function AssistantFab() {
         .as-cards small { color: var(--muted); font-size: .7rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
         .as-cards svg { position: absolute; right: 9px; top: 10px; color: var(--muted); }
         .as-acts, .as-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-        .as-acts button, .as-chips button { padding: 6px 11px; border-radius: 999px; border: 1px solid var(--a2); background: color-mix(in srgb, var(--a2) 12%, transparent); color: var(--text); font: inherit; font-size: .72rem; font-weight: 600; cursor: pointer; transition: background .2s, transform .15s; }
+        .as-acts button, .as-chips button { padding: 6px 11px; border-radius: var(--r-l); border: 1px solid var(--a2); background: color-mix(in srgb, var(--a2) 12%, transparent); color: var(--text); font: inherit; font-size: .72rem; font-weight: 600; cursor: pointer; transition: background .2s, transform .15s; }
         .as-acts button:hover, .as-chips button:hover { background: color-mix(in srgb, var(--a2) 26%, transparent); transform: translateY(-1px); }
         .as-chips button { border-color: var(--border); background: var(--surface-2); font-weight: 500; }
         .as-typing { display: flex; gap: 4px; align-items: center; padding: 12px; }

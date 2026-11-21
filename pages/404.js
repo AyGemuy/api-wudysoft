@@ -186,12 +186,12 @@ export default function NotFound() {
         .nf-orbit svg { position: absolute; top: -6px; left: 50%; margin-left: -9px; width: 18px; height: 18px; animation: none; transform: rotate(45deg); }
         .nf-title { font-size: clamp(1.05rem, 3.4vw, 1.3rem); font-weight: 800; margin-top: 2px; }
         .nf-sub { font-size: .84rem; color: var(--muted); max-width: 400px; }
-        .nf-term { width: 100%; max-width: 440px; display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 12px; background: rgba(0,0,0,.35); border: 1px solid var(--border); text-align: left; min-height: 40px; }
+        .nf-term { width: 100%; max-width: 440px; display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--r-m); background: rgba(0,0,0,.35); border: 1px solid var(--border); text-align: left; min-height: 40px; }
         .nf-term code { font-family: var(--font-mono); font-size: .74rem; color: var(--a2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-        .nf-dots { display: inline-flex; gap: 4px; flex-shrink: 0; } .nf-dots i { width: 8px; height: 8px; border-radius: 50%; background: #f87171; } .nf-dots i:nth-child(2) { background: #fbbf24; } .nf-dots i:nth-child(3) { background: #34d399; }
+        .nf-dots { display: inline-flex; gap: 4px; flex-shrink: 0; } .nf-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--err); } .nf-dots i:nth-child(2) { background: var(--warn); } .nf-dots i:nth-child(3) { background: var(--ok); }
         .nf-caret { display: inline-block; width: 7px; height: 13px; margin-left: 2px; vertical-align: -2px; background: var(--a2); animation: nf-caret 1s steps(1) infinite; }
         .nf-cta { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%; }
-        .nf-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 22px; font: inherit; font-weight: 700; font-size: .86rem; cursor: pointer; text-decoration: none; color: var(--text); background: color-mix(in srgb, #fff 7%, transparent); border: 1px solid var(--border); transition: transform .25s cubic-bezier(.34,1.56,.64,1), border-color .2s, box-shadow .2s; }
+        .nf-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: var(--r-l); font: inherit; font-weight: 700; font-size: .86rem; cursor: pointer; text-decoration: none; color: var(--text); background: color-mix(in srgb, #fff 7%, transparent); border: 1px solid var(--border); transition: transform .25s cubic-bezier(.34,1.56,.64,1), border-color .2s, box-shadow .2s; }
         .nf-btn:hover { transform: translateY(-3px); border-color: var(--a2); }
         .nf-primary { background: linear-gradient(135deg, var(--a1), var(--a3)); color: var(--on-accent); border: none; box-shadow: 0 14px 30px -10px var(--a1); }
         .nf-primary:hover svg { animation: nf-nudge .6s ease infinite; }
@@ -199,7 +199,7 @@ export default function NotFound() {
         .nf-quick { display: grid; gap: 8px; width: 100%; margin-top: 4px; }
         .nf-quick-cap { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: .64rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-family: var(--font-mono); }
         .nf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .nf-chip { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border-radius: 16px; text-decoration: none; color: var(--muted); font-size: .72rem; font-weight: 600; background: color-mix(in srgb, #fff 5%, transparent); border: 1px solid var(--border); transition: transform .3s cubic-bezier(.34,1.56,.64,1), color .2s, border-color .2s, background .2s; }
+        .nf-chip { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border-radius: var(--r-m); text-decoration: none; color: var(--muted); font-size: .72rem; font-weight: 600; background: color-mix(in srgb, #fff 5%, transparent); border: 1px solid var(--border); transition: transform .3s cubic-bezier(.34,1.56,.64,1), color .2s, border-color .2s, background .2s; }
         .nf-chip svg { transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
         .nf-chip:hover { color: var(--a2); border-color: var(--a2); background: color-mix(in srgb, var(--a2) 10%, transparent); transform: translateY(-4px); }
         .nf-chip:hover svg { transform: scale(1.25) rotate(-8deg); }

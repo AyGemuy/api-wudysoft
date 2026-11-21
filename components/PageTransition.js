@@ -1,6 +1,6 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useTheme } from './ThemeContext';
 
 const E = [0.22, 1, 0.36, 1];
@@ -47,22 +47,24 @@ export default function PageTransition({ children }) {
   const locked = useRef({});
   locked.current[path] = locked.current[path] || name;
 
+  // Scroll ke atas tiap pindah halaman (dulu lewat onExitComplete)
+  useEffect(() => { window.scrollTo(0, 0); }, [path]);
+
   if (requested === 'none') return <div style={{ width: '100%' }}>{children}</div>;
   const v = VARIANTS[locked.current[path]] || VARIANTS.slide;
   const d = 0.34 / Math.max(0.5, config.speed);
 
+  // Hanya animasi MASUK. AnimatePresence mode="wait" dibuang: bila animasi keluar tidak selesai
+  // (klik cepat, tombol ⚡/dial, back), halaman baru tetap tak terlihat (kosong) sampai di-refresh.
   return (
-    <AnimatePresence mode="wait" initial={false} onExitComplete={() => window.scrollTo(0, 0)}>
-      <motion.div
-        key={path}
-        initial={v.initial}
-        animate={v.animate}
-        exit={v.exit}
-        transition={{ duration: d, ease: E }}
-        style={{ width: '100%', willChange: 'transform, opacity' }}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <motion.div
+      key={path}
+      initial={v.initial}
+      animate={v.animate}
+      transition={{ duration: d, ease: E }}
+      style={{ width: '100%', willChange: 'transform, opacity' }}
+    >
+      {children}
+    </motion.div>
   );
 }

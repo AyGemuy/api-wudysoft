@@ -290,7 +290,7 @@ export default function PastesPage() {
         .pp-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
         .pp-mono { font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5; resize: vertical; min-height: 180px; tab-size: 2; }
         .pp-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-        .pp-created { display: grid; gap: 8px; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: color-mix(in srgb, var(--a2) 8%, transparent); }
+        .pp-created { display: grid; gap: 8px; padding: 12px; border-radius: var(--r-m); border: 1px solid var(--border); background: color-mix(in srgb, var(--a2) 8%, transparent); }
         .pp-created code { font-family: var(--font-mono); font-size: 0.78rem; overflow-wrap: anywhere; }
         .pp-list-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .pp-search { flex: 1 1 240px; display: flex; align-items: center; gap: 8px; }
@@ -300,13 +300,13 @@ export default function PastesPage() {
         .pp-item-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
         .pp-item-head :global(.pp-title) { font-weight: 700; color: var(--text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .pp-item-head :global(.pp-title:hover) { color: var(--a2); }
-        .pp-snippet { margin: 0; max-height: 110px; overflow: hidden; font-family: var(--font-mono); font-size: 0.74rem; line-height: 1.45; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; padding: 10px; border-radius: 10px; background: color-mix(in srgb, var(--bg1) 45%, transparent); border: 1px solid var(--border); }
+        .pp-snippet { margin: 0; max-height: 110px; overflow: hidden; font-family: var(--font-mono); font-size: 0.74rem; line-height: 1.45; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; padding: 10px; border-radius: var(--r-s); background: color-mix(in srgb, var(--bg1) 45%, transparent); border: 1px solid var(--border); }
         .pp-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 0.72rem; color: var(--muted); }
         .pp-meta code { font-family: var(--font-mono); }
         .pp-exp { display: inline-flex; align-items: center; gap: 4px; }
         .pp-empty { text-align: center; color: var(--muted); }
-        :global(.pp-danger) { color: #f87171; }
-        .pp-toast { position: fixed; top: 84px; right: 16px; z-index: 9999; display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 12px; color: #fff; font-size: 0.84rem; font-weight: 600; background: rgba(16, 124, 16, 0.95); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
+        :global(.pp-danger) { color: var(--err); }
+        .pp-toast { position: fixed; top: 84px; right: 16px; z-index: 9999; display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: var(--r-m); color: #fff; font-size: 0.84rem; font-weight: 600; background: rgba(16, 124, 16, 0.95); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
         .pp-toast.err { background: rgba(196, 43, 28, 0.95); }
       `}</style>
     </>

@@ -33,19 +33,19 @@ export function AuthScene({ children }) {
         .as-outer { width: 100%; overflow-x: clip; padding: 24px 0; display: flex; justify-content: center; }
         .as-scene { position: relative; width: 100%; max-width: 420px; }
         .as-scene > :not(.as-cube) { position: relative; z-index: 2; }
-        .as-cube { position: absolute; z-index: 1; display: grid; place-items: center; width: 54px; height: 54px; border-radius: 18px; color: color-mix(in srgb, var(--a2) 85%, #fff);
+        .as-cube { position: absolute; z-index: 1; display: grid; place-items: center; width: 54px; height: 54px; border-radius: var(--r-l); color: color-mix(in srgb, var(--a2) 85%, #fff);
           background: linear-gradient(145deg, color-mix(in srgb, #fff 22%, transparent), color-mix(in srgb, var(--a1) 16%, transparent));
           border: 1px solid color-mix(in srgb, #fff 26%, transparent); backdrop-filter: blur(6px);
           box-shadow: 0 18px 40px -14px color-mix(in srgb, var(--a1) 70%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 40%, transparent);
           animation: as-float 7s ease-in-out infinite; pointer-events: none; }
-        .as-cube.c1 { top: -14px; right: -34px; width: 70px; height: 70px; border-radius: 22px; animation-delay: -1s; transform: rotate(12deg); }
+        .as-cube.c1 { top: -14px; right: -34px; width: 70px; height: 70px; border-radius: var(--r-l); animation-delay: -1s; transform: rotate(12deg); }
         .as-cube.c2 { bottom: 70px; right: -46px; width: 60px; height: 60px; animation-delay: -3s; }
         .as-cube.c3 { top: 60px; left: -50px; width: 64px; height: 64px; animation-delay: -2s; }
         .as-cube.c4 { bottom: -10px; left: -30px; animation-delay: -4s; }
-        .as-cube.c5 { top: 40%; left: -86px; width: 40px; height: 40px; border-radius: 14px; animation-delay: -5s; opacity: .8; }
-        .as-cube.c6 { top: 30%; right: -84px; width: 38px; height: 38px; border-radius: 13px; animation-delay: -2.5s; opacity: .8; }
-        .as-cube.c7 { bottom: -34px; right: 18%; width: 42px; height: 42px; border-radius: 14px; animation-delay: -6s; opacity: .7; }
-        .as-cube.c8 { top: -30px; left: 14%; width: 42px; height: 42px; border-radius: 14px; animation-delay: -1.5s; opacity: .7; }
+        .as-cube.c5 { top: 40%; left: -86px; width: 40px; height: 40px; border-radius: var(--r-m); animation-delay: -5s; opacity: .8; }
+        .as-cube.c6 { top: 30%; right: -84px; width: 38px; height: 38px; border-radius: var(--r-m); animation-delay: -2.5s; opacity: .8; }
+        .as-cube.c7 { bottom: -34px; right: 18%; width: 42px; height: 42px; border-radius: var(--r-m); animation-delay: -6s; opacity: .7; }
+        .as-cube.c8 { top: -30px; left: 14%; width: 42px; height: 42px; border-radius: var(--r-m); animation-delay: -1.5s; opacity: .7; }
         @keyframes as-float { 0%, 100% { translate: 0 0; rotate: 0deg; } 33% { translate: 6px -14px; rotate: 6deg; } 66% { translate: -6px 8px; rotate: -5deg; } }
         @media (max-width: 760px) { .as-cube.c5, .as-cube.c6 { display: none; } .as-cube.c1 { right: -12px; width: 52px; height: 52px; } .as-cube.c2 { right: -14px; width: 46px; height: 46px; } .as-cube.c3 { left: -16px; width: 48px; height: 48px; } .as-cube.c4 { left: -8px; } .as-cube.c7 { right: 12%; } }
         html[data-anim='off'] .as-cube, html[data-anim='off'] .ah-ring, html[data-anim='off'] .ah-tile { animation: none !important; }

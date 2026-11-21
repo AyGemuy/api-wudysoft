@@ -1,15 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" >
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4cc2ff"/><stop offset=".55" stop-color="#0078d4"/><stop offset="1" stop-color="#8764b8"/></linearGradient>
-    <linearGradient id="s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-    <clipPath id="c"><rect x="5" y="5" width="38" height="38" rx="9"/></clipPath>
+    <linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0ea5e9"/><stop offset=".55" stop-color="#0284c7"/><stop offset="1" stop-color="#6366f1"/></linearGradient>
+    <linearGradient id="ms" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".55" stop-color="#fff" stop-opacity=".04"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <radialGradient id="md" cx=".5" cy="1.05" r=".8"><stop offset="0" stop-color="#000" stop-opacity=".35"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+    <clipPath id="mc"><rect x="5" y="5" width="38" height="38" rx="11"/></clipPath>
   </defs>
-  
-  <g transform="translate(24 24) scale(1) translate(-24 -24)">
-    <rect x="5" y="5" width="38" height="38" rx="9" fill="url(#g)"/>
-    <g clip-path="url(#c)"><rect x="9" y="-4" width="12" height="56" fill="url(#s)" transform="skewX(-20)"/></g>
-    <rect x="3.5" y="3.5" width="41" height="41" rx="11" fill="none" stroke="url(#g)" stroke-width="1.2" opacity=".55"/>
-    <path d="M13.5 17 L18.5 32 L24 21 L29.5 32 L34.5 17" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="38" cy="10" r="2.4" fill="#fff"/>
-  </g>
+  <rect x="5" y="5" width="38" height="38" rx="11" fill="url(#mg)"/>
+  <g clip-path="url(#mc)"><rect x="5" y="30" width="38" height="14" fill="url(#md)"/><ellipse cx="24" cy="9" rx="26" ry="15" fill="url(#ms)"/></g>
+  <rect x="5.6" y="5.6" width="36.8" height="36.8" rx="10.4" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width=".9"/>
+  <path d="M13 17.6 L18.5 32.4 L24 21.6 L29.5 32.4 L35 17.6" fill="none" stroke="#0b1b4d" stroke-opacity=".3" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 1.6)"/>
+  <path d="M13 17 L18.5 32 L24 21 L29.5 32 L35 17" fill="none" stroke="#6366f1" stroke-opacity=".6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 .8)"/>
+  <path d="M13 17 L18.5 32 L24 21 L29.5 32 L35 17" fill="none" stroke="#fff" stroke-width="3.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="38" cy="10.5" r="2.3" fill="#fff"/>
 </svg>

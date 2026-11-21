@@ -3,7 +3,7 @@
   "info": {
     "title": "Wudysoft API",
     "version": "1.0.0",
-    "description": "Dokumen dibuat otomatis dari `pages/api` (45 operasi pada 24 path). Detail akurat ditambahkan lewat `scripts/openapi-registry.mjs`.\n\n**Auth:** sesi browser (cookie NextAuth) atau `Authorization: Bearer <apiToken>`."
+    "description": "Dokumen dibuat otomatis dari `pages/api` (55 operasi pada 28 path). Detail akurat ditambahkan lewat `scripts/openapi-registry.mjs`.\n\n**Auth:** sesi browser (cookie NextAuth) atau `Authorization: Bearer <apiToken>`."
   },
   "servers": [
     {
@@ -37,6 +37,15 @@
       "name": "Health"
     },
     {
+      "name": "Hook"
+    },
+    {
+      "name": "Hooks"
+    },
+    {
+      "name": "Keys"
+    },
+    {
       "name": "Og"
     },
     {
@@ -65,6 +74,12 @@
     },
     {
       "name": "Tools"
+    },
+    {
+      "name": "Webhooks"
+    },
+    {
+      "name": "Whoami"
     }
   ],
   "paths": {
@@ -1293,6 +1308,495 @@
             "description": "Kesalahan server"
           }
         }
+      }
+    },
+    "/api/hook/{slug}": {
+      "get": {
+        "tags": [
+          "Hook"
+        ],
+        "summary": "Ambil Hook",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "get_api_hook_slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Path parameter",
+            "example": "string"
+          },
+          {
+            "name": "slug",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Hook"
+        ],
+        "summary": "Kirim Hook",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "post_api_hook_slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Path parameter",
+            "example": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/hooks": {
+      "get": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Daftar / detail webhook",
+        "description": "Tambahkan `?slug=` untuk detail dan request masuk.",
+        "operationId": "get_api_hooks",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Belum login"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Buat webhook penampung",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "post_api_hooks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Belum login"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Stripe test"
+                  },
+                  "status": {
+                    "type": "integer",
+                    "example": 200
+                  },
+                  "ttlHours": {
+                    "type": "integer",
+                    "example": 24
+                  }
+                }
+              },
+              "example": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Hooks"
+        ],
+        "summary": "Ubah Hooks",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "patch_api_hooks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Belum login"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "example": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Hooks"
+        ],
+        "summary": "Hapus Hooks",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "delete_api_hooks",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "query",
+            "required": false,
+            "description": "Terdeteksi otomatis dari kode.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Belum login"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      }
+    },
+    "/api/keys": {
+      "get": {
+        "tags": [
+          "Keys"
+        ],
+        "summary": "Daftar kunci API",
+        "description": "Kunci milik akun yang login (tanpa nilai rahasia).",
+        "operationId": "get_api_keys",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Belum login"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Keys"
+        ],
+        "summary": "Buat kunci API",
+        "description": "Teks kunci hanya muncul sekali di respons.",
+        "operationId": "post_api_keys",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Belum login"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Bot Telegram"
+                  },
+                  "scopes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "read",
+                        "write"
+                      ]
+                    }
+                  },
+                  "expiresInDays": {
+                    "type": "integer",
+                    "example": 30
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              },
+              "example": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Keys"
+        ],
+        "summary": "Cabut kunci API",
+        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
+        "operationId": "delete_api_keys",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Belum login"
+          },
+          "429": {
+            "description": "Terlalu banyak permintaan (rate limit)"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
       }
     },
     "/api/og": {
@@ -2651,6 +3155,63 @@
           }
         }
       }
+    },
+    "/api/whoami": {
+      "get": {
+        "tags": [
+          "Keys"
+        ],
+        "summary": "Siapa saya?",
+        "description": "Menguji autentikasi. Kirim header `x-api-key` (atau Bearer `wd_live_…`), atau panggil dengan sesi browser.",
+        "operationId": "get_api_whoami",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Terautentikasi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "via": {
+                      "type": "string",
+                      "enum": [
+                        "api-key",
+                        "session"
+                      ]
+                    },
+                    "user": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Permintaan tidak valid"
+          },
+          "401": {
+            "description": "Kunci tidak valid / belum login"
+          },
+          "429": {
+            "description": "Batas 120 permintaan/menit tercapai"
+          },
+          "500": {
+            "description": "Kesalahan server"
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -2660,6 +3221,12 @@
         "in": "cookie",
         "name": "next-auth.session-token",
         "description": "Cookie sesi NextAuth (otomatis dikirim browser)."
+      },
+      "apiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "Kunci API pribadi (buat di /keys): `wd_live_…`."
       },
       "bearerAuth": {
         "type": "http",

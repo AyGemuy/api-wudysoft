@@ -4,7 +4,7 @@ import { RotateCcw } from 'lucide-react';
 import { Icons } from './Icons';
 import { sound } from '@/src/lib/interactiveEffects';
 import {
-  PRESETS, TEMPLATES, BORDER_STYLES, BORDER_COLORS, GLINTS, FONTS, FONT_CATS, GRADIENTS, RADIUS_PRESETS, PARTICLES, CARD_STYLES, COLOR_KEYS, DEFAULT_CONFIG,
+  PRESETS, TEMPLATES, BORDER_STYLES, BORDER_COLORS, GLINTS, SPLASH_STYLES, SPLASH_BGS, FONTS, FONT_CATS, GRADIENTS, RADIUS_PRESETS, PARTICLES, CARD_STYLES, HEADING_CASES, NAV_STYLES, NAV_LABELS, HOVERS, COLOR_KEYS, DEFAULT_CONFIG,
   resolveColors, sanitizeConfig, randomPalette, hexToRgb, isLight, fontPreviewHref,
 } from '@/src/lib/themes';
 import { saveBackgroundFile, clearBackground, readBackground } from '@/src/lib/bgUpload';
@@ -14,6 +14,7 @@ const TABS = [
   { id: 'preset', label: 'Preset' },
   { id: 'color', label: 'Warna' },
   { id: 'shape', label: 'Bentuk' },
+  { id: 'nav', label: 'Nav' },
   { id: 'anim', label: 'Animasi' },
   { id: 'fx', label: 'Efek' },
   { id: 'bg', label: 'Latar' },
@@ -104,6 +105,12 @@ function cardPreviewStyle(id, c) {
     case 'holo': return { border: '1.5px solid transparent', background: `linear-gradient(${surf}, ${surf}) padding-box, conic-gradient(from 40deg, ${c.a1}, ${c.a2}, ${c.a3}, ${c.a1}) border-box` };
     case 'stack': return { border: `1px solid ${txt}22`, background: surf, boxShadow: `0 4px 0 -1px ${txt}18, 0 8px 0 -3px ${txt}0e, 0 11px 10px -5px ${sh}` };
     case 'terminal': return { border: `1px solid ${c.a2}88`, background: `repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,.18) 2px 3px), ${c.bg1}` };
+    case 'hud': return { border: `1px solid ${c.a2}66`, background: `linear-gradient(${c.a2}26, transparent), ${c.bg1}cc`, boxShadow: `0 0 10px ${c.a1}55, inset 0 0 8px ${c.a1}22` };
+    case 'panel': return { border: `1px solid ${txt}1f`, background: `linear-gradient(${c.a1}, ${c.a1}) left center / 3px 60% no-repeat, ${c.bg2}ee` };
+    case 'tint': return { border: '1px solid rgba(255,255,255,.3)', background: `linear-gradient(150deg, ${c.a1}99, ${c.a1}44)`, boxShadow: `0 6px 10px -4px ${c.a1}88`, backdropFilter: 'blur(6px)' };
+    case 'soft': return { border: `1px solid ${txt}12`, background: light ? '#ffffff' : surf, boxShadow: `0 6px 12px -6px ${sh}` };
+    case 'smoke': return { border: `1px solid ${txt}26`, background: `linear-gradient(180deg, ${txt}24, ${txt}08)`, boxShadow: `inset 0 1px 0 ${txt}33`, backdropFilter: 'blur(6px)' };
+    case 'refract': return { border: '1.5px solid transparent', background: `linear-gradient(${surf}d6, ${surf}d6) padding-box, conic-gradient(from 210deg, #ff5a3c, #ffc94d, #5ee6a8, #4d8dff, #b36bff, #ff5a3c) border-box` };
     case 'minimal': return { border: '1px solid transparent', borderBottom: `1px solid ${txt}30`, background: `${surf}66` };
     default: return base; // glass
   }
@@ -121,6 +128,62 @@ function CardPicker({ value, colors, onChange }) {
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** Pratinjau mini tiap model tombol nav tab (tab kedua = aktif). */
+function NavMini({ id, c }) {
+  const txt = c.text || (isLight(c.bg1) ? '#0f172a' : '#f8fafc');
+  const A = 1;
+  const bar = {
+    position: 'relative', display: 'flex', width: '100%', height: 30, marginTop: 12,
+    borderRadius: id === 'classic' ? 10 : 14, border: `1px solid ${id === 'notch' ? `${c.a2}66` : `${txt}22`}`,
+    background: id === 'label' ? `color-mix(in srgb, ${c.a3} 30%, ${c.bg2})` : `${c.bg2}f2`,
+    boxShadow: id === 'notch' ? `inset 0 -2px 0 ${c.a2}, 0 4px 10px -6px ${c.a2}` : 'none',
+  };
+  return (
+    <span style={bar} aria-hidden="true">
+      {[0, 1, 2, 3, 4].map((i) => {
+        const on = i === A;
+        const col = { flex: 1, display: 'grid', placeItems: 'center', position: 'relative' };
+        const ico = { width: 9, height: 9, borderRadius: 3, position: 'relative', zIndex: 2, background: on ? (id === 'bubble' ? c.bg1 : c.a2) : `${txt}66` };
+        let bg = null;
+        if (id === 'classic' && i === 2) Object.assign(ico, { width: 16, height: 16, borderRadius: 6, background: `linear-gradient(145deg, ${c.a2}, ${c.a1})`, transform: 'translateY(-5px)', boxShadow: `0 0 0 3px ${c.bg2}` });
+        if (id === 'classic' && on) bg = <i style={{ position: 'absolute', inset: '4px 2px', borderRadius: 7, background: `${c.a2}22` }} />;
+        if (id === 'notch' && on) bg = <i style={{ position: 'absolute', left: -2, right: -2, top: -8, bottom: -1, borderRadius: '10px 10px 0 0', border: `1.5px solid ${c.a2}`, borderBottom: 'none', background: c.bg2, boxShadow: `0 -3px 8px -3px ${c.a2}` }} />;
+        if (id === 'beam' && on) bg = (
+          <>
+            <i style={{ position: 'absolute', top: -1, left: '22%', right: '22%', height: 2, borderRadius: 2, background: c.a2, boxShadow: `0 0 6px ${c.a2}` }} />
+            <i style={{ position: 'absolute', inset: 0, clipPath: 'polygon(22% 0, 78% 0, 100% 100%, 0 100%)', background: `linear-gradient(180deg, ${c.a2}77, transparent)` }} />
+          </>
+        );
+        if (id === 'bubble' && on) { bg = <i style={{ position: 'absolute', top: -10, width: 20, height: 20, borderRadius: '50%', background: `linear-gradient(145deg, ${c.a2}, ${c.a1})`, boxShadow: `0 0 0 3px ${c.bg2}` }} />; ico.transform = 'translateY(-9px)'; }
+        if (id === 'label' && on) bg = <i style={{ position: 'absolute', bottom: 2, width: 3, height: 3, borderRadius: 3, background: c.a1 }} />;
+        const showLbl = id === 'notch' || id === 'label';
+        return (
+          <span key={i} style={col}>
+            {bg}
+            <b style={{ ...ico, display: 'block' }} />
+            {showLbl && <u style={{ position: 'absolute', bottom: 4, width: 8, height: 2, borderRadius: 2, background: on ? `${txt}cc` : `${txt}44`, zIndex: 2 }} />}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
+function NavPicker({ value, colors, onChange }) {
+  const txt = colors.text || (isLight(colors.bg1) ? '#0f172a' : '#f8fafc');
+  return (
+    <div className="nv-grid" role="radiogroup" aria-label="Model tombol nav tab">
+      {NAV_STYLES.map((n) => (
+        <button key={n.id} type="button" role="radio" aria-checked={value === n.id} className={`cp-tile nv-tile ${value === n.id ? 'active' : ''}`} onClick={() => onChange(n.id)} style={{ background: `linear-gradient(135deg, ${colors.bg1}, ${colors.bg2})`, color: txt }}>
+          <NavMini id={n.id} c={colors} />
+          <span className="cp-name" style={{ color: txt }}>{n.label}</span>
+          <span className="nv-desc" style={{ color: `${txt}b0` }}>{n.desc}</span>
+        </button>
+      ))}
     </div>
   );
 }
@@ -384,6 +447,25 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
                 </>
               )}
 
+              {tab === 'nav' && (
+                <>
+                  <Section title="MODEL TOMBOL NAV TAB" hint="Navbar melayang di bawah">
+                    <NavPicker value={config.navStyle} colors={colors} onChange={(v) => set({ navStyle: v })} />
+                  </Section>
+
+                  <Section title="TAMPILAN TOMBOL">
+                    <Segmented label="Teks di bawah ikon" value={config.navLabels} options={NAV_LABELS} onChange={(v) => set({ navLabels: v })} />
+                    <Toggle label="Tombol menu cepat ⚡" hint="Tombol tengah yang membuka pintasan Playground, Compiler, Pastes & Rooms" value={config.navCenter} onChange={(v) => set({ navCenter: v })} />
+                  </Section>
+
+                  <Section title="BENTUK NAVBAR" hint="Sama dengan tab Bentuk">
+                    <Slider label="Sudut atas" value={config.rDockTop} min={0} max={60} unit="px" pill onChange={(v) => set({ rDockTop: v }, true)} />
+                    <Slider label="Sudut bawah" value={config.rDockBottom} min={0} max={60} unit="px" pill onChange={(v) => set({ rDockBottom: v }, true)} />
+                    <Slider label="Tombol ikon di dalamnya" value={config.rDockBtn} min={0} max={60} unit="px" pill onChange={(v) => set({ rDockBtn: v }, true)} />
+                  </Section>
+                </>
+              )}
+
               {tab === 'anim' && (
                 <>
                   <Section title="UMUM">
@@ -395,7 +477,7 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
                     <Toggle label="Animasi masuk konten" hint="Kartu & hero muncul bertahap" value={config.animEntrance} onChange={(v) => set({ animEntrance: v })} />
                   </Section>
                   <Section title="INTERAKSI">
-                    <Segmented label="Efek hover kartu" value={config.animHover} options={[{ id: 'lift', label: 'Angkat' }, { id: 'tilt', label: 'Tilt 3D' }, { id: 'glow', label: 'Kilau' }, { id: 'none', label: 'Mati' }]} onChange={(v) => set({ animHover: v })} />
+                    <Segmented label="Efek hover kartu" value={config.animHover} options={HOVERS} onChange={(v) => set({ animHover: v })} />
                     <Toggle label="Animasi tombol" hint="Transisi hover & tekan" value={config.animBtn} onChange={(v) => set({ animBtn: v })} />
                     <Toggle label="Animasi pratinjau kartu" hint="Terminal, grafik, chat di kartu Home" value={config.animPreview} onChange={(v) => set({ animPreview: v })} />
                     <Toggle label="Cahaya kursor" hint="Mengikuti pointer (desktop)" value={config.spotlight} onChange={(v) => set({ spotlight: v })} />
@@ -403,6 +485,21 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
                   <Section title="LATAR & LOADING">
                     <Toggle label="Blob cahaya bergerak" value={config.animBlobs} onChange={(v) => set({ animBlobs: v })} />
                     <Toggle label="Layar loading awal" hint="Splash saat pertama membuka situs" value={config.animSplash} onChange={(v) => set({ animSplash: v })} />
+                    {config.animSplash && (
+                      <>
+                        <Segmented label="Animasi loading" value={config.splashStyle} options={SPLASH_STYLES} onChange={(v) => { set({ splashStyle: v }); setTimeout(() => window.dispatchEvent(new Event('wudysoft:preview-splash')), 120); }} />
+                        <Segmented label="Latar loading" value={config.splashBg} options={SPLASH_BGS} onChange={(v) => set({ splashBg: v })} />
+                        <div className="cfg">
+                          <span className="cfg-label">Teks loading</span>
+                          <input className="text-in" value={config.splashTitle} maxLength={20} placeholder="WUDYSOFT" onChange={(e) => set({ splashTitle: e.target.value }, true)} />
+                        </div>
+                        <Slider label="Kecepatan loading" value={config.splashSpeed} min={0.5} max={2.5} step={0.1} format={(v) => `${v.toFixed(1)}x`} onChange={(v) => set({ splashSpeed: v }, true)} />
+                        <Toggle label="Bar progres di loading" value={config.splashBar} onChange={(v) => set({ splashBar: v })} />
+                        <div className="btn-row">
+                          <button type="button" className="mini-btn" onClick={() => window.dispatchEvent(new Event('wudysoft:preview-splash'))}>▶ Pratinjau loading</button>
+                        </div>
+                      </>
+                    )}
                     <Toggle label="Progress bar pindah halaman" value={config.animBar} onChange={(v) => set({ animBar: v })} />
                     <Toggle label="Efek suara" value={config.soundEnabled} onChange={(v) => set({ soundEnabled: v })} />
                   </Section>
@@ -484,6 +581,7 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
                   <Section title="FONT JUDUL">
                     <Toggle label="Sama dengan font utama" value={config.fontHeading === 'same'} onChange={(v) => set({ fontHeading: v ? 'same' : 'orbitron' })} />
                     {config.fontHeading !== 'same' && <FontPicker value={config.fontHeading} onChange={(v) => set({ fontHeading: v })} />}
+                    <Segmented label="Huruf judul" value={config.headingCase} options={HEADING_CASES} onChange={(v) => set({ headingCase: v })} />
                   </Section>
                   <Section title="FONT KODE (MONOSPACE)">
                     <FontPicker value={config.fontMono} cats={['mono']} onChange={(v) => set({ fontMono: v })} />
@@ -682,7 +780,7 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
 
         .studio-panel-solid .tpl-hint { display: block; color: var(--muted); font-size: 0.74rem; line-height: 1.45; margin: 6px 0 12px; }
         .studio-panel-solid .tpl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .studio-panel-solid .tpl-card { display: grid; gap: 4px; padding: 8px; text-align: left; border-radius: var(--r-btn, 12px); border: 1px solid var(--border); cursor: pointer; min-width: 0; font: inherit; transition: transform .25s var(--mo-spring, ease), border-color .2s, box-shadow .2s; }
+        .studio-panel-solid .tpl-card { display: grid; gap: 4px; padding: 8px; text-align: left; border-radius: min(var(--r-btn, 12px), 16px); border: 1px solid var(--border); cursor: pointer; min-width: 0; font: inherit; transition: transform .25s var(--mo-spring, ease), border-color .2s, box-shadow .2s; }
         .studio-panel-solid .tpl-card:hover { transform: translateY(-3px) scale(1.015); }
         .studio-panel-solid .tpl-card:active { transform: scale(.97); }
         .studio-panel-solid .tpl-card.active { border-color: var(--a2); box-shadow: 0 0 0 2px color-mix(in srgb, var(--a2) 35%, transparent); }
@@ -694,8 +792,12 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
         .studio-panel-solid .tpl-mock u { display: block; height: 5px; border-radius: 3px; text-decoration: none; width: 85%; }
         .studio-panel-solid .tpl-name { display: flex; align-items: center; gap: 5px; font-weight: 800; font-size: .8rem; padding: 2px 2px 0; }
         .studio-panel-solid .tpl-desc { font-size: .66rem; line-height: 1.35; padding: 0 2px 2px; }
+        .studio-panel-solid .nv-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 6px; }
+        .studio-panel-solid .nv-tile { padding: 8px 8px 8px; text-align: center; }
+        .studio-panel-solid .nv-tile[aria-checked='true'] { border-color: var(--a2); box-shadow: 0 0 0 2px color-mix(in srgb, var(--a2) 35%, transparent); }
+        .studio-panel-solid .nv-desc { font-size: 0.62rem; line-height: 1.3; }
         .studio-panel-solid .cp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
-        .studio-panel-solid .cp-tile { display: grid; gap: 6px; padding: 8px 6px 6px; justify-items: center; border-radius: var(--r-btn, 10px); border: 1px solid var(--border); cursor: pointer; font: inherit; transition: transform .2s var(--mo-spring, ease), border-color .2s; min-width: 0; }
+        .studio-panel-solid .cp-tile { display: grid; gap: 6px; padding: 8px 6px 6px; justify-items: center; border-radius: min(var(--r-btn, 10px), 16px); border: 1px solid var(--border); cursor: pointer; font: inherit; transition: transform .2s var(--mo-spring, ease), border-color .2s; min-width: 0; }
         .studio-panel-solid .cp-tile:hover { transform: translateY(-2px); }
         .studio-panel-solid .cp-tile.active { border-color: var(--a2); box-shadow: 0 0 0 2px color-mix(in srgb, var(--a2) 35%, transparent); }
         .studio-panel-solid .cp-demo { display: block; width: 100%; height: 34px; }

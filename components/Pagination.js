@@ -62,7 +62,7 @@ export default function Pagination({ page, pages, total, limit, loading, onPage,
         .pgn-info { font-size: 0.76rem; color: var(--muted); }
         .pgn-info b { color: var(--text); }
         .pgn-ctrl { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
-        .pgn-b { min-width: 34px; height: 34px; padding: 0 8px; display: inline-grid; place-items: center; border-radius: 9px; border: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: 0.8rem; cursor: pointer; transition: background 0.2s, border-color 0.2s, transform 0.15s; }
+        .pgn-b { min-width: 34px; height: 34px; padding: 0 8px; display: inline-grid; place-items: center; border-radius: var(--r-s); border: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: 0.8rem; cursor: pointer; transition: background 0.2s, border-color 0.2s, transform 0.15s; }
         .pgn-b:hover:not(:disabled) { border-color: var(--a2); background: color-mix(in srgb, var(--a2) 12%, transparent); transform: translateY(-1px); }
         .pgn-b:disabled { opacity: 0.4; cursor: not-allowed; }
         .pgn-n.on { background: linear-gradient(135deg, var(--a1), var(--a3)); color: var(--on-accent); border-color: transparent; font-weight: 700; cursor: default; }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Hash, LayoutGrid, List, MessageSquare, Search, User, Calendar, Copy, Check, RefreshCw, Users, ArrowUpRight } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import { sound } from '@/src/lib/interactiveEffects';
@@ -89,8 +89,7 @@ export default function RoomPicker({ onPick, refreshKey = 0 }) {
 
       {failed && <div className="rp-note">Daftar grup tidak dapat dimuat. Menampilkan grup bawaan.</div>}
 
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div key={key} variants={container} initial="hidden" animate="show" exit={{ opacity: 0, transition: { duration: 0.1 } }} className={view === 'grid' ? 'rp-grid' : 'rp-list'} aria-busy={loading}>
+      <motion.div key={key} variants={container} initial="hidden" animate="show" className={view === 'grid' ? 'rp-grid' : 'rp-list'} aria-busy={loading}>
           {rows.length === 0 && !loading && (
             <motion.div variants={item} className="rp-empty"><Users size={28} /><b>Grup tidak ditemukan</b><span>Coba kata kunci lain atau buat channel baru.</span></motion.div>
           )}
@@ -108,7 +107,6 @@ export default function RoomPicker({ onPick, refreshKey = 0 }) {
             </motion.div>
           ))}
         </motion.div>
-      </AnimatePresence>
 
       <Pagination page={page} pages={meta.pages} total={meta.total} limit={limit} loading={loading} onPage={setPage} onLimit={setL} label="grup" sizes={[8, 12, 24, 48]} />
 
@@ -140,7 +138,7 @@ export default function RoomPicker({ onPick, refreshKey = 0 }) {
         .rp-main { flex: 1; min-width: 0; display: grid; gap: 6px; width: 100%; }
         .rp-title { display: flex; align-items: center; gap: 6px; color: var(--a2); min-width: 0; flex-wrap: wrap; }
         .rp-title b { color: var(--text); font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-        .rp-id { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); font-family: var(--font-mono); font-size: .64rem; cursor: pointer; }
+        .rp-id { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--r-l); border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); font-family: var(--font-mono); font-size: .64rem; cursor: pointer; }
         .rp-id:hover { color: var(--a2); border-color: var(--a2); }
         .rp-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .74rem; color: var(--text); min-width: 0; }
         .rp-meta span { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }

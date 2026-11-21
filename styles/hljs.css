@@ -8,5 +8,5 @@
 .hl .hljs-attr, .hl .hljs-attribute, .hl .hljs-variable, .hl .hljs-template-variable, .hl .hljs-params, .hl .hljs-property { color: var(--hl-at); }
 .hl .hljs-comment, .hl .hljs-quote { color: var(--hl-cm); font-style: italic; }
 .hl .hljs-meta, .hl .hljs-tag, .hl .hljs-name, .hl .hljs-selector-class, .hl .hljs-selector-id { color: var(--hl-ty); }
-.hl .hljs-deletion { color: #f87171; }
+.hl .hljs-deletion { color: var(--err); }
 .hl .hljs-emphasis { font-style: italic; } .hl .hljs-strong { font-weight: 700; }

@@ -1,20 +1,42 @@
 import { Html, Head, Main, NextScript } from 'next/document';
-import { THEME_BOOT_SCRIPT } from '@/src/lib/themes';
+import site from '@/configs/siteConfig';
+import { THEME_BOOT_SCRIPT, DEFAULT_CONFIG, resolveColors } from '@/src/lib/themes';
+
+// Nilai awal (SSR) mengikuti tema bawaan. Setelah halaman termuat, boot script dan
+// applyThemeAssets() (src/lib/themeAssets.js) menggantinya dengan warna tema pilihan pengunjung.
+const C = resolveColors(DEFAULT_CONFIG);
+const MODE = C.light ? 'light' : 'dark';
 
 export default function Document() {
   return (
-    <Html lang="id" data-theme="stealth">
+    <Html lang="id" data-theme={DEFAULT_CONFIG.theme} data-mode={MODE}>
       <Head>
         <meta charSet="utf-8" />
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
-        <link rel="manifest" href="/manifest.json" />
+
+        {/* Tag yang ikut tema — harus berada SEBELUM boot script agar bisa diperbarui sebelum paint */}
+        <meta name="theme-color" content={C.bg1} />
+        <meta name="color-scheme" content={MODE} />
+        <meta name="supported-color-schemes" content={MODE} />
+        <meta name="msapplication-TileColor" content={C.a1} />
+        <meta name="msapplication-TileImage" content="/icons/icon-192.png" />
+        <meta name="msapplication-navbutton-color" content={C.bg1} />
+        <meta name="apple-mobile-web-app-status-bar-style" content={C.light ? 'default' : 'black-translucent'} />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="mask-icon" href="/favicon.svg" color={C.a1} />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-        <meta name="theme-color" content="#0b0d11" />
+        <meta name="application-name" content={site.APP_NAME} />
+        <meta name="apple-mobile-web-app-title" content={site.APP_NAME} />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="format-detection" content="telephone=no, address=no, email=no" />
+        <meta name="referrer" content="strict-origin-when-cross-origin" />
+        <meta name="author" content={site.APP_NAME} />
+        <meta name="generator" content="Next.js" />
+        <meta name="msapplication-tap-highlight" content="no" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

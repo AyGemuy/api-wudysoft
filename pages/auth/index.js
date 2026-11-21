@@ -171,7 +171,7 @@ export default function AuthPage() {
                 <span>Masuk ke Dashboard</span>
                 <Icons.ArrowRight size={16} />
               </button>
-              <button className="btn full" style={{ color: '#f87171' }} onClick={() => logout('/auth')}>
+              <button className="btn full" style={{ color: 'var(--err)' }} onClick={() => logout('/auth')}>
                 <Icons.LogOut size={16} /> Ganti Akun / Logout
               </button>
             </div>
@@ -376,7 +376,7 @@ export default function AuthPage() {
           display: flex;
           padding: 4px;
           gap: 4px;
-          border-radius: 999px;
+          border-radius: var(--r-l);
           background: color-mix(in srgb, var(--bg1) 45%, transparent);
           border: 1px solid var(--border);
         }
@@ -386,7 +386,7 @@ export default function AuthPage() {
           padding: 9px 0;
           border: none;
           background: transparent;
-          border-radius: 999px;
+          border-radius: var(--r-l);
           color: var(--muted);
           font-family: var(--font-mono);
           font-size: 0.8rem;
@@ -399,7 +399,7 @@ export default function AuthPage() {
         :global(.auth-tab-bg) {
           position: absolute;
           inset: 0;
-          border-radius: 999px;
+          border-radius: var(--r-l);
           background: linear-gradient(135deg, var(--a1), var(--a3));
           box-shadow: 0 4px 14px var(--border-glow);
         }
@@ -424,7 +424,7 @@ export default function AuthPage() {
           transform: translateY(-50%);
           padding: 5px 9px;
           border: none;
-          border-radius: 8px;
+          border-radius: var(--r-s);
           background: color-mix(in srgb, var(--text) 8%, transparent);
           color: var(--muted);
           font-family: var(--font-mono);
@@ -439,7 +439,7 @@ export default function AuthPage() {
           color: var(--muted);
         }
         .hint.bad {
-          color: #f87171;
+          color: var(--err);
         }
         .meter {
           margin-top: 6px;
@@ -456,16 +456,16 @@ export default function AuthPage() {
           transition: background 0.25s;
         }
         .meter-bars span.on.s1 {
-          background: #f87171;
+          background: var(--err);
         }
         .meter-bars span.on.s2 {
-          background: #fbbf24;
+          background: var(--warn);
         }
         .meter-bars span.on.s3 {
           background: #84cc16;
         }
         .meter-bars span.on.s4 {
-          background: #34d399;
+          background: var(--ok);
         }
         .divider {
           display: flex;
@@ -502,9 +502,9 @@ export default function AuthPage() {
           text-underline-offset: 3px;
         }
         :global(.ok-alert) {
-          background: color-mix(in srgb, #34d399 14%, transparent) !important;
-          border-color: color-mix(in srgb, #34d399 40%, transparent) !important;
-          color: #34d399 !important;
+          background: color-mix(in srgb, var(--ok) 14%, transparent) !important;
+          border-color: color-mix(in srgb, var(--ok) 40%, transparent) !important;
+          color: var(--ok) !important;
         }
       `}</style>
     </>

@@ -67,7 +67,9 @@ import {
   Minus,
   ThumbsUp,
   ThumbsDown,
-  Hash
+  Hash,
+  KeyRound,
+  Webhook
 } from "lucide-react";
 export const Icons = {
   Terminal: Terminal,
@@ -99,6 +101,9 @@ export const Icons = {
   Settings: Settings,
   Sliders: Sliders,
   Activity: Activity,
+  KeyRound: KeyRound,
+  Webhook: Webhook,
+  Gauge: Gauge,
   Cpu: Cpu,
   Shield: Shield,
   ShieldCheck: ShieldCheck,
@@ -120,7 +125,6 @@ export const Icons = {
   Close: X,
   ArrowRight: ArrowRight,
   ArrowLeft: ArrowLeft,
-  Gauge: Gauge,
   UploadCloud: UploadCloud,
   FileText: FileText,
   FileArchive: FileArchive,

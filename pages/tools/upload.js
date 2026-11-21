@@ -410,7 +410,7 @@ export default function UploadPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedFiles([])}
-                  style={{ background: 'none', border: 'none', color: '#f87171', fontSize: '0.75rem', cursor: 'pointer' }}
+                  style={{ background: 'none', border: 'none', color: 'var(--err)', fontSize: '0.75rem', cursor: 'pointer' }}
                 >
                   Bersihkan Semua
                 </button>
@@ -518,7 +518,7 @@ export default function UploadPage() {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-                    {res.success ? <CheckCircle2 size={18} color="#34d399" /> : <AlertCircle size={18} color="#f87171" />}
+                    {res.success ? <CheckCircle2 size={18} style={{ stroke: 'var(--ok)' }} /> : <AlertCircle size={18} style={{ stroke: 'var(--err)' }} />}
                     <div>
                       <strong style={{ fontSize: '0.85rem', display: 'block' }}>{res.fileName}</strong>
                       <span style={{ fontSize: '0.72rem', color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
@@ -551,7 +551,7 @@ export default function UploadPage() {
                   )}
 
                   {!res.success && (
-                    <span style={{ fontSize: '0.78rem', color: '#f87171', fontFamily: 'var(--font-mono)' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--err)', fontFamily: 'var(--font-mono)' }}>
                       Gagal: {res.error}
                     </span>
                   )}
@@ -568,7 +568,7 @@ export default function UploadPage() {
           align-items: center;
           justify-content: space-between;
           padding: 12px 16px;
-          border-radius: 14px;
+          border-radius: var(--r-m);
           background: color-mix(in srgb, var(--bg1) 40%, transparent);
           border: 1px solid var(--border);
           cursor: pointer;
@@ -591,7 +591,7 @@ export default function UploadPage() {
           right: 0;
           z-index: 50;
           padding: 6px;
-          border-radius: 16px;
+          border-radius: var(--r-m);
           background: var(--surface) !important;
           border: 1px solid var(--border);
           box-shadow: 0 16px 36px color-mix(in srgb, var(--shadow-c) 70%, transparent);
@@ -604,7 +604,7 @@ export default function UploadPage() {
           align-items: center;
           justify-content: space-between;
           padding: 10px 14px;
-          border-radius: 10px;
+          border-radius: var(--r-s);
           color: var(--text);
           cursor: pointer;
           transition: background 0.15s;

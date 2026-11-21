@@ -3,7 +3,9 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { SessionProvider } from 'next-auth/react';
 import { AnimatePresence, motion } from 'framer-motion';
+import Seo from '@/components/Seo';
 import Layout from '@/components/Layout';
+import GlobalSounds from '@/components/GlobalSounds';
 import Preloader from '@/components/Preloader';
 import PageTransition from '@/components/PageTransition';
 import { sound } from '@/src/lib/interactiveEffects';
@@ -31,7 +33,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
   // 2. Efek suara saat pindah halaman (indikator loading ada di <Preloader />)
   useEffect(() => {
     const handleStart = (url) => {
-      if (url.split('?')[0] !== router.asPath.split('?')[0]) sound.playBeep();
+      if (url.split('?')[0] !== router.asPath.split('?')[0]) sound.fx('nav');
     };
     router.events.on('routeChangeStart', handleStart);
     return () => router.events.off('routeChangeStart', handleStart);
@@ -44,12 +46,14 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
           name="viewport"
           content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
         />
-        <title>Wudysoft — API, Tools & Developer Platform</title>
       </Head>
+      {/* Meta/OG bawaan untuk SEMUA halaman (halaman dengan <Seo> sendiri menimpa lewat key yang sama) */}
+      <Seo path={router.asPath.split('?')[0].split('#')[0] || '/'} />
 
       {/* Splash awal + indikator loading antar halaman */}
       <Preloader />
       <GlobalEffects />
+      <GlobalSounds />
 
       <Layout>
         <PageTransition>

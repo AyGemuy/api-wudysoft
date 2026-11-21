@@ -20,6 +20,8 @@ const DEFAULTS = {
   bgmVol: 0.35,
   sfxVol: 0.8,
   cues: Object.fromEntries(CUES.map((c) => [c.id, true])),
+  pack: 'pop', // paket suara interaksi (lihat PACKS di interactiveEffects)
+  events: {}, // kategori interaksi yang dimatikan/dinyalakan manual; kosong = bawaan
 };
 
 const listeners = new Set();
@@ -35,6 +37,8 @@ function loadSettings() {
     bgmVol: clamp(saved.bgmVol ?? DEFAULTS.bgmVol),
     sfxVol: clamp(saved.sfxVol ?? DEFAULTS.sfxVol),
     cues: { ...DEFAULTS.cues, ...(saved.cues || {}) },
+    pack: typeof saved.pack === 'string' ? saved.pack.slice(0, 20) : DEFAULTS.pack,
+    events: saved.events && typeof saved.events === 'object' ? saved.events : {},
   };
 }
 

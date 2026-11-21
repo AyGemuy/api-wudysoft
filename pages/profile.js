@@ -180,7 +180,7 @@ export default function ProfilePage() {
             <p style={{ fontSize: '0.82rem' }}>Sesi tamu bersifat sementara dan tidak tersimpan di database. Daftar akun agar profil, foto, dan token API tersimpan permanen.</p>
             <div style={{ display: 'grid', gap: 10, marginTop: 16 }}>
               <button className="btn primary full" onClick={() => logout('/auth?mode=signup&next=%2Fprofile')}>Buat akun</button>
-              <button className="btn full" style={{ color: '#f87171' }} onClick={() => logout('/auth')}><Icons.LogOut size={16} /> Keluar</button>
+              <button className="btn full" style={{ color: 'var(--err)' }} onClick={() => logout('/auth')}><Icons.LogOut size={16} /> Keluar</button>
             </div>
           </motion.div>
           <div style={{ width: 'min(680px, 100%)' }}><GithubCard variant="up" /></div>
@@ -369,18 +369,18 @@ export default function ProfilePage() {
         :global(.pf-stat) b { font-size: 1.15rem; color: var(--a2); text-transform: capitalize; overflow-wrap: anywhere; }
         :global(.pf-stat) span { font-size: 0.68rem; color: var(--muted); }
         .pf-bio { font-size: 0.8rem; color: var(--muted); overflow-wrap: anywhere; }
-        .pf-meter { height: 8px; border-radius: 99px; background: var(--border); overflow: hidden; }
+        .pf-meter { height: 8px; border-radius: var(--r-l); background: var(--border); overflow: hidden; }
         .pf-meter i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--a1), var(--a3)); transition: width 0.8s cubic-bezier(.22,1,.36,1); }
         .pf-checks { display: flex; flex-wrap: wrap; gap: 6px; }
         .pf-id { min-width: 0; display: grid; gap: 4px; }
         .pf-id h2 { font-size: 1.25rem; overflow-wrap: anywhere; }
         .pf-mail { font-size: 0.78rem; font-family: var(--font-mono); color: var(--muted); overflow-wrap: anywhere; }
         .pf-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-        .pf-link { justify-self: start; background: none; border: none; color: #f87171; font-size: 0.74rem; cursor: pointer; padding: 4px 0; }
+        .pf-link { justify-self: start; background: none; border: none; color: var(--err); font-size: 0.74rem; cursor: pointer; padding: 4px 0; }
         .pf-form { display: grid; gap: 12px; }
         .pf-note { font-size: 0.78rem; color: var(--muted); }
         .pf-hint { font-size: 0.72rem; color: var(--muted); }
-        .pf-hint.bad { color: #f87171; }
+        .pf-hint.bad { color: var(--err); }
         .pf-dl { display: grid; gap: 8px; }
         .pf-dl div { display: flex; justify-content: space-between; gap: 12px; font-size: 0.8rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
         .pf-dl div:last-child { border: none; padding: 0; }
@@ -389,7 +389,7 @@ export default function ProfilePage() {
         .mono { font-family: var(--font-mono); font-size: 0.72rem; }
         .pf-token { display: flex; gap: 8px; flex-wrap: wrap; }
         .pf-token .input { flex: 1 1 200px; min-width: 0; }
-        .pf-logout { color: #f87171; }
+        .pf-logout { color: var(--err); }
         @media (max-width: 480px) { :global(.pf-stats) { grid-template-columns: repeat(2, 1fr); } :global(.pf-hero) { grid-template-columns: 1fr; justify-items: center; text-align: center; } .pf-badges { justify-content: center; } .pf-link { justify-self: center; } }
       `}</style>
     </>

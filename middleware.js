@@ -5,7 +5,7 @@ import { checkRateLimit, clientIp } from "./src/lib/rateLimit";
 import { safeNext } from "./src/lib/safeNext";
 
 /** Halaman yang wajib login. Tambahkan path lain di sini bila perlu. */
-const PROTECTED = ["/playground", "/profile"];
+const PROTECTED = ["/playground", "/profile", "/keys", "/webhooks"];
 const DEFAULT_AFTER_LOGIN = "/";
 
 // User-Agent crawler pembuat preview tautan
@@ -110,6 +110,6 @@ export async function middleware(req) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|assets/|icons/|favicon.ico|sw.js|manifest.json|og.png|workbox-).*)",
+    "/((?!_next/static|_next/image|assets/|icons/|favicon.ico|sw.js|manifest.json|og.jpg|workbox-).*)",
   ],
 };

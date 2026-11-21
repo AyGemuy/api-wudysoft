@@ -22,7 +22,7 @@ export function CodeEditor({ value, onChange, lang, minHeight = 220, onRun }) {
       <pre ref={pre} className="hl ce-pre" aria-hidden="true"><code dangerouslySetInnerHTML={{ __html: html }} /></pre>
       <textarea className="ce-ta" value={value} onChange={(e) => onChange(e.target.value)} onScroll={sync} onKeyDown={onKey} spellCheck={false} autoCapitalize="none" autoCorrect="off" aria-label="Editor kode" style={{ minHeight }} />
       <style jsx global>{`
-        .ce { position: relative; border-radius: 12px; border: 1px solid var(--border); background: color-mix(in srgb, var(--bg1, #000) 62%, transparent); overflow: hidden; }
+        .ce { position: relative; border-radius: var(--r-m); border: 1px solid var(--border); background: color-mix(in srgb, var(--bg1, #000) 62%, transparent); overflow: hidden; }
         .ce-pre, .ce-ta { margin: 0; padding: 12px 14px; font-family: var(--font-mono); font-size: .78rem; line-height: 1.6; tab-size: 2; white-space: pre; border: 0; width: 100%; box-sizing: border-box; }
         .ce-pre { position: absolute; inset: 0; overflow: hidden; pointer-events: none; color: var(--text); }
         .ce-pre code { font: inherit; }
@@ -144,22 +144,22 @@ export default function CodeRunner({ code: codeProp, onCode, lang: langProp, onL
       <style jsx global>{`
         .cr { display: grid; gap: 10px; min-width: 0; }
         .cr-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .cr-bar select, .cr-in { height: 36px; padding: 0 10px; border-radius: 10px; background: color-mix(in srgb, #fff 6%, transparent); border: 1px solid var(--border); color: var(--text); font: inherit; font-size: .8rem; }
+        .cr-bar select, .cr-in { height: 36px; padding: 0 10px; border-radius: var(--r-s); background: color-mix(in srgb, #fff 6%, transparent); border: 1px solid var(--border); color: var(--text); font: inherit; font-size: .8rem; }
         .cr-bar select option, .cr-bar select optgroup { background: var(--bg2, #111); color: var(--text); }
         .cr-in { width: 100%; box-sizing: border-box; font-family: var(--font-mono); }
         .cr-where { display: inline-flex; align-items: center; gap: 5px; font-size: .68rem; color: var(--muted); font-family: var(--font-mono); }
         .cr-sp { flex: 1; }
-        .cr-b { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; }
+        .cr-b { width: 36px; height: 36px; display: grid; place-items: center; border-radius: var(--r-s); background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; }
         .cr-b:hover { color: var(--text); border-color: var(--a2); }
-        .cr-run { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 16px; border-radius: 10px; border: 0; font: inherit; font-weight: 700; font-size: .82rem; cursor: pointer; color: var(--on-accent); background: linear-gradient(135deg, var(--a1), var(--a3)); box-shadow: 0 8px 20px -8px var(--a1); }
+        .cr-run { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 16px; border-radius: var(--r-s); border: 0; font: inherit; font-weight: 700; font-size: .82rem; cursor: pointer; color: var(--on-accent); background: linear-gradient(135deg, var(--a1), var(--a3)); box-shadow: 0 8px 20px -8px var(--a1); }
         .cr-run.stop { background: #ef4444; color: #fff; box-shadow: none; }
-        .cr-frame { width: 100%; height: 240px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
-        .cr-out { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: color-mix(in srgb, var(--bg1, #000) 70%, transparent); }
+        .cr-frame { width: 100%; height: 240px; border: 1px solid var(--border); border-radius: var(--r-m); background: #fff; }
+        .cr-out { border: 1px solid var(--border); border-radius: var(--r-m); overflow: hidden; background: color-mix(in srgb, var(--bg1, #000) 70%, transparent); }
         .cr-oh { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-bottom: 1px solid var(--border); font-size: .68rem; text-transform: uppercase; letter-spacing: .1em; font-family: var(--font-mono); color: var(--muted); }
         .cr-oh small { flex: 1; text-transform: none; letter-spacing: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .cr-oh .cr-b { width: 28px; height: 28px; }
         .cr-log { margin: 0; padding: 10px 12px; min-height: 90px; max-height: 280px; overflow: auto; font-family: var(--font-mono); font-size: .76rem; line-height: 1.55; white-space: pre-wrap; word-break: break-word; color: var(--text); }
-        .cr-log .k-err { color: #f87171; } .cr-log .k-sys { color: var(--muted); font-style: italic; }
+        .cr-log .k-err { color: var(--err); } .cr-log .k-sys { color: var(--muted); font-style: italic; }
         .cr-empty { color: var(--muted); }
         .cr-spin { animation: crspin .8s linear infinite; vertical-align: -2px; }
         @keyframes crspin { to { transform: rotate(360deg); } }

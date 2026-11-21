@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import Pagination from '@/components/Pagination';
 import { Icons } from '@/components/Icons';
 import { MethodBadge, Seg, cx } from './ui';
 import { statusTone } from '@/src/lib/playgroundCore';
@@ -7,6 +8,10 @@ import s from '@/styles/playground.module.css';
 export default function Sidebar({ parsed, activeKey, activePath, onOpen, history, onOpenHistory, onClearHistory, onClose, specLabel }) {
   const [view, setView] = useState('endpoints');
   const [q, setQ] = useState('');
+  const [hp, setHp] = useState(1);
+  const HLIM = 12;
+  const hPages = Math.max(1, Math.ceil(history.length / HLIM));
+  const hCur = Math.min(hp, hPages);
   const [openMap, setOpenMap] = useState({}); // grup tertutup secara default
   const activeTag = useMemo(() => parsed.operations.find((o) => o.key === activeKey)?.tags[0], [parsed, activeKey]);
   const pathCount = useMemo(() => new Set(parsed.operations.map((o) => o.path)).size, [parsed]);
@@ -104,7 +109,7 @@ export default function Sidebar({ parsed, activeKey, activePath, onOpen, history
             <>
               <button type="button" className={s.ghost} onClick={onClearHistory}><Icons.Trash2 size={13} /> Bersihkan riwayat</button>
               <ul className={s.opList}>
-                {history.map((h) => (
+                {history.slice((hCur - 1) * HLIM, hCur * HLIM).map((h) => (
                   <li key={h.id}>
                     <button type="button" className={s.op} onClick={() => onOpenHistory(h)}>
                       <MethodBadge m={h.method} tiny />
@@ -117,6 +122,7 @@ export default function Sidebar({ parsed, activeKey, activePath, onOpen, history
                   </li>
                 ))}
               </ul>
+              <Pagination page={hCur} pages={hPages} total={history.length} limit={HLIM} onPage={setHp} label="riwayat" />
             </>
           )}
         </div>

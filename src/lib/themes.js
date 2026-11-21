@@ -1,10 +1,12 @@
 /**
  * WUDYSOFT Theme Engine
- * - 17 preset (gelap & terang) + override warna bebas
+ * - 34 preset (gelap & terang) + override warna bebas
  * - Bentuk (radius, blur, gaya kartu), efek (partikel, blob, grid, spotlight, tilt),
  *   tipografi (font, skala), animasi (kecepatan / mati), kepadatan, ukuran kartu
  * - Semua jadi CSS variable / data-attribute di <html>, disimpan di localStorage
  */
+
+import { applyThemeAssets } from './themeAssets';
 
 /* ---------- helper warna ---------- */
 const clamp = (n, a = 0, b = 255) => Math.min(b, Math.max(a, n));
@@ -57,9 +59,9 @@ const P = (id, name, a1, a2, a3, bg1, bg2, extra = {}) => ({
 
 export const PRESETS = [
   // Tema bawaan: bahasa visual Fluent (biru #0078D4, permukaan netral, sudut halus)
+  P('snow', 'Snow', '#0284c7', '#0ea5e9', '#6366f1', '#e8eef6', '#ffffff', { text: '#0f172a', muted: '#475569' }),
   P('fluent', 'Fluent Dark', '#0078d4', '#4cc2ff', '#8764b8', '#0b0d11', '#16191f', { text: '#f3f2f1', muted: '#a19f9d' }),
   P('fluentlight', 'Fluent Light', '#0f6cbd', '#0078d4', '#8764b8', '#f3f2f1', '#ffffff', { text: '#201f1e', muted: '#605e5c' }),
-  P('stealth', 'Stealth', '#0284c7', '#38bdf8', '#6366f1', '#07090e', '#0f172a'),
   P('cyberpunk', 'Cyberpunk', '#f43f5e', '#fbbf24', '#d946ef', '#0c0814', '#1e102a'),
   P('matrix', 'Matrix', '#059669', '#10b981', '#34d399', '#030d07', '#091f14'),
   P('crimson', 'Crimson', '#e11d48', '#f43f5e', '#fb7185', '#0f0507', '#240a10'),
@@ -68,14 +70,33 @@ export const PRESETS = [
   P('sunset', 'Sunset', '#f97316', '#fb7185', '#fbbf24', '#160a0c', '#2b1319'),
   P('dracula', 'Dracula', '#bd93f9', '#ff79c6', '#50fa7b', '#191a21', '#282a36', { text: '#f8f8f2', muted: '#a9b0d0' }),
   P('nord', 'Nord', '#5e81ac', '#88c0d0', '#b48ead', '#232831', '#2e3440', { text: '#eceff4', muted: '#a3aec2' }),
-  P('forest', 'Forest', '#16a34a', '#86efac', '#a3e635', '#06100a', '#0f2417'),
   P('royal', 'Royal', '#7c3aed', '#c084fc', '#f0abfc', '#0b0716', '#1a1033'),
   P('gold', 'Gold', '#d97706', '#fbbf24', '#fde68a', '#0e0a04', '#231a0a'),
   P('sakura', 'Sakura', '#ec4899', '#f9a8d4', '#c084fc', '#140a12', '#2a1224'),
   P('mono', 'Mono', '#9ca3af', '#e5e7eb', '#6b7280', '#0a0a0a', '#171717'),
-  P('snow', 'Snow', '#0284c7', '#0ea5e9', '#6366f1', '#e8eef6', '#ffffff', { text: '#0f172a', muted: '#475569' }),
   P('latte', 'Latte', '#b45309', '#d97706', '#be123c', '#f3e9dc', '#fffaf3', { text: '#2b1d12', muted: '#6b5845' }),
-  P('mint', 'Mint', '#059669', '#10b981', '#0891b2', '#e3f6ee', '#ffffff', { text: '#052e22', muted: '#3f6b5b' }),
+  // Seri dasbor kaca (terinspirasi V22–V35)
+  P('mintwork', 'Mint Studio', '#14584a', '#2fbf9a', '#f59e6b', '#dcebe5', '#f7fbf9', { text: '#0d2a24', muted: '#4f6f66' }),
+  P('coral', 'Coral Glass', '#e5484d', '#ff7a6b', '#f5b9a0', '#2a1411', '#4a2520', { text: '#fff0ea', muted: '#e0b4a8' }),
+  P('indigoair', 'Indigo Air', '#5648e8', '#7b6cff', '#22c3a6', '#eceefb', '#ffffff', { text: '#141433', muted: '#5a5d86' }),
+  P('orbit', 'Orbit Green', '#2f9e4f', '#4cbf6a', '#1f7a8c', '#e9f1ee', '#ffffff', { text: '#0f2a1a', muted: '#52695c' }),
+  P('graphite', 'Graphite Glass', '#4d8dff', '#9cc0ff', '#c9bfae', '#171616', '#2c2927', { text: '#efeae5', muted: '#a8a19a' }),
+  P('refract', 'Refract', '#ff5a3c', '#ff9a73', '#ffc94d', '#0b0a0a', '#1b1716', { text: '#f6f1ee', muted: '#a79d97' }),
+  // Seri HUD sci-fi (terinspirasi Kronos, Spectre, Vision, Chronos, Aether, Nexus, Valkyrie, Orion)
+  P('kronos', 'Kronos', '#0ea5c6', '#38e0f5', '#4f7cff', '#06111f', '#12283f', { text: '#e8f4ff', muted: '#8fb0cc' }),
+  P('spectre', 'Spectre', '#8b5cf6', '#b69cff', '#e879f9', '#0a0818', '#1b1738', { text: '#f0ebff', muted: '#a59cc8' }),
+  P('vision', 'Vision', '#5b5bf0', '#8b93ff', '#f59e0b', '#070813', '#1a1e30', { text: '#f1f3ff', muted: '#9aa3c0' }),
+  P('chronos', 'Chronos', '#2aa7d4', '#67e8f9', '#4ade80', '#0a1d29', '#18394a', { text: '#e6f7ff', muted: '#8fb8c8' }),
+  P('nexus', 'Nexus', '#16d98a', '#6ff2b4', '#7c5cff', '#0a1220', '#133a35', { text: '#e8fff3', muted: '#8fc2ae' }),
+  P('valkyrie', 'Valkyrie', '#e53e3e', '#ff6464', '#38bdf8', '#0a0a0c', '#1d1416', { text: '#f7eeee', muted: '#b79a9c' }),
+  P('orion', 'Orion', '#e8891a', '#ffb347', '#4cc3e8', '#110b07', '#2c1c0e', { text: '#fbeedd', muted: '#c0a07c' }),
+  // Tren 2025–2026: warna Pantone (Cloud Dancer, Mocha Mousse), matcha, ube, lime elektrik, midnight aurora
+  P('cloud', 'Cloud Dancer', '#5b6b85', '#7c93c4', '#c4a7e7', '#eef0f4', '#ffffff', { text: '#1c2230', muted: '#5d6679' }),
+  P('mocha', 'Mocha Mousse', '#a47764', '#d4a98f', '#e8cbb5', '#1a1311', '#2b201c', { text: '#f5ebe3', muted: '#b8a296' }),
+  P('matcha', 'Matcha Latte', '#5c7f3f', '#8fb36b', '#d9a441', '#eef2e3', '#fbfcf6', { text: '#1f2a14', muted: '#5f6c4d' }),
+  P('electric', 'Electric Lime', '#7ddc1f', '#c6ff3d', '#22d3ee', '#0a0c08', '#161b10', { text: '#f4ffe6', muted: '#9fb08a' }),
+  P('ube', 'Ube Pastel', '#7c5cdb', '#a78bfa', '#f472b6', '#f1ecfb', '#ffffff', { text: '#241a45', muted: '#6a5f8f' }),
+  P('midnight', 'Midnight Aurora', '#6d5efc', '#38e1c6', '#f472b6', '#05060f', '#0f1230', { text: '#eef0ff', muted: '#9aa0c8' }),
 ];
 
 const GF = (family, weights) => `${family.replace(/ /g, '+')}${weights ? `:wght@${weights}` : ''}`;
@@ -116,6 +137,10 @@ export const FONTS = [
   F('orbitron', 'Orbitron', 'display', 'Orbitron', '400;500;600;700;800', SANS),
   F('rajdhani', 'Rajdhani', 'display', 'Rajdhani', '400;500;600;700', SANS),
   F('exo2', 'Exo 2', 'display', 'Exo 2', '400;500;600;700;800', SANS),
+  F('barlowc', 'Barlow Condensed', 'display', 'Barlow Condensed', '400;500;600;700;800', SANS),
+  F('oswald', 'Oswald', 'display', 'Oswald', '400;500;600;700', SANS),
+  F('chakra', 'Chakra Petch', 'display', 'Chakra Petch', '400;500;600;700', SANS),
+  F('oxanium', 'Oxanium', 'display', 'Oxanium', '400;500;600;700;800', SANS),
   F('syne', 'Syne', 'display', 'Syne', '400;500;600;700;800', SANS),
   F('unbounded', 'Unbounded', 'display', 'Unbounded', '400;500;600;700;800', SANS),
   F('audiowide', 'Audiowide', 'display', 'Audiowide', '', SANS),
@@ -164,7 +189,37 @@ export const GRADIENTS = [
   { id: 'rose', name: 'Rose', css: 'radial-gradient(60% 60% at 80% 15%, rgba(244,63,94,.45), transparent 70%), radial-gradient(60% 60% at 15% 85%, rgba(192,132,252,.4), transparent 70%)' },
   { id: 'mesh', name: 'Mesh', css: 'radial-gradient(40% 40% at 20% 20%, rgba(99,102,241,.5), transparent 70%), radial-gradient(40% 40% at 80% 25%, rgba(236,72,153,.4), transparent 70%), radial-gradient(45% 45% at 30% 85%, rgba(34,211,238,.4), transparent 70%), radial-gradient(40% 40% at 85% 85%, rgba(250,204,21,.28), transparent 70%)' },
   { id: 'dusk', name: 'Dusk', css: 'linear-gradient(160deg, rgba(76,29,149,.55) 0%, rgba(30,64,175,.35) 50%, rgba(2,6,23,0) 100%)' },
+  { id: 'coral', name: 'Coral', css: 'radial-gradient(60% 55% at 15% 15%, rgba(255,122,107,.45), transparent 70%), radial-gradient(55% 55% at 90% 85%, rgba(176,110,70,.4), transparent 70%), radial-gradient(40% 40% at 60% 40%, rgba(245,185,160,.18), transparent 70%)' },
+  { id: 'smoke', name: 'Smoke', css: 'radial-gradient(60% 60% at 20% 10%, rgba(180,170,160,.28), transparent 70%), radial-gradient(55% 55% at 85% 90%, rgba(77,141,255,.22), transparent 70%), radial-gradient(50% 50% at 50% 55%, rgba(120,110,100,.2), transparent 70%)' },
+  { id: 'mintmist', name: 'Mint Mist', css: 'radial-gradient(60% 60% at 10% 10%, rgba(47,191,154,.35), transparent 70%), radial-gradient(55% 55% at 90% 20%, rgba(245,158,107,.28), transparent 70%), radial-gradient(60% 60% at 50% 105%, rgba(20,88,74,.22), transparent 70%)' },
+  { id: 'lavender', name: 'Lavender', css: 'radial-gradient(60% 60% at 15% 10%, rgba(108,108,240,.32), transparent 70%), radial-gradient(55% 55% at 90% 15%, rgba(34,211,238,.22), transparent 70%), radial-gradient(60% 60% at 60% 105%, rgba(167,139,250,.3), transparent 70%)' },
+  { id: 'prism', name: 'Prism', css: 'radial-gradient(45% 45% at 15% 20%, rgba(255,90,60,.32), transparent 70%), radial-gradient(45% 45% at 85% 25%, rgba(255,201,77,.22), transparent 70%), radial-gradient(50% 50% at 55% 95%, rgba(108,108,240,.25), transparent 70%)' },
+  { id: 'warp', name: 'Warp', css: 'radial-gradient(70% 60% at 50% 40%, rgba(14,165,198,.28), transparent 70%), repeating-conic-gradient(from 0deg at 50% 45%, rgba(94,231,255,.10) 0 1.2deg, transparent 1.2deg 6deg), radial-gradient(60% 50% at 85% 95%, rgba(79,124,255,.28), transparent 70%)' },
+  { id: 'spectre', name: 'Spectre', css: 'radial-gradient(60% 55% at 15% 10%, rgba(139,92,246,.34), transparent 70%), radial-gradient(55% 55% at 90% 90%, rgba(232,121,249,.2), transparent 70%), radial-gradient(40% 40% at 60% 45%, rgba(91,91,240,.14), transparent 70%)' },
+  { id: 'nebula', name: 'Nebula', css: 'radial-gradient(40% 40% at 18% 30%, rgba(245,158,11,.24), transparent 70%), radial-gradient(45% 45% at 72% 18%, rgba(99,102,241,.34), transparent 70%), radial-gradient(50% 45% at 92% 88%, rgba(56,189,248,.2), transparent 70%)' },
+  { id: 'cryo', name: 'Cryo', css: 'radial-gradient(60% 50% at 50% 0%, rgba(103,232,249,.3), transparent 70%), radial-gradient(55% 60% at 10% 90%, rgba(42,167,212,.28), transparent 70%), radial-gradient(40% 40% at 90% 60%, rgba(74,222,128,.12), transparent 70%)' },
+  { id: 'solar', name: 'Solar', css: 'radial-gradient(45% 55% at 92% 40%, rgba(255,150,30,.5), transparent 70%), radial-gradient(60% 60% at 12% 105%, rgba(234,88,12,.18), transparent 70%), radial-gradient(30% 30% at 80% 20%, rgba(255,197,61,.16), transparent 70%)' },
+  { id: 'biome', name: 'Biome', css: 'linear-gradient(180deg, rgba(88,48,160,.5), transparent 55%), radial-gradient(70% 50% at 50% 112%, rgba(22,217,138,.34), transparent 70%), radial-gradient(40% 40% at 85% 30%, rgba(124,92,255,.2), transparent 70%)' },
+  { id: 'battle', name: 'Battle', css: 'radial-gradient(45% 55% at 86% 32%, rgba(56,120,200,.32), transparent 70%), radial-gradient(55% 50% at 70% 105%, rgba(229,62,62,.3), transparent 70%), radial-gradient(40% 40% at 10% 10%, rgba(229,62,62,.12), transparent 70%)' },
+  { id: 'asteroid', name: 'Asteroid', css: 'radial-gradient(50% 50% at 76% 50%, rgba(76,195,232,.24), transparent 70%), radial-gradient(60% 60% at 8% 92%, rgba(232,137,26,.3), transparent 70%), radial-gradient(40% 40% at 50% 0%, rgba(255,179,71,.12), transparent 70%)' },
 ];
+
+/** Efek hover kartu. lift/tilt memakai framer-motion; sisanya CSS murni (properti scale/translate/rotate). */
+export const HOVERS = [
+  { id: 'lift', label: 'Angkat' },
+  { id: 'tilt', label: 'Tilt 3D' },
+  { id: 'spotlight', label: 'Sorot' },
+  { id: 'shine', label: 'Kilat' },
+  { id: 'pop', label: 'Pop' },
+  { id: 'jelly', label: 'Jelly' },
+  { id: 'float', label: 'Melayang' },
+  { id: 'press', label: 'Tekan' },
+  { id: 'glow', label: 'Kilau' },
+  { id: 'none', label: 'Mati' },
+];
+
+/** Id tema lama yang sudah dihapus (duplikat) → pengganti, agar pengaturan tersimpan tetap valid. */
+export const THEME_ALIASES = { stealth: 'fluent', mint: 'mintwork', clinova: 'indigoair', aether: 'gold', forest: 'matrix' };
 
 export const PARTICLES = [
   { id: 'off', label: 'Off' },
@@ -193,6 +248,49 @@ export const CARD_STYLES = [
   { id: 'holo', label: 'Holo' },
   { id: 'stack', label: 'Stack 3D' },
   { id: 'terminal', label: 'Terminal' },
+  { id: 'tint', label: 'Tinted' },
+  { id: 'soft', label: 'Soft' },
+  { id: 'smoke', label: 'Smoke' },
+  { id: 'refract', label: 'Refract' },
+  { id: 'hud', label: 'HUD' },
+  { id: 'panel', label: 'Panel' },
+];
+
+/** Huruf judul (h1–h4). */
+export const HEADING_CASES = [
+  { id: 'normal', label: 'Normal' },
+  { id: 'upper', label: 'KAPITAL' },
+];
+
+/** Model tombol navbar bawah (tab). */
+export const NAV_STYLES = [
+  { id: 'classic', label: 'Klasik', desc: 'Pil + tombol ⚡ melayang' },
+  { id: 'notch', label: 'Lekuk', desc: 'Garis melengkung di tab aktif' },
+  { id: 'beam', label: 'Sinar', desc: 'Cahaya jatuh ke tab aktif' },
+  { id: 'bubble', label: 'Gelembung', desc: 'Ikon aktif menyembul' },
+  { id: 'label', label: 'Label', desc: 'Ikon + teks, titik penanda' },
+];
+export const NAV_LABELS = [
+  { id: 'auto', label: 'Otomatis' },
+  { id: 'on', label: 'Tampil' },
+  { id: 'off', label: 'Sembunyi' },
+];
+
+export const SPLASH_STYLES = [
+  { id: 'ring', label: 'Cincin' },
+  { id: 'orbit', label: 'Orbit' },
+  { id: 'bars', label: 'Equalizer' },
+  { id: 'pulse', label: 'Gelombang' },
+  { id: 'morph', label: 'Morph' },
+  { id: 'dots', label: 'Titik' },
+  { id: 'typing', label: 'Mengetik' },
+];
+
+export const SPLASH_BGS = [
+  { id: 'theme', label: 'Tema' },
+  { id: 'gradient', label: 'Gradien' },
+  { id: 'mesh', label: 'Mesh' },
+  { id: 'glass', label: 'Kaca' },
 ];
 
 export const BORDER_COLORS = [
@@ -215,28 +313,48 @@ export const BORDER_STYLES = [
   { id: 'none', label: 'Tanpa' },
 ];
 
-const TPL_BASE = { custom: {}, card: 'glass', cardBorderStyle: 'solid', cardBorderW: 0, cardBorderColor: 'theme', cardGlint: 'hover', cardDepth: 0.5, radius: 10, rBtn: 6, rInput: 6, rChip: 6, rDockTop: 14, rDockBottom: 14, rDockBtn: 8, rModal: 12, blur: 28, glass: 0.75, border: 0.12, blobs: true, blobIntensity: 0.22, grid: false, particle: 'off', animHover: 'tilt', bgType: 'none', density: 'normal', font: 'segoe', fontHeading: 'same', fontMono: 'jetbrains' };
+const TPL_BASE = { custom: {}, card: 'glass', cardBorderStyle: 'solid', cardBorderW: 0, cardBorderColor: 'theme', cardGlint: 'hover', cardDepth: 0.5, radius: 10, rBtn: 6, rInput: 6, rChip: 6, rDockTop: 14, rDockBottom: 14, rDockBtn: 8, rModal: 12, blur: 28, glass: 0.75, border: 0.12, blobs: true, blobIntensity: 0.22, grid: false, particle: 'off', animHover: 'tilt', bgType: 'none', density: 'normal', font: 'segoe', fontHeading: 'same', headingCase: 'normal', fontMono: 'jetbrains', navStyle: 'classic', navLabels: 'auto', navCenter: true };
 const T = (id, name, desc, theme, v) => ({ id, name, desc, theme, v: { ...TPL_BASE, theme, ...v } });
 
 /** Template: satu klik menerapkan tema, model kartu, bentuk, efek, dan font sekaligus. */
 export const TEMPLATES = [
-  T('fluent', 'Fluent Klasik', 'Tampilan bawaan Wudysoft', 'fluent', {}),
+  T('snow', 'Snow Klasik', 'Tampilan bawaan Wudysoft — terang, bersih, kaca halus', 'snow', {}),
   T('liquid', 'Liquid Glass', 'Kaca cair bening ala iOS terbaru', 'aurora', { card: 'liquid', cardDepth: 0.6, radius: 28, rBtn: 20, rInput: 18, rChip: 60, rDockTop: 36, rDockBottom: 36, rDockBtn: 24, rModal: 30, blur: 38, glass: 0.5, border: 0.2, blobIntensity: 0.4, bgType: 'gradient', bgGradient: 'aurora', font: 'jakarta' }),
   T('brutal', 'Neo Brutal', 'Garis tebal, bayangan keras, tajam', 'snow', { card: 'brutal', cardDepth: 0.5, radius: 4, rBtn: 4, rInput: 4, rChip: 4, rDockTop: 6, rDockBottom: 6, rDockBtn: 4, rModal: 6, blur: 0, glass: 1, border: 0.5, blobs: false, grid: true, animHover: 'lift', font: 'space', fontMono: 'spacemono' }),
   T('neu', 'Soft Neumorph', 'Timbul lembut, menekan saat disentuh', 'snow', { card: 'neu', cardDepth: 0.6, radius: 26, rBtn: 18, rInput: 16, rChip: 60, rDockTop: 30, rDockBottom: 30, rDockBtn: 18, rModal: 28, blur: 0, glass: 1, border: 0, blobs: false, animHover: 'lift', font: 'manrope' }),
-  T('bevel', 'Bento 3D', 'Kartu tebal berlapis dengan kedalaman', 'stealth', { card: 'bevel', cardDepth: 0.8, radius: 18, rBtn: 12, rInput: 12, rChip: 10, rDockTop: 22, rDockBottom: 22, rDockBtn: 14, rModal: 22, blur: 12, glass: 0.9, border: 0.14, blobs: false, density: 'compact', font: 'inter' }),
+  T('bevel', 'Bento 3D', 'Kartu tebal berlapis dengan kedalaman', 'fluent', { card: 'bevel', cardDepth: 0.8, radius: 18, rBtn: 12, rInput: 12, rChip: 10, rDockTop: 22, rDockBottom: 22, rDockBtn: 14, rModal: 22, blur: 12, glass: 0.9, border: 0.14, blobs: false, density: 'compact', font: 'inter' }),
   T('aurora', 'Aurora Mesh', 'Kartu berwarna gradien mesh lembut', 'ocean', { card: 'aurora', cardDepth: 0.5, radius: 22, rBtn: 14, rInput: 14, rChip: 60, rDockTop: 30, rDockBottom: 30, rDockBtn: 16, rModal: 24, blur: 30, glass: 0.6, border: 0.16, blobIntensity: 0.35, bgType: 'gradient', bgGradient: 'mesh', font: 'outfit' }),
   T('cyber', 'Cyber Neon', 'Neon gelap dengan grid & hujan kode', 'cyberpunk', { card: 'neon', radius: 6, rBtn: 4, rInput: 4, rChip: 4, rDockTop: 8, rDockBottom: 8, rDockBtn: 6, rModal: 8, blur: 16, glass: 0.7, border: 0.2, blobIntensity: 0.3, grid: true, particle: 'matrix', font: 'rajdhani', fontHeading: 'orbitron' }),
   T('sakura', 'Sakura Gradien', 'Garis gradien pastel, salju lembut', 'sakura', { card: 'gradient', cardDepth: 0.4, radius: 24, rBtn: 16, rInput: 16, rChip: 60, rDockTop: 34, rDockBottom: 34, rDockBtn: 20, rModal: 26, blur: 24, particle: 'snow', font: 'figtree', fontHeading: 'fraunces' }),
   T('minimal', 'Minimal Mono', 'Datar, bersih, garis tipis', 'mono', { card: 'minimal', cardDepth: 0.1, radius: 8, rBtn: 6, rInput: 6, rChip: 6, rDockTop: 12, rDockBottom: 12, rDockBtn: 8, rModal: 10, blur: 0, glass: 0.4, border: 0.1, blobs: false, animHover: 'lift', font: 'inter' }),
   T('frost', 'Frosted Ice', 'Es beku buram, terang & bersih', 'snow', { card: 'frosted', cardDepth: 0.5, radius: 22, rBtn: 14, rInput: 14, rChip: 60, rDockTop: 30, rDockBottom: 30, rDockBtn: 16, rModal: 26, blur: 40, glass: 0.55, border: 0.18, blobIntensity: 0.3, bgType: 'gradient', bgGradient: 'dusk', font: 'jakarta' }),
   T('crystal', 'Crystal Glass', 'Kaca kristal bersudut dengan kilau diagonal', 'ocean', { card: 'crystal', cardDepth: 0.6, cardGlint: 'always', radius: 16, rBtn: 10, rInput: 10, rChip: 10, rDockTop: 20, rDockBottom: 20, rDockBtn: 12, rModal: 20, blur: 34, glass: 0.5, border: 0.22, blobIntensity: 0.4, bgType: 'gradient', bgGradient: 'ocean', font: 'jakarta' }),
-  T('clay', 'Clay Pop', 'Kenyal ala tanah liat, lembut & ceria', 'mint', { card: 'clay', cardDepth: 0.7, radius: 30, rBtn: 22, rInput: 20, rChip: 60, rDockTop: 34, rDockBottom: 34, rDockBtn: 22, rModal: 32, blur: 0, glass: 1, border: 0, blobs: false, animHover: 'lift', font: 'figtree' }),
   T('holo', 'Holo Chrome', 'Tepi holografis bergerak ala Y2K', 'dracula', { card: 'holo', cardDepth: 0.5, radius: 18, rBtn: 12, rInput: 12, rChip: 60, rDockTop: 24, rDockBottom: 24, rDockBtn: 14, rModal: 22, blur: 20, glass: 0.8, border: 0.14, blobIntensity: 0.3, grid: true, particle: 'stars', font: 'jakarta' }),
   T('stack', 'Stack Deck', 'Kartu bertumpuk seperti setumpuk kartu', 'royal', { card: 'stack', cardDepth: 0.8, radius: 14, rBtn: 10, rInput: 10, rChip: 8, rDockTop: 18, rDockBottom: 18, rDockBtn: 10, rModal: 18, blur: 10, glass: 0.95, border: 0.14, blobIntensity: 0.25, animHover: 'lift' }),
   T('terminal', 'Hacker Terminal', 'Monospace, siku sudut, garis pindai CRT', 'matrix', { card: 'terminal', cardDepth: 0.3, radius: 2, rBtn: 2, rInput: 2, rChip: 2, rDockTop: 4, rDockBottom: 4, rDockBtn: 2, rModal: 4, blur: 0, glass: 0.9, border: 0.3, blobs: false, grid: true, particle: 'matrix', animHover: 'none', font: 'jetbrains' }),
   T('vapor', 'Vaporwave', 'Gradien senja neon, bintang berkelip', 'sunset', { card: 'gradient', cardBorderColor: 'gradient', cardDepth: 0.5, radius: 20, rBtn: 14, rInput: 14, rChip: 60, rDockTop: 28, rDockBottom: 28, rDockBtn: 16, rModal: 24, blur: 22, glass: 0.7, border: 0.16, blobIntensity: 0.45, particle: 'stars', bgType: 'gradient', bgGradient: 'neon', font: 'jakarta' }),
   T('noir', 'Golden Noir', 'Hitam elegan, tepi emas, kaca buram', 'gold', { card: 'frosted', cardBorderColor: 'accent', cardDepth: 0.6, radius: 12, rBtn: 8, rInput: 8, rChip: 8, rDockTop: 16, rDockBottom: 16, rDockBtn: 10, rModal: 16, blur: 30, glass: 0.7, border: 0.2, blobIntensity: 0.2 }),
+  // Seri dasbor kaca — tiap template sekaligus memilih model nav tab yang cocok
+  T('mintwork', 'Mint Studio', 'Kartu putih lembut, hijau mint & persik', 'mintwork', { card: 'soft', cardDepth: 0.5, radius: 22, rBtn: 14, rInput: 14, rChip: 60, rDockTop: 30, rDockBottom: 30, rDockBtn: 60, rModal: 26, blur: 20, glass: 0.9, border: 0.07, blobIntensity: 0.22, bgType: 'gradient', bgGradient: 'mintmist', font: 'jakarta', navStyle: 'bubble' }),
+  T('coral', 'Coral Glass', 'Kaca berwarna koral di atas latar hangat', 'coral', { card: 'tint', cardDepth: 0.6, radius: 24, rBtn: 16, rInput: 16, rChip: 60, rDockTop: 34, rDockBottom: 34, rDockBtn: 22, rModal: 28, blur: 30, glass: 0.55, border: 0.18, blobIntensity: 0.35, bgType: 'gradient', bgGradient: 'coral', font: 'outfit', navStyle: 'label' }),
+  T('indigoair', 'Indigo Air', 'Putih lapang dengan aksen indigo', 'indigoair', { card: 'soft', cardDepth: 0.45, radius: 18, rBtn: 12, rInput: 12, rChip: 60, rDockTop: 26, rDockBottom: 26, rDockBtn: 14, rModal: 22, blur: 18, glass: 0.92, border: 0.06, blobIntensity: 0.18, bgType: 'gradient', bgGradient: 'lavender', font: 'figtree', navStyle: 'classic' }),
+  T('graphite', 'Graphite Glass', 'Kaca abu monokrom yang tenang', 'graphite', { card: 'smoke', cardDepth: 0.6, radius: 20, rBtn: 14, rInput: 14, rChip: 60, rDockTop: 30, rDockBottom: 30, rDockBtn: 18, rModal: 24, blur: 42, glass: 0.5, border: 0.16, blobIntensity: 0.3, bgType: 'gradient', bgGradient: 'smoke', font: 'manrope', navStyle: 'beam' }),
+  T('refract', 'Refract Glass', 'Kaca gelap dengan tepi pelangi kromatik', 'refract', { card: 'refract', cardDepth: 0.6, radius: 22, rBtn: 14, rInput: 14, rChip: 60, rDockTop: 32, rDockBottom: 32, rDockBtn: 20, rModal: 26, blur: 36, glass: 0.5, border: 0.14, blobIntensity: 0.4, bgType: 'gradient', bgGradient: 'prism', font: 'sora', navStyle: 'notch' }),
+  // Seri HUD sci-fi — tiap template memilih model kartu, font, latar, partikel & model nav yang cocok
+  T('kronos', 'Kronos Warp', 'HUD biru neon dengan garis warp & sudut siku', 'kronos', { card: 'hud', cardDepth: 0.6, radius: 10, rBtn: 6, rInput: 6, rChip: 6, rDockTop: 14, rDockBottom: 14, rDockBtn: 8, rModal: 12, blur: 18, glass: 0.65, border: 0.2, blobIntensity: 0.3, grid: true, particle: 'stars', bgType: 'gradient', bgGradient: 'warp', font: 'inter', fontHeading: 'barlowc', headingCase: 'upper', navStyle: 'beam' }),
+  T('spectre', 'Spectre Intercept', 'Panel ungu gelap, tepi violet, aliran sinyal', 'spectre', { card: 'panel', cardBorderW: 1, cardBorderColor: 'accent', cardDepth: 0.5, radius: 14, rBtn: 10, rInput: 10, rChip: 60, rDockTop: 22, rDockBottom: 22, rDockBtn: 12, rModal: 18, blur: 22, glass: 0.7, border: 0.18, blobIntensity: 0.3, particle: 'matrix', bgType: 'gradient', bgGradient: 'spectre', font: 'inter', navStyle: 'notch' }),
+  T('vision', 'Vision Nebula', 'Kaca gelap di atas nebula, aksen indigo', 'vision', { card: 'glass', cardDepth: 0.55, radius: 16, rBtn: 12, rInput: 12, rChip: 60, rDockTop: 26, rDockBottom: 26, rDockBtn: 14, rModal: 20, blur: 26, glass: 0.55, border: 0.14, blobIntensity: 0.28, particle: 'stars', bgType: 'gradient', bgGradient: 'nebula', font: 'inter', navStyle: 'bubble' }),
+  T('chronos', 'Chronos Cryo', 'Kaca beku biru-teal dengan kabut dingin', 'chronos', { card: 'frosted', cardDepth: 0.55, radius: 16, rBtn: 12, rInput: 12, rChip: 60, rDockTop: 26, rDockBottom: 26, rDockBtn: 14, rModal: 20, blur: 34, glass: 0.45, border: 0.18, blobIntensity: 0.3, particle: 'snow', bgType: 'gradient', bgGradient: 'cryo', font: 'chakra', navStyle: 'label' }),
+  T('nexus', 'Nexus Biome', 'Kaca hijau neon di atas kubah bio, malam ungu', 'nexus', { card: 'glass', cardBorderW: 1, cardBorderColor: 'accent', cardDepth: 0.55, radius: 14, rBtn: 10, rInput: 10, rChip: 60, rDockTop: 24, rDockBottom: 24, rDockBtn: 14, rModal: 18, blur: 24, glass: 0.5, border: 0.2, blobIntensity: 0.34, particle: 'fireflies', bgType: 'gradient', bgGradient: 'biome', font: 'outfit', navStyle: 'bubble' }),
+  T('valkyrie', 'Valkyrie Combat', 'HUD merah-hitam siaga tempur', 'valkyrie', { card: 'hud', cardDepth: 0.6, radius: 8, rBtn: 4, rInput: 4, rChip: 4, rDockTop: 12, rDockBottom: 12, rDockBtn: 6, rModal: 10, blur: 16, glass: 0.7, border: 0.2, blobIntensity: 0.28, grid: true, bgType: 'gradient', bgGradient: 'battle', font: 'rajdhani', fontHeading: 'rajdhani', navStyle: 'notch' }),
+  T('orion', 'Orion Mining', 'Kartu amber-tembaga, rig tambang asteroid', 'orion', { card: 'tint', cardDepth: 0.6, radius: 10, rBtn: 6, rInput: 6, rChip: 6, rDockTop: 16, rDockBottom: 16, rDockBtn: 8, rModal: 14, blur: 20, glass: 0.6, border: 0.2, blobIntensity: 0.3, particle: 'stars', bgType: 'gradient', bgGradient: 'asteroid', font: 'inter', fontHeading: 'oswald', navStyle: 'label' }),
+  // Tren 2025–2026
+  T('cloud', 'Cloud Dancer', 'Putih awan lembut, warna tahun 2026, lapang', 'cloud', { card: 'soft', cardDepth: 0.4, radius: 20, rBtn: 14, rInput: 14, rChip: 60, rDockTop: 28, rDockBottom: 28, rDockBtn: 16, rModal: 24, blur: 24, glass: 0.8, border: 0.1, blobIntensity: 0.18, bgType: 'gradient', bgGradient: 'lavender', font: 'jakarta', animHover: 'spotlight', navStyle: 'bubble' }),
+  T('mocha', 'Mocha Mousse', 'Cokelat hangat berkabut, judul serif elegan', 'mocha', { card: 'frosted', cardDepth: 0.5, radius: 22, rBtn: 14, rInput: 14, rChip: 60, rDockTop: 30, rDockBottom: 30, rDockBtn: 16, rModal: 26, blur: 36, glass: 0.55, border: 0.16, blobIntensity: 0.3, bgType: 'gradient', bgGradient: 'smoke', font: 'figtree', fontHeading: 'fraunces', animHover: 'shine', navStyle: 'notch' }),
+  T('matcha', 'Matcha Latte', 'Hijau sage kenyal, ramah dan ceria', 'matcha', { card: 'clay', cardDepth: 0.7, radius: 28, rBtn: 20, rInput: 18, rChip: 60, rDockTop: 32, rDockBottom: 32, rDockBtn: 20, rModal: 30, blur: 0, glass: 1, border: 0, blobs: false, font: 'figtree', animHover: 'jelly', navStyle: 'label' }),
+  T('lime', 'Electric Lime', 'Hitam & hijau lime, garis tegas ala Gen-Z', 'electric', { card: 'brutal', cardBorderColor: 'accent', cardDepth: 0.5, radius: 6, rBtn: 4, rInput: 4, rChip: 4, rDockTop: 8, rDockBottom: 8, rDockBtn: 4, rModal: 8, blur: 0, glass: 1, border: 0.4, blobs: false, grid: true, font: 'space', fontMono: 'spacemono', headingCase: 'upper', animHover: 'press', navStyle: 'beam' }),
+  T('ube', 'Ube Pastel', 'Ungu ube dan pink, tepi gradien manis', 'ube', { card: 'gradient', cardDepth: 0.45, radius: 26, rBtn: 18, rInput: 16, rChip: 60, rDockTop: 34, rDockBottom: 34, rDockBtn: 20, rModal: 28, blur: 24, bgType: 'gradient', bgGradient: 'lavender', font: 'manrope', animHover: 'pop', navStyle: 'bubble' }),
+  T('midnight', 'Midnight Aurora', 'Malam pekat, cahaya aurora, kaca cair', 'midnight', { card: 'liquid', cardDepth: 0.6, radius: 28, rBtn: 20, rInput: 18, rChip: 60, rDockTop: 36, rDockBottom: 36, rDockBtn: 22, rModal: 30, blur: 38, glass: 0.4, border: 0.2, blobIntensity: 0.35, particle: 'stars', bgType: 'gradient', bgGradient: 'aurora', font: 'jakarta', animHover: 'float', navStyle: 'beam' }),
 ];
 
 export const COLOR_KEYS = [
@@ -257,7 +375,7 @@ export const RADIUS_PRESETS = [
 ];
 
 export const DEFAULT_CONFIG = {
-  theme: 'fluent',
+  theme: 'snow',
   custom: {},
   // bentuk (60 = pill) — sudut halus ala Fluent
   radius: 10, // kartu
@@ -279,6 +397,10 @@ export const DEFAULT_CONFIG = {
   cardDepth: 0.5, // 0..1 kedalaman bayangan & kemiringan 3D
   density: 'normal', // compact | normal | spacious
   cardSize: 'm', // s | m | l
+  // navbar bawah (tab)
+  navStyle: 'classic', // classic | notch | beam | bubble | label
+  navLabels: 'auto', // auto (ikut model) | on | off
+  navCenter: true, // tombol menu cepat ⚡ di tengah
   // efek latar
   particle: 'off',
   blobs: true,
@@ -295,6 +417,11 @@ export const DEFAULT_CONFIG = {
   animBlobs: true,
   animBtn: true,
   animSplash: true,
+  splashStyle: 'ring', // ring | orbit | bars | pulse | morph | dots | typing
+  splashBg: 'theme', // theme | gradient | mesh | glass
+  splashBar: true,
+  splashTitle: 'WUDYSOFT',
+  splashSpeed: 1,
   animBar: true,
   // latar kustom
   bgType: 'none', // none | gradient | link | upload
@@ -307,6 +434,7 @@ export const DEFAULT_CONFIG = {
   // teks
   font: 'segoe',
   fontHeading: 'same',
+  headingCase: 'normal', // normal | upper
   fontMono: 'jetbrains',
   fontScale: 100,
   soundEnabled: true,
@@ -324,6 +452,7 @@ export function sanitizeConfig(raw) {
   const num = (v, min, max, d) => (Number.isFinite(Number(v)) ? Math.min(max, Math.max(min, Number(v))) : d);
   const bool = (v, d) => (typeof v === 'boolean' ? v : d);
 
+  if (THEME_ALIASES[c.theme]) c.theme = THEME_ALIASES[c.theme];
   if (!PRESETS.some((p) => p.id === c.theme)) c.theme = DEFAULT_CONFIG.theme;
   c.font = FONT_ALIASES[c.font] || c.font;
   c.fontMono = FONT_ALIASES[c.fontMono] || c.fontMono;
@@ -336,13 +465,22 @@ export function sanitizeConfig(raw) {
   c.cardBorderW = Math.round(num(c.cardBorderW, 0, 4, 0));
   c.cardBorderColor = pick(c.cardBorderColor, BORDER_COLORS.map((b) => b.id), 'theme');
   c.cardGlint = pick(c.cardGlint, GLINTS.map((g) => g.id), 'hover');
+  c.splashStyle = pick(c.splashStyle, SPLASH_STYLES.map((s) => s.id), 'ring');
+  c.splashBg = pick(c.splashBg, SPLASH_BGS.map((s) => s.id), 'theme');
+  c.splashBar = bool(c.splashBar, true);
+  c.splashTitle = String(c.splashTitle ?? 'WUDYSOFT').replace(/[^\p{L}\p{N} ._-]/gu, '').slice(0, 20);
+  c.splashSpeed = num(c.splashSpeed, 0.5, 2.5, 1);
   c.cardDepth = num(c.cardDepth, 0, 1, 0.5);
   c.density = pick(c.density, ['compact', 'normal', 'spacious'], 'normal');
   c.cardSize = pick(c.cardSize, ['s', 'm', 'l'], 'm');
+  c.headingCase = pick(c.headingCase, HEADING_CASES.map((h) => h.id), 'normal');
+  c.navStyle = pick(c.navStyle, NAV_STYLES.map((n) => n.id), 'classic');
+  c.navLabels = pick(c.navLabels, NAV_LABELS.map((n) => n.id), 'auto');
+  c.navCenter = bool(c.navCenter, true);
   c.anim = c.anim === 'off' ? 'off' : 'on';
   c.animPage = pick(c.animPage, ['auto', 'slide', 'fade', 'zoom', 'blur', 'slideX', 'rise', 'flip', 'drop', 'skew', 'none'], 'auto');
   // migrasi: `tilt` (boolean) → animHover
-  c.animHover = pick(r.animHover !== undefined ? c.animHover : r.tilt === false ? 'lift' : 'tilt', ['lift', 'tilt', 'glow', 'none'], 'tilt');
+  c.animHover = pick(r.animHover !== undefined ? c.animHover : r.tilt === false ? 'lift' : 'tilt', HOVERS.map((h) => h.id), 'tilt');
   ['animEntrance', 'animPreview', 'animBlobs', 'animBtn', 'animSplash', 'animBar'].forEach((k) => { c[k] = bool(c[k], DEFAULT_CONFIG[k]); });
 
   ['radius', 'rBtn', 'rInput', 'rChip', 'rDockTop', 'rDockBottom', 'rDockBtn', 'rModal'].forEach((k) => { c[k] = Math.round(num(c[k], 0, 60, DEFAULT_CONFIG[k])); });
@@ -427,8 +565,17 @@ export function computeTheme(input) {
     '--dock-bg': rgba(mix(c.bg1, c.bg2, 0.5), 0.94),
     '--dock-border': rgba(c.text, Math.max(0.1, cfg.border + 0.02)),
     '--shadow-c': c.light ? '#334155' : '#000000',
+    '--ok': c.light ? '#059669' : '#34d399',
+    '--warn': c.light ? '#b45309' : '#fbbf24',
+    '--err': c.light ? '#dc2626' : '#f87171',
+    '--info': c.light ? '#2563eb' : '#60a5fa',
+    '--r-s': `min(${rad(cfg.rBtn)}, 10px)`,
+    '--r-m': `min(${rad(cfg.radius)}, 18px)`,
+    '--r-l': `min(${rad(cfg.rModal)}, 28px)`,
     '--blur': `${cfg.blur}px`,
     '--card-depth': String(cfg.cardDepth),
+    '--splash-title': JSON.stringify(cfg.splashTitle),
+    '--splash-speed': String(cfg.splashSpeed),
     '--card-bw': `${cfg.cardBorderW}px`,
     '--tilt-k': String(cfg.cardDepth * 2),
     '--neu-hi': c.light ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.07)',
@@ -453,10 +600,14 @@ export function computeTheme(input) {
   };
 
   const off = cfg.anim === 'off';
+  const navLabelsOn = cfg.navLabels === 'on' || (cfg.navLabels === 'auto' && ['notch', 'label'].includes(cfg.navStyle));
   const attrs = {
     'data-theme': cfg.theme,
     'data-mode': c.light ? 'light' : 'dark',
     'data-card': cfg.card,
+    'data-hcase': cfg.headingCase,
+    'data-nav': cfg.navStyle,
+    'data-nav-labels': navLabelsOn ? 'on' : 'off',
     'data-bstyle': cfg.cardBorderStyle,
     'data-bw': cfg.cardBorderW ? 'on' : 'off',
     'data-bcolor': cfg.cardBorderColor,
@@ -470,6 +621,9 @@ export function computeTheme(input) {
     'data-anim-blobs': cfg.animBlobs ? 'on' : 'off',
     'data-anim-btn': cfg.animBtn ? 'on' : 'off',
     'data-splash': cfg.animSplash ? 'on' : 'off',
+    'data-splash-style': cfg.splashStyle,
+    'data-splash-bg': cfg.splashBg,
+    'data-splash-bar': cfg.splashBar ? 'on' : 'off',
     'data-bar': cfg.animBar ? 'on' : 'off',
   };
 
@@ -496,10 +650,11 @@ export function applyConfig(input) {
   Object.entries(t.attrs).forEach(([k, v]) => root.setAttribute(k, v));
   root.style.colorScheme = t.attrs['data-mode'];
   ensureFontLink(t.fontHref);
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', t.colors.bg1);
+  // meta warna, favicon, ikon PWA & manifest ikut tema (src/lib/themeAssets.js)
+  let fav = null;
+  try { fav = applyThemeAssets(t.colors); } catch {}
   try {
-    localStorage.setItem(BOOT_KEY, JSON.stringify({ vars: t.vars, attrs: t.attrs, font: t.fontHref }));
+    localStorage.setItem(BOOT_KEY, JSON.stringify({ vars: t.vars, attrs: t.attrs, font: t.fontHref, fav }));
   } catch {}
   return t;
 }
@@ -545,4 +700,4 @@ export function randomPalette(lightMode = false) {
 }
 
 /** Script kecil di <head> supaya tema tersimpan langsung terpasang sebelum paint */
-export const THEME_BOOT_SCRIPT = `(function(){try{var d=JSON.parse(localStorage.getItem('${BOOT_KEY}')||'null');if(!d)return;var r=document.documentElement;for(var k in d.vars)r.style.setProperty(k,d.vars[k]);for(var a in d.attrs)r.setAttribute(a,d.attrs[a]);r.style.colorScheme=d.attrs['data-mode'];if(d.font){var l=document.createElement('link');l.id='wudysoft-fonts';l.rel='stylesheet';l.href=d.font;document.head.appendChild(l);}}catch(e){}})();`;
+export const THEME_BOOT_SCRIPT = `(function(){try{var d=JSON.parse(localStorage.getItem('${BOOT_KEY}')||'null');if(!d)return;var r=document.documentElement;for(var k in d.vars)r.style.setProperty(k,d.vars[k]);for(var a in d.attrs)r.setAttribute(a,d.attrs[a]);r.style.colorScheme=d.attrs['data-mode'];var m=document.querySelector('meta[name="theme-color"]');if(m&&d.vars['--bg1'])m.setAttribute('content',d.vars['--bg1']);var cs=document.querySelector('meta[name="color-scheme"]');if(cs)cs.setAttribute('content',d.attrs['data-mode']);if(d.fav){var f=document.querySelector('link[rel="icon"][type="image/svg+xml"]');if(f)f.setAttribute('href',d.fav);}if(d.font){var l=document.createElement('link');l.id='wudysoft-fonts';l.rel='stylesheet';l.href=d.font;document.head.appendChild(l);}}catch(e){}})();`;

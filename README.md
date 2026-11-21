@@ -30,9 +30,15 @@
 | 💬 **Chat Rooms** | Ruang obrolan realtime dengan daftar grup, gelembung berefek pegas, dan layout khusus mobile. |
 | 📋 **Pastes** | CRUD paste (judul, sintaks, kedaluwarsa) dengan pencarian di server dan pagination. |
 | 🧩 **Code Share** | Bagikan potongan kode: tag bahasa, suka/tidak suka, hitungan lihat, urut & filter, pagination. |
+| 📚 **Dokumentasi API** | `/docs`: referensi interaktif dari OpenAPI — pencarian, parameter, skema respons, contoh cURL/JavaScript/Python, pilih server, tautan ke Playground. |
+| 🟢 **Status Monitor** | `/status`: uptime, rata-rata & p95 latensi, grafik mini, riwayat gangguan; bisa menambah endpoint sendiri; ekspor JSON. Riwayat disimpan di browser. |
+| 🔑 **API Keys** | `/keys`: kunci pribadi `wd_live_…` (hanya hash yang disimpan), izin baca/tulis, kedaluwarsa, pencabutan. Pakai header `x-api-key`; uji di `GET /api/whoami`. Batas 120 req/menit per kunci. |
+| 🪝 **Webhook Inspector** | `/webhooks`: URL penampung sementara `/api/hook/<slug>` — lihat header, query, body secara live; atur status balasan; kedaluwarsa otomatis. |
 | 🛠️ **Tools** | Code Beautifier dan Multi-Host Uploader. |
 | 👤 **Profil** | Ringkasan akun, kelengkapan profil, foto, sesi & perangkat, plus kartu **GitHub** pengembang (repo, bintang, bahasa). |
-| 🎨 **Theme Studio** | Puluhan preset + editor tema: warna, latar, partikel, blur, kecepatan animasi, transisi halaman. Ekspor/impor JSON. |
+| 🎨 **Theme Studio** | 34 preset, 32 template satu-ketukan (termasuk seri dasbor kaca: Mint Studio, Coral Glass, Indigo Air, Orbit Green, Graphite Glass, Refract Glass, Clinova Care, dan seri HUD sci-fi: Kronos Warp, Spectre Intercept, Vision Nebula, Chronos Cryo, Aether Solar, Nexus Biome, Valkyrie Combat, Orion Mining; ada juga model kartu HUD/Panel dan opsi huruf judul KAPITAL) + editor tema: warna, latar, partikel, blur, kecepatan animasi, transisi halaman. Ekspor/impor JSON. |
+| 🏷️ **Meta & aset ikut tema** | `theme-color`, `color-scheme`, tile Windows, status bar iOS, favicon SVG, mask-icon, apple-touch-icon, ikon PWA & `manifest.json` otomatis memakai warna tema aktif (`src/lib/themeAssets.js`). Gambar preview `/api/og?theme=<id>` ikut palet tema. Aset statis per tema: `node scripts/gen-assets.cjs --theme=coral [--out=folder]`. |
+| 🧭 **Model tombol nav tab** | Tab **Nav** di Theme Studio: 5 model (Klasik, Lekuk, Sinar, Gelembung, Label), teks di bawah ikon (otomatis/tampil/sembunyi), dan tombol menu cepat ⚡ bisa dimatikan. Tersimpan di `navStyle`, `navLabels`, `navCenter`. |
 | 🎞️ **Animasi halus & bervariasi** | 11 gaya masuk, transisi halaman otomatis per rute, hitung naik, tombol magnetik, ripple, progres gulir. Semua menghormati `prefers-reduced-motion` dan pengaturan tema. |
 | 🎵 **Audio** | BGM dari **link YouTube** (video/playlist), efek suara sintetis untuk welcome, login berhasil/gagal, logout, dan 404 — tanpa file audio. |
 | 🧭 **UI modern** | Sidebar melengkung glass, bottom dock dengan menu cepat ⚡, tombol tema & audio menempel di tepi kanan, 404 interaktif, ikon besar di halaman login. |
@@ -98,7 +104,7 @@ Isi penting:
 ├─ scripts/            openapi-gen, api-log-loader, trace-size, prepare-standalone
 ├─ styles/             globals.css · motion.css
 ├─ configs/            siteConfig · apiConfig
-└─ public/             manifest.json · sw.js · icons · og.png
+└─ public/             manifest.json · sw.js · icons · og.jpg
 ```
 
 ## 🌐 Deploy

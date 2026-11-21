@@ -131,7 +131,7 @@ export default function OAuthPage() {
                       Lanjutkan dengan {p.label}
                     </span>
                     {!isReady ? (
-                      <span style={{ fontSize: '0.68rem', color: '#f87171', fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ fontSize: '0.68rem', color: 'var(--err)', fontFamily: 'var(--font-mono)' }}>
                         Belum Diatur
                       </span>
                     ) : (

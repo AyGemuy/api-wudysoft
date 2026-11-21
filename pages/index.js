@@ -16,6 +16,7 @@ import { useTheme } from '@/components/ThemeContext';
 import { sound } from '@/src/lib/interactiveEffects';
 import { SITE_PAGES, CATEGORIES } from '@/src/lib/siteMap';
 import { PRESETS } from '@/src/lib/themes';
+import Pagination from '@/components/Pagination';
 
 const HOST = 'wudysoft.app';
 const ROTATING = ['API Playground', 'Realtime Rooms', 'Dev Tools', 'Theme Studio', 'Live Telemetry'];
@@ -354,6 +355,13 @@ export default function Home() {
     });
   }, [query, cat]);
 
+  const [hpage, setHpage] = useState(1);
+  const [hlimit, setHlimit] = useState(12);
+  useEffect(() => { setHpage(1); }, [query, cat, hlimit]);
+  const hpages = Math.max(1, Math.ceil(filtered.length / hlimit));
+  const hcur = Math.min(hpage, hpages);
+  const pagedPages = filtered.slice((hcur - 1) * hlimit, hcur * hlimit);
+
   const countPages = useCountUp(SITE_PAGES.length, statsIn);
   const countThemes = useCountUp(PRESETS.length, statsIn);
   const countCats = useCountUp(CATEGORIES.length - 1, statsIn);
@@ -545,7 +553,7 @@ export default function Home() {
       {/* ============ GRID CARD ============ */}
       <div className="hx-grid">
         <AnimatePresence mode="popLayout">
-          {filtered.map((p) => (
+          {pagedPages.map((p) => (
             <PageCard
               key={p.id}
               page={p}
@@ -558,6 +566,7 @@ export default function Home() {
           ))}
         </AnimatePresence>
       </div>
+      <Pagination page={hcur} pages={hpages} total={filtered.length} limit={hlimit} onPage={setHpage} onLimit={setHlimit} label="halaman" sizes={[12, 24, 48]} />
 
       <AnimatePresence>
         {filtered.length === 0 && (
@@ -705,7 +714,7 @@ export default function Home() {
           display: grid;
           place-items: center;
           margin-bottom: 6px;
-          border-radius: 9px;
+          border-radius: var(--r-s);
           color: var(--a2);
           background: color-mix(in srgb, var(--a2) 13%, transparent);
         }
@@ -739,12 +748,12 @@ export default function Home() {
           display: inline-block;
         }
         .hx-health.ok {
-          background: #34d399;
-          box-shadow: 0 0 8px #34d399;
+          background: var(--ok);
+          box-shadow: 0 0 8px var(--ok);
           animation: hx-ping calc(1.8s / var(--speed)) ease-in-out infinite;
         }
         .hx-health.err {
-          background: #f87171;
+          background: var(--err);
         }
 
         /* ---------- TOOLBAR ---------- */
@@ -930,13 +939,13 @@ export default function Home() {
           transition: background 0.25s ease;
         }
         .hx-card:hover .hx-traffic i:nth-child(1) {
-          background: #f87171;
+          background: var(--err);
         }
         .hx-card:hover .hx-traffic i:nth-child(2) {
-          background: #fbbf24;
+          background: var(--warn);
         }
         .hx-card:hover .hx-traffic i:nth-child(3) {
-          background: #34d399;
+          background: var(--ok);
         }
         .hx-url {
           flex: 1;
@@ -1015,7 +1024,7 @@ export default function Home() {
           color: var(--ac);
         }
         .hx-line em {
-          color: #34d399;
+          color: var(--ok);
           font-style: normal;
         }
         .hx-line.l2 {
@@ -1085,7 +1094,7 @@ export default function Home() {
         .hx-bub {
           max-width: 70%;
           padding: 7px 12px;
-          border-radius: 14px;
+          border-radius: var(--r-m);
           opacity: 0;
           transform: translateY(8px) scale(0.9);
           animation: hx-pop calc(6s / var(--speed)) ease-out infinite;
@@ -1110,7 +1119,7 @@ export default function Home() {
           display: flex;
           gap: 4px;
           padding: 8px 10px;
-          border-radius: 12px;
+          border-radius: var(--r-m);
           background: color-mix(in srgb, var(--ac) 25%, transparent);
         }
         .hx-typing i {
@@ -1167,7 +1176,7 @@ export default function Home() {
         .hx-drop {
           width: 60px;
           height: 50px;
-          border-radius: 14px;
+          border-radius: var(--r-m);
           border: 2px dashed color-mix(in srgb, var(--ac) 70%, transparent);
           display: flex;
           align-items: center;
@@ -1272,7 +1281,7 @@ export default function Home() {
           z-index: 1;
           width: 56px;
           height: 56px;
-          border-radius: 18px;
+          border-radius: var(--r-l);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1343,10 +1352,10 @@ export default function Home() {
           background-image: linear-gradient(90deg, var(--a3), color-mix(in srgb, var(--a3) 40%, transparent), var(--a3));
         }
         .hx-jl u.s {
-          background-image: linear-gradient(90deg, #34d399, color-mix(in srgb, #34d399 40%, transparent), #34d399);
+          background-image: linear-gradient(90deg, var(--ok), color-mix(in srgb, var(--ok) 40%, transparent), var(--ok));
         }
         .hx-jl u.n {
-          background-image: linear-gradient(90deg, #fbbf24, color-mix(in srgb, #fbbf24 40%, transparent), #fbbf24);
+          background-image: linear-gradient(90deg, var(--warn), color-mix(in srgb, var(--warn) 40%, transparent), var(--warn));
         }
         .hx-jl u.b {
           background-image: linear-gradient(90deg, var(--a2), color-mix(in srgb, var(--a2) 40%, transparent), var(--a2));
@@ -1358,8 +1367,8 @@ export default function Home() {
           width: 10px;
           height: 10px;
           border-radius: 50%;
-          background: #34d399;
-          box-shadow: 0 0 12px #34d399;
+          background: var(--ok);
+          box-shadow: 0 0 12px var(--ok);
           animation: hx-ping calc(1.6s / var(--speed)) ease-in-out infinite;
         }
 
@@ -1384,7 +1393,7 @@ export default function Home() {
           flex-shrink: 0;
           width: 34px;
           height: 34px;
-          border-radius: 11px;
+          border-radius: var(--r-m);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1442,7 +1451,7 @@ export default function Home() {
           display: inline-flex;
           align-items: center;
           gap: 4px;
-          color: #fbbf24;
+          color: var(--warn);
         }
         .hx-open {
           display: inline-flex;

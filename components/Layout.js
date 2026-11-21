@@ -114,6 +114,19 @@ export default function Layout({ children }) {
     sound.enabled = config.soundEnabled;
   }, [config, hydrated]);
 
+  // sinkron antar-tab/jendela: perubahan tema di satu tab langsung diterapkan di tab lain
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key && !e.key.startsWith('wudysoft_theme')) return;
+      setConfig((cur) => {
+        const next = loadConfig();
+        return JSON.stringify(next) === JSON.stringify(cur) ? cur : next;
+      });
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   const openStudio = useCallback(() => setStudioOpen(true), []);
   useEffect(() => {
     window.addEventListener('wudysoft:open-studio', openStudio);
@@ -143,6 +156,10 @@ export default function Layout({ children }) {
       { type: 'Halaman', title: 'Chat Rooms', sub: 'Komunikasi', action: '/rooms' },
       { type: 'Halaman', title: 'Pastes', sub: 'Tools · simpan & bagikan teks', action: '/tools/pastes' },
       { type: 'Halaman', title: 'Code Share', sub: 'Tools · bagikan potongan kode', action: '/tools/code-share' },
+      { type: 'Halaman', title: 'Dokumentasi API', sub: 'Developer · referensi endpoint', action: '/docs' },
+      { type: 'Halaman', title: 'Status Layanan', sub: 'Developer · uptime & latensi', action: '/status' },
+      { type: 'Halaman', title: 'API Keys', sub: 'Developer · kunci akses pribadi', action: '/keys' },
+      { type: 'Halaman', title: 'Webhook Inspector', sub: 'Developer · tangkap request', action: '/webhooks' },
       { type: 'Halaman', title: 'Masuk / Daftar', sub: 'Akun', action: '/auth' },
     ].filter((i) => !q || `${i.title} ${i.sub}`.toLowerCase().includes(q));
     const eps = endpoints
@@ -151,6 +168,17 @@ export default function Layout({ children }) {
       .map((o) => ({ type: 'Endpoint', method: o.method, methods: o.methods, title: o.path, sub: o.summary, secure: o.secure, action: `/playground?op=${encodeURIComponent(o.key)}` }));
     return [...pages, ...eps];
   }, [searchQuery, endpoints, user]);
+
+  // Tab navbar bawah (dipakai semua model nav: classic / notch / beam / bubble / label)
+  const navItems = [
+    { key: 'home', href: '/', label: 'Beranda', Icon: Icons.Home, active: router.pathname === '/' },
+    { key: 'api', href: '/playground', label: 'API', Icon: Icons.Terminal, active: router.pathname === '/playground' },
+    { key: 'menu', center: true },
+    { key: 'search', label: 'Cari', Icon: Icons.Search, onClick: () => setSearchOpen(true) },
+    user
+      ? { key: 'me', href: '/profile', label: 'Profil', Icon: Icons.User, active: router.pathname === '/profile' }
+      : { key: 'me', href: '/auth', label: 'Masuk', Icon: Icons.User, active: router.pathname.startsWith('/auth') },
+  ];
 
   return (
     <ThemeContext.Provider value={themeCtx}>
@@ -261,8 +289,8 @@ export default function Layout({ children }) {
                           logout('/');
                         }}
                       >
-                        <Icons.LogOut size={14} color="#f87171" />
-                        <span style={{ color: '#f87171' }}>Keluar</span>
+                        <Icons.LogOut size={14} style={{ stroke: 'var(--err)' }} />
+                        <span style={{ color: 'var(--err)' }}>Keluar</span>
                       </button>
                     </motion.div>
                   )}
@@ -322,7 +350,7 @@ export default function Layout({ children }) {
                       <b className={item.method ? 'si-path' : ''}>{item.title}</b>
                       {item.sub ? <small>{item.sub}</small> : null}
                     </span>
-                    {item.secure && <Icons.Lock size={12} color="#fbbf24" />}
+                    {item.secure && <Icons.Lock size={12} style={{ stroke: 'var(--warn)' }} />}
                     <Icons.ChevronRight size={14} color="var(--a2)" />
                   </div>
                 ))}
@@ -362,81 +390,69 @@ export default function Layout({ children }) {
         {dialOpen && <motion.div className="dial-scrim" onClick={() => setDialOpen(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />}
       </AnimatePresence>
 
-      {/* FLOATING BOTTOM NAVBAR */}
+      {/* FLOATING BOTTOM NAVBAR — model diatur lewat Theme Studio → Nav (data-nav) */}
       <div className="floating-navbar-wrap">
-        <nav className="floating-navbar">
-          <Link href="/" className={`nav-tab ${router.pathname === '/' ? 'active' : ''}`} onClick={() => sound.playClick()}>
-            <Icons.Home size={22} />
-            {router.pathname === '/' && <motion.div layoutId="navDot" className="nav-active-dot" />}
-          </Link>
+        <nav className="floating-navbar" aria-label="Navigasi bawah">
+          {navItems.map((it) => {
+            if (it.center) {
+              if (!config.navCenter) return null;
+              return (
+                <div className="dial-slot" key="center">
+                  <AnimatePresence>
+                    {dialOpen && (
+                      <>
+                        {DIAL.map((d, i) => {
+                          const ang = (-158 + (i * 136) / (DIAL.length - 1)) * (Math.PI / 180);
+                          const R = 140;
+                          return (
+                            <motion.button
+                              key={d.href}
+                              className="dial-chip"
+                              aria-label={d.label}
+                              initial={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
+                              animate={{ x: Math.cos(ang) * R, y: Math.sin(ang) * R - 48, scale: 1, opacity: 1 }}
+                              exit={{ x: 0, y: 0, scale: 0.2, opacity: 0, transition: { duration: 0.15 } }}
+                              transition={{ type: 'spring', stiffness: 380, damping: 22, delay: i * 0.04 }}
+                              onClick={() => { sound.playClick(); setDialOpen(false); router.push(d.href); }}
+                            >
+                              <d.Icon size={22} className="dc-ico" />
+                              <span>{d.label}</span>
+                            </motion.button>
+                          );
+                        })}
+                      </>
+                    )}
+                  </AnimatePresence>
+                  <button
+                    className={`nav-center-action ${dialOpen ? 'open' : ''}`}
+                    aria-label={dialOpen ? 'Tutup menu cepat' : 'Menu cepat'}
+                    aria-expanded={dialOpen}
+                    onClick={() => { sound.playBeep(); setDialOpen((o) => !o); }}
+                  >
+                    {dialOpen ? <Icons.Close key="x" size={24} strokeWidth={2.4} className="dock-ico" /> : <Icons.Zap key="z" size={26} strokeWidth={2.2} fill="currentColor" className="dock-ico dock-zap" />}
+                    <span className="nav-lbl">Menu</span>
+                  </button>
+                </div>
+              );
+            }
 
-          <Link href="/playground" className={`nav-tab ${router.pathname === '/playground' ? 'active' : ''}`} onClick={() => sound.playClick()}>
-            <Icons.Terminal size={22} />
-            {router.pathname === '/playground' && <motion.div layoutId="navDot" className="nav-active-dot" />}
-          </Link>
-
-          <div className="dial-slot">
-            <AnimatePresence>
-              {dialOpen && (
-                <>
-                  {DIAL.map((d, i) => {
-                    const ang = (-158 + (i * 136) / (DIAL.length - 1)) * (Math.PI / 180);
-                    const R = 140;
-                    return (
-                      <motion.button
-                        key={d.href}
-                        className="dial-chip"
-                        aria-label={d.label}
-                        initial={{ x: 0, y: 0, scale: 0.2, opacity: 0 }}
-                        animate={{ x: Math.cos(ang) * R, y: Math.sin(ang) * R - 48, scale: 1, opacity: 1 }}
-                        exit={{ x: 0, y: 0, scale: 0.2, opacity: 0, transition: { duration: 0.15 } }}
-                        transition={{ type: 'spring', stiffness: 380, damping: 22, delay: i * 0.04 }}
-                        onClick={() => { sound.playClick(); setDialOpen(false); router.push(d.href); }}
-                      >
-                        <d.Icon size={22} className="dc-ico" />
-                        <span>{d.label}</span>
-                      </motion.button>
-                    );
-                  })}
-                </>
-              )}
-            </AnimatePresence>
-            <button
-              className={`nav-center-action ${dialOpen ? 'open' : ''}`}
-              aria-label={dialOpen ? 'Tutup menu cepat' : 'Menu cepat'}
-              aria-expanded={dialOpen}
-              onClick={() => { sound.playBeep(); setDialOpen((o) => !o); }}
-            >
-              {dialOpen ? <Icons.Close key="x" size={24} strokeWidth={2.4} className="dock-ico" /> : <Icons.Zap key="z" size={26} strokeWidth={2.2} fill="currentColor" className="dock-ico dock-zap" />}
-            </button>
-          </div>
-
-          <button
-            className="nav-tab"
-            onClick={() => {
-              sound.playClick();
-              setSearchOpen(true);
-            }}
-          >
-            <Icons.Search size={22} />
-          </button>
-
-          {user ? (
-            <Link
-              href="/profile"
-              className={`nav-tab ${router.pathname === '/profile' ? 'active' : ''}`}
-              aria-label="Profil"
-              onClick={() => sound.playClick()}
-            >
-              <Icons.User size={22} />
-              {router.pathname === '/profile' && <motion.div layoutId="navDot" className="nav-active-dot" />}
-            </Link>
-          ) : (
-            <Link href="/auth" className={`nav-tab ${router.pathname.startsWith('/auth') ? 'active' : ''}`} onClick={() => sound.playClick()}>
-              <Icons.User size={22} />
-              {router.pathname.startsWith('/auth') && <motion.div layoutId="navDot" className="nav-active-dot" />}
-            </Link>
-          )}
+            const inner = (
+              <>
+                {it.active && <motion.span layoutId="navInd" className="nav-ind" aria-hidden="true" transition={{ type: 'spring', stiffness: 420, damping: 32 }} />}
+                <it.Icon size={22} />
+                <span className="nav-lbl">{it.label}</span>
+              </>
+            );
+            return it.href ? (
+              <Link key={it.key} href={it.href} className={`nav-tab ${it.active ? 'active' : ''}`} aria-label={it.label} aria-current={it.active ? 'page' : undefined} onClick={() => sound.playClick()}>
+                {inner}
+              </Link>
+            ) : (
+              <button key={it.key} type="button" className="nav-tab" aria-label={it.label} onClick={() => { sound.playClick(); it.onClick?.(); }}>
+                {inner}
+              </button>
+            );
+          })}
         </nav>
       </div>
 
@@ -610,7 +626,7 @@ export default function Layout({ children }) {
           right: 0;
           width: 230px;
           padding: 12px;
-          border-radius: 18px;
+          border-radius: var(--r-l);
           background: var(--surface);
           border: 1px solid var(--border);
           box-shadow: 0 16px 36px color-mix(in srgb, var(--shadow-c) 85%, transparent);
@@ -642,7 +658,7 @@ export default function Layout({ children }) {
           text-transform: uppercase;
           letter-spacing: 0.06em;
           padding: 2px 8px;
-          border-radius: 999px;
+          border-radius: var(--r-l);
           color: var(--a2);
           background: color-mix(in srgb, var(--a2) 14%, transparent);
           border: 1px solid color-mix(in srgb, var(--a2) 30%, transparent);
@@ -658,7 +674,7 @@ export default function Layout({ children }) {
           align-items: center;
           gap: 8px;
           padding: 8px 10px;
-          border-radius: 10px;
+          border-radius: var(--r-s);
           font-size: 0.8rem;
           background: transparent;
           border: none;
@@ -689,7 +705,7 @@ export default function Layout({ children }) {
           width: min(580px, 92%);
           background: var(--surface);
           border: 1px solid var(--border);
-          border-radius: 20px;
+          border-radius: var(--r-l);
           padding: 20px;
           box-shadow: 0 25px 60px color-mix(in srgb, var(--shadow-c) 95%, transparent);
         }
@@ -700,7 +716,7 @@ export default function Layout({ children }) {
           gap: 12px;
           background: var(--surface-2);
           border: 1px solid var(--border);
-          border-radius: 14px;
+          border-radius: var(--r-m);
           padding: 0 14px;
           margin-bottom: 14px;
         }
@@ -735,7 +751,7 @@ export default function Layout({ children }) {
           flex-shrink: 0;
           min-width: 44px;
           padding: 2px 7px;
-          border-radius: 7px;
+          border-radius: var(--r-s);
           text-align: center;
           font-family: var(--font-mono);
           font-size: 0.62rem;
@@ -747,7 +763,7 @@ export default function Layout({ children }) {
         .si-page {
           font-weight: 600;
         }
-        .m-GET { --mc: #34d399; } .m-POST { --mc: #fbbf24; } .m-PUT { --mc: #60a5fa; } .m-PATCH { --mc: #c084fc; } .m-DELETE { --mc: #f87171; }
+        .m-GET { --mc: var(--ok); } .m-POST { --mc: var(--warn); } .m-PUT { --mc: var(--info); } .m-PATCH { --mc: #c084fc; } .m-DELETE { --mc: var(--err); }
         .si-text {
           flex: 1;
           min-width: 0;
@@ -778,7 +794,7 @@ export default function Layout({ children }) {
           gap: 10px;
           min-height: 46px;
           padding: 6px 12px;
-          border-radius: 10px;
+          border-radius: var(--r-s);
           font-family: var(--font-mono);
           cursor: pointer;
           background: color-mix(in srgb, var(--text) 3%, transparent);

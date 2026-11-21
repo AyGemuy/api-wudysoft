@@ -293,6 +293,7 @@ export function generateSpec() {
     components: {
       securitySchemes: {
         cookieAuth: { type: 'apiKey', in: 'cookie', name: 'next-auth.session-token', description: 'Cookie sesi NextAuth (otomatis dikirim browser).' },
+        apiKey: { type: 'apiKey', in: 'header', name: 'x-api-key', description: 'Kunci API pribadi (buat di /keys): `wd_live_…`.' },
         bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'JWT dari POST /api/auth atau `session.user.apiToken`.' },
       },
     },
