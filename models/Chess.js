@@ -21,4 +21,10 @@ const ChessSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+// Sesi game berlaku 1 hari: dihapus otomatis MongoDB 24 jam setelah update terakhir.
+ChessSchema.index({
+  updatedAt: 1
+}, {
+  expireAfterSeconds: 24 * 60 * 60
+});
 export default mongoose.models.Chess || mongoose.model("Chess", ChessSchema);

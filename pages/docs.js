@@ -42,10 +42,9 @@ function snippets(op, base) {
   const bodySchema = op.body?.content?.['application/json']?.schema;
   const hasBody = bodySchema && !['GET', 'HEAD'].includes(op.method);
   const json = hasBody ? JSON.stringify(sample(bodySchema), null, 2) : '';
-  const auth = op.secure ? 'YOUR_API_KEY' : '';
-  const curl = [`curl -X ${op.method} '${url}'`, auth && `  -H 'x-api-key: ${auth}'`, hasBody && `  -H 'Content-Type: application/json'`, hasBody && `  -d '${json.replace(/\n\s*/g, ' ')}'`].filter(Boolean).join(' \\\n');
-  const fetchJs = `const res = await fetch('${url}', {\n  method: '${op.method}',\n  headers: {${auth ? `\n    'x-api-key': '${auth}',` : ''}${hasBody ? `\n    'Content-Type': 'application/json',` : ''}\n  },${hasBody ? `\n  body: JSON.stringify(${json.replace(/\n/g, '\n  ')}),` : ''}\n});\nconst data = await res.json();`;
-  const py = `import requests\n\nres = requests.request('${op.method}', '${url}'${auth ? `,\n  headers={'x-api-key': '${auth}'}` : ''}${hasBody ? `,\n  json=${json.replace(/\n/g, '\n  ')}` : ''})\nprint(res.json())`;
+  const curl = [`curl -X ${op.method} '${url}'`, hasBody && `  -H 'Content-Type: application/json'`, hasBody && `  -d '${json.replace(/\n\s*/g, ' ')}'`].filter(Boolean).join(' \\\n');
+  const fetchJs = `const res = await fetch('${url}', {\n  method: '${op.method}',\n  headers: {${hasBody ? `\n    'Content-Type': 'application/json',` : ''}\n  },${hasBody ? `\n  body: JSON.stringify(${json.replace(/\n/g, '\n  ')}),` : ''}\n});\nconst data = await res.json();`;
+  const py = `import requests\n\nres = requests.request('${op.method}', '${url}'${hasBody ? `,\n  json=${json.replace(/\n/g, '\n  ')}` : ''})\nprint(res.json())`;
   return { curl, js: fetchJs, py };
 }
 
@@ -92,7 +91,7 @@ export default function DocsPage() {
           <div className="dc-actions">
             <a className="btn" href="/api/openapi" target="_blank" rel="noreferrer"><Download size={15} /> openapi.json</a>
             <Link className="btn" href="/playground"><Play size={15} /> Playground</Link>
-            <Link className="btn" href="/keys">API Keys</Link>
+            
           </div>
         </header>
 
@@ -125,7 +124,7 @@ export default function DocsPage() {
                   <div className="dc-title"><span className={`dc-m big m-${current.method}`}>{current.method}</span><code>{current.path}</code></div>
                   <h2>{current.summary}</h2>
                   {current.description && <p className="dc-muted">{current.description}</p>}
-                  {current.secure && <div className="badge warn" style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><Lock size={12} /> Butuh autentikasi (sesi, Bearer token, atau header <code>x-api-key</code>)</div>}
+                  {current.secure && <div className="badge warn" style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><Lock size={12} /> Butuh login (sesi browser atau Bearer token)</div>}
 
                   {current.params.length > 0 && (
                     <section>

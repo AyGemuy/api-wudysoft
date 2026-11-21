@@ -17,6 +17,18 @@ module.exports = {
   PORT: 3000,
   // Pengembang / pemilik repo yang ditampilkan di halaman profil
   GITHUB_USER: "AyGemuy",
+  // Kontak admin/author & komunitas (publik, tampil di footer, /contact, dan popup sambutan)
+  CONTACT: {
+    NAME: "AyGemuy",
+    WHATSAPP: "+6282195322106",
+    WHATSAPP_URL: "https://wa.me/6282195322106",
+    EMAIL: "abdmalikalqadri2001@gmail.com",
+    WA_GROUP_URL: "https://chat.whatsapp.com/G8WsbzAmIIx6HEWlAFod9x?s=cl&p=a&iam=2",
+    WA_COMMUNITY_URL: "https://chat.whatsapp.com/KENDS5ewj35BA6yDQPvU2e",
+    GITHUB_URL: "https://github.com/AyGemuy",
+    REPO: "AyGemuy/api-wudysoft",
+    REPO_URL: "https://github.com/AyGemuy/api-wudysoft",
+  },
   // BGM bawaan (link YouTube video/playlist), otomatis menyala setelah interaksi pertama.
   // Kosongkan "" bila tidak ingin ada musik bawaan.
   // Pengunjung bisa menggantinya lewat tombol Audio; pilihannya tersimpan di browser.

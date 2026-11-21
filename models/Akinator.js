@@ -99,27 +99,20 @@ const AkinatorSessionSchema = new mongoose.Schema({
     }
   }]
 }, {
-  timestamps: true,
-  indexes: [{
-    session: 1
-  }, {
-    createdAt: -1
-  }, {
-    updatedAt: -1
-  }, {
-    "gameState.finished": 1
-  }]
+  timestamps: true
 });
-AkinatorSessionSchema.pre("save", function(next) {
-  if (this.isNew) {
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1e3);
-    this.constructor.deleteMany({
-      updatedAt: {
-        $lt: twentyFourHoursAgo
-      }
-    }).catch(err => console.log("Cleanup error:", err));
-  }
-  next();
+// Opsi `indexes` di konstruktor skema tidak dikenali Mongoose, jadi indeks dibuat lewat schema.index().
+// TTL 24 jam pada updatedAt menggantikan deleteMany manual di hook pre-save (sekaligus melayani sort updatedAt di v1).
+AkinatorSessionSchema.index({
+  updatedAt: 1
+}, {
+  expireAfterSeconds: 24 * 60 * 60
+});
+AkinatorSessionSchema.index({
+  session: 1
+});
+AkinatorSessionSchema.index({
+  "gameState.finished": 1
 });
 AkinatorSessionSchema.statics.findBySessionId = function(sessionId) {
   return this.findOne({

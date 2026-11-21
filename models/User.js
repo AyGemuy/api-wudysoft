@@ -19,7 +19,6 @@ const UserSchema = new Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      index: true,
     },
     name: { type: String, trim: true, maxlength: 64 },
     // Hash bcrypt. `select: false` agar tidak ikut terbawa ke query biasa.
@@ -45,5 +44,8 @@ const UserSchema = new Schema(
   },
   { timestamps: true }
 );
+
+// Dipakai upsertOAuthUser: findOne({ providers: { $elemMatch: { provider, providerId } } }).
+UserSchema.index({ "providers.provider": 1, "providers.providerId": 1 });
 
 export default mongoose.models.User || mongoose.model("User", UserSchema);

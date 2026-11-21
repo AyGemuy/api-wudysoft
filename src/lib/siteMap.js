@@ -1,3 +1,5 @@
+import site from '@/configs/siteConfig';
+
 /** Peta halaman: dipakai oleh grid card di Home dan footer situs. */
 export const CATEGORIES = [
   { id: 'all', label: 'Semua' },
@@ -188,19 +190,6 @@ export const SITE_PAGES = [
     tags: ['Uptime', 'Latensi', 'Monitor'],
   },
   {
-    id: 'keys',
-    title: 'API Keys',
-    href: '/keys',
-    category: 'identity',
-    icon: 'KeyRound',
-    accent: 'a3',
-    preview: 'lock',
-    status: 'NEW',
-    locked: true,
-    desc: 'Buat kunci API pribadi dengan izin baca/tulis dan masa berlaku, lalu pakai lewat header x-api-key.',
-    tags: ['Keamanan', 'Token', 'Scope'],
-  },
-  {
     id: 'webhooks',
     title: 'Webhook Inspector',
     href: '/webhooks',
@@ -212,6 +201,18 @@ export const SITE_PAGES = [
     locked: true,
     desc: 'URL webhook sementara untuk menangkap dan memeriksa request masuk (header, query, body) secara live.',
     tags: ['Webhook', 'Debug', 'Realtime'],
+  },
+  {
+    id: 'contact',
+    title: 'Kontak & Komunitas',
+    href: '/contact',
+    category: 'comms',
+    icon: 'MessageSquare',
+    accent: 'a1',
+    preview: 'chat',
+    status: 'NEW',
+    desc: 'Hubungi admin/author lewat WhatsApp atau email, gabung grup & komunitas WhatsApp, dan lihat source code di GitHub.',
+    tags: ['WhatsApp', 'Email', 'Komunitas'],
   },
   {
     id: 'openapi',
@@ -264,6 +265,18 @@ export const FOOTER_COLUMNS = [
       { label: 'Dokumentasi', href: '/docs' },
       { label: 'Status', href: '/status' },
       { label: 'OpenAPI', href: '/api/openapi', external: true },
+    ],
+  },
+  {
+    title: 'Kontak',
+    links: [
+      { label: 'Halaman Kontak', href: '/contact' },
+      { label: 'WhatsApp Admin', href: site.CONTACT.WHATSAPP_URL, external: true },
+      { label: 'Email', href: `mailto:${site.CONTACT.EMAIL}`, external: true },
+      { label: 'Grup WhatsApp', href: site.CONTACT.WA_GROUP_URL, external: true },
+      { label: 'Komunitas WhatsApp', href: site.CONTACT.WA_COMMUNITY_URL, external: true },
+      { label: 'GitHub', href: site.CONTACT.GITHUB_URL, external: true },
+      { label: 'Source Code', href: site.CONTACT.REPO_URL, external: true },
     ],
   },
 ];

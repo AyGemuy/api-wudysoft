@@ -32,7 +32,7 @@
 | 🧩 **Code Share** | Bagikan potongan kode: tag bahasa, suka/tidak suka, hitungan lihat, urut & filter, pagination. |
 | 📚 **Dokumentasi API** | `/docs`: referensi interaktif dari OpenAPI — pencarian, parameter, skema respons, contoh cURL/JavaScript/Python, pilih server, tautan ke Playground. |
 | 🟢 **Status Monitor** | `/status`: uptime, rata-rata & p95 latensi, grafik mini, riwayat gangguan; bisa menambah endpoint sendiri; ekspor JSON. Riwayat disimpan di browser. |
-| 🔑 **API Keys** | `/keys`: kunci pribadi `wd_live_…` (hanya hash yang disimpan), izin baca/tulis, kedaluwarsa, pencabutan. Pakai header `x-api-key`; uji di `GET /api/whoami`. Batas 120 req/menit per kunci. |
+| 📞 **Kontak & Komunitas** | `/contact`, footer, dan popup sambutan saat login/daftar: WhatsApp admin, email, grup & komunitas WhatsApp, GitHub `AyGemuy`, repo `AyGemuy/api-wudysoft`. Data di `configs/siteConfig.cjs` → `CONTACT`. Notifikasi admin saat user baru bergabung lewat webhook opsional `JOIN_WEBHOOK_URL` (`configs/apiConfig.cjs`). |
 | 🪝 **Webhook Inspector** | `/webhooks`: URL penampung sementara `/api/hook/<slug>` — lihat header, query, body secara live; atur status balasan; kedaluwarsa otomatis. |
 | 🛠️ **Tools** | Code Beautifier dan Multi-Host Uploader. |
 | 👤 **Profil** | Ringkasan akun, kelengkapan profil, foto, sesi & perangkat, plus kartu **GitHub** pengembang (repo, bintang, bahasa). |

@@ -51,4 +51,10 @@ const DeckSchema = new mongoose.Schema({
   timestamps: true,
   _id: false
 });
+// Sesi game berlaku 1 hari: dihapus otomatis MongoDB 24 jam setelah update terakhir.
+DeckSchema.index({
+  updatedAt: 1
+}, {
+  expireAfterSeconds: 24 * 60 * 60
+});
 export default mongoose.models.Deck || mongoose.model("Deck", DeckSchema);

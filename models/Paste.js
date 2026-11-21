@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const PasteSchema = new mongoose.Schema(
   {
-    key: { type: String, required: true, unique: true, index: true, trim: true, maxlength: 64 },
+    key: { type: String, required: true, unique: true, trim: true, maxlength: 64 },
     title: { type: String, required: true, trim: true, maxlength: 120 },
     content: { type: String, required: true, maxlength: 500000 },
     syntax: { type: String, default: "text", trim: true, maxlength: 24 },
@@ -13,5 +13,7 @@ const PasteSchema = new mongoose.Schema(
   },
   { versionKey: false }
 );
+
+PasteSchema.index({ createdAt: -1 });
 
 export default mongoose.models.Paste || mongoose.model("Paste", PasteSchema);

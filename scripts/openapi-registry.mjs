@@ -25,19 +25,10 @@ const echoBody = json(
 export const REGISTRY = {
   'GET /api/whoami': {
     summary: 'Siapa saya?',
-    description: 'Menguji autentikasi. Kirim header `x-api-key` (atau Bearer `wd_live_…`), atau panggil dengan sesi browser.',
-    tags: ['Keys'],
-    security: [{ apiKey: [] }],
-    responses: { 200: { description: 'Terautentikasi', content: json(obj({ ok: { type: 'boolean' }, via: str({ enum: ['api-key', 'session'] }), user: { type: 'object', additionalProperties: true } })) }, 401: { description: 'Kunci tidak valid / belum login' }, 429: { description: 'Batas 120 permintaan/menit tercapai' } },
+    description: 'Mengembalikan info pemanggil. Terbuka tanpa API key; bila ada sesi browser, data akun ikut dikembalikan.',
+    tags: ['System'],
+    responses: { 200: { description: 'OK', content: json(obj({ ok: { type: 'boolean' }, via: str({ enum: ['session', 'anonymous'] }), user: { type: 'object', additionalProperties: true, nullable: true } })) } },
   },
-  'GET /api/keys': { summary: 'Daftar kunci API', description: 'Kunci milik akun yang login (tanpa nilai rahasia).', tags: ['Keys'] },
-  'POST /api/keys': {
-    summary: 'Buat kunci API',
-    description: 'Teks kunci hanya muncul sekali di respons.',
-    tags: ['Keys'],
-    requestBody: { required: true, content: json(obj({ name: str({ example: 'Bot Telegram' }), scopes: { type: 'array', items: str({ enum: ['read', 'write'] }) }, expiresInDays: { type: 'integer', example: 30 } }, ['name'])) },
-  },
-  'DELETE /api/keys': { summary: 'Cabut kunci API', tags: ['Keys'], parameters: [{ name: 'id', in: 'query', required: true, schema: { type: 'string' } }] },
   'POST /api/hooks': { summary: 'Buat webhook penampung', tags: ['Webhooks'], requestBody: { required: true, content: json(obj({ name: str({ example: 'Stripe test' }), status: { type: 'integer', example: 200 }, ttlHours: { type: 'integer', example: 24 } })) } },
   'GET /api/hooks': { summary: 'Daftar / detail webhook', description: 'Tambahkan `?slug=` untuk detail dan request masuk.', tags: ['Webhooks'] },
   'GET /api/health': {

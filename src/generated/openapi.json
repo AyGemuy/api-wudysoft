@@ -3,7 +3,7 @@
   "info": {
     "title": "Wudysoft API",
     "version": "1.0.0",
-    "description": "Dokumen dibuat otomatis dari `pages/api` (55 operasi pada 28 path). Detail akurat ditambahkan lewat `scripts/openapi-registry.mjs`.\n\n**Auth:** sesi browser (cookie NextAuth) atau `Authorization: Bearer <apiToken>`."
+    "description": "Dokumen dibuat otomatis dari `pages/api` (52 operasi pada 27 path). Detail akurat ditambahkan lewat `scripts/openapi-registry.mjs`.\n\n**Open source, tanpa API key.** Endpoint publik bisa dipanggil langsung; endpoint akun memakai sesi browser (cookie NextAuth) atau `Authorization: Bearer <apiToken>`."
   },
   "servers": [
     {
@@ -41,9 +41,6 @@
     },
     {
       "name": "Hooks"
-    },
-    {
-      "name": "Keys"
     },
     {
       "name": "Og"
@@ -1636,169 +1633,6 @@
         ]
       }
     },
-    "/api/keys": {
-      "get": {
-        "tags": [
-          "Keys"
-        ],
-        "summary": "Daftar kunci API",
-        "description": "Kunci milik akun yang login (tanpa nilai rahasia).",
-        "operationId": "get_api_keys",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Berhasil",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Permintaan tidak valid"
-          },
-          "401": {
-            "description": "Belum login"
-          },
-          "429": {
-            "description": "Terlalu banyak permintaan (rate limit)"
-          },
-          "500": {
-            "description": "Kesalahan server"
-          }
-        },
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ]
-      },
-      "post": {
-        "tags": [
-          "Keys"
-        ],
-        "summary": "Buat kunci API",
-        "description": "Teks kunci hanya muncul sekali di respons.",
-        "operationId": "post_api_keys",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Berhasil",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Permintaan tidak valid"
-          },
-          "401": {
-            "description": "Belum login"
-          },
-          "429": {
-            "description": "Terlalu banyak permintaan (rate limit)"
-          },
-          "500": {
-            "description": "Kesalahan server"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true,
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "example": "Bot Telegram"
-                  },
-                  "scopes": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "enum": [
-                        "read",
-                        "write"
-                      ]
-                    }
-                  },
-                  "expiresInDays": {
-                    "type": "integer",
-                    "example": 30
-                  }
-                },
-                "required": [
-                  "name"
-                ]
-              },
-              "example": {}
-            }
-          }
-        },
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ]
-      },
-      "delete": {
-        "tags": [
-          "Keys"
-        ],
-        "summary": "Cabut kunci API",
-        "description": "Parameter dideteksi otomatis dari kode sumber. Tambahkan detail di `scripts/openapi-registry.mjs`.",
-        "operationId": "delete_api_keys",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Berhasil",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Permintaan tidak valid"
-          },
-          "401": {
-            "description": "Belum login"
-          },
-          "429": {
-            "description": "Terlalu banyak permintaan (rate limit)"
-          },
-          "500": {
-            "description": "Kesalahan server"
-          }
-        },
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ]
-      }
-    },
     "/api/og": {
       "get": {
         "tags": [
@@ -3159,15 +2993,15 @@
     "/api/whoami": {
       "get": {
         "tags": [
-          "Keys"
+          "System"
         ],
         "summary": "Siapa saya?",
-        "description": "Menguji autentikasi. Kirim header `x-api-key` (atau Bearer `wd_live_…`), atau panggil dengan sesi browser.",
+        "description": "Mengembalikan info pemanggil. Terbuka tanpa API key; bila ada sesi browser, data akun ikut dikembalikan.",
         "operationId": "get_api_whoami",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Terautentikasi",
+            "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
@@ -3180,13 +3014,14 @@
                     "via": {
                       "type": "string",
                       "enum": [
-                        "api-key",
-                        "session"
+                        "session",
+                        "anonymous"
                       ]
                     },
                     "user": {
                       "type": "object",
-                      "additionalProperties": true
+                      "additionalProperties": true,
+                      "nullable": true
                     }
                   }
                 }
@@ -3197,10 +3032,10 @@
             "description": "Permintaan tidak valid"
           },
           "401": {
-            "description": "Kunci tidak valid / belum login"
+            "description": "Belum login"
           },
           "429": {
-            "description": "Batas 120 permintaan/menit tercapai"
+            "description": "Terlalu banyak permintaan (rate limit)"
           },
           "500": {
             "description": "Kesalahan server"
@@ -3208,7 +3043,7 @@
         },
         "security": [
           {
-            "apiKey": []
+            "cookieAuth": []
           }
         ]
       }
@@ -3221,12 +3056,6 @@
         "in": "cookie",
         "name": "next-auth.session-token",
         "description": "Cookie sesi NextAuth (otomatis dikirim browser)."
-      },
-      "apiKey": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "x-api-key",
-        "description": "Kunci API pribadi (buat di /keys): `wd_live_…`."
       },
       "bearerAuth": {
         "type": "http",

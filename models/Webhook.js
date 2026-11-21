@@ -16,8 +16,8 @@ const ReqSchema = new mongoose.Schema(
 
 const WebhookSchema = new mongoose.Schema(
   {
-    slug: { type: String, required: true, unique: true, index: true },
-    ownerId: { type: String, required: true, index: true },
+    slug: { type: String, required: true, unique: true },
+    ownerId: { type: String, required: true },
     name: { type: String, default: "Webhook", maxlength: 40 },
     // Balasan yang dikirim ke pemanggil
     status: { type: Number, default: 200 },
@@ -29,5 +29,8 @@ const WebhookSchema = new mongoose.Schema(
   },
   { versionKey: false }
 );
+
+// Daftar webhook per pemilik, terbaru dulu (pages/api/hooks.js).
+WebhookSchema.index({ ownerId: 1, createdAt: -1 });
 
 export default mongoose.models.Webhook || mongoose.model("Webhook", WebhookSchema);

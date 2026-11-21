@@ -46,7 +46,6 @@ const MessageSchema = new mongoose.Schema(
     ],
     replyTo: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Room.messages",
       default: null,
     },
   },
@@ -81,5 +80,9 @@ const RoomSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Daftar room diurutkan lewat updatedAt / createdAt (lihat pages/api/rooms.js).
+RoomSchema.index({ updatedAt: -1 });
+RoomSchema.index({ createdAt: -1 });
 
 export default mongoose.models.Room || mongoose.model("Room", RoomSchema);

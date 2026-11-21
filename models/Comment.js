@@ -1,39 +1,38 @@
 import mongoose from "mongoose";
-const replySchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true
+
+const { Schema } = mongoose;
+
+/* ---------------- field bersama ---------------- */
+const authorField = { type: String, required: true, trim: true, maxlength: 64 };
+const messageField = { type: String, required: true, trim: true, maxlength: 2000 };
+
+/**
+ * Balasan (sub-dokumen). `timestamp` = epoch ms, dipertahankan karena dipakai klien.
+ */
+const ReplySchema = new Schema(
+  {
+    name: authorField,
+    message: messageField,
+    timestamp: { type: Number, required: true, default: Date.now },
   },
-  message: {
-    type: String,
-    required: true
+  { _id: false }
+);
+
+/**
+ * Komentar tingkat atas beserta balasannya (pages/api/comments.js).
+ * `createdAt`/`updatedAt` dikelola Mongoose; `timestamp` tetap ada untuk kompatibilitas respons API.
+ */
+const CommentSchema = new Schema(
+  {
+    name: authorField,
+    message: messageField,
+    timestamp: { type: Number, required: true, default: Date.now },
+    replies: { type: [ReplySchema], default: [] },
   },
-  timestamp: {
-    type: Number,
-    required: true
-  }
-}, {
-  _id: false
-});
-const commentSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true
-  },
-  message: {
-    type: String,
-    required: true
-  },
-  timestamp: {
-    type: Number,
-    required: true
-  },
-  replies: {
-    type: [replySchema],
-    default: []
-  }
-}, {
-  timestamps: true
-});
-const Comment = mongoose.models.Comment || mongoose.model("Comment", commentSchema);
-export default Comment;
+  { timestamps: true }
+);
+
+// Daftar komentar: terbaru dulu
+CommentSchema.index({ createdAt: -1 });
+
+export default mongoose.models.Comment || mongoose.model("Comment", CommentSchema);

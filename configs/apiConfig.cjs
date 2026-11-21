@@ -37,6 +37,11 @@ const apiConfig = {
   GITHUB_ID: "Ov23litwcoA0MkgF5vLW",
   GITHUB_SECRET: "8a82a0c5cd7dfc35a2c43a65ec6adcc25eec940d",
 
+  // Notifikasi admin saat ada user baru bergabung (opsional, kosongkan "" untuk mematikan).
+  // Isi dengan URL webhook Discord (https://discord.com/api/webhooks/...) atau URL lain yang
+  // menerima POST JSON {content, text}. Nomor WA tidak bisa dikirimi pesan tanpa gateway pihak ketiga.
+  JOIN_WEBHOOK_URL: "",
+
   // External Keys
   SONIVA_KEY: "tn15hejzwk27li3xmk7zslbypzc6a2zx8ihvalpc2js700938k7a4g9b9i0dgc9f",
   SUNOAPI_KEY: "977ca7b8be925e1bf426e5290c3c7fbc",

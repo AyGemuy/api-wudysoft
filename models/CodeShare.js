@@ -13,4 +13,9 @@ const CodeShareSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Kolom sort yang diizinkan di pages/api/code-share.js (fileName & tag sudah berindeks).
+CodeShareSchema.index({ createdAt: -1 });
+CodeShareSchema.index({ likes: -1 });
+CodeShareSchema.index({ views: -1 });
+
 export default mongoose.models.CodeShare || mongoose.model("CodeShare", CodeShareSchema);

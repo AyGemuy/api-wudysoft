@@ -13,6 +13,7 @@ import { lockZoom } from '@/src/lib/lockZoom';
 import GlobalEffects from '@/components/motion/GlobalEffects';
 import AudioControl from '@/components/AudioControl';
 import AssistantFab from '@/components/AssistantFab';
+import JoinNotice from '@/components/JoinNotice';
 import '@/styles/globals.css';
 import '@/styles/motion.css';
 import '@/styles/hljs.css';
@@ -61,6 +62,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
         </PageTransition>
         <AudioControl />
         <AssistantFab />
+        <JoinNotice />
       </Layout>
     </SessionProvider>
   );

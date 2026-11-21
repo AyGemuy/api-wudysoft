@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Home, Terminal, Activity, MessageSquare, FileText, FileCode, Wand2, UploadCloud, User, LogIn, LogOut, Search, Sliders, X, TerminalSquare, BookOpen, ExternalLink, Gauge, KeyRound, Webhook } from 'lucide-react';
+import { Home, Terminal, Activity, MessageSquare, FileText, FileCode, Wand2, UploadCloud, User, LogIn, LogOut, Search, Sliders, X, TerminalSquare, BookOpen, ExternalLink, Gauge, Webhook } from 'lucide-react';
 import WudysoftBrand from '@/components/WudysoftBrand';
 import { sound } from '@/src/lib/interactiveEffects';
 
@@ -22,8 +22,8 @@ const GROUPS = [
   { title: 'Developer', items: [
     { href: '/docs', label: 'Dokumentasi API', Icon: BookOpen },
     { href: '/status', label: 'Status Layanan', Icon: Gauge },
-    { href: '/keys', label: 'API Keys', Icon: KeyRound },
     { href: '/webhooks', label: 'Webhook Inspector', Icon: Webhook },
+    { href: '/contact', label: 'Kontak & Komunitas', Icon: MessageSquare },
     { href: '/api/openapi', label: 'OpenAPI Spec', Icon: ExternalLink, external: true },
   ] },
 ];

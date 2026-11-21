@@ -158,7 +158,7 @@ export default function Layout({ children }) {
       { type: 'Halaman', title: 'Code Share', sub: 'Tools · bagikan potongan kode', action: '/tools/code-share' },
       { type: 'Halaman', title: 'Dokumentasi API', sub: 'Developer · referensi endpoint', action: '/docs' },
       { type: 'Halaman', title: 'Status Layanan', sub: 'Developer · uptime & latensi', action: '/status' },
-      { type: 'Halaman', title: 'API Keys', sub: 'Developer · kunci akses pribadi', action: '/keys' },
+      { type: 'Halaman', title: 'Kontak & Komunitas', sub: 'WhatsApp · email · grup · GitHub', action: '/contact' },
       { type: 'Halaman', title: 'Webhook Inspector', sub: 'Developer · tangkap request', action: '/webhooks' },
       { type: 'Halaman', title: 'Masuk / Daftar', sub: 'Akun', action: '/auth' },
     ].filter((i) => !q || `${i.title} ${i.sub}`.toLowerCase().includes(q));

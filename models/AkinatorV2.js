@@ -61,4 +61,10 @@ const AkinatorSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+// Sesi game tidak perlu disimpan selamanya: dihapus otomatis 24 jam setelah update terakhir.
+AkinatorSchema.index({
+  updatedAt: 1
+}, {
+  expireAfterSeconds: 24 * 60 * 60
+});
 export default mongoose.models.AkinatorV2 || mongoose.model("AkinatorV2", AkinatorSchema);

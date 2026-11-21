@@ -285,7 +285,7 @@ export function generateSpec() {
     info: {
       title: 'Wudysoft API',
       version: pkg.version || '1.0.0',
-      description: `Dokumen dibuat otomatis dari \`pages/api\` (${opCount} operasi pada ${pathCount} path). Detail akurat ditambahkan lewat \`scripts/openapi-registry.mjs\`.\n\n**Auth:** sesi browser (cookie NextAuth) atau \`Authorization: Bearer <apiToken>\`.`,
+      description: `Dokumen dibuat otomatis dari \`pages/api\` (${opCount} operasi pada ${pathCount} path). Detail akurat ditambahkan lewat \`scripts/openapi-registry.mjs\`.\n\n**Open source, tanpa API key.** Endpoint publik bisa dipanggil langsung; endpoint akun memakai sesi browser (cookie NextAuth) atau \`Authorization: Bearer <apiToken>\`.`,
     },
     servers: [{ url: '/', description: 'Origin saat ini' }],
     tags,
@@ -293,7 +293,6 @@ export function generateSpec() {
     components: {
       securitySchemes: {
         cookieAuth: { type: 'apiKey', in: 'cookie', name: 'next-auth.session-token', description: 'Cookie sesi NextAuth (otomatis dikirim browser).' },
-        apiKey: { type: 'apiKey', in: 'header', name: 'x-api-key', description: 'Kunci API pribadi (buat di /keys): `wd_live_…`.' },
         bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'JWT dari POST /api/auth atau `session.user.apiToken`.' },
       },
     },
