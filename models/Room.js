@@ -14,9 +14,49 @@ const MessageSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    // @username gaya WhatsApp (diturunkan dari nama + id pengguna)
+    username: {
+      type: String,
+      default: "",
+    },
+    // boleh kosong bila pesan hanya berisi media
     message: {
       type: String,
-      required: true,
+      default: "",
+    },
+    // lampiran yang sudah terunggah ke URL publik
+    media: {
+      type: [
+        {
+          _id: false,
+          url: { type: String, required: true },
+          type: { type: String, enum: ["image", "video", "audio", "file"], default: "file" },
+          name: { type: String, default: "" },
+          size: { type: Number, default: 0 },
+          mime: { type: String, default: "" },
+        },
+      ],
+      default: [],
+    },
+    // cuplikan pesan yang dibalas (tetap tampil walau pesan aslinya dihapus)
+    replyPreview: {
+      type: new mongoose.Schema(
+        {
+          _id: false,
+          name: { type: String, default: "" },
+          username: { type: String, default: "" },
+          userId: { type: String, default: "" },
+          text: { type: String, default: "" },
+          mediaType: { type: String, default: "" },
+          mediaUrl: { type: String, default: "" },
+        },
+        { _id: false }
+      ),
+      default: null,
+    },
+    userId: {
+      type: String,
+      default: "",
     },
     timestamp: {
       type: Number,

@@ -1,9 +1,27 @@
 // Konfigurasi 100% hardcoded di configs/*.cjs — tidak ada .env / dotenv.
 const http = require("http");
 const apiLog = require("../lib/apiLogger.cjs");
+const log = require("../lib/logger.cjs");
+const bootAt = Date.now();
 const net = require("net");
 const os = require("os");
 const next = require("next");
+// Kompresi gzip untuk HTML/JSON/JS/CSS (server kustom tidak memakai kompresi bawaan Next).
+// SSE / socket / stream realtime dikecualikan agar tidak ter-buffer.
+let compress = null;
+try {
+  const compression = require("next/dist/compiled/compression");
+  compress = compression({
+    threshold: 1024,
+    filter: (req, res) => {
+      const u = req.url || "";
+      if (u.startsWith("/socket.io") || u.startsWith("/api/live") || u.includes("/stream")) return false;
+      if (String(res.getHeader("Content-Type") || "").includes("text/event-stream")) return false;
+      if (req.headers.accept && String(req.headers.accept).includes("text/event-stream")) return false;
+      return compression.filter(req, res);
+    }
+  });
+} catch {}
 const dev = process.argv.includes("--dev");
 if (!dev) process.env.NODE_ENV = "production";
 const app = next({
@@ -29,57 +47,40 @@ app.prepare().then(async () => {
   const wanted = apiConfig.PORT || 3000;
   const port = await findPort(wanted);
   if (port !== wanted) {
-    console.log(`\x1b[33m⚡ [PORT WARN] Port ${wanted} terpakai, dialihkan ke: ${port}\x1b[0m`);
+    log.warn(`Port ${wanted} terpakai, dialihkan ke ${port}`);
   }
   const server = http.createServer((req, res) => {
     const startTime = performance.now();
     if (req.url.startsWith("/api/")) apiLog.startLog(req, res); // log req/res realtime untuk semua route API
     res.on("finish", () => {
-      if (req.url.startsWith("/_next/static") || req.url.startsWith("/_next/webpack-hmr") || req.url.startsWith("/icons/") || req.url.endsWith(".ico")) {
-        return;
-      }
-      const duration = Math.round(performance.now() - startTime);
-      const status = res.statusCode;
-      let statusColor = "[32m";
-      if (status >= 500) statusColor = "[31m";
-      else if (status >= 400) statusColor = "[33m";
-      else if (status >= 300) statusColor = "[36m";
-      const timestamp = new Date().toLocaleTimeString("id-ID", {
-        hour12: false
-      });
-      console.log(`\x1b[90m[${timestamp}]\x1b[0m \x1b[35m${req.method.padEnd(6)}\x1b[0m ${statusColor}${status}\x1b[0m \x1b[90m${duration}ms\x1b[0m → ${req.url}`);
+      const u = req.url;
+      if (u.startsWith("/_next/static") || u.startsWith("/_next/webpack-hmr") || u.startsWith("/_next/image") || u.startsWith("/icons/") || u.endsWith(".ico")) return;
+      log.request(req, res, Math.round(performance.now() - startTime));
     });
-    handle(req, res);
+    if (compress) compress(req, res, () => handle(req, res));
+    else handle(req, res);
   });
   server.listen(port, "0.0.0.0", () => {
-    console.log("\n[36m╔══════════════════════════════════════════════════════════╗[0m");
-    console.log(`\x1b[36m║  \x1b[1m\x1b[37mWudysoft // CYBER GLASS PLATFORM ONLINE\x1b[0m                 \x1b[36m║\x1b[0m`);
-    console.log(`\x1b[36m║  Mode: \x1b[32m${(dev ? "DEVELOPMENT (LIVE RELOAD)" : "PRODUCTION (COMPILED)").padEnd(46)}\x1b[36m║\x1b[0m`);
-    console.log("[36m╠══════════════════════════════════════════════════════════╣[0m");
-    console.log(`\x1b[36m║\x1b[0m  \x1b[33m► Local Host\x1b[0m   : \x1b[4mhttp://localhost:${port}\x1b[0m`);
-    lanIPs().forEach(ip => {
-      console.log(`\x1b[36m║\x1b[0m  \x1b[34m► Network Node\x1b[0m : \x1b[4mhttp://${ip}:${port}\x1b[0m`);
+    log.banner({
+      port, dev, ips: lanIPs(), bootMs: Date.now() - bootAt,
+      config: [
+        ["Domain", apiConfig.DOMAIN_URL ? `https://${apiConfig.DOMAIN_URL}` : "belum diatur", !!apiConfig.DOMAIN_URL],
+        ["MongoDB", apiConfig.MONGODB_URI ? "terhubung (URI terisi)" : "belum diatur", !!apiConfig.MONGODB_URI],
+        ["Rate limit", `${apiConfig.LIMIT_POINTS} req / ${apiConfig.LIMIT_DURATION}s`, true],
+        ["GitHub OAuth", apiConfig.GITHUB_ID && apiConfig.GITHUB_SECRET ? "aktif" : "tidak aktif", apiConfig.GITHUB_ID && apiConfig.GITHUB_SECRET ? true : null],
+        ["Google OAuth", apiConfig.GOOGLE_CLIENT_ID ? "aktif" : "tidak aktif", apiConfig.GOOGLE_CLIENT_ID ? true : null],
+      ]
     });
-    console.log("[36m╠══════════════════════════════════════════════════════════╣[0m");
-    console.log(`\x1b[36m║  \x1b[1m\x1b[90mCONFIG VALIDATION TELEMETRY (configs/apiConfig.js):\x1b[0m   \x1b[36m║\x1b[0m`);
-    console.log(`\x1b[36m║\x1b[0m  Target Domain : \x1b[36mhttps://${apiConfig.DOMAIN_URL}\x1b[0m`);
-    console.log(`\x1b[36m║\x1b[0m  MongoDB Sync  : ${apiConfig.MONGODB_URI ? "[32m✔ LOADED" : "[31m✖ UNSET"}\x1b[0m`);
-    console.log(`\x1b[36m║\x1b[0m  Rate Limiting : \x1b[32m${apiConfig.LIMIT_POINTS} req / ${apiConfig.LIMIT_DURATION}s\x1b[0m`);
-    console.log(`\x1b[36m║\x1b[0m  GitHub OAuth  : ${apiConfig.GITHUB_ID && apiConfig.GITHUB_SECRET ? "[32m✔ CONFIGURED" : "[33m○ UNSET"}\x1b[0m`);
-    console.log(`\x1b[36m║\x1b[0m  Google OAuth  : ${apiConfig.GOOGLE_CLIENT_ID ? "[32m✔ CONFIGURED" : "[33m○ UNSET"}\x1b[0m`);
-    console.log("[36m╚══════════════════════════════════════════════════════════╝[0m\n");
   });
   const shutdown = () => {
-    console.log("\n[33m⚡ Mematikan instance Wudysoft Node...[0m");
-    server.close(() => {
-      console.log("[32m✔ Node berhasil dimatikan dengan aman.[0m");
-      process.exit(0);
-    });
+    log.warn("Mematikan server…");
+    server.close(() => { log.ok("Server berhenti dengan aman."); process.exit(0); });
+    setTimeout(() => process.exit(0), 4000).unref();
   };
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);
 }).catch(err => {
-  console.error("[31m[WUDYSOFT FATAL ERROR][0m Gagal memulai engine server:");
+  log.error("Gagal memulai server:");
   console.error(err);
   process.exit(1);
 });

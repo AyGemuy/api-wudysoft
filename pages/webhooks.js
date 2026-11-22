@@ -5,6 +5,7 @@ import Seo from '@/components/Seo';
 import { Reveal, TextReveal } from '@/components/motion';
 import Pagination from '@/components/Pagination';
 import { timeAgo, fmtDateTime, copyText } from '@/src/lib/timeAgo';
+import { confirmToast } from '@/src/lib/toast';
 
 const STATUSES = [200, 201, 202, 204, 400, 401, 403, 404, 429, 500, 503];
 const M = { GET: '#2563eb', POST: '#16a34a', PUT: '#d97706', PATCH: '#7c3aed', DELETE: '#dc2626' };
@@ -56,7 +57,7 @@ export default function WebhooksPage() {
     e.preventDefault(); if (busy) return; setBusy(true);
     try { const d = await api('POST', '/api/hooks', form); setForm({ name: '', status: 200, ttlHours: 24 }); await loadList(); setSel(d.hook.slug); flash('Webhook dibuat.'); } catch (er) { flash(er.message, 'err'); } finally { setBusy(false); }
   };
-  const del = async (slug) => { if (!window.confirm('Hapus webhook ini beserta semua request-nya?')) return; try { await api('DELETE', `/api/hooks?slug=${slug}`); setSel(''); setDetail(null); setReqs([]); await loadList(); flash('Dihapus.'); } catch (er) { flash(er.message, 'err'); } };
+  const del = async (slug) => { if (!(await confirmToast('Hapus webhook ini beserta semua request-nya?', { danger: true, okLabel: 'Hapus' }))) return; try { await api('DELETE', `/api/hooks?slug=${slug}`); setSel(''); setDetail(null); setReqs([]); await loadList(); flash('Dihapus.'); } catch (er) { flash(er.message, 'err'); } };
   const clear = async () => { try { await api('PATCH', '/api/hooks', { slug: sel, clear: true }); setReqs([]); loadList(); flash('Riwayat dikosongkan.'); } catch (er) { flash(er.message, 'err'); } };
   const patch = async (p) => { try { await api('PATCH', '/api/hooks', { slug: sel, ...p }); loadDetail(sel); } catch (er) { flash(er.message, 'err'); } };
   const copy = async (k, t) => { await copyText(t); setCopied(k); setTimeout(() => setCopied(''), 1400); };

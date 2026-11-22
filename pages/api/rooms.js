@@ -2,6 +2,26 @@ import { withApiLog } from "@/lib/apiLogger.cjs";
 import dbConnect from "@/lib/mongoose";
 import Room from "@/models/Room";
 import mongoose from "mongoose";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import { handleOf, mediaKind } from "@/src/lib/chatUser";
+
+export const config = { api: { bodyParser: { sizeLimit: "200kb" } } };
+
+const MAX_TEXT = 4000;
+const MAX_MEDIA = 6;
+const isHttp = (u) => /^https?:\/\/[^\s]{4,1500}$/i.test(String(u || ""));
+const cleanMedia = (list) =>
+  (Array.isArray(list) ? list : [])
+    .filter((m) => m && isHttp(m.url))
+    .slice(0, MAX_MEDIA)
+    .map((m) => ({
+      url: String(m.url),
+      type: ["image", "video", "audio", "file"].includes(m.type) ? m.type : mediaKind(m.mime, m.name || m.url),
+      name: String(m.name || "").slice(0, 120),
+      size: Math.max(0, Number(m.size) || 0),
+      mime: String(m.mime || "").slice(0, 80),
+    }));
 
 async function handler(req, res) {
   try {
@@ -9,6 +29,11 @@ async function handler(req, res) {
   } catch (err) {
     return res.status(500).json({ success: false, message: "Koneksi database gagal", error: err.message });
   }
+
+  // Identitas pengirim: bila ada sesi login, nama/id/foto diambil dari sesi (tidak bisa dipalsukan lewat body).
+  // Klien API tanpa sesi tetap bisa memakai body seperti sebelumnya.
+  const session = await getServerSession(req, res, authOptions).catch(() => null);
+  const su = session?.user && session.user.id ? session.user : null;
 
   // ==========================================
   // GET: Ambil Pesan Spesifik Room atau Daftar Semua Room
@@ -72,25 +97,53 @@ async function handler(req, res) {
       replyToMessageId,
       emoji,
       createdBy,
+      media,
+      username,
     } = req.body || {};
 
-    // 1. Send Message
+    // 1. Send Message / Reply (teks, media, atau keduanya)
     if (action === "sendMessage" || action === "replyMessage") {
-      if (!roomName || !name || !message || !userId) {
+      const senderName = su ? su.name || "User" : name;
+      const senderId = su ? String(su.id) : userId;
+      const text = String(message || "").trim().slice(0, MAX_TEXT);
+      const files = cleanMedia(media);
+      if (!roomName || !senderName || !senderId || (!text && files.length === 0)) {
         return res.status(400).json({
           success: false,
-          message: "Room name, name, user ID, and message are required",
+          message: "Room name, name, user ID, and message or media are required",
         });
       }
       try {
+        const roomKey = String(roomName).trim();
         const timestamp = Date.now();
+        let replyTo = null;
+        let replyPreview = null;
+        if (replyToMessageId && mongoose.isValidObjectId(replyToMessageId)) {
+          const room = await Room.findOne({ roomName: roomKey }, { messages: { $elemMatch: { _id: new mongoose.Types.ObjectId(replyToMessageId) } } }).lean();
+          const target = room?.messages?.[0];
+          if (target) {
+            replyTo = target._id;
+            const first = (target.media || [])[0];
+            replyPreview = {
+              name: target.name || "",
+              username: target.username || handleOf(target.name, target.userId),
+              userId: target.userId || "",
+              text: target.isDeleted ? "" : String(target.message || "").slice(0, 160),
+              mediaType: target.isDeleted ? "" : first?.type || "",
+              mediaUrl: target.isDeleted ? "" : first?.type === "image" ? first.url : "",
+            };
+          }
+        }
         const newMessage = {
-          name,
-          message,
+          name: String(senderName).slice(0, 60),
+          username: handleOf(senderName, senderId),
+          message: text,
+          media: files,
           timestamp,
-          avatar: avatar || "",
-          userId,
-          replyTo: replyToMessageId ? new mongoose.Types.ObjectId(replyToMessageId) : null,
+          avatar: su ? (su.image && /^(https?:\/\/|\/api\/avatar\/)/i.test(su.image) ? String(su.image).slice(0, 500) : "") : /^https?:\/\//i.test(String(avatar || "")) ? String(avatar).slice(0, 500) : "",
+          userId: String(senderId).slice(0, 80),
+          replyTo,
+          replyPreview,
           likes: [],
           dislikes: [],
           reactions: [],
@@ -99,7 +152,7 @@ async function handler(req, res) {
         };
 
         const updatedRoom = await Room.findOneAndUpdate(
-          { roomName },
+          { roomName: roomKey },
           {
             $push: { messages: newMessage },
             $setOnInsert: { isGroup: true },
@@ -107,11 +160,22 @@ async function handler(req, res) {
           { new: true, upsert: true, runValidators: true }
         );
 
-        return res.status(201).json({ success: true, data: updatedRoom });
+        const saved = updatedRoom.messages[updatedRoom.messages.length - 1];
+        return res.status(201).json({ success: true, data: updatedRoom, sent: saved });
       } catch (error) {
         return res.status(500).json({ success: false, message: "Error saving message" });
       }
     }
+
+    // Pemilik pesan: bila ada sesi, hanya pengirim asli yang boleh ubah/hapus pesannya.
+    const ownsMessage = async (rn, mid) => {
+      if (!su) return true; // klien API tanpa sesi: perilaku lama
+      const room = await Room.findOne({ roomName: rn }, { messages: { $elemMatch: { _id: new mongoose.Types.ObjectId(mid) } } }).lean();
+      const m = room?.messages?.[0];
+      if (!m) return true; // biarkan handler mengembalikan 404
+      if (su.role === "admin") return true;
+      return String(m.userId || "") === String(su.id) || (!m.userId && m.name === su.name);
+    };
 
     // 2. Edit Message
     if (action === "editMessage") {
@@ -119,11 +183,13 @@ async function handler(req, res) {
         return res.status(400).json({ success: false, message: "Parameter tidak lengkap" });
       }
       try {
+        if (!mongoose.isValidObjectId(messageId)) return res.status(400).json({ success: false, message: "ID pesan tidak valid" });
+        if (!(await ownsMessage(roomName, messageId))) return res.status(403).json({ success: false, message: "Hanya pengirim yang dapat mengubah pesan ini" });
         const updatedRoom = await Room.findOneAndUpdate(
           { roomName, "messages._id": new mongoose.Types.ObjectId(messageId) },
           {
             $set: {
-              "messages.$.message": message,
+              "messages.$.message": String(message).slice(0, MAX_TEXT),
               "messages.$.edited": Date.now(),
             },
           },
@@ -142,12 +208,15 @@ async function handler(req, res) {
         return res.status(400).json({ success: false, message: "Parameter tidak lengkap" });
       }
       try {
+        if (!mongoose.isValidObjectId(messageId)) return res.status(400).json({ success: false, message: "ID pesan tidak valid" });
+        if (!(await ownsMessage(roomName, messageId))) return res.status(403).json({ success: false, message: "Hanya pengirim yang dapat menghapus pesan ini" });
         const updatedRoom = await Room.findOneAndUpdate(
           { roomName, "messages._id": new mongoose.Types.ObjectId(messageId) },
           {
             $set: {
               "messages.$.isDeleted": true,
               "messages.$.message": "[Pesan ini telah dihapus]",
+              "messages.$.media": [],
             },
           },
           { new: true }
@@ -161,7 +230,8 @@ async function handler(req, res) {
 
     // 4. Like / Dislike
     if (action === "toggleLike" || action === "toggleDislike") {
-      if (!roomName || !messageId || !userId) {
+      const uid = su ? String(su.id) : userId;
+      if (!roomName || !messageId || !uid) {
         return res.status(400).json({ success: false, message: "Parameter tidak lengkap" });
       }
       try {
@@ -174,11 +244,11 @@ async function handler(req, res) {
         const field = action === "toggleLike" ? "likes" : "dislikes";
         const oppositeField = action === "toggleLike" ? "dislikes" : "likes";
 
-        if (messageToUpdate[field].includes(userId)) {
-          messageToUpdate[field] = messageToUpdate[field].filter((id) => id.toString() !== userId.toString());
+        if (messageToUpdate[field].includes(uid)) {
+          messageToUpdate[field] = messageToUpdate[field].filter((id) => id.toString() !== uid.toString());
         } else {
-          messageToUpdate[field].push(userId);
-          messageToUpdate[oppositeField] = messageToUpdate[oppositeField].filter((id) => id.toString() !== userId.toString());
+          messageToUpdate[field].push(uid);
+          messageToUpdate[oppositeField] = messageToUpdate[oppositeField].filter((id) => id.toString() !== uid.toString());
         }
 
         await room.save();

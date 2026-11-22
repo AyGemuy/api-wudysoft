@@ -64,8 +64,11 @@ async function handler(req, res) {
     d,
     bg,
     model,
-    type
+    type,
+    noimg
   } = req.method === "GET" ? req.query : req.body;
+  // noimg=1 → tanpa gambar papan dari layanan html2img (dipakai halaman /games/ludo yang menggambar papan sendiri)
+  const skipImg = noimg === "1" || noimg === 1 || noimg === true || noimg === "true";
   try {
     let ludoGame;
     const htmlToImg = new HtmlToImg();
@@ -121,7 +124,7 @@ async function handler(req, res) {
         console.error("Error creating Ludo game in DB:", error);
         throw error;
       }
-      const boardUrl = await htmlToImg.generate({
+      const boardUrl = skipImg ? null : await htmlToImg.generate({
         bg: ludoGame.bg,
         state: ludoGame.state,
         totalPlayers: ludoGame.totalPlayers,
@@ -137,6 +140,7 @@ async function handler(req, res) {
           bg: ludoGame.bg,
           state: ludoGame.state.toObject ? ludoGame.state.toObject() : ludoGame.state,
           boardUrl: boardUrl,
+          meta: ludoGame.meta || {},
           createdAt: ludoGame.createdAt,
           updatedAt: ludoGame.updatedAt
         }
@@ -149,7 +153,7 @@ async function handler(req, res) {
           message: `No Ludo game found with ID '${id}'. Example: \`/api/game/ludo?action=state&id=YOUR_GAME_ID\``
         });
       }
-      const boardUrl = await htmlToImg.generate({
+      const boardUrl = skipImg ? null : await htmlToImg.generate({
         bg: ludoGame.bg,
         state: ludoGame.state,
         totalPlayers: ludoGame.totalPlayers,
@@ -164,6 +168,7 @@ async function handler(req, res) {
           bg: ludoGame.bg,
           state: ludoGame.state.toObject ? ludoGame.state.toObject() : ludoGame.state,
           boardUrl: boardUrl,
+          meta: ludoGame.meta || {},
           createdAt: ludoGame.createdAt,
           updatedAt: ludoGame.updatedAt
         }
@@ -204,6 +209,10 @@ async function handler(req, res) {
         } : null
       };
       ludoGame.state = resetState;
+      ludoGame.meta = {
+        rev: (ludoGame.meta?.rev || 0) + 1
+      };
+      ludoGame.markModified("meta");
       await ludoGame.save();
       return res.status(200).json({
         success: true,
@@ -242,6 +251,72 @@ async function handler(req, res) {
         success: true,
         message: `List of ${sessions.length} active Ludo sessions:`,
         sessions: sessions.map(session => session.toObject())
+      });
+    } else if (action === "sync" && id) {
+      // Simpan status papan + giliran sekaligus (dipakai halaman /games/ludo). Optimistic lock lewat `rev`.
+      ludoGame = await Ludo.findById(id);
+      if (!ludoGame) {
+        return res.status(404).json({
+          success: false,
+          message: `No Ludo game found with ID '${id}' for sync.`
+        });
+      }
+      const body = req.method === "POST" ? req.body || {} : {};
+      const curRev = ludoGame.meta?.rev || 0;
+      if (body.rev !== undefined && Number(body.rev) !== curRev) {
+        return res.status(409).json({
+          success: false,
+          message: "Status sudah berubah di perangkat lain.",
+          game: {
+            id: ludoGame._id,
+            totalPlayers: ludoGame.totalPlayers,
+            state: ludoGame.state.toObject ? ludoGame.state.toObject() : ludoGame.state,
+            meta: ludoGame.meta || {}
+          }
+        });
+      }
+      const newState = {};
+      for (let i = 1; i <= ludoGame.totalPlayers; i++) {
+        const src = body.state?.[`p${i}`] || {};
+        const pcs = {};
+        for (const k of ["a", "b", "c", "d"]) {
+          const n = parseInt(src[k]);
+          if (isNaN(n) || n < 0 || n > 58) {
+            return res.status(400).json({
+              success: false,
+              message: `Posisi bidak p${i}.${k} tidak valid (0-58).`
+            });
+          }
+          pcs[k] = n;
+        }
+        newState[`p${i}`] = pcs;
+      }
+      newState.p3 = newState.p3 || null;
+      newState.p4 = newState.p4 || null;
+      const mm = body.meta || {};
+      const clampInt = (v, lo, hi, dflt) => {
+        const n = parseInt(v);
+        return isNaN(n) ? dflt : Math.min(hi, Math.max(lo, n));
+      };
+      ludoGame.state = newState;
+      ludoGame.meta = {
+        rev: curRev + 1,
+        turn: clampInt(mm.turn, 1, ludoGame.totalPlayers, 1),
+        dice: clampInt(mm.dice, 0, 6, 0),
+        rolled: !!mm.rolled,
+        winners: (Array.isArray(mm.winners) ? mm.winners : []).map(n => clampInt(n, 1, 4, 0)).filter(Boolean).slice(0, 4),
+        log: String(mm.log || "").slice(0, 140)
+      };
+      ludoGame.markModified("meta");
+      await ludoGame.save();
+      return res.status(200).json({
+        success: true,
+        game: {
+          id: ludoGame._id,
+          totalPlayers: ludoGame.totalPlayers,
+          state: ludoGame.state.toObject ? ludoGame.state.toObject() : ludoGame.state,
+          meta: ludoGame.meta
+        }
       });
     } else if (action === "move" && id) {
       ludoGame = await Ludo.findById(id);
@@ -312,7 +387,7 @@ async function handler(req, res) {
       if (updated) {
         await ludoGame.save();
       }
-      const boardUrl = await htmlToImg.generate({
+      const boardUrl = skipImg ? null : await htmlToImg.generate({
         bg: ludoGame.bg,
         state: ludoGame.state,
         totalPlayers: ludoGame.totalPlayers,
@@ -328,6 +403,7 @@ async function handler(req, res) {
           bg: ludoGame.bg,
           state: ludoGame.state.toObject ? ludoGame.state.toObject() : ludoGame.state,
           boardUrl: boardUrl,
+          meta: ludoGame.meta || {},
           updatedAt: ludoGame.updatedAt
         }
       });

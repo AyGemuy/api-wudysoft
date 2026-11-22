@@ -318,7 +318,7 @@ const T = (id, name, desc, theme, v) => ({ id, name, desc, theme, v: { ...TPL_BA
 
 /** Template: satu klik menerapkan tema, model kartu, bentuk, efek, dan font sekaligus. */
 export const TEMPLATES = [
-  T('snow', 'Snow Klasik', 'Tampilan bawaan Wudysoft — terang, bersih, kaca halus', 'snow', {}),
+  T('snow', 'Snow Klasik', 'Terang, bersih, kaca halus (tampilan lama)', 'snow', {}),
   T('liquid', 'Liquid Glass', 'Kaca cair bening ala iOS terbaru', 'aurora', { card: 'liquid', cardDepth: 0.6, radius: 28, rBtn: 20, rInput: 18, rChip: 60, rDockTop: 36, rDockBottom: 36, rDockBtn: 24, rModal: 30, blur: 38, glass: 0.5, border: 0.2, blobIntensity: 0.4, bgType: 'gradient', bgGradient: 'aurora', font: 'jakarta' }),
   T('brutal', 'Neo Brutal', 'Garis tebal, bayangan keras, tajam', 'snow', { card: 'brutal', cardDepth: 0.5, radius: 4, rBtn: 4, rInput: 4, rChip: 4, rDockTop: 6, rDockBottom: 6, rDockBtn: 4, rModal: 6, blur: 0, glass: 1, border: 0.5, blobs: false, grid: true, animHover: 'lift', font: 'space', fontMono: 'spacemono' }),
   T('neu', 'Soft Neumorph', 'Timbul lembut, menekan saat disentuh', 'snow', { card: 'neu', cardDepth: 0.6, radius: 26, rBtn: 18, rInput: 16, rChip: 60, rDockTop: 30, rDockBottom: 30, rDockBtn: 18, rModal: 28, blur: 0, glass: 1, border: 0, blobs: false, animHover: 'lift', font: 'manrope' }),
@@ -354,7 +354,7 @@ export const TEMPLATES = [
   T('matcha', 'Matcha Latte', 'Hijau sage kenyal, ramah dan ceria', 'matcha', { card: 'clay', cardDepth: 0.7, radius: 28, rBtn: 20, rInput: 18, rChip: 60, rDockTop: 32, rDockBottom: 32, rDockBtn: 20, rModal: 30, blur: 0, glass: 1, border: 0, blobs: false, font: 'figtree', animHover: 'jelly', navStyle: 'label' }),
   T('lime', 'Electric Lime', 'Hitam & hijau lime, garis tegas ala Gen-Z', 'electric', { card: 'brutal', cardBorderColor: 'accent', cardDepth: 0.5, radius: 6, rBtn: 4, rInput: 4, rChip: 4, rDockTop: 8, rDockBottom: 8, rDockBtn: 4, rModal: 8, blur: 0, glass: 1, border: 0.4, blobs: false, grid: true, font: 'space', fontMono: 'spacemono', headingCase: 'upper', animHover: 'press', navStyle: 'beam' }),
   T('ube', 'Ube Pastel', 'Ungu ube dan pink, tepi gradien manis', 'ube', { card: 'gradient', cardDepth: 0.45, radius: 26, rBtn: 18, rInput: 16, rChip: 60, rDockTop: 34, rDockBottom: 34, rDockBtn: 20, rModal: 28, blur: 24, bgType: 'gradient', bgGradient: 'lavender', font: 'manrope', animHover: 'pop', navStyle: 'bubble' }),
-  T('midnight', 'Midnight Aurora', 'Malam pekat, cahaya aurora, kaca cair', 'midnight', { card: 'liquid', cardDepth: 0.6, radius: 28, rBtn: 20, rInput: 18, rChip: 60, rDockTop: 36, rDockBottom: 36, rDockBtn: 22, rModal: 30, blur: 38, glass: 0.4, border: 0.2, blobIntensity: 0.35, particle: 'stars', bgType: 'gradient', bgGradient: 'aurora', font: 'jakarta', animHover: 'float', navStyle: 'beam' }),
+  T('midnight', 'Midnight Aurora', 'Bawaan baru — malam pekat, cahaya aurora, kaca cair', 'midnight', { card: 'liquid', cardDepth: 0.6, radius: 28, rBtn: 20, rInput: 18, rChip: 60, rDockTop: 36, rDockBottom: 36, rDockBtn: 22, rModal: 30, blur: 38, glass: 0.4, border: 0.2, blobIntensity: 0.35, particle: 'stars', bgType: 'gradient', bgGradient: 'aurora', font: 'jakarta', animHover: 'float', navStyle: 'beam' }),
 ];
 
 export const COLOR_KEYS = [
@@ -375,36 +375,36 @@ export const RADIUS_PRESETS = [
 ];
 
 export const DEFAULT_CONFIG = {
-  theme: 'snow',
+  theme: 'midnight', // Midnight Aurora: malam pekat + aurora + kaca cair (tren 2025–2026)
   custom: {},
-  // bentuk (60 = pill) — sudut halus ala Fluent
-  radius: 10, // kartu
-  rBtn: 6,
-  rInput: 6,
-  rChip: 6,
-  rDockTop: 14, // header & navbar melayang: sudut atas
-  rDockBottom: 14, // sudut bawah
-  rDockBtn: 8, // ikon di dalam dock
-  rModal: 12,
-  blur: 28,
-  glass: 0.75,
-  border: 0.12,
-  card: 'glass',
+  // bentuk (60 = pill) — sudut besar & lembut ala kaca cair
+  radius: 28, // kartu
+  rBtn: 20,
+  rInput: 18,
+  rChip: 60,
+  rDockTop: 36, // header & navbar melayang: sudut atas
+  rDockBottom: 36, // sudut bawah
+  rDockBtn: 22, // ikon di dalam dock
+  rModal: 30,
+  blur: 38,
+  glass: 0.4,
+  border: 0.2,
+  card: 'liquid',
   cardBorderStyle: 'solid', // solid | dashed | dotted | double | none
   cardBorderW: 0, // 0 = ikuti model, 1..4 px
   cardBorderColor: 'theme', // theme | accent | gradient
   cardGlint: 'hover', // hover | always | off
-  cardDepth: 0.5, // 0..1 kedalaman bayangan & kemiringan 3D
+  cardDepth: 0.6, // 0..1 kedalaman bayangan & kemiringan 3D
   density: 'normal', // compact | normal | spacious
   cardSize: 'm', // s | m | l
   // navbar bawah (tab)
-  navStyle: 'classic', // classic | notch | beam | bubble | label
+  navStyle: 'beam', // classic | notch | beam | bubble | label
   navLabels: 'auto', // auto (ikut model) | on | off
   navCenter: true, // tombol menu cepat ⚡ di tengah
   // efek latar
-  particle: 'off',
+  particle: 'stars',
   blobs: true,
-  blobIntensity: 0.22,
+  blobIntensity: 0.35,
   grid: false,
   spotlight: false,
   // animasi
@@ -412,7 +412,7 @@ export const DEFAULT_CONFIG = {
   speed: 1,
   animPage: 'auto', // auto | slide | fade | zoom | blur | slideX | rise | flip | drop | skew | none
   animEntrance: true,
-  animHover: 'tilt', // lift | tilt | glow | none
+  animHover: 'float', // lift | tilt | glow | none
   animPreview: true,
   animBlobs: true,
   animBtn: true,
@@ -424,7 +424,7 @@ export const DEFAULT_CONFIG = {
   splashSpeed: 1,
   animBar: true,
   // latar kustom
-  bgType: 'none', // none | gradient | link | upload
+  bgType: 'gradient', // none | gradient | link | upload
   bgGradient: 'aurora',
   bgUrl: '',
   bgFit: 'cover', // cover | contain | repeat
@@ -432,7 +432,7 @@ export const DEFAULT_CONFIG = {
   bgBlur: 0,
   bgDim: 0.45,
   // teks
-  font: 'segoe',
+  font: 'jakarta',
   fontHeading: 'same',
   headingCase: 'normal', // normal | upper
   fontMono: 'jetbrains',

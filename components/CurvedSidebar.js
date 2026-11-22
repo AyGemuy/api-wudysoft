@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Home, Terminal, Activity, MessageSquare, FileText, FileCode, Wand2, UploadCloud, User, LogIn, LogOut, Search, Sliders, X, TerminalSquare, BookOpen, ExternalLink, Gauge, Webhook } from 'lucide-react';
+import { Home, Terminal, Activity, MessageSquare, FileText, FileCode, Wand2, UploadCloud, User, LogIn, LogOut, Search, Sliders, X, TerminalSquare, BookOpen, ExternalLink, Gauge, Webhook, MessageSquareText, Newspaper, MousePointerClick, Database, Gamepad2 } from 'lucide-react';
 import WudysoftBrand from '@/components/WudysoftBrand';
 import { sound } from '@/src/lib/interactiveEffects';
 
@@ -9,8 +9,10 @@ const GROUPS = [
   { title: 'Navigasi', items: [
     { href: '/', label: 'Beranda', Icon: Home },
     { href: '/playground', label: 'API Playground', Icon: Terminal },
-    { href: '/stats', label: 'Live Stats', Icon: Activity },
+    { href: '/docs?tab=stats', label: 'Live Stats', Icon: Activity },
     { href: '/rooms', label: 'Chat Rooms', Icon: MessageSquare },
+    { href: '/community', label: 'Komentar', Icon: MessageSquareText },
+    { href: '/community?tab=posts', label: 'Posts', Icon: Newspaper },
   ] },
   { title: 'Tools', items: [
     { href: '/tools/pastes', label: 'Pastes', Icon: FileText },
@@ -18,17 +20,29 @@ const GROUPS = [
     { href: '/tools/compiler', label: 'Compiler', Icon: TerminalSquare },
     { href: '/tools/beautify', label: 'Code Beautifier', Icon: Wand2 },
     { href: '/tools/upload', label: 'Multi-Host Upload', Icon: UploadCloud },
+    { href: '/tools/hit', label: 'Hit Counter', Icon: MousePointerClick },
+    { href: '/tools/db', label: 'Data Store', Icon: Database },
+  ] },
+  { title: 'Game', items: [
+    { href: '/games', label: 'Arena Game', Icon: Gamepad2 },
   ] },
   { title: 'Developer', items: [
     { href: '/docs', label: 'Dokumentasi API', Icon: BookOpen },
-    { href: '/status', label: 'Status Layanan', Icon: Gauge },
+    { href: '/docs?tab=status', label: 'Status Layanan', Icon: Gauge },
     { href: '/webhooks', label: 'Webhook Inspector', Icon: Webhook },
-    { href: '/contact', label: 'Kontak & Komunitas', Icon: MessageSquare },
+    { href: '/profile?tab=kontak', label: 'Kontak & Komunitas', Icon: MessageSquare },
     { href: '/api/openapi', label: 'OpenAPI Spec', Icon: ExternalLink, external: true },
   ] },
 ];
 
-const isActive = (path, href) => (href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`));
+const isActive = (path, href) => {
+  const [hp, hq = ''] = href.split('?');
+  const [pp, pq = ''] = path.split('?');
+  if (hp === '/') return pp === '/';
+  if (pp !== hp && !pp.startsWith(`${hp}/`)) return false;
+  const tab = new URLSearchParams(pq).get('tab') || '';
+  return (new URLSearchParams(hq).get('tab') || '') === tab; // item bertab hanya aktif pada tab-nya
+};
 
 /**
  * Sidebar melengkung bergaya glassmorphism: sudut kanan sangat membulat, tab aktif "menyatu"

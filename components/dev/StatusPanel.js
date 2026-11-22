@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, Plus, Trash2, RefreshCw, Pause, Play, CheckCircle2, AlertTriangle, XCircle, Download } from 'lucide-react';
-import Seo from '@/components/Seo';
 import { Reveal, TextReveal } from '@/components/motion';
 import { timeAgo } from '@/src/lib/timeAgo';
 
@@ -129,7 +128,6 @@ export default function StatusPage() {
 
   return (
     <>
-      <Seo title="Status — uptime & latensi API" path="/status" label="STATUS" description="Pantau ketersediaan dan latensi endpoint API Wudysoft secara langsung: uptime, p95, dan riwayat gangguan." />
       <div className="st-page">
         <header>
           <Reveal variant="down"><div className="badge ok" style={{ marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Activity size={14} color="var(--a2)" /> <span>STATUS MONITOR</span></div></Reveal>

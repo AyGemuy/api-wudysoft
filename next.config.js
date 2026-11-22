@@ -56,6 +56,14 @@ const nextConfig = {
   // 2. Matikan source map di production agar ukuran build jauh lebih kecil
   productionBrowserSourceMaps: false,
 
+  // 2b. Minifier SWC (Rust, cepat) dengan mangling nama variabel/fungsi tingkat atas + 2 putaran kompresi.
+  //     Hasilnya lebih kecil dari obfuscator ("mangled") dan tidak memperlambat runtime.
+  swcMinify: true,
+  compiler: {
+    // buang console.log/info/debug dari bundle klien production (error & warn tetap ada untuk diagnosa)
+    removeConsole: { exclude: ["error", "warn"] },
+  },
+
   // 3. Memperkecil ukuran deployment (hanya menyertakan node_modules yang terpakai).
   //    Jalankan production dengan `node .next/standalone/server.js` (setelah menyalin
   //    `.next/static` dan `public`), atau tetap pakai `npm start` (server custom + Socket.IO).
@@ -66,9 +74,13 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   images: {
-    domains: ["avatars.githubusercontent.com", "lh3.googleusercontent.com", "images.unsplash.com"]
+    domains: ["avatars.githubusercontent.com", "lh3.googleusercontent.com", "images.unsplash.com"],
+    formats: ["image/avif", "image/webp"], // gambar modern jauh lebih kecil → skor Lighthouse naik
+    minimumCacheTTL: 60 * 60 * 24 * 30
   },
   experimental: {
+    // hanya sertakan ikon/komponen yang benar-benar dipakai (tree-shaking agresif untuk paket besar)
+    optimizePackageImports: ["lucide-react", "framer-motion", "date-fns", "highlight.js"],
     outputFileTracingExcludes: {
       "*": EXCLUDE_FROM_SERVER_TRACE
     }
@@ -117,7 +129,25 @@ const nextConfig = {
         )
       );
     }
+    // Bundle kecil & cepat: modul ESM di-concat (scope hoisting) dan chunk bersama dipecah wajar
+    if (!dev && !isServer) {
+      config.optimization.concatenateModules = true;
+      config.optimization.usedExports = true;
+      config.optimization.sideEffects = true;
+    }
     return config;
+  },
+
+  // Halaman lama digabung: game → /games?g=…, kontak → tab di /profile (query asli, mis. ?id=, ikut diteruskan)
+  async redirects() {
+    return [
+      { source: "/games/:slug(tictactoe|chess|blackjack|akinator|ludo|tebak-gambar)", destination: "/games?g=:slug", permanent: true },
+      { source: "/status", destination: "/docs?tab=status", permanent: true },
+      { source: "/stats", destination: "/docs?tab=stats", permanent: true },
+      { source: "/comments", destination: "/community", permanent: true },
+      { source: "/posts", destination: "/community?tab=posts", permanent: true },
+      { source: "/contact", destination: "/profile?tab=kontak", permanent: true },
+    ];
   },
 
   async headers() {
@@ -134,6 +164,19 @@ const nextConfig = {
       // Respons API (JSON) tidak perlu diindeks mesin pencari; gambar preview /api/og dikecualikan
       source: "/api/:path((?!og$).*)",
       headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }]
+    }, {
+      // ikon & aset statis: cache panjang + revalidate di latar belakang
+      source: "/:path(icons|assets)/:file*",
+      headers: [{ key: "Cache-Control", value: "public, max-age=2592000, stale-while-revalidate=86400" }]
+    }, {
+      source: "/:file(favicon.ico|favicon.svg|og.jpg)",
+      headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" }]
+    }, {
+      source: "/:path*",
+      headers: [
+        { key: "X-Content-Type-Options", value: "nosniff" },
+        { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" }
+      ]
     }, {
       source: "/_next/static/:path*",
       headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }]

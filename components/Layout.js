@@ -4,9 +4,7 @@ import { useRouter } from 'next/router';
 import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icons } from './Icons';
-import CustomThemeStudio from './CustomThemeStudio';
-import InteractiveCanvas from './InteractiveCanvas';
-import CursorGlow from './CursorGlow';
+import dynamic from 'next/dynamic';
 import BgLayer from './BgLayer';
 import SiteFooter from './SiteFooter';
 import WudysoftBrand from './WudysoftBrand';
@@ -18,6 +16,12 @@ import { logout } from '@/src/lib/nav';
 import { loadSpecOps } from '@/src/lib/specIndex';
 import { DEFAULT_CONFIG, loadConfig, saveConfig, applyConfig, computeTheme } from '@/src/lib/themes';
 import { sound } from '@/src/lib/interactiveEffects';
+
+// Dimuat terpisah (code splitting) agar bundle awal kecil & cepat: studio tema besar hanya diunduh saat dibuka,
+// kanvas/cursor adalah efek dekoratif yang tidak perlu menghalangi render pertama.
+const CustomThemeStudio = dynamic(() => import('./CustomThemeStudio'), { ssr: false });
+const InteractiveCanvas = dynamic(() => import('./InteractiveCanvas'), { ssr: false });
+const CursorGlow = dynamic(() => import('./CursorGlow'), { ssr: false });
 
 /** Avatar header: foto bila ada (dan bisa dimuat), jika tidak → inisial nama. */
 function Avatar({ user }) {
@@ -45,6 +49,8 @@ export default function Layout({ children }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [studioOpen, setStudioOpen] = useState(false);
+  const [studioEver, setStudioEver] = useState(false); // studio tema baru diunduh setelah pertama dibuka
+  useEffect(() => { if (studioOpen) setStudioEver(true); }, [studioOpen]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dialOpen, setDialOpen] = useState(false);
 
@@ -149,7 +155,7 @@ export default function Layout({ children }) {
     const pages = [
       { type: 'Halaman', title: 'Command Deck', sub: 'Beranda', action: '/' },
       { type: 'Halaman', title: 'API Playground', sub: 'Uji endpoint dari OpenAPI', action: '/playground' },
-      { type: 'Halaman', title: 'System & API Stats', sub: 'Telemetri realtime', action: '/stats' },
+      { type: 'Halaman', title: 'System & API Stats', sub: 'Telemetri realtime', action: '/docs?tab=stats' },
       { type: 'Halaman', title: 'Code Beautifier', sub: 'Tools', action: '/tools/beautify' },
       { type: 'Halaman', title: 'Compiler', sub: 'Tools · jalankan kode langsung', action: '/tools/compiler' },
       { type: 'Halaman', title: 'Multi-Host Uploader', sub: 'Tools', action: '/tools/upload' },
@@ -157,8 +163,13 @@ export default function Layout({ children }) {
       { type: 'Halaman', title: 'Pastes', sub: 'Tools · simpan & bagikan teks', action: '/tools/pastes' },
       { type: 'Halaman', title: 'Code Share', sub: 'Tools · bagikan potongan kode', action: '/tools/code-share' },
       { type: 'Halaman', title: 'Dokumentasi API', sub: 'Developer · referensi endpoint', action: '/docs' },
-      { type: 'Halaman', title: 'Status Layanan', sub: 'Developer · uptime & latensi', action: '/status' },
-      { type: 'Halaman', title: 'Kontak & Komunitas', sub: 'WhatsApp · email · grup · GitHub', action: '/contact' },
+      { type: 'Halaman', title: 'Status Layanan', sub: 'Developer · uptime & latensi', action: '/docs?tab=status' },
+      { type: 'Halaman', title: 'Komentar', sub: 'Komunikasi · buku tamu', action: '/community' },
+      { type: 'Halaman', title: 'Posts', sub: 'Komunikasi · tulisan & pengumuman', action: '/community?tab=posts' },
+      { type: 'Halaman', title: 'Hit Counter', sub: 'Tools · penghitung kunjungan', action: '/tools/hit' },
+      { type: 'Halaman', title: 'Data Store', sub: 'Tools · penyimpanan JSON', action: '/tools/db' },
+      { type: 'Halaman', title: 'Arena Game', sub: 'Game · Tic-Tac-Toe, Catur, Blackjack, Ludo, Akinator', action: '/games' },
+      { type: 'Halaman', title: 'Kontak & Komunitas', sub: 'WhatsApp · email · grup · GitHub', action: '/profile?tab=kontak' },
       { type: 'Halaman', title: 'Webhook Inspector', sub: 'Developer · tangkap request', action: '/webhooks' },
       { type: 'Halaman', title: 'Masuk / Daftar', sub: 'Akun', action: '/auth' },
     ].filter((i) => !q || `${i.title} ${i.sub}`.toLowerCase().includes(q));
@@ -262,7 +273,7 @@ export default function Layout({ children }) {
                         <Icons.User size={14} color="var(--a2)" />
                         <span>Profil saya</span>
                       </Link>
-                      <Link href="/stats" className="dropdown-item" role="menuitem" onClick={() => setProfileOpen(false)}>
+                      <Link href="/docs?tab=stats" className="dropdown-item" role="menuitem" onClick={() => setProfileOpen(false)}>
                         <Icons.Activity size={14} color="var(--a2)" />
                         <span>Live Stats</span>
                       </Link>
@@ -362,18 +373,20 @@ export default function Layout({ children }) {
 
       <a href="#konten" className="skip-link">Lewati ke konten</a>
 
+      {studioEver && (
       <CustomThemeStudio
         isOpen={studioOpen}
         onClose={() => setStudioOpen(false)}
         config={config}
         setConfig={setConfig}
       />
+      )}
 
       <CurvedSidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         user={user}
-        pathname={router.pathname}
+        pathname={router.asPath.split('#')[0]}
         onSearch={() => setSearchOpen(true)}
         onTheme={() => setStudioOpen(true)}
         onLogout={() => logout('/')}

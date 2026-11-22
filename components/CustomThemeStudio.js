@@ -8,6 +8,7 @@ import {
   resolveColors, sanitizeConfig, randomPalette, hexToRgb, isLight, fontPreviewHref,
 } from '@/src/lib/themes';
 import { saveBackgroundFile, clearBackground, readBackground } from '@/src/lib/bgUpload';
+import { toast } from '@/src/lib/toast';
 
 const TABS = [
   { id: 'template', label: 'Template' },
@@ -242,7 +243,6 @@ function FontPicker({ value, onChange, cats }) {
 export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }) {
   const [tab, setTab] = useState('template');
   const [importText, setImportText] = useState('');
-  const [note, setNote] = useState('');
   const [linkDraft, setLinkDraft] = useState(config.bgUrl);
   const [linkErr, setLinkErr] = useState('');
   const [upload, setUpload] = useState('');
@@ -280,7 +280,7 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
     sound.playClick();
     setConfig((prev) => { const custom = { ...prev.custom }; delete custom[key]; return sanitizeConfig({ ...prev, custom }); });
   };
-  const flash = (msg) => { setNote(msg); setTimeout(() => setNote(''), 2400); };
+  const flash = (msg) => toast(msg, /gagal|tidak valid/i.test(msg) ? 'err' : 'info', { title: 'Tema', duration: 2600 });
 
   const applyLink = () => {
     const v = linkDraft.trim();
@@ -370,7 +370,7 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
                       const selected = config.theme === p.id;
                       const active = selected && !Object.keys(config.custom).length;
                       return (
-                        <button key={p.id} type="button" className={`palette-box ${selected ? 'active' : ''}`} onClick={() => set({ theme: p.id, custom: {} })} style={{ background: `linear-gradient(135deg, ${c.bg2}, ${c.bg1})` }} title={p.name}>
+                        <button key={p.id} type="button" className={`palette-box ${selected ? 'active' : ''}`} onClick={() => { set({ theme: p.id, custom: {} }); flash(`Preset ${p.name} diterapkan`); }} style={{ background: `linear-gradient(135deg, ${c.bg2}, ${c.bg1})` }} title={p.name}>
                           <span className="dots"><i style={{ background: c.a1 }} /><i style={{ background: c.a2 }} /><i style={{ background: c.a3 }} /></span>
                           <span className="name" style={{ color: c.text || (isLight(c.bg1) ? '#0f172a' : '#f8fafc') }}>{p.name}</span>
                           {active && <Icons.Check size={13} color={c.a2} />}
@@ -608,9 +608,6 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
                 </>
               )}
 
-              <AnimatePresence>
-                {note && <motion.div className="studio-note" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>{note}</motion.div>}
-              </AnimatePresence>
             </div>
           </motion.div>
         </div>

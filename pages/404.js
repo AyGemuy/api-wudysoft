@@ -35,7 +35,7 @@ const DRIFT = [
 const LINKS = [
   { href: '/', label: 'Beranda', Icon: Home },
   { href: '/playground', label: 'Playground', Icon: Terminal },
-  { href: '/stats', label: 'Live Stats', Icon: Activity },
+  { href: '/docs?tab=stats', label: 'Live Stats', Icon: Activity },
   { href: '/rooms', label: 'Chat Rooms', Icon: MessageSquare },
   { href: '/tools/pastes', label: 'Pastes', Icon: FileText },
   { href: '/tools/code-share', label: 'Code Share', Icon: FileCode },

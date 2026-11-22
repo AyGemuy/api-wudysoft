@@ -8,6 +8,7 @@ import { sound } from '@/src/lib/interactiveEffects';
 import { timeAgo, fmtDateTime, copyText } from '@/src/lib/timeAgo';
 import { Reveal, Stagger, Item, TextReveal, Magnetic } from '@/components/motion';
 import Pagination from '@/components/Pagination';
+import { toast } from '@/src/lib/toast';
 
 const API = '/api/tools/paste/v1';
 const SYNTAXES = ['text', 'markdown', 'javascript', 'typescript', 'json', 'html', 'css', 'python', 'php', 'java', 'c', 'cpp', 'go', 'rust', 'bash', 'sql', 'yaml'];
@@ -42,6 +43,7 @@ export default function PastesPage() {
   const listRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState('');
+  useEffect(() => { if (loadErr) toast.err(loadErr); }, [loadErr]);
   const [q, setQ] = useState('');
   const [form, setForm] = useState(EMPTY);
   const [editing, setEditing] = useState(null); // key yang sedang diedit
@@ -242,7 +244,6 @@ export default function PastesPage() {
           <button className="btn" onClick={() => { sound.playClick(); load(); }} disabled={loading}><RefreshCw size={14} /> Muat ulang</button>
         </section>
 
-        {loadErr && <div className="alert">{loadErr}</div>}
         {loading && !list.length && <div className="badge">Memuat…</div>}
         {!loading && !loadErr && !shown.length && (
           <div className="glass card pp-empty">{q ? 'Tidak ada paste yang cocok.' : 'Belum ada paste. Buat yang pertama di atas.'}</div>

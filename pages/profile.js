@@ -3,12 +3,16 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import Seo from '@/components/Seo';
+import Tabs from '@/components/Tabs';
+import ContactCard from '@/components/ContactCard';
+import { useRouter } from 'next/router';
 import { Icons } from '@/components/Icons';
 import { sound } from '@/src/lib/interactiveEffects';
 import { logout } from '@/src/lib/nav';
 import { passwordStrength } from '@/src/lib/authErrors';
 import { Reveal, CountUp } from '@/components/motion';
 import GithubCard from '@/components/GithubCard';
+import { toast } from '@/src/lib/toast';
 
 const STRENGTH_LABEL = ['Terlalu lemah', 'Lemah', 'Cukup', 'Kuat', 'Sangat kuat'];
 const fmtDate = (v) => (v ? new Date(v).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '—');
@@ -48,7 +52,7 @@ function Avatar({ src, name, size = 88 }) {
   );
 }
 
-export default function ProfilePage() {
+function ProfilePanel() {
   const { data: session, status, update } = useSession();
   const sUser = session?.user;
   const fileRef = useRef(null);
@@ -57,13 +61,12 @@ export default function ProfilePage() {
   const [loadErr, setLoadErr] = useState('');
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
-  const [msg, setMsg] = useState({ type: '', text: '' });
   const [busy, setBusy] = useState('');
   const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
   const [showToken, setShowToken] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const flash = (type, text) => setMsg({ type, text });
+  const flash = (type, text) => { if (text) toast(text, type === 'ok' ? 'ok' : 'err'); };
 
   const apply = useCallback((p) => {
     setProfile(p);
@@ -80,9 +83,9 @@ export default function ProfilePage() {
         const d = await r.json().catch(() => ({}));
         if (!alive) return;
         if (r.ok && d.ok) apply(d.profile);
-        else setLoadErr(d.message || 'Gagal memuat profil.');
+        else { setLoadErr(d.message || 'Gagal memuat profil.'); toast.err(d.message || 'Gagal memuat profil.'); }
       })
-      .catch(() => alive && setLoadErr('Tidak dapat menghubungi server.'));
+      .catch(() => alive && (setLoadErr('Tidak dapat menghubungi server.'), toast.err('Tidak dapat menghubungi server.')));
     return () => { alive = false; };
   }, [status, apply]);
 
@@ -171,7 +174,6 @@ export default function ProfilePage() {
   if (sUser.isGuest) {
     return (
       <>
-        <Seo title="Profil" path="/profile" label="PROFIL" description="Kelola profil akun Wudysoft." noindex />
         <div className="center" style={{ flexDirection: 'column', alignItems: 'center', gap: 18, justifyContent: 'flex-start' }}>
           <motion.div className="glass auth-card text-center" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'center' }}><Avatar name={sUser.name} /></div>
@@ -209,7 +211,6 @@ export default function ProfilePage() {
 
   return (
     <>
-      <Seo title="Profil Saya" path="/profile" label="PROFIL" description="Kelola profil, foto, password, dan token API akun Wudysoft." noindex />
       <div className="pf-page">
         <Reveal as="section" variant="zoom" className="glass pf-card pf-hero">
           <div className="pf-avatar-wrap">
@@ -242,10 +243,6 @@ export default function ProfilePage() {
           <div className="glass pf-stat"><b>{p.role}</b><span>Peran</span></div>
           <div className="glass pf-stat"><b>{pct}%</b><span>Profil lengkap</span></div>
         </Reveal>
-
-        {(msg.text || loadErr) && (
-          <div className={(msg.type === 'ok' ? 'alert ok-alert' : 'alert')} role={msg.type === 'ok' ? 'status' : 'alert'}>{msg.text || loadErr}</div>
-        )}
 
         <Reveal as="section" variant="blur" className="glass pf-card">
           <h3><Icons.User size={16} color="var(--a2)" /> Informasi profil</h3>
@@ -392,6 +389,33 @@ export default function ProfilePage() {
         .pf-logout { color: var(--err); }
         @media (max-width: 480px) { :global(.pf-stats) { grid-template-columns: repeat(2, 1fr); } :global(.pf-hero) { grid-template-columns: 1fr; justify-items: center; text-align: center; } .pf-badges { justify-content: center; } .pf-link { justify-self: center; } }
       `}</style>
+    </>
+  );
+}
+
+const TABS = [
+  { id: 'profil', label: 'Profil', Icon: Icons.User },
+  { id: 'kontak', label: 'Kontak & Author', Icon: Icons.MessageSquare || Icons.User },
+];
+
+/** Satu halaman untuk profil akun + kontak/author. Tab kontak bersifat publik (tanpa login). */
+export default function ProfilePage() {
+  const router = useRouter();
+  const tab = router.query.tab === 'kontak' ? 'kontak' : 'profil';
+  const pick = (id) => router.replace({ pathname: '/profile', query: id === 'profil' ? {} : { tab: id } }, undefined, { shallow: true, scroll: false });
+  return (
+    <>
+      {tab === 'kontak' ? (
+        <Seo title="Kontak & Komunitas" path="/profile?tab=kontak" label="KONTAK" description="Hubungi admin/author Wudysoft lewat WhatsApp atau email, gabung grup & komunitas WhatsApp, dan temukan source code di GitHub." />
+      ) : (
+        <Seo title="Profil" path="/profile" label="PROFIL" description="Kelola profil akun Wudysoft." noindex />
+      )}
+      <div style={{ width: 'min(960px, 100%)', margin: '0 auto', display: 'grid', gap: 16, justifyItems: 'center' }}>
+        <Tabs tabs={TABS} value={tab} onChange={pick} label="Profil dan kontak" />
+        <div role="tabpanel" key={tab} style={{ width: '100%' }}>
+          {tab === 'kontak' ? <ContactCard heading="h1" /> : <ProfilePanel />}
+        </div>
+      </div>
     </>
   );
 }

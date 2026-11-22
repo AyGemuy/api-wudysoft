@@ -5,6 +5,7 @@ import { Music, Pause, Play, X, Volume2, VolumeX, Bell, Link2, Minus, Plus } fro
 import { audioStore, bgm, CUES, parseYouTube } from '@/src/lib/audio';
 import { sound, PACKS, EVENTS } from '@/src/lib/interactiveEffects';
 import { useTheme } from '@/components/ThemeContext';
+import { toast } from '@/src/lib/toast';
 
 function useStore(store) {
   const [v, setV] = useState(store.get());
@@ -61,7 +62,7 @@ export default function AudioControl() {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('bgm');
   const [url, setUrl] = useState('');
-  const [urlErr, setUrlErr] = useState('');
+  const setUrlErr = (m) => { if (m) toast.warn(m); };
   const box = useRef(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -159,7 +160,6 @@ export default function AudioControl() {
                 <div className="au-input"><Link2 size={14} /><input id="au-link" className="input" placeholder="Link YouTube (video / playlist)" value={url} onChange={(e) => { setUrl(e.target.value); setUrlErr(''); }} inputMode="url" autoComplete="off" spellCheck={false} /></div>
                 <button className="btn primary" type="submit">Setel</button>
               </form>
-              {urlErr && <div className="au-err" role="alert">{urlErr}</div>}
               <div className={`au-status ${b.status}`} aria-live="polite">
                 {playing && <span className="au-eq" aria-hidden="true"><i /><i /><i /></span>}
                 <span className="au-status-t">{statusText}</span>

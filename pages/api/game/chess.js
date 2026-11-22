@@ -16,7 +16,8 @@ async function handler(req, res) {
     id,
     from,
     to,
-    fen
+    fen,
+    promotion
   } = req.method === "GET" ? req.query : req.body;
   await dbConnect();
   if (!action) {
@@ -67,10 +68,16 @@ async function handler(req, res) {
         });
       }
       const chess = new Chess(gameData.boardConfiguration || DEFAULT_FEN);
-      const move = chess.move({
-        from: from,
-        to: to
-      });
+      let move = null;
+      try {
+        move = chess.move({
+          from: from,
+          to: to,
+          promotion: promotion || "q"
+        });
+      } catch {
+        move = null;
+      }
       if (!move) {
         return res.status(400).json({
           message: "Invalid move"
@@ -84,12 +91,19 @@ async function handler(req, res) {
           boardConfiguration: chess.fen(),
           turn: chess.turn() === "w" ? "white" : "black",
           isFinished: isFinished
+        },
+        $push: {
+          moves: {
+            from: from,
+            to: to,
+            san: move.san
+          }
         }
       });
       const flipParam = chess.turn() === "w" ? "" : "&flip=true";
       const encodedFen = encodeURIComponent(chess.fen());
       const boardImageUrl = `https://www.chess.com/dynboard?fen=${encodedFen}&board=graffiti&piece=graffiti&size=3&coordinates=inside${flipParam}`;
-      const comments = gameData.moves.find(moveRecord => moveRecord.from === from && moveRecord.to === to)?.comments || [];
+      const comments = (gameData.moves || []).find(moveRecord => moveRecord.from === from && moveRecord.to === to)?.comments || [];
       return res.status(200).json({
         gameId: id,
         boardImageUrl: boardImageUrl,

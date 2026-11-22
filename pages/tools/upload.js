@@ -19,6 +19,7 @@ import {
   Check
 } from 'lucide-react';
 import { sound } from '@/src/lib/interactiveEffects';
+import { toast } from '@/src/lib/toast';
 
 export default function UploadPage() {
   const fileInputRef = useRef(null);
@@ -33,13 +34,9 @@ export default function UploadPage() {
   const [uploadProgress, setUploadProgress] = useState({});
   const [uploadResults, setUploadResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState(null);
   const [dragActive, setDragActive] = useState(false);
 
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3500);
-  };
+  const showToast = (message, type = 'success') => toast(message, type);
 
   // 1. AUTO-GET ALL AVAILABLE HOSTS VIA NATIVE FETCH
   const fetchAvailableHosts = async () => {
@@ -225,37 +222,6 @@ export default function UploadPage() {
       <Seo title="Multi-Host File Uploader" path="/tools/upload" label="TOOL" description="Unggah file ke beberapa host sekaligus dan dapatkan tautan siap bagikan." />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-        {/* Toast Notifikasi */}
-        <AnimatePresence>
-          {toast && (
-            <motion.div
-              initial={{ opacity: 0, y: -20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.9 }}
-              style={{
-                position: 'fixed',
-                top: '20px',
-                right: '20px',
-                zIndex: 9999,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '12px 18px',
-                borderRadius: '14px',
-                background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)',
-                backdropFilter: 'blur(16px)',
-                color: '#fff',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                boxShadow: '0 10px 30px color-mix(in srgb, var(--shadow-c) 50%, transparent)',
-              }}
-            >
-              {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-              <span>{toast.message}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Header */}
         <header>
           <div className="badge ok" style={{ marginBottom: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>

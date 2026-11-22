@@ -5,13 +5,13 @@
   "description": "Next.js glassmorphism starter: auth, OAuth, guest, playground, PWA",
   "scripts": {
     "dev": "node src/index.js --dev",
-    "build": "next build",
+    "build": "node scripts/build.mjs",
     "start": "node src/index.js",
     "openapi": "node scripts/openapi-gen.mjs",
     "predev": "npm run openapi",
-    "prebuild": "npm run openapi",
     "size": "node scripts/trace-size.mjs",
-    "start:standalone": "node scripts/prepare-standalone.mjs && node .next/standalone/server.js"
+    "start:standalone": "node scripts/prepare-standalone.mjs && node .next/standalone/server.js",
+    "build:raw": "next build"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "latest",

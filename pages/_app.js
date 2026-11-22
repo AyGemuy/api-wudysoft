@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { SessionProvider } from 'next-auth/react';
@@ -11,9 +12,12 @@ import PageTransition from '@/components/PageTransition';
 import { sound } from '@/src/lib/interactiveEffects';
 import { lockZoom } from '@/src/lib/lockZoom';
 import GlobalEffects from '@/components/motion/GlobalEffects';
-import AudioControl from '@/components/AudioControl';
-import AssistantFab from '@/components/AssistantFab';
-import JoinNotice from '@/components/JoinNotice';
+import ToastHost from '@/components/ToastHost';
+
+// Widget non-kritis: dimuat setelah halaman interaktif (tidak masuk bundle awal)
+const AudioControl = dynamic(() => import('@/components/AudioControl'), { ssr: false });
+const AssistantFab = dynamic(() => import('@/components/AssistantFab'), { ssr: false });
+const JoinNotice = dynamic(() => import('@/components/JoinNotice'), { ssr: false });
 import '@/styles/globals.css';
 import '@/styles/motion.css';
 import '@/styles/hljs.css';
@@ -63,6 +67,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
         <AudioControl />
         <AssistantFab />
         <JoinNotice />
+        <ToastHost />
       </Layout>
     </SessionProvider>
   );

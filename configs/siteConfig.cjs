@@ -13,7 +13,7 @@ module.exports = {
   // "netlify" = serverless (tanpa output standalone) · "vps" = server Node biasa (output standalone aktif)
   DEPLOY_TARGET: "netlify",
   // Obfuscate JS klien saat build production
-  OBFUSCATE_CLIENT: true,
+  OBFUSCATE_CLIENT: false,
   PORT: 3000,
   // Pengembang / pemilik repo yang ditampilkan di halaman profil
   GITHUB_USER: "AyGemuy",

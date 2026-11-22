@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { AnimatePresence } from 'framer-motion';
-import Seo from '@/components/Seo';
 import { Icons } from '@/components/Icons';
 import { sound } from '@/src/lib/interactiveEffects';
 import { useLive } from '@/components/stats/useLive';
@@ -12,6 +11,7 @@ import LogDetail from '@/components/stats/LogDetail';
 import { Portal, MethodBadge, cx } from '@/components/playground/ui';
 import { formatBytes } from '@/src/lib/playgroundCore';
 import s from '@/styles/stats.module.css';
+import { confirmToast, toast } from '@/src/lib/toast';
 
 const CONN = {
   socket: { label: 'Socket.IO · realtime', tone: 'ok' },
@@ -90,12 +90,12 @@ export default function StatsPage() {
   }, [events]);
 
   const purge = async () => {
-    if (!window.confirm('Hapus semua riwayat log (memori & database)?')) return;
+    if (!(await confirmToast('Hapus semua riwayat log (memori & database)?', { danger: true, okLabel: 'Hapus semua' }))) return;
     sound.playClick();
     setPurging(true);
     try {
       const r = await fetch('/api/stats', { method: 'DELETE' });
-      if (r.ok) clear(); else window.alert((await r.json().catch(() => ({}))).error || 'Gagal menghapus log.');
+      if (r.ok) { clear(); toast.ok('Riwayat log dihapus.'); } else toast.err((await r.json().catch(() => ({}))).error || 'Gagal menghapus log.');
     } finally { setPurging(false); }
   };
 
@@ -106,7 +106,6 @@ export default function StatsPage() {
 
   return (
     <>
-      <Seo title="System & API Stats" path="/stats" label="LIVE STATS" description="Telemetri penggunaan API, log permintaan realtime, latensi, dan kesehatan sistem Wudysoft." />
       <div className={s.page}>
         <div className={s.head}>
           <div>
@@ -132,7 +131,7 @@ export default function StatsPage() {
             <Icons.Lock size={26} />
             <h3>Masuk untuk melihat log realtime</h3>
             <p>Isi request/respons API bisa memuat data sensitif, jadi stream log hanya untuk pengguna yang login.</p>
-            <Link href="/auth?next=%2Fstats" className="btn primary">Masuk atau daftar</Link>
+            <Link href="/auth?next=%2Fdocs%3Ftab%3Dstats" className="btn primary">Masuk atau daftar</Link>
           </div>
         ) : (
           <>

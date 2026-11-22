@@ -11,6 +11,7 @@ import { sound } from '@/src/lib/interactiveEffects';
 import { safeNext } from '@/src/lib/safeNext';
 import { hardGo, logout, goAfterLogin } from '@/src/lib/nav';
 import { authErrorMessage, passwordStrength } from '@/src/lib/authErrors';
+import { toast } from '@/src/lib/toast';
 
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]+\.[^\s@]{2,}$/;
 const STRENGTH_LABEL = ['Terlalu lemah', 'Lemah', 'Cukup', 'Kuat', 'Sangat kuat'];
@@ -27,8 +28,8 @@ export default function AuthPage() {
   const { data: session, status } = useSession();
 
   const [busy, setBusy] = useState(''); // '', 'form', 'guest', provider-id
-  const [err, setErr] = useState('');
-  const [info, setInfo] = useState('');
+  const setErr = (m) => { if (m) toast.err(m); };
+  const setInfo = (m) => { if (m) toast.ok(m); };
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,7 +45,7 @@ export default function AuthPage() {
   // sinkronkan mode & error dari URL
   useEffect(() => {
     if (!router.isReady) return;
-    if (router.query.error) { setErr(authErrorMessage(router.query.error)); sound.playWhenReady('fail'); }
+    if (router.query.error) setErr(authErrorMessage(router.query.error));
   }, [router.isReady, router.query.error]);
 
   // sudah login → arahkan
@@ -92,7 +93,7 @@ export default function AuthPage() {
     (!isSignup || (!pwProblem(password) && confirm === password));
 
   const finish = (target) => goAfterLogin(target);
-  const failed = (msg) => { sound.play('fail'); setErr(msg); };
+  const failed = (msg) => setErr(msg);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -220,21 +221,6 @@ export default function AuthPage() {
               </button>
             ))}
           </div>
-
-          <AnimatePresence mode="wait">
-            {(err || info) && (
-              <motion.div
-                key={err || info}
-                className={err ? 'alert' : 'alert ok-alert'}
-                role={err ? 'alert' : 'status'}
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
-                {err || info}
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           <form onSubmit={submit} noValidate style={{ display: 'grid', gap: 12 }}>
             <AnimatePresence initial={false}>

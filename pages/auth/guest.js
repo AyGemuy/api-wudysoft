@@ -9,6 +9,7 @@ import AuthHero, { AuthScene } from '@/components/AuthHero';
 import { sound } from '@/src/lib/interactiveEffects';
 import { safeNext } from '@/src/lib/safeNext';
 import { hardGo, goAfterLogin } from '@/src/lib/nav';
+import { toast } from '@/src/lib/toast';
 import { authErrorMessage } from '@/src/lib/authErrors';
 
 export default function GuestPage() {
@@ -16,7 +17,7 @@ export default function GuestPage() {
   const { data: session, status } = useSession();
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const setError = (m) => { if (m) toast.err(m); };
 
   const nextUrl = safeNext(router.query.next, '/playground');
 
@@ -50,7 +51,6 @@ export default function GuestPage() {
 
       goAfterLogin(targetDestination);
     } catch (err) {
-      sound.play('fail');
       setError(err.message || 'Terjadi gangguan jaringan');
       setBusy(false);
     }
@@ -76,20 +76,6 @@ export default function GuestPage() {
               Inisialisasi akses cepat tanpa email & kata sandi.
             </p>
           </div>
-
-          {/* Alert Error */}
-          <AnimatePresence>
-            {error && (
-              <motion.div
-                className="alert"
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
-                {error}
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* Form Input */}
           <form onSubmit={handleStartGuest} style={{ display: 'grid', gap: '14px' }}>

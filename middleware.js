@@ -5,7 +5,7 @@ import { checkRateLimit, clientIp } from "./src/lib/rateLimit";
 import { safeNext } from "./src/lib/safeNext";
 
 /** Halaman yang wajib login. Tambahkan path lain di sini bila perlu. */
-const PROTECTED = ["/playground", "/profile", "/webhooks"];
+const PROTECTED = ["/playground", "/webhooks"];
 const DEFAULT_AFTER_LOGIN = "/";
 
 // User-Agent crawler pembuat preview tautan

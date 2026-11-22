@@ -48,6 +48,11 @@ const ludoSchema = new mongoose.Schema({
       type: playerPieceSchema,
       default: null
     }
+  },
+  // Status giliran untuk halaman /games/ludo: { rev, turn, dice, rolled, winners[], log }
+  meta: {
+    type: Object,
+    default: {}
   }
 }, {
   timestamps: true,

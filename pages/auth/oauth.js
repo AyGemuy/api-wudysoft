@@ -8,6 +8,7 @@ import { Key, ArrowLeft, RefreshCw, ChevronRight, Zap } from 'lucide-react';
 import { sound } from '@/src/lib/interactiveEffects';
 import { safeNext } from '@/src/lib/safeNext';
 import { goAfterLogin } from '@/src/lib/nav';
+import { toast } from '@/src/lib/toast';
 import { authErrorMessage } from '@/src/lib/authErrors';
 import { PROVIDER_ICONS as ICONS, PROVIDER_LABELS } from '@/components/ProviderIcons';
 
@@ -24,6 +25,10 @@ export default function OAuthPage() {
       goAfterLogin(nextUrl);
     }
   }, [router.isReady, status, session, nextUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (router.isReady && router.query.error) toast.err(authErrorMessage(router.query.error));
+  }, [router.isReady, router.query.error]);
 
   useEffect(() => {
     // Provider aktif langsung dari konfigurasi NextAuth di server
@@ -75,19 +80,6 @@ export default function OAuthPage() {
               Sambungkan akun terverifikasi kamu secara instan.
             </p>
           </div>
-
-          <AnimatePresence>
-            {router.query.error && (
-              <motion.div
-                className="alert"
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
-                {authErrorMessage(router.query.error)}
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {!providers ? (
             <div style={{ textAlign: 'center', padding: '18px', color: 'var(--muted)', fontSize: '0.82rem', fontFamily: 'var(--font-mono)' }}>

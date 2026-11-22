@@ -63,7 +63,11 @@ async function handler(req, res) {
         }
         const updatedUser = await DataUser.findOneAndUpdate({
           customId: customId.trim()
-        }, body, {
+        }, {
+          $set: {
+            data: body
+          }
+        }, {
           new: true,
           runValidators: true
         });

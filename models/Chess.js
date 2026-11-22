@@ -17,6 +17,21 @@ const ChessSchema = new mongoose.Schema({
     type: String,
     enum: ["white", "black", "draw", null],
     default: null
+  },
+  // Riwayat langkah. Route /api/game/chess membaca `moves` (komentar per langkah), jadi field ini wajib ada;
+  // tanpa field ini setiap langkah yang sah berujung error 500 setelah papan sudah tersimpan.
+  moves: {
+    type: [{
+      from: String,
+      to: String,
+      san: String,
+      comments: {
+        type: [String],
+        default: []
+      },
+      _id: false
+    }],
+    default: []
   }
 }, {
   timestamps: true

@@ -8,6 +8,7 @@ import { sound } from '@/src/lib/interactiveEffects';
 import { timeAgo, copyText } from '@/src/lib/timeAgo';
 import { Reveal, Stagger, Item, TextReveal, Magnetic } from '@/components/motion';
 import Pagination from '@/components/Pagination';
+import { toast } from '@/src/lib/toast';
 
 const API = '/api/code-share';
 const TAGS = ['JavaScript', 'TypeScript', 'Python', 'PHP', 'HTML', 'CSS', 'JSON', 'Bash', 'SQL', 'Java', 'C/C++', 'Go', 'Rust', 'Other'];
@@ -47,6 +48,7 @@ export default function CodeSharePage() {
   const listRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState('');
+  useEffect(() => { if (loadErr) toast.err(loadErr); }, [loadErr]);
   const [search, setSearch] = useState('');
   const [tag, setTag] = useState('');
   const [sortBy, setSortBy] = useState('createdAt');
@@ -243,7 +245,6 @@ export default function CodeSharePage() {
           ))}
         </div>
 
-        {loadErr && <div className="alert">{loadErr}</div>}
         {loading && !items.length && <div className="badge">Memuat…</div>}
         {!loading && !loadErr && !items.length && <div className="glass card cs-empty">Belum ada kode{search || tag ? ' yang cocok' : ''}. Jadilah yang pertama berbagi!</div>}
 
