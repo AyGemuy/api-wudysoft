@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Spade, Plus, Hand, CirclePlus } from 'lucide-react';
+import KCard from '@/components/Card';
 import { PageHead, useToast, kit as s } from '@/components/PageKit';
 import { http, qs } from '@/src/lib/http';
 
@@ -44,7 +45,7 @@ export default function BlackjackPage() {
       {toast}
       <div className={s.page}>
         <PageHead Icon={Spade} badge="GAME" title="Blackjack" desc="Capai angka sedekat mungkin ke 21 tanpa melewatinya. Dealer membuka kartu kedua saat ronde selesai." />
-        <section className={`glass card ${s.game}`}>
+        <KCard Icon={Spade} title="Blackjack" subtitle="Papan permainan" bodyClassName={s.game} footer={<span>Main sendiri melawan bandar</span>}>
           {!g ? (
             <button type="button" className="btn primary" onClick={create} disabled={busy}><Plus size={14} /> {busy ? 'Mengocok…' : 'Mulai game'}</button>
           ) : (
@@ -68,7 +69,7 @@ export default function BlackjackPage() {
               </div>
             </>
           )}
-        </section>
+        </KCard>
       </div>
     </>
   );

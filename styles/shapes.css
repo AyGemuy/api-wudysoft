@@ -1,0 +1,334 @@
+/* =====================================================================
+   BENTUK KARTU & NAV  (Theme Studio → Bentuk / Nav)
+   html[data-cshape]  : none | tab | cut | water | wood | electric | ticket | pixel | stitch | ice | bubble | torn
+   html[data-tshape]  : bentuk nav ATAS    (none | square | leaf | tab | water | wood | electric | ice | stitch)
+   html[data-bshape]  : bentuk nav BAWAH   (sama)
+   html[data-chead]   : bar | gradient | chrome | plain   (gaya header kartu)
+   html[data-cfoot]   : on | off
+   html[data-tlayout] / html[data-blayout] : float | bar | island
+   Satu resep dipakai bersama oleh kartu, nav, dan pratinjau (.sp-demo) di Studio.
+   --u = satuan ukuran (1px; pratinjau memakai 0.5px).
+   ===================================================================== */
+:root { --u: 1px; }
+@property --wd-ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+
+/* ---------- struktur kartu: header / body / footer ---------- */
+.card { --cp: calc(22px * var(--space)); }
+.card.kc, .card.kc.glass { padding: 0; display: flex; flex-direction: column; gap: 0; }
+.kc-head { position: relative; display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 50px; padding: 10px var(--cp);
+  border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--text) 4%, transparent);
+  border-top-left-radius: inherit; border-top-right-radius: inherit; box-shadow: inset 3px 0 0 var(--a2); }
+.kc-ico { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: var(--r-s); color: var(--on-accent);
+  background: linear-gradient(135deg, var(--a1), var(--a3)); box-shadow: 0 6px 14px -6px var(--border-glow); }
+.kc-titles { min-width: 0; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; }
+.kc .kc-head h3 { margin: 0; padding: 0; font-size: .95rem; line-height: 1.25; overflow-wrap: anywhere; display: block; }
+.kc-titles h3 a, .kc-titles a { color: var(--text); font-weight: 700; text-decoration: none; overflow-wrap: anywhere; }
+.kc-titles a:hover { color: var(--a2); }
+.kc-titles code { font-family: var(--font-mono); font-size: .8em; }
+.kc-foot .btn, .kc-actions .btn { padding-block: 6px; }
+.kc-titles small { color: var(--muted); font-size: .72rem; line-height: 1.3; overflow-wrap: anywhere; }
+.kc-badge { flex: none; padding: 2px 9px; border-radius: var(--r-chip, 999px); font-size: .68rem; font-weight: 700; font-family: var(--font-mono);
+  color: var(--a2); background: color-mix(in srgb, var(--a2) 14%, transparent); border: 1px solid color-mix(in srgb, var(--a2) 32%, transparent); }
+.kc-actions { flex: none; display: flex; align-items: center; gap: 6px; }
+.kc-dots { display: none; gap: 5px; flex: none; }
+.kc-dots i { width: 9px; height: 9px; border-radius: 50%; background: color-mix(in srgb, var(--text) 24%, transparent); }
+.kc-dots i:nth-child(1) { background: #ff5f57; } .kc-dots i:nth-child(2) { background: #febc2e; } .kc-dots i:nth-child(3) { background: #28c840; }
+.kc-body { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: var(--cp); align-content: start; }
+.kc-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-width: 0; padding: 10px var(--cp);
+  border-top: 1px solid var(--border); background: color-mix(in srgb, var(--text) 3%, transparent); color: var(--muted); font-size: .74rem;
+  border-bottom-left-radius: inherit; border-bottom-right-radius: inherit; }
+.kc-foot > * { min-width: 0; }
+.kc-deco { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; z-index: 0; }
+.kc-head, .kc-body, .kc-foot { position: relative; z-index: 1; }
+@media (max-width: 768px) { .card { --cp: calc(16px * var(--space)); } .kc-head { min-height: 46px; } }
+
+/* gaya header (html[data-chead]) */
+html[data-chead='gradient'] .kc-head { background: linear-gradient(120deg, color-mix(in srgb, var(--a1) 42%, transparent), color-mix(in srgb, var(--a3) 26%, transparent)); box-shadow: none; }
+html[data-chead='gradient'] .kc-ico { background: color-mix(in srgb, var(--text) 16%, transparent); color: var(--text); box-shadow: none; }
+html[data-chead='chrome'] .kc-head { box-shadow: none; background: color-mix(in srgb, var(--text) 6%, transparent); }
+html[data-chead='chrome'] .kc-dots { display: flex; }
+html[data-chead='chrome'] .kc-ico { display: none; }
+html[data-chead='chrome'] .kc .kc-head h3 { font-family: var(--font-mono); font-size: .82rem; font-weight: 600; letter-spacing: .01em; }
+html[data-chead='plain'] .kc-head { background: transparent; box-shadow: none; }
+html[data-chead='plain'] .kc-ico { background: transparent; color: var(--a2); box-shadow: none; width: 22px; }
+html[data-cfoot='off'] .kc-foot { display: none; }
+
+/* anim */
+@keyframes wd-morph { 0% { border-radius: 42px 58px 46px 62px / 56px 44px 60px 48px; } 50% { border-radius: 58px 42px 62px 46px / 46px 60px 44px 58px; } 100% { border-radius: 46px 62px 42px 58px / 60px 48px 56px 44px; } }
+@keyframes wd-morph-nav { 0% { border-radius: 30px 44px 34px 46px / 28px 20px 30px 22px; } 100% { border-radius: 44px 30px 46px 34px / 20px 28px 22px 30px; } }
+@keyframes wd-spin { to { --wd-ang: 360deg; } }
+@keyframes wd-flicker { 0%, 100% { filter: none; } 46% { filter: none; } 48% { filter: brightness(1.45) saturate(1.3); } 50% { filter: brightness(.9); } 52% { filter: brightness(1.6); } 54% { filter: none; } }
+@keyframes wd-ripple { 0% { transform: scale(.2); opacity: .7; } 100% { transform: scale(1.6); opacity: 0; } }
+@keyframes wd-bolt { 0%, 40%, 100% { opacity: .0; } 42%, 46% { opacity: 1; } 44% { opacity: .2; } 48% { opacity: 0; } 70% { opacity: 0; } 72% { opacity: .9; } 74% { opacity: 0; } }
+@keyframes wd-drip { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(2px); } }
+
+.sp-demo[data-sp='none'] { background: var(--glass); border: 1px solid var(--border); border-radius: 12px; }
+.sp-demo { position: relative; width: 100%; height: 100%; min-height: 40px; box-sizing: border-box; --u: .5px; --radius: 18px; --cp: 8px; --text: #f1f5f9; --muted: #94a3b8; --surface: #1b2438; --glass: rgba(30,41,59,.7); --border: rgba(255,255,255,.18); display: block; }
+
+
+/* ---------- TAB · Kaca terpisah: header lepas di kiri-atas, body & footer ikut terpisah ---------- */
+html[data-cshape='tab'] .card.kc.glass {
+  background: none !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  border-radius: 0 !important; gap: 8px; overflow: visible; animation: none;
+}
+html[data-cshape='tab'] .kc-head, html[data-cshape='tab'] .kc-body, html[data-cshape='tab'] .kc-foot {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--glass) 100%, transparent), color-mix(in srgb, var(--glass) 70%, transparent));
+  backdrop-filter: blur(var(--blur, 24px)) saturate(1.6); -webkit-backdrop-filter: blur(var(--blur, 24px)) saturate(1.6);
+  border: 1px solid color-mix(in srgb, #fff 24%, var(--border));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 14px 28px -16px color-mix(in srgb, var(--shadow-c) 65%, transparent);
+}
+html[data-cshape='tab'] .kc-head { align-self: flex-start; max-width: 100%; border-radius: var(--radius) var(--radius) var(--radius) 6px; padding-right: calc(var(--cp) + 6px); margin-right: 18px; }
+html[data-cshape='tab'] .kc-body { border-radius: 6px var(--radius) var(--radius) var(--radius); }
+html[data-cshape='tab'] .kc-foot { align-self: flex-end; max-width: 100%; border-radius: var(--radius) 6px var(--radius) var(--radius); padding-left: calc(var(--cp) + 6px); margin-left: 18px; }
+html[data-cshape='tab'] .kc-deco { display: none; }
+/* kartu tanpa struktur (lama / Home): bingkai ganda terpisah, sudut kiri-atas tajam */
+html[data-cshape='tab'] :is(.glass.card:not(.kc), .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass) { border-radius: 6px var(--radius) var(--radius) var(--radius); outline: 1px solid color-mix(in srgb, var(--text) 18%, transparent); outline-offset: 5px; }
+html[data-tshape='tab'] .top-header-nav, html[data-bshape='tab'] .floating-navbar { border-radius: 6px 30px 30px 30px; outline: 1px solid color-mix(in srgb, var(--text) 22%, transparent); outline-offset: 4px; }
+.sp-demo[data-sp='tab'] { background: transparent; }
+.sp-demo[data-sp='tab']::before { content: ''; position: absolute; left: 0; top: 0; width: 46%; height: 30%; border-radius: 10px 10px 10px 3px; background: rgba(148,163,184,.35); border: 1px solid rgba(255,255,255,.35); }
+.sp-demo[data-sp='tab']::after { content: ''; position: absolute; left: 0; right: 0; top: 38%; bottom: 0; border-radius: 3px 12px 12px 12px; background: rgba(148,163,184,.25); border: 1px solid rgba(255,255,255,.3); }
+
+
+/* ---------- CUT · Sudut potong (chamfer) ---------- */
+html[data-cshape='cut'] :is(.glass.card, .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass),
+.sp-demo[data-sp='cut'] {
+  border-radius: 0 !important;
+  clip-path: polygon(calc(26*var(--u)) 0, 100% 0, 100% calc(100% - 26*var(--u)), calc(100% - 26*var(--u)) 100%, 0 100%, 0 calc(26*var(--u)));
+  border-color: color-mix(in srgb, var(--a2) 40%, var(--border));
+  background-image: linear-gradient(135deg, color-mix(in srgb, var(--a2) 14%, transparent), transparent 40%);
+  background-color: var(--glass);
+}
+html[data-cshape='cut'] .kc-deco::before, html[data-cshape='cut'] .kc-deco::after { content: ''; position: absolute; width: 26px; height: 26px; }
+html[data-cshape='cut'] .kc-deco::before { left: 0; top: 0; background: linear-gradient(to bottom right, transparent calc(50% - 1px), var(--a2) calc(50% - 1px) calc(50% + .5px), transparent calc(50% + .5px)); }
+html[data-cshape='cut'] .kc-deco::after { right: 0; bottom: 0; background: linear-gradient(to bottom right, transparent calc(50% - 1px), var(--a2) calc(50% - 1px) calc(50% + .5px), transparent calc(50% + .5px)); }
+
+
+/* ---------- WATER · Air: tetesan membulat, kilau & riak ---------- */
+html[data-cshape='water'] :is(.glass.card, .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass),
+html[data-tshape='water'] .top-header-nav,
+html[data-bshape='water'] .floating-navbar,
+.sp-demo[data-sp='water'] {
+  --wt: color-mix(in srgb, var(--a2) 22%, #2bb7f3);
+  background:
+    radial-gradient(120% 80% at 16% 6%, rgba(255,255,255,.42), transparent 46%),
+    radial-gradient(90% 70% at 88% 104%, color-mix(in srgb, var(--wt) 55%, transparent), transparent 62%),
+    linear-gradient(165deg, color-mix(in srgb, var(--wt) 26%, var(--surface)), color-mix(in srgb, var(--wt) 12%, var(--surface)));
+  border: 1px solid color-mix(in srgb, #fff 46%, transparent);
+  backdrop-filter: blur(calc(var(--blur, 24px) * .7)) saturate(1.7); -webkit-backdrop-filter: blur(calc(var(--blur, 24px) * .7)) saturate(1.7);
+  box-shadow: inset 0 calc(10*var(--u)) calc(24*var(--u)) rgba(255,255,255,.3), inset 0 calc(-16*var(--u)) calc(30*var(--u)) color-mix(in srgb, var(--wt) 34%, transparent),
+    0 calc(16*var(--u)) calc(34*var(--u)) calc(-14*var(--u)) color-mix(in srgb, var(--wt) 60%, transparent);
+}
+html[data-cshape='water'] :is(.glass.card, .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass),
+.sp-demo[data-sp='water'] { border-radius: calc(42*var(--u)) calc(58*var(--u)) calc(46*var(--u)) calc(62*var(--u)) / calc(56*var(--u)) calc(44*var(--u)) calc(60*var(--u)) calc(48*var(--u)); animation: wd-morph 10s ease-in-out infinite alternate; }
+html[data-tshape='water'] .top-header-nav,
+html[data-bshape='water'] .floating-navbar,
+.sp-demo[data-sp='water'][data-nav] { border-radius: 30px 44px 34px 46px / 28px 20px 30px 22px; animation: wd-morph-nav 7s ease-in-out infinite alternate; }
+html[data-cshape='water'] .kc-deco::before { content: ''; position: absolute; right: 14px; bottom: 14px; width: 90px; height: 90px; border-radius: 50%; border: 2px solid rgba(255,255,255,.5); animation: wd-ripple 4.2s ease-out infinite; }
+html[data-cshape='water'] .kc-deco::after { content: ''; position: absolute; left: 18px; top: 10px; width: 34px; height: 12px; border-radius: 50%; background: rgba(255,255,255,.35); transform: rotate(-18deg); filter: blur(1px); }
+html[data-cshape='water'] .kc-head { background: linear-gradient(180deg, rgba(255,255,255,.18), transparent); box-shadow: none; border-bottom-color: rgba(255,255,255,.22); }
+html[data-cshape='water'] .kc-foot { background: linear-gradient(0deg, color-mix(in srgb, var(--wt) 22%, transparent), transparent); border-top-color: rgba(255,255,255,.2); }
+
+
+/* ---------- WOOD · Kayu: serat papan, paku, bingkai tebal ---------- */
+html[data-cshape='wood'] :is(.glass.card, .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass),
+html[data-tshape='wood'] .top-header-nav,
+html[data-bshape='wood'] .floating-navbar,
+.sp-demo[data-sp='wood'] {
+  --text: #fbeedd; --muted: #dbbf9c; --border: rgba(255,226,186,.22); --surface: #6b3f1f; --glass: rgba(60,32,14,.55); --a2: #ffc27a; --u2: 1;
+  background:
+    radial-gradient(circle at calc(11*var(--u)) calc(11*var(--u)), #e8d3b0 0 calc(1.6*var(--u)), #3a2210 calc(2.2*var(--u)) calc(3.4*var(--u)), transparent calc(3.8*var(--u))),
+    radial-gradient(circle at calc(100% - 11*var(--u)) calc(11*var(--u)), #e8d3b0 0 calc(1.6*var(--u)), #3a2210 calc(2.2*var(--u)) calc(3.4*var(--u)), transparent calc(3.8*var(--u))),
+    radial-gradient(circle at calc(11*var(--u)) calc(100% - 11*var(--u)), #e8d3b0 0 calc(1.6*var(--u)), #3a2210 calc(2.2*var(--u)) calc(3.4*var(--u)), transparent calc(3.8*var(--u))),
+    radial-gradient(circle at calc(100% - 11*var(--u)) calc(100% - 11*var(--u)), #e8d3b0 0 calc(1.6*var(--u)), #3a2210 calc(2.2*var(--u)) calc(3.4*var(--u)), transparent calc(3.8*var(--u))),
+    repeating-linear-gradient(90deg, rgba(40,20,6,0) 0 calc(5*var(--u)), rgba(40,20,6,.10) calc(5*var(--u)) calc(6*var(--u)), rgba(255,220,170,.05) calc(6*var(--u)) calc(11*var(--u))),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.0) 0 calc(46*var(--u)), rgba(30,14,4,.34) calc(46*var(--u)) calc(48*var(--u))),
+    linear-gradient(180deg, #a56f3f 0%, #86542a 52%, #70441f 100%);
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  border: calc(4*var(--u)) solid #4a2a12 !important;
+  box-shadow: inset 0 calc(2*var(--u)) 0 rgba(255,222,170,.38), inset 0 calc(-3*var(--u)) 0 rgba(0,0,0,.34), inset 0 0 calc(26*var(--u)) rgba(30,12,2,.45),
+    0 calc(12*var(--u)) calc(22*var(--u)) calc(-8*var(--u)) rgba(20,8,0,.65);
+  text-shadow: 0 1px 0 rgba(0,0,0,.35);
+}
+html[data-cshape='wood'] :is(.glass.card, .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass),
+.sp-demo[data-sp='wood'] { border-radius: calc(10*var(--u)); animation: none; }
+html[data-tshape='wood'] .top-header-nav,
+html[data-bshape='wood'] .floating-navbar,
+.sp-demo[data-sp='wood'][data-nav] { border-radius: 14px; }
+html[data-cshape='wood'] .kc-head { background: linear-gradient(180deg, rgba(0,0,0,.16), rgba(0,0,0,.06)); box-shadow: inset 0 -2px 0 rgba(0,0,0,.3), inset 0 1px 0 rgba(255,222,170,.2); border-bottom: 0; padding-left: calc(var(--cp) + 10px); }
+html[data-cshape='wood'] .kc-foot { background: linear-gradient(0deg, rgba(0,0,0,.2), rgba(0,0,0,.05)); border-top: 0; box-shadow: inset 0 2px 0 rgba(0,0,0,.28); }
+html[data-cshape='wood'] .kc-ico { background: linear-gradient(145deg, #e9c58f, #b07a3c); color: #3a2210; }
+html[data-cshape='wood'] .kc-badge { color: #3a2210; background: #e9c58f; border-color: #b07a3c; }
+
+
+/* ---------- ELECTRIC · Listrik: tepi petir berputar, kilat acak ---------- */
+html[data-cshape='electric'] :is(.glass.card, .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass),
+html[data-tshape='electric'] .top-header-nav,
+html[data-bshape='electric'] .floating-navbar,
+.sp-demo[data-sp='electric'] {
+  --text: #e9f6ff; --muted: #8fb4dd; --border: rgba(110,236,255,.24); --surface: #0a1430; --glass: rgba(8,16,40,.7); --a2: #5ff0ff;
+  border: calc(2*var(--u)) solid transparent !important;
+  background:
+    linear-gradient(160deg, #060c24, #0b1740 60%, #08122e) padding-box,
+    conic-gradient(from var(--wd-ang), #00e5ff, #2563eb 22%, #e8fdff 34%, #00e5ff 46%, #6d28d9 66%, #00e5ff 82%, #2563eb 92%, #00e5ff) border-box !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  box-shadow: 0 0 0 1px rgba(0,229,255,.28), 0 0 calc(24*var(--u)) rgba(0,229,255,.42), 0 0 calc(60*var(--u)) rgba(37,99,235,.28), inset 0 0 calc(30*var(--u)) rgba(0,229,255,.12) !important;
+  animation: wd-spin 3.4s linear infinite, wd-flicker 6s steps(1) infinite;
+}
+html[data-cshape='electric'] :is(.glass.card, .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass),
+.sp-demo[data-sp='electric'] { border-radius: calc(14*var(--u)); }
+html[data-tshape='electric'] .top-header-nav,
+html[data-bshape='electric'] .floating-navbar,
+.sp-demo[data-sp='electric'][data-nav] { border-radius: 16px; }
+html[data-cshape='electric'] .kc-head { background: linear-gradient(90deg, rgba(0,229,255,.16), transparent 70%); box-shadow: inset 3px 0 0 #00e5ff, 0 0 18px -6px #00e5ff; }
+html[data-cshape='electric'] .kc-ico { background: linear-gradient(145deg, #00e5ff, #2563eb); color: #021024; box-shadow: 0 0 14px #00e5ff99; }
+html[data-cshape='electric'] .kc-deco::before { content: ''; position: absolute; right: 12px; top: 10px; width: 26px; height: 34px; opacity: 0; animation: wd-bolt 6s steps(1) infinite;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath d='M14 0 2 18h8l-3 14 15-20h-9z' fill='%23bdf6ff' stroke='%2300e5ff' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; filter: drop-shadow(0 0 6px #00e5ff); }
+.sp-demo[data-sp='electric'] { animation: wd-spin 3.4s linear infinite; }
+
+
+/* ---------- TICKET · Tiket: takik di kedua sisi + garis sobekan ---------- */
+html[data-cshape='ticket'] :is(.glass.card, .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass), .sp-demo[data-sp='ticket'] {
+  --tk-y: calc(50*var(--u));
+  border-radius: calc(14*var(--u)) !important;
+  -webkit-mask: radial-gradient(circle calc(10*var(--u)) at 0 var(--tk-y), #0000 calc(10*var(--u) - 1px), #000 calc(10*var(--u))) left / 51% 100% no-repeat,
+                radial-gradient(circle calc(10*var(--u)) at 100% var(--tk-y), #0000 calc(10*var(--u) - 1px), #000 calc(10*var(--u))) right / 51% 100% no-repeat;
+          mask: radial-gradient(circle calc(10*var(--u)) at 0 var(--tk-y), #0000 calc(10*var(--u) - 1px), #000 calc(10*var(--u))) left / 51% 100% no-repeat,
+                radial-gradient(circle calc(10*var(--u)) at 100% var(--tk-y), #0000 calc(10*var(--u) - 1px), #000 calc(10*var(--u))) right / 51% 100% no-repeat;
+  background-image: linear-gradient(180deg, color-mix(in srgb, var(--a1) 16%, transparent), transparent 60%);
+  background-color: var(--glass);
+}
+html[data-cshape='ticket'] .kc-head { min-height: 50px; border-bottom: 2px dashed color-mix(in srgb, var(--text) 30%, transparent); box-shadow: none; }
+html[data-cshape='ticket'] .kc-foot { border-top: 2px dashed color-mix(in srgb, var(--text) 24%, transparent); }
+.sp-demo[data-sp='ticket'] { background-color: rgba(148,163,184,.35); }
+
+
+/* ---------- PIXEL · Sudut bertangga ala game 8-bit ---------- */
+html[data-cshape='pixel'] :is(.glass.card, .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass),
+.sp-demo[data-sp='pixel'] {
+  border-radius: 0 !important; border: 0 !important;
+  --px: calc(6*var(--u));
+  clip-path: polygon(0 var(--px), var(--px) var(--px), var(--px) 0, calc(100% - var(--px)) 0, calc(100% - var(--px)) var(--px), 100% var(--px), 100% calc(100% - var(--px)), calc(100% - var(--px)) calc(100% - var(--px)), calc(100% - var(--px)) 100%, var(--px) 100%, var(--px) calc(100% - var(--px)), 0 calc(100% - var(--px)));
+  background: var(--surface) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  box-shadow: inset 0 0 0 calc(3*var(--u)) color-mix(in srgb, var(--text) 78%, var(--surface)), inset calc(-6*var(--u)) calc(-6*var(--u)) 0 0 rgba(0,0,0,.28), inset calc(6*var(--u)) calc(6*var(--u)) 0 0 rgba(255,255,255,.08) !important;
+  font-smooth: never; image-rendering: pixelated;
+}
+html[data-cshape='pixel'] .kc-head { box-shadow: none; border-bottom: calc(3*var(--u)) solid color-mix(in srgb, var(--text) 40%, transparent); background: color-mix(in srgb, var(--a1) 28%, var(--surface)); margin: 3px 3px 0; border-radius: 0; }
+html[data-cshape='pixel'] .kc-foot { border-top: calc(3*var(--u)) solid color-mix(in srgb, var(--text) 40%, transparent); margin: 0 3px 3px; }
+html[data-cshape='pixel'] :is(.kc-ico, .kc-badge) { border-radius: 0; }
+
+
+/* ---------- STITCH · Jahitan kain ---------- */
+html[data-cshape='stitch'] :is(.glass.card, .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass),
+html[data-tshape='stitch'] .top-header-nav,
+html[data-bshape='stitch'] .floating-navbar,
+.sp-demo[data-sp='stitch'] {
+  background: repeating-linear-gradient(45deg, rgba(255,255,255,.035) 0 2px, transparent 2px 5px), color-mix(in srgb, var(--surface) 94%, transparent) !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  border: 0 !important;
+  box-shadow: 0 calc(10*var(--u)) calc(20*var(--u)) calc(-10*var(--u)) color-mix(in srgb, var(--shadow-c) 60%, transparent), inset 0 0 0 calc(5*var(--u)) color-mix(in srgb, var(--a1) 22%, var(--surface)) !important;
+  outline: calc(2*var(--u)) dashed color-mix(in srgb, var(--text) 55%, transparent); outline-offset: calc(-9*var(--u));
+}
+html[data-cshape='stitch'] :is(.glass.card, .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass),
+.sp-demo[data-sp='stitch'] { border-radius: calc(18*var(--u)); }
+html[data-tshape='stitch'] .top-header-nav,
+html[data-bshape='stitch'] .floating-navbar,
+.sp-demo[data-sp='stitch'][data-nav] { border-radius: 18px; outline-offset: -5px; outline-width: 1.5px; }
+html[data-cshape='stitch'] .kc-head { background: transparent; box-shadow: none; border-bottom: 0; padding-top: 14px; }
+html[data-cshape='stitch'] .kc-foot { background: transparent; border-top: 0; padding-bottom: 14px; }
+
+
+/* ---------- ICE · Es: kaca beku putih kebiruan, tetesan es ---------- */
+html[data-cshape='ice'] :is(.glass.card, .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass),
+html[data-tshape='ice'] .top-header-nav,
+html[data-bshape='ice'] .floating-navbar,
+.sp-demo[data-sp='ice'] {
+  --text: #0b2a47; --muted: #3d6585; --border: rgba(255,255,255,.7); --a2: #0284c7; --on-accent: #fff;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.78), rgba(205,238,255,.42) 38%, rgba(255,255,255,.24) 64%, rgba(186,230,253,.45)),
+    radial-gradient(80% 60% at 10% 0%, rgba(255,255,255,.7), transparent 60%) !important;
+  backdrop-filter: blur(calc(var(--blur, 24px) * 1.2)) saturate(1.5) brightness(1.08); -webkit-backdrop-filter: blur(calc(var(--blur, 24px) * 1.2)) saturate(1.5) brightness(1.08);
+  border: 1px solid rgba(255,255,255,.85) !important;
+  box-shadow: inset 0 0 calc(34*var(--u)) rgba(255,255,255,.7), inset 0 calc(-10*var(--u)) calc(22*var(--u)) rgba(125,211,252,.4), 0 calc(14*var(--u)) calc(30*var(--u)) calc(-12*var(--u)) rgba(56,189,248,.55) !important;
+}
+html[data-cshape='ice'] :is(.glass.card, .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass),
+.sp-demo[data-sp='ice'] { border-radius: calc(8*var(--u)) calc(26*var(--u)) calc(8*var(--u)) calc(26*var(--u)); }
+html[data-tshape='ice'] .top-header-nav,
+html[data-bshape='ice'] .floating-navbar,
+.sp-demo[data-sp='ice'][data-nav] { border-radius: 10px 28px 10px 28px; }
+html[data-cshape='ice'] .card.kc { overflow: visible; margin-bottom: 8px; }
+html[data-cshape='ice'] .kc-head { background: linear-gradient(180deg, rgba(255,255,255,.55), transparent); box-shadow: none; border-bottom-color: rgba(125,190,230,.35); }
+html[data-cshape='ice'] .kc-foot { background: rgba(186,230,253,.28); border-top-color: rgba(125,190,230,.35); }
+html[data-cshape='ice'] .kc-deco { overflow: visible; }
+html[data-cshape='ice'] .kc-deco::after { content: ''; position: absolute; left: 14px; right: 14px; bottom: -9px; height: 10px; animation: wd-drip 3.4s ease-in-out infinite;
+  background: linear-gradient(135deg, rgba(220,244,255,.95) 25%, transparent 25%) 0 0 / 18px 10px, linear-gradient(225deg, rgba(220,244,255,.95) 25%, transparent 25%) 0 0 / 18px 10px;
+  -webkit-mask: linear-gradient(90deg, #000 0 30%, transparent 30% 38%, #000 38% 100%); mask: linear-gradient(90deg, #000 0 30%, transparent 30% 38%, #000 38% 100%); filter: drop-shadow(0 1px 1px rgba(56,189,248,.5)); }
+
+
+/* ---------- BUBBLE · Balon percakapan ---------- */
+html[data-cshape='bubble'] :is(.glass.card, .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass),
+.sp-demo[data-sp='bubble'] {
+  border-radius: calc(26*var(--u)) calc(26*var(--u)) calc(26*var(--u)) calc(6*var(--u));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--a1) 30%, var(--surface)), color-mix(in srgb, var(--a3) 22%, var(--surface))) !important;
+  border: 1px solid color-mix(in srgb, var(--a2) 45%, transparent) !important;
+  box-shadow: 0 calc(12*var(--u)) calc(24*var(--u)) calc(-12*var(--u)) color-mix(in srgb, var(--a1) 55%, transparent), inset 0 1px 0 rgba(255,255,255,.18) !important;
+}
+html[data-cshape='bubble'] .card.kc { overflow: visible; margin-bottom: 12px; }
+html[data-cshape='bubble'] .kc-deco { overflow: visible; }
+html[data-cshape='bubble'] .kc-deco::after { content: ''; position: absolute; left: 22px; bottom: -13px; width: 22px; height: 14px; background: color-mix(in srgb, var(--a3) 22%, var(--surface)); clip-path: polygon(0 0, 100% 0, 0 100%); border-left: 0; }
+html[data-cshape='bubble'] .kc-head { background: transparent; box-shadow: none; }
+html[data-cshape='bubble'] .kc-foot { background: transparent; }
+
+
+/* ---------- TORN · Kertas bergaris dengan tepi sobek ---------- */
+html[data-cshape='torn'] :is(.glass.card, .hx-card.glass, .auth-card.glass, .ct-card.glass, .rooms-container.glass, .hx-stat.glass, .pf-stat.glass, .rp-card.glass, .pgn.glass),
+.sp-demo[data-sp='torn'] {
+  --text: #2b2218; --muted: #7a6a55; --border: rgba(80,60,30,.22); --a2: #b45309; --surface: #f7f0df;
+  border-radius: calc(4*var(--u)) !important; border: 0 !important;
+  background: linear-gradient(90deg, transparent calc(34*var(--u)), rgba(220,70,70,.45) calc(34*var(--u)) calc(35.5*var(--u)), transparent calc(35.5*var(--u))),
+    repeating-linear-gradient(180deg, transparent 0 calc(27*var(--u)), rgba(70,110,190,.22) calc(27*var(--u)) calc(28*var(--u))), #f8f1e0 !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - calc(11*var(--u))), 96% calc(100% - 4px), 92% calc(100% - calc(11*var(--u))), 88% calc(100% - 3px), 83% calc(100% - 10px), 78% calc(100% - 4px), 73% calc(100% - calc(12*var(--u))), 68% calc(100% - 3px), 63% calc(100% - 9px), 58% calc(100% - 4px), 52% calc(100% - calc(11*var(--u))), 47% calc(100% - 3px), 42% calc(100% - 10px), 36% calc(100% - 4px), 31% calc(100% - calc(12*var(--u))), 26% calc(100% - 3px), 21% calc(100% - 9px), 15% calc(100% - 4px), 10% calc(100% - calc(11*var(--u))), 5% calc(100% - 3px), 0 calc(100% - 9px));
+  box-shadow: inset 0 calc(2*var(--u)) 0 rgba(255,255,255,.7) !important;
+  padding-bottom: calc(10*var(--u));
+}
+html[data-cshape='torn'] .kc-head { background: rgba(255,214,102,.35); box-shadow: none; border-bottom: 1px solid rgba(80,60,30,.2); padding-left: calc(var(--cp) + 22px); }
+html[data-cshape='torn'] .kc-foot { background: transparent; border-top: 1px dashed rgba(80,60,30,.3); padding-bottom: 18px; }
+html[data-cshape='torn'] .kc-body { padding-left: calc(var(--cp) + 22px); }
+
+
+/* ---------- NAV · Siku & Daun (hanya navbar) ---------- */
+html[data-tshape='square'] .top-header-nav,
+html[data-bshape='square'] .floating-navbar,
+.sp-demo[data-sp='square'][data-nav] { border-radius: 4px !important; }
+html[data-tshape='leaf'] .top-header-nav,
+html[data-bshape='leaf'] .floating-navbar,
+.sp-demo[data-sp='leaf'][data-nav] { border-radius: 4px 30px 4px 30px !important; }
+.sp-demo[data-sp='square'], .sp-demo[data-sp='leaf'] { background: rgba(148,163,184,.3); border: 1px solid rgba(255,255,255,.3); }
+.sp-demo[data-sp='square'] { border-radius: 3px; } .sp-demo[data-sp='leaf'] { border-radius: 3px 14px 3px 14px; }
+
+
+/* =====================================================================
+   TATA LETAK NAV  (float = melayang · bar = menempel penuh · island = pulau ringkas)
+   ===================================================================== */
+html[data-tlayout='bar'] .top-header-wrap { top: 0; padding: 0; }
+html[data-tlayout='bar'] .top-header-nav { max-width: none; border-radius: 0 0 var(--r-dock-bottom) var(--r-dock-bottom); border-top: 0; border-left: 0; border-right: 0; padding-top: calc(8px + var(--safe-top)); }
+html[data-tlayout='bar'] .wrap.app-main { padding-top: calc(var(--safe-top) + var(--header-h) + 18px + clamp(16px, 3vw, 28px)); }
+html[data-tlayout='island'] .top-header-nav { max-width: 620px; }
+html[data-blayout='bar'] .floating-navbar-wrap { bottom: 0; padding: 0; }
+html[data-blayout='bar'] .floating-navbar { width: 100%; max-width: none; justify-content: space-around; gap: 0; border-radius: var(--r-dock-top) var(--r-dock-top) 0 0; border-bottom: 0; border-left: 0; border-right: 0; padding-bottom: calc(6px + var(--safe-bottom)); }
+html[data-blayout='island'] .floating-navbar-wrap { bottom: calc(var(--safe-bottom) + 10px); }
+html[data-blayout='island'] .floating-navbar { --nav-w: 40px; --nav-h: 40px; padding: 4px 10px; gap: 4px; transform-origin: bottom center; scale: .94; }
+html[data-blayout='island'][data-nav-labels='on'] .floating-navbar { --nav-w: 48px; --nav-h: 46px; }
+
+/* hormati preferensi gerak */
+html[data-anim='off'] :is(.glass.card, .hx-card.glass, .top-header-nav, .floating-navbar, .sp-demo, .kc-deco, .kc-deco::before, .kc-deco::after) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { :is(.glass.card, .hx-card.glass, .top-header-nav, .floating-navbar, .sp-demo, .kc-deco::before, .kc-deco::after) { animation: none !important; } }
+
+/* ---------- Keterbacaan: teks gradien merek & ikon di navbar bertekstur (kayu / es) ---------- */
+html[data-tshape='wood'] .top-header-nav .wd-word,
+html[data-tshape='wood'] .top-header-nav .wd-word * { background: none !important; -webkit-text-fill-color: var(--text) !important; color: var(--text) !important; text-shadow: 0 1px 0 rgba(0,0,0,.45); }
+html[data-tshape='ice'] .top-header-nav .wd-word,
+html[data-tshape='ice'] .top-header-nav .wd-word * { background: none !important; -webkit-text-fill-color: var(--text) !important; color: var(--text) !important; }
+/* Angka/judul bergradien di permukaan kayu: ganti jadi teks solid agar terbaca */
+html[data-cshape='wood'] :is(.hx-stat, .pf-stat, .hx-card) :is(strong, b, h3, .hx-grad),
+html[data-cshape='wood'] .hx-stat strong { background: none !important; -webkit-text-fill-color: var(--text) !important; color: var(--text) !important; text-shadow: 0 1px 0 rgba(0,0,0,.4); }

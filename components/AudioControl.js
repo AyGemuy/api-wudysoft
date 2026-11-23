@@ -241,7 +241,7 @@ export default function AudioControl() {
         @keyframes au-sway { 0%, 100% { transform: rotate(-8deg) scale(1); } 50% { transform: rotate(8deg) scale(1.1); } }
         .au-backdrop { position: fixed; inset: 0; z-index: 99999; display: flex; justify-content: flex-end; background: color-mix(in srgb, var(--shadow-c) 60%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
         .au-panel { width: 100%; max-width: 380px; height: 100%; height: 100dvh; display: flex; flex-direction: column; background: var(--surface); color: var(--text); border-left: 1px solid var(--border); box-shadow: -10px 0 30px color-mix(in srgb, var(--shadow-c) 55%, transparent); }
-        .au-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 18px; align-content: start; }
+        .au-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-content: start; }
         @media (max-width: 560px) { .au-fab { top: calc(40% + 62px); width: 40px; height: 52px; } .au-fab:hover { width: 40px; } .au-tip { display: none; } }
         html[data-anim='off'] .au-ico { animation: none; }
         .au-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
@@ -256,7 +256,7 @@ export default function AudioControl() {
         .au-tab.active { color: var(--a2); }
         .au-tab-line { animation: au-line .25s ease-out; position: absolute; left: 8px; right: 8px; bottom: 0; height: 2px; border-radius: 2px; background: var(--a2); box-shadow: 0 0 8px var(--a2); }
         @keyframes au-line { from { transform: scaleX(.2); opacity: 0; } to { transform: none; opacity: 1; } }
-        .au-sec { display: grid; gap: 10px; }
+        .au-sec { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
         .au-title { font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: var(--font-mono); }
         /* saklar & slider: gaya yang sama dengan Theme Studio */
         .au-panel .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 10px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-m); color: var(--text); text-align: left; cursor: pointer; font: inherit; transition: border-color .2s; }
@@ -294,7 +294,7 @@ export default function AudioControl() {
         .au-status-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .au-play { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; flex-shrink: 0; }
         .au-play:hover { border-color: var(--a2); color: var(--a2); }
-        .au-cues { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+        .au-cues { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
         .au-cues li { display: flex; gap: 6px; align-items: stretch; }
         .au-cues li .switch-row { flex: 1; min-width: 0; }
         .au-test { width: 40px; flex-shrink: 0; border-radius: var(--r-m); border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); cursor: pointer; display: grid; place-items: center; }

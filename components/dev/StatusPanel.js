@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, Plus, Trash2, RefreshCw, Pause, Play, CheckCircle2, AlertTriangle, XCircle, Download } from 'lucide-react';
 import { Reveal, TextReveal } from '@/components/motion';
+import { CardDeco, CardHead, CardBody, CardFoot } from '@/components/Card';
 import { timeAgo } from '@/src/lib/timeAgo';
 
 const KEY = 'wd_status_v2';
@@ -148,44 +149,55 @@ export default function StatusPage() {
 
         <div className="st-grid">
           {rows.map((r) => (
-            <article key={r.id} className={`glass card st-card s-${r.state}`}>
-              <div className="st-head">
-                <span className="st-dot" aria-hidden />
-                <div className="st-name"><b>{r.name}</b><code>{r.url}</code></div>
-                <span className={`badge ${r.state === 'up' ? 'ok' : r.state === 'slow' ? 'warn' : r.state === 'down' ? 'err' : ''}`}>{r.state === 'up' ? 'Online' : r.state === 'slow' ? 'Lambat' : r.state === 'down' ? 'Down' : '…'}</span>
-                {r.custom && <button type="button" className="st-x" onClick={() => setEps((l) => l.filter((x) => x.id !== r.id))} aria-label={`Hapus ${r.name}`}><Trash2 size={14} /></button>}
-              </div>
-              <Spark data={r.a} />
-              <dl className="st-stats">
-                <div><dt>Terakhir</dt><dd>{r.last ? `${r.last.ms} ms` : '—'}</dd></div>
-                <div><dt>Rata-rata</dt><dd>{r.avg != null ? `${r.avg} ms` : '—'}</dd></div>
-                <div><dt>p95</dt><dd>{r.p95 != null ? `${r.p95} ms` : '—'}</dd></div>
-                <div><dt>Uptime</dt><dd>{r.uptime != null ? `${r.uptime.toFixed(1)}%` : '—'}</dd></div>
-                <div><dt>HTTP</dt><dd>{r.last ? r.last.code || r.last.err : '—'}</dd></div>
-              </dl>
+            <article key={r.id} className={`glass card kc st-card s-${r.state}`}>
+              <CardDeco />
+              <CardHead
+                Icon={Activity}
+                title={r.name}
+                subtitle={r.url}
+                badge={r.state === 'up' ? 'Online' : r.state === 'slow' ? 'Lambat' : r.state === 'down' ? 'Down' : '…'}
+                actions={r.custom && <button type="button" className="st-x" onClick={() => setEps((l) => l.filter((x) => x.id !== r.id))} aria-label={`Hapus ${r.name}`}><Trash2 size={14} /></button>}
+              />
+              <CardBody>
+                <Spark data={r.a} />
+                <dl className="st-stats">
+                  <div><dt>Terakhir</dt><dd>{r.last ? `${r.last.ms} ms` : '—'}</dd></div>
+                  <div><dt>Rata-rata</dt><dd>{r.avg != null ? `${r.avg} ms` : '—'}</dd></div>
+                  <div><dt>p95</dt><dd>{r.p95 != null ? `${r.p95} ms` : '—'}</dd></div>
+                  <div><dt>Uptime</dt><dd>{r.uptime != null ? `${r.uptime.toFixed(1)}%` : '—'}</dd></div>
+                  <div><dt>HTTP</dt><dd>{r.last ? r.last.code || r.last.err : '—'}</dd></div>
+                </dl>
+              </CardBody>
+              <CardFoot><span>{r.state === 'wait' || !r.last ? 'Menunggu cek pertama' : `Dicek ${timeAgo(r.last.t || Date.now())}`}</span></CardFoot>
             </article>
           ))}
         </div>
 
         <div className="st-two">
-          <form className="glass card st-add" onSubmit={add}>
-            <h3><Plus size={15} /> Pantau endpoint lain</h3>
+          <form className="glass card kc" onSubmit={add}>
+            <CardDeco />
+            <CardHead Icon={Plus} title="Pantau endpoint lain" />
+            <CardBody><div className="st-add">
             <input className="input" placeholder="Nama (opsional)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} aria-label="Nama" maxLength={40} />
             <input className="input" placeholder="/api/... atau https://..." value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} aria-label="URL" required />
             <button className="btn primary" type="submit">Tambah</button>
-            <p className="st-note">URL eksternal harus mengizinkan CORS agar bisa dicek dari browser.</p>
+            </div></CardBody>
+            <CardFoot><span className="st-note">URL eksternal harus mengizinkan CORS agar bisa dicek dari browser.</span></CardFoot>
           </form>
-          <section className="glass card st-log">
-            <h3>Riwayat kejadian</h3>
+          <section className="glass card kc">
+            <CardDeco />
+            <CardHead Icon={Activity} title="Riwayat kejadian" badge={events.length} />
+            <CardBody><div className="st-log">
             {events.length === 0 ? <p className="st-note">Belum ada perubahan status. Bagus!</p> : (
               <ul>{events.map((e, i) => <li key={`${e.t}-${i}`} className={e.up ? 'up' : 'down'}>{e.up ? <CheckCircle2 size={14} /> : <XCircle size={14} />}<span><b>{e.name}</b> {e.up ? 'pulih' : `gagal (${e.code || 'timeout'})`}</span><time>{timeAgo(e.t)}</time></li>)}</ul>
             )}
+          </div></CardBody>
           </section>
         </div>
       </div>
 
       <style jsx>{`
-        .st-page { width: min(1100px, 100%); margin: 0 auto; display: grid; gap: 16px; padding-bottom: 24px; }
+        .st-page { width: min(1100px, 100%); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding-bottom: 24px; }
         .st-banner { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; border-color: color-mix(in srgb, var(--ok) 45%, var(--border)); }
         .st-banner :global(svg) { color: var(--ok); flex: none; }
         .st-banner h2 { margin: 0; font-size: 1.1rem; } .st-banner p { margin: 2px 0 0; color: var(--muted); font-size: 0.82rem; }
@@ -196,7 +208,7 @@ export default function StatusPage() {
         .st-ctl :global(.input) { width: auto; }
         :global(.st-spin) { animation: st-rot 0.8s linear infinite; } @keyframes st-rot { to { rotate: 360deg; } }
         .st-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 14px; }
-        .st-card { display: grid; gap: 10px; min-width: 0; }
+        .st-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
         .st-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
         .st-name { display: grid; min-width: 0; flex: 1; } .st-name b { font-size: 0.92rem; } .st-name code { font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .st-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
@@ -207,12 +219,12 @@ export default function StatusPage() {
         .st-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 0; }
         .st-stats div { min-width: 0; } .st-stats dt { font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); } .st-stats dd { margin: 2px 0 0; font-size: 0.8rem; font-weight: 700; font-family: var(--font-mono); }
         .st-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 14px; align-items: start; }
-        .st-add { display: grid; gap: 10px; } .st-add h3, .st-log h3 { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 0.92rem; }
+        .st-add { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; } .st-add h3, .st-log h3 { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 0.92rem; }
         .st-note { color: var(--muted); font-size: 0.74rem; margin: 0; }
-        .st-log { display: grid; gap: 10px; } .st-log ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 260px; overflow: auto; }
+        .st-log { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; } .st-log ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; max-height: 260px; overflow: auto; }
         .st-log li { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; padding: 7px 10px; border-radius: var(--r-s); border: 1px solid var(--border); }
         .st-log li.up :global(svg) { color: var(--ok); } .st-log li.down :global(svg) { color: var(--err); } .st-log time { margin-left: auto; color: var(--muted); font-size: 0.7rem; white-space: nowrap; }
-        @media (max-width: 760px) { .st-two { grid-template-columns: 1fr; } .st-ctl { margin-left: 0; } }
+        @media (max-width: 760px) { .st-two { grid-template-columns: minmax(0, 1fr); } .st-ctl { margin-left: 0; } }
         @media (prefers-reduced-motion: reduce) { .st-dot, :global(.st-spin) { animation: none !important; } }
       `}</style>
     </>

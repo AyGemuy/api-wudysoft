@@ -7,7 +7,7 @@ import path from 'node:path';
 
 const root = process.cwd();
 const dest = path.join(root, '.next', 'standalone');
-if (!fs.existsSync(dest)) { console.error('.next/standalone tidak ada. Jalankan `npm run build` (bukan di Netlify) dulu.'); process.exit(1); }
+if (!fs.existsSync(dest)) { console.error('.next/standalone tidak ada. Jalankan `npm run build` di server Node/VPS/Docker (platform serverless seperti Netlify/Vercel tidak membuat folder ini) dulu.'); process.exit(1); }
 
 const copy = (from, to) => {
   if (!fs.existsSync(from)) return;

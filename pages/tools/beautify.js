@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Seo from '@/components/Seo';
+import { toast } from '@/src/lib/toast';
+import { CardDeco, CardHead, CardBody, CardFoot } from '@/components/Card';
 import {
   FileCode,
   Download,
@@ -21,12 +23,8 @@ export default function BeautifyPage() {
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('Memproses Code…');
   const [dragActive, setDragActive] = useState(false);
-  const [toast, setToast] = useState(null);
 
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 4000);
-  };
+  const showToast = (message, type = 'success') => toast(message, type === 'error' ? 'err' : 'ok');
 
   // 1. Eksekusi Beautify dari URL langsung
   const executeBeautify = async (targetUrl) => {
@@ -134,37 +132,6 @@ export default function BeautifyPage() {
       <Seo title="Code Beautifier & Unpacker" path="/tools/beautify" label="TOOL" description="Rapikan, minify, dan buka bungkusan kode JavaScript, HTML, dan CSS dari file atau URL dalam hitungan detik." />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '22px', maxWidth: '800px', margin: '0 auto' }}>
-        {/* Toast Notification */}
-        <AnimatePresence>
-          {toast && (
-            <motion.div
-              initial={{ opacity: 0, y: -20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.9 }}
-              style={{
-                position: 'fixed',
-                top: '20px',
-                right: '20px',
-                zIndex: 9999,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '12px 18px',
-                borderRadius: '14px',
-                background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)',
-                backdropFilter: 'blur(16px)',
-                color: '#fff',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                boxShadow: '0 10px 30px color-mix(in srgb, var(--shadow-c) 50%, transparent)',
-              }}
-            >
-              {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-              <span>{toast.message}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Header */}
         <header>
           <div className="badge ok" style={{ marginBottom: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
@@ -177,11 +144,14 @@ export default function BeautifyPage() {
 
         {/* Main Panel */}
         <motion.div
-          className="glass card"
+          className="glass card kc"
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
+          <CardDeco />
+          <CardHead Icon={FileCode} title="Beautify & Unpack" subtitle="File JS, ZIP, atau URL" />
+          <CardBody>
           {/* AUTO UPLOAD DROP ZONE */}
           <div
             onDragEnter={handleDrag}
@@ -269,20 +239,24 @@ export default function BeautifyPage() {
               </motion.button>
             </div>
           </form>
+          </CardBody>
+          <CardFoot><span>Hasil otomatis diunduh sebagai ZIP</span></CardFoot>
         </motion.div>
 
         {/* Info Cards Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '16px' }}>
-          <motion.div className="glass card" whileHover={{ y: -3 }}>
-            <FileCode size={24} color="var(--a2)" />
-            <strong style={{ marginTop: '8px', display: 'block' }}>Format JS Bersih</strong>
-            <p style={{ fontSize: '0.8rem' }}>Merapikan indentasi, deobfuscate variabel, dan struktur sintaks JavaScript terkompresi.</p>
+          <motion.div className="glass card kc" whileHover={{ y: -3 }}>
+            <CardDeco />
+            <CardHead Icon={FileCode} title="Format JS Bersih" />
+            <CardBody><p style={{ fontSize: '0.8rem' }}>Merapikan indentasi, deobfuscate variabel, dan struktur sintaks JavaScript terkompresi.</p></CardBody>
+            <CardFoot><span>JavaScript</span></CardFoot>
           </motion.div>
 
-          <motion.div className="glass card" whileHover={{ y: -3 }}>
-            <FileArchive size={24} color="var(--a3)" />
-            <strong style={{ marginTop: '8px', display: 'block' }}>Auto Zip Compression</strong>
-            <p style={{ fontSize: '0.8rem' }}>Hasil file langsung diekspor ke format arsip ZIP siap pakai secara aman.</p>
+          <motion.div className="glass card kc" whileHover={{ y: -3 }}>
+            <CardDeco />
+            <CardHead Icon={FileArchive} title="Auto Zip Compression" />
+            <CardBody><p style={{ fontSize: '0.8rem' }}>Hasil file langsung diekspor ke format arsip ZIP siap pakai secara aman.</p></CardBody>
+            <CardFoot><span>ZIP</span></CardFoot>
           </motion.div>
         </div>
       </div>

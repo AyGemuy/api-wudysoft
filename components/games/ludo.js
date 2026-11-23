@@ -249,7 +249,7 @@ export default function LudoPage() {
     <>
       <div className={s.page}>
         <PageHead Icon={Dices} badge="GAME" title="Ludo" desc="Lempar dadu, keluarkan bidak dengan angka 6, makan bidak lawan, dan bawa keempat bidakmu pulang. Papan digambar langsung di browser." />
-        <section className={`glass card ${s.game}`}>
+        <Card Icon={Dices} title="Ludo" subtitle="Papan permainan" bodyClassName={s.game} footer={<span>Bagikan tautan agar bisa dimainkan bersama</span>}>
           {!view ? (
             <div className="ld-menu">
               <b>Jumlah pemain</b>
@@ -305,15 +305,15 @@ export default function LudoPage() {
               {online && <span className={s.muted}>ID game: <span className={s.mono}>{id}</span> · aktifkan “saya” hanya pada kursimu agar tidak bisa dimainkan orang lain dari perangkatmu.</span>}
             </div>
           )}
-        </section>
+        </Card>
       </div>
 
       <style jsx global>{`
-        .ld-menu { display: grid; gap: 14px; justify-items: center; text-align: center; }
+        .ld-menu { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; justify-items: center; text-align: center; }
         .ld-seg { display: inline-flex; gap: 6px; }
         .ld-seg button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--r-btn, 10px); border: 1px solid var(--border); background: transparent; color: var(--muted); font: inherit; font-weight: 700; cursor: pointer; }
         .ld-seg button.on { color: var(--on-accent); border-color: transparent; background: linear-gradient(135deg, var(--a1), var(--a3)); }
-        .ld-wrap { display: grid; gap: 14px; justify-items: center; width: 100%; }
+        .ld-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; justify-items: center; width: 100%; }
         .ld-side-top { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
         .ld-pl { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: var(--r-l, 999px); border: 1px solid var(--border); font-size: .78rem; transition: border-color .2s, box-shadow .2s, transform .2s; }
         .ld-pl i { width: 11px; height: 11px; border-radius: 50%; background: var(--pc); box-shadow: 0 0 0 2px color-mix(in srgb, var(--pc) 30%, transparent); }
@@ -337,7 +337,7 @@ export default function LudoPage() {
         .ld-die:disabled { cursor: default; opacity: .8; }
         .ld-die svg { width: 100%; height: 100%; fill: #1f2937; }
         .ld-msg { flex: 1; min-width: 0; }
-        .ld-msg > div { display: grid; gap: 2px; }
+        .ld-msg > div { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
         .ld-msg b { display: inline-flex; align-items: center; gap: 6px; font-size: .95rem; }
         .ld-msg span { font-size: .8rem; }
         .ld-msg small { color: var(--muted); font-size: .72rem; }

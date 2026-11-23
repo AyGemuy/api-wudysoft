@@ -1,3 +1,4 @@
+import { CardDeco, CardHead, CardBody, CardFoot } from '@/components/Card';
 import { useEffect, useState } from 'react';
 import site from '@/configs/siteConfig';
 import { Reveal, Stagger, Item } from '@/components/motion';
@@ -27,15 +28,15 @@ export default function GithubCard({ variant = 'left' }) {
 
   const u = d?.ok ? d.user : null;
   return (
-    <Reveal as="section" variant={variant} className="glass gh-card" aria-label="Repositori GitHub">
-      <div className="gh-top">
-        <span className="gh-ava">{u?.avatar ? <img src={u.avatar} alt="" loading="lazy" /> : <GhMark size={26} />}</span>
-        <div className="gh-id">
-          <h3>{u?.name || user}</h3>
-          <a href={href} target="_blank" rel="noopener noreferrer" className="gh-handle"><GhMark size={13} /> @{user}</a>
-        </div>
-        <a className="btn gh-btn" href={href} target="_blank" rel="noopener noreferrer">Lihat repo</a>
-      </div>
+    <Reveal as="section" variant={variant} className="glass card kc gh-card" aria-label="Repositori GitHub">
+      <CardDeco />
+      <CardHead
+        Icon={GhMark}
+        title={u?.name || user}
+        subtitle={`@${user}`}
+        actions={<a className="btn gh-btn" href={href} target="_blank" rel="noopener noreferrer">Lihat repo</a>}
+      />
+      <CardBody>
 
       {!d && <div className="mo-skeleton" style={{ height: 64, borderRadius: 10 }} />}
       {d && !u && <p className="gh-note">Data GitHub sedang tidak dapat dimuat. Buka profil langsung lewat tombol di atas.</p>}
@@ -70,12 +71,15 @@ export default function GithubCard({ variant = 'left' }) {
         </>
       )}
 
+      </CardBody>
+      <CardFoot><a href={href} target="_blank" rel="noopener noreferrer" className="gh-handle"><GhMark size={13} /> @{user}</a></CardFoot>
+
       <style jsx global>{`
-        .gh-card { padding: clamp(16px, 4vw, 24px); border-radius: var(--radius); display: grid; gap: 14px; }
+        .gh-card { padding: clamp(16px, 4vw, 24px); border-radius: var(--radius); display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
         .gh-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .gh-ava { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); flex-shrink: 0; }
         .gh-ava img { width: 100%; height: 100%; object-fit: cover; }
-        .gh-id { min-width: 0; flex: 1 1 140px; display: grid; gap: 2px; }
+        .gh-id { min-width: 0; flex: 1 1 140px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
         .gh-id h3 { font-size: 1rem; overflow-wrap: anywhere; }
         .gh-handle { display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; font-family: var(--font-mono); color: var(--muted); text-decoration: none; }
         .gh-handle:hover { color: var(--a2); }
@@ -87,7 +91,7 @@ export default function GithubCard({ variant = 'left' }) {
         .gh-stats span { font-size: 0.68rem; color: var(--muted); }
         .gh-langs { display: flex; flex-wrap: wrap; gap: 6px; }
         .gh-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 10px; }
-        .gh-repo { display: grid; gap: 6px; align-content: start; padding: 12px; border: 1px solid var(--border); border-radius: var(--r-m); text-decoration: none; color: inherit; min-width: 0; background: color-mix(in srgb, var(--surface) 55%, transparent); }
+        .gh-repo { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; align-content: start; padding: 12px; border: 1px solid var(--border); border-radius: var(--r-m); text-decoration: none; color: inherit; min-width: 0; background: color-mix(in srgb, var(--surface) 55%, transparent); }
         .gh-repo strong { font-size: 0.85rem; color: var(--a2); overflow-wrap: anywhere; }
         .gh-desc { font-size: 0.74rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .gh-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.68rem; color: var(--muted); font-family: var(--font-mono); }

@@ -106,7 +106,7 @@ export function ChatStyles() {
       .cr-row.mine { align-self: flex-end; flex-direction: row-reverse; }
       .cr-row.cont { margin-top: -8px; }
       .cr-spacer { flex: none; width: 34px; }
-      .cr-bub { position: relative; min-width: 0; padding: 7px 10px 6px; border-radius: var(--r-m); border: 1px solid var(--border); background: color-mix(in srgb, var(--text) 7%, transparent); font-size: .9rem; line-height: 1.45; display: grid; gap: 4px; }
+      .cr-bub { position: relative; min-width: 0; padding: 7px 10px 6px; border-radius: var(--r-m); border: 1px solid var(--border); background: color-mix(in srgb, var(--text) 7%, transparent); font-size: .9rem; line-height: 1.45; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
       .cr-row:not(.mine):not(.cont) .cr-bub { border-top-left-radius: 4px; }
       .cr-row.mine:not(.cont) .cr-bub { border-top-right-radius: 4px; }
       .cr-row.mine .cr-bub { background: linear-gradient(135deg, color-mix(in srgb, var(--a1) 38%, transparent), color-mix(in srgb, var(--a3) 34%, transparent)); border-color: color-mix(in srgb, var(--a2) 40%, var(--border)); }
@@ -131,15 +131,15 @@ export function ChatStyles() {
       .cr-date { align-self: center; padding: 3px 12px; border-radius: 999px; font-size: .68rem; font-family: var(--font-mono); color: var(--muted); background: color-mix(in srgb, var(--text) 6%, transparent); border: 1px solid var(--border); margin: 4px 0; }
 
       .cr-quote { display: flex; align-items: stretch; gap: 8px; width: 100%; text-align: left; padding: 5px 8px; border: 0; border-left: 3px solid var(--qc, var(--a2)); border-radius: 6px; background: color-mix(in srgb, var(--qc, var(--a2)) 12%, transparent); color: var(--text); font: inherit; cursor: pointer; overflow: hidden; }
-      .cr-quote-t { min-width: 0; flex: 1; display: grid; gap: 1px; }
+      .cr-quote-t { min-width: 0; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; }
       .cr-quote-t b { color: var(--qc, var(--a2)); font-size: .74rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .cr-quote-t small { color: var(--muted); font-size: .76rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
       .cr-quote-t small svg { vertical-align: -2px; }
       .cr-quote img { flex: none; width: 38px; height: 38px; border-radius: 6px; object-fit: cover; }
 
-      .cr-media { display: grid; gap: 6px; }
-      .cr-imgs { display: grid; gap: 3px; border-radius: calc(var(--r-m) - 4px); overflow: hidden; width: min(280px, 100%); }
-      .cr-imgs.n1 { grid-template-columns: 1fr; } .cr-imgs.n2, .cr-imgs.n3, .cr-imgs.n4 { grid-template-columns: 1fr 1fr; }
+      .cr-media { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+      .cr-imgs { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; border-radius: calc(var(--r-m) - 4px); overflow: hidden; width: min(280px, 100%); }
+      .cr-imgs.n1 { grid-template-columns: minmax(0, 1fr); } .cr-imgs.n2, .cr-imgs.n3, .cr-imgs.n4 { grid-template-columns: 1fr 1fr; }
       .cr-imgs.n3 .cr-img:first-child { grid-column: span 2; }
       .cr-img { position: relative; padding: 0; border: 0; background: color-mix(in srgb, var(--text) 8%, transparent); cursor: zoom-in; aspect-ratio: 1; overflow: hidden; }
       .cr-imgs.n1 .cr-img { aspect-ratio: auto; max-height: 340px; }
@@ -154,7 +154,7 @@ export function ChatStyles() {
       .cr-file-t b { font-size: .8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .cr-file-t small { color: var(--muted); font-size: .68rem; }
 
-      .cr-comp { display: grid; gap: 8px; padding: 10px 14px 12px; border-top: 1px solid var(--border); background: color-mix(in srgb, var(--bg1) 35%, transparent); position: relative; }
+      .cr-comp { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 10px 14px 12px; border-top: 1px solid var(--border); background: color-mix(in srgb, var(--bg1) 35%, transparent); position: relative; }
       .cr-replybar { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--r-m); background: color-mix(in srgb, var(--text) 5%, transparent); border: 1px solid var(--border); }
       .cr-replybar .cr-quote { flex: 1; min-width: 0; cursor: default; }
       .cr-tray { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: thin; }

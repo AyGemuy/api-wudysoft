@@ -173,7 +173,7 @@ export default function NotFound() {
         .nf-float { animation-name: nf-float; } .nf-spin { animation-name: nf-spinr; animation-timing-function: linear; } .nf-wobble { animation-name: nf-wobble; }
         .nf-fly { animation-name: nf-fly; } .nf-crawl { animation-name: nf-crawl; } .nf-blink { animation-name: nf-blink; }
 
-        .nf-card { position: relative; width: min(560px, 100%); padding: clamp(22px, 5vw, 38px) clamp(16px, 4vw, 32px); border-radius: calc(var(--radius) + 6px); text-align: center; overflow: hidden; z-index: 2; display: grid; gap: 12px; justify-items: center; transform-style: preserve-3d; box-shadow: 0 40px 90px -30px rgba(0,0,0,.7), 0 0 60px -20px color-mix(in srgb, var(--a1) 60%, transparent); }
+        .nf-card { position: relative; width: min(560px, 100%); padding: clamp(22px, 5vw, 38px) clamp(16px, 4vw, 32px); border-radius: calc(var(--radius) + 6px); text-align: center; overflow: hidden; z-index: 2; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; justify-items: center; transform-style: preserve-3d; box-shadow: 0 40px 90px -30px rgba(0,0,0,.7), 0 0 60px -20px color-mix(in srgb, var(--a1) 60%, transparent); }
         .nf-scan { position: absolute; left: 0; right: 0; top: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--a2), transparent); opacity: .75; animation: nf-scan 3.6s linear infinite; pointer-events: none; }
         .nf-badge { display: inline-flex; align-items: center; gap: 6px; font-size: .68rem; letter-spacing: .04em; }
         .nf-num { display: flex; align-items: center; justify-content: center; gap: clamp(2px, 1.5vw, 10px); margin: 4px 0 0; line-height: 1; font-size: clamp(5.5rem, 24vw, 9.5rem); font-weight: 800; letter-spacing: -.04em; }
@@ -196,7 +196,7 @@ export default function NotFound() {
         .nf-primary { background: linear-gradient(135deg, var(--a1), var(--a3)); color: var(--on-accent); border: none; box-shadow: 0 14px 30px -10px var(--a1); }
         .nf-primary:hover svg { animation: nf-nudge .6s ease infinite; }
         .nf-btn:hover .nf-spinhover { animation: nf-spinr .8s linear infinite; }
-        .nf-quick { display: grid; gap: 8px; width: 100%; margin-top: 4px; }
+        .nf-quick { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; width: 100%; margin-top: 4px; }
         .nf-quick-cap { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: .64rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-family: var(--font-mono); }
         .nf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .nf-chip { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border-radius: var(--r-m); text-decoration: none; color: var(--muted); font-size: .72rem; font-weight: 600; background: color-mix(in srgb, #fff 5%, transparent); border: 1px solid var(--border); transition: transform .3s cubic-bezier(.34,1.56,.64,1), color .2s, border-color .2s, background .2s; }

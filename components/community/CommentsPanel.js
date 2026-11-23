@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { MessageSquareText, Send, Reply, Pencil, Trash2, X } from 'lucide-react';
+import Card from '@/components/Card';
 import { PageHead, useToast, kit as s } from '@/components/PageKit';
 import { http } from '@/src/lib/http';
 import { confirmToast } from '@/src/lib/toast';
@@ -45,15 +46,13 @@ export default function CommentsPage() {
       <div className={s.page}>
         <PageHead Icon={MessageSquareText} badge="KOMENTAR" title="Buku Tamu" desc="Tinggalkan komentar atau balas pengunjung lain. Tidak perlu login." />
 
-        <form className={`glass card ${s.form}`} onSubmit={submit}>
-          <h3><Send size={16} /> Komentar baru</h3>
+        <Card as="form" Icon={Send} title="Komentar baru" subtitle="Tanpa login" onSubmit={submit} bodyClassName={s.form} footer={<span>{form.message.length}/2000</span>}>
           <div className="field"><label htmlFor="cm-name">Nama</label><input id="cm-name" className="input" maxLength={64} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama kamu" /></div>
           <div className="field"><label htmlFor="cm-msg">Pesan</label><textarea id="cm-msg" className="input" rows={3} maxLength={2000} required value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Tulis komentar…" /></div>
-          <div className={s.row}><button className="btn primary" type="submit" disabled={busy}>{busy ? 'Mengirim…' : 'Kirim'}</button><span className={s.muted}>{form.message.length}/2000</span></div>
-        </form>
+          <div className={s.row}><button className="btn primary" type="submit" disabled={busy}>{busy ? 'Mengirim…' : 'Kirim'}</button></div>
+        </Card>
 
-        <section className="glass card">
-          <h3>Komentar <span className={s.muted}>({items.length})</span></h3>
+        <Card Icon={MessageSquareText} title="Komentar" badge={items.length} footer={<span>Balas komentar pengunjung lain</span>}>
           {loading ? <p className={s.empty}>Memuat…</p> : items.length === 0 ? <p className={s.empty}>Belum ada komentar. Jadilah yang pertama!</p> : (
             <ul className={s.list}>
               {items.map((c) => (
@@ -91,7 +90,7 @@ export default function CommentsPage() {
               ))}
             </ul>
           )}
-        </section>
+        </Card>
       </div>
     </>
   );

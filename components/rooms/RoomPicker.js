@@ -94,7 +94,7 @@ export default function RoomPicker({ onPick, refreshKey = 0 }) {
             <motion.div variants={item} className="rp-empty"><Users size={28} /><b>Grup tidak ditemukan</b><span>Coba kata kunci lain atau buat channel baru.</span></motion.div>
           )}
           {rows.map((r) => (
-            <motion.div key={r.roomName} variants={item} className={`rp-card ${view}`} whileHover={{ y: -3 }} whileTap={{ scale: 0.985 }} role="button" tabIndex={0}
+            <motion.div key={r.roomName} variants={item} className={`glass rp-card ${view}`} whileHover={{ y: -3 }} whileTap={{ scale: 0.985 }} role="button" tabIndex={0}
               onClick={() => { sound.playClick(); onPick(r); }} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onPick(r))} aria-label={`Buka grup ${r.roomName}`}>
               <GroupAvatar room={r} size={view === 'grid' ? 56 : 46} />
               <div className="rp-main">
@@ -111,7 +111,7 @@ export default function RoomPicker({ onPick, refreshKey = 0 }) {
       <Pagination page={page} pages={meta.pages} total={meta.total} limit={limit} loading={loading} onPage={setPage} onLimit={setL} label="grup" sizes={[8, 12, 24, 48]} />
 
       <style jsx global>{`
-        .rp { display: grid; gap: 14px; min-width: 0; }
+        .rp { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
         .rp-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
         .rp-search { flex: 1 1 200px; min-width: 0; display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 12px; border-radius: var(--r-input, 12px); border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); }
         .rp-search:focus-within { border-color: var(--a2); }
@@ -127,15 +127,15 @@ export default function RoomPicker({ onPick, refreshKey = 0 }) {
         .rp-refresh:hover { color: var(--a2); border-color: var(--a2); }
         .rp-spin { animation: rpspin .8s linear infinite; } @keyframes rpspin { to { transform: rotate(360deg); } }
         .rp-note { font-size: .78rem; color: var(--muted); padding: 8px 12px; border: 1px dashed var(--border); border-radius: var(--r-btn, 12px); }
-        .rp-list { display: grid; gap: 10px; }
-        .rp-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+        .rp-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+        .rp-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
         .rp-card { position: relative; display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: var(--radius, 14px); border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 70%, transparent); backdrop-filter: blur(10px); cursor: pointer; min-width: 0; overflow: hidden; transition: border-color .2s, box-shadow .2s; }
         .rp-card::before { content: ''; position: absolute; inset: 0; background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--text) 7%, transparent), transparent 65%); opacity: 0; transition: opacity .25s; pointer-events: none; border-radius: inherit; }
         .rp-card:hover, .rp-card:focus-visible { border-color: color-mix(in srgb, var(--text) 24%, var(--border)); box-shadow: 0 16px 30px -22px rgba(0, 0, 0, 0.45); outline: none; }
         .rp-card:hover::before { opacity: 1; }
         .rp-card.grid { flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px; }
         .rp-ava { display: grid; place-items: center; flex-shrink: 0; object-fit: cover; color: var(--on-accent); font-weight: 800; box-shadow: 0 8px 20px -8px var(--a1); }
-        .rp-main { flex: 1; min-width: 0; display: grid; gap: 6px; width: 100%; }
+        .rp-main { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; width: 100%; }
         .rp-title { display: flex; align-items: center; gap: 6px; color: var(--a2); min-width: 0; flex-wrap: wrap; }
         .rp-title b { color: var(--text); font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
         .rp-id { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--r-l); border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); font-family: var(--font-mono); font-size: .64rem; cursor: pointer; }
@@ -152,7 +152,7 @@ export default function RoomPicker({ onPick, refreshKey = 0 }) {
         .rp-empty b { color: var(--text); }
         @media (max-width: 560px) { .rp-meta em { display: none; } .rp-sort { flex: 1; } .rp-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .rp-card.grid { padding: 12px; } }
         @media (max-width: 560px) { .rp-card.grid .rp-meta em { display: inline; } }
-        @media (max-width: 380px) { .rp-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 380px) { .rp-grid { grid-template-columns: minmax(0, 1fr); } }
         html[data-anim='off'] .rp-spin { animation: none; }
       `}</style>
     </div>

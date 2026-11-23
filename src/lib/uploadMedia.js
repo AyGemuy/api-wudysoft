@@ -1,11 +1,13 @@
 import { mediaKind } from '@/src/lib/chatUser';
 
 /**
- * Unggah otomatis file/gambar ke host publik lewat /api/tools/upload dan kembalikan URL-nya.
- * Mencoba beberapa host berurutan sampai ada yang berhasil. Gambar diperkecil dulu di browser.
+ * Unggah file/gambar chat. Urutan:
+ *  1) PENYIMPANAN PERMANEN sendiri (/api/media → MongoDB): tidak kedaluwarsa, tidak bergantung host luar.
+ *  2) Hanya jika (1) gagal (mis. DB bermasalah), cadangan ke host publik lewat /api/tools/upload.
+ * Gambar diperkecil dulu di browser.
  */
 export const UPLOAD_HOSTS = ['Catbox', 'Tmpfiles', 'Uguu', 'Poners', 'Telegraph', 'Litterbox'];
-export const MAX_UPLOAD_MB = 4.5; // aman untuk batas payload hosting serverless
+export const MAX_UPLOAD_MB = 4; // sama dengan batas /api/media (aman untuk payload hosting serverless)
 
 const loadImg = (file) => new Promise((ok, no) => {
   const u = URL.createObjectURL(file);
@@ -48,6 +50,32 @@ export function pickUrl(v) {
   return '';
 }
 
+/** Simpan permanen di server sendiri. Mengembalikan URL relatif /api/media/<id>. */
+function postOwn(file, room, onProgress, signal) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `/api/media?name=${encodeURIComponent(file.name)}${room ? `&room=${encodeURIComponent(room)}` : ''}`);
+    xhr.responseType = 'text';
+    xhr.timeout = 120000;
+    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress?.(e.loaded / e.total); };
+    xhr.onload = () => {
+      let j = {}; try { j = JSON.parse(xhr.responseText); } catch {}
+      if (xhr.status < 200 || xhr.status >= 300 || !j?.data?.url) {
+        // 401/413 dsb. dilaporkan apa adanya; selain itu jatuh ke host cadangan
+        const err = new Error(j.message || `HTTP ${xhr.status}`);
+        err.fatal = xhr.status === 401 || xhr.status === 413;
+        return reject(err);
+      }
+      resolve(j.data);
+    };
+    xhr.onerror = () => reject(new Error('Jaringan terputus'));
+    xhr.ontimeout = () => reject(new Error('Waktu unggah habis'));
+    if (signal) signal.addEventListener('abort', () => { xhr.abort(); reject(Object.assign(new Error('Dibatalkan'), { fatal: true })); }, { once: true });
+    xhr.send(file);
+  });
+}
+
 function post(host, file, onProgress, signal) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -73,7 +101,8 @@ function post(host, file, onProgress, signal) {
 
 /**
  * @returns {Promise<{url, type, name, size, mime, host}>}
- * @param opts.onProgress (0..1)  opts.signal AbortSignal  opts.hosts daftar host berurutan
+ * @param opts.onProgress (0..1)  opts.signal AbortSignal  opts.hosts daftar host cadangan berurutan
+ * @param opts.room nama room (disimpan bersama file)  opts.permanent=false untuk melewati penyimpanan sendiri
  */
 export async function uploadMedia(input, opts = {}) {
   let file = input;
@@ -81,6 +110,15 @@ export async function uploadMedia(input, opts = {}) {
   file = await shrinkImage(file);
   if (file.size > MAX_UPLOAD_MB * 1024 * 1024) throw new Error(`Ukuran file maksimal ${MAX_UPLOAD_MB} MB`);
   let lastErr;
+  if (opts.permanent !== false) {
+    try {
+      const d = await postOwn(file, opts.room, opts.onProgress, opts.signal);
+      return { url: d.url, host: 'Wudysoft', name: d.name || file.name, size: d.size || file.size, mime: d.mime || file.type || '', type: d.type || mediaKind(file.type, file.name) };
+    } catch (e) {
+      if (e.fatal) throw e;
+      lastErr = e;
+    }
+  }
   for (const host of opts.hosts || UPLOAD_HOSTS) {
     try {
       const url = await post(host, file, opts.onProgress, opts.signal);

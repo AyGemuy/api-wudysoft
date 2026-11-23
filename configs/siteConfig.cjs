@@ -10,8 +10,8 @@ module.exports = {
   APP_TAGLINE: "API, Tools & Developer Platform",
   DOMAIN_URL,
   SITE_URL: `https://${DOMAIN_URL}`,
-  // "netlify" = serverless (tanpa output standalone) · "vps" = server Node biasa (output standalone aktif)
-  DEPLOY_TARGET: "netlify",
+  // Tidak ada pengaturan target deploy: platform terdeteksi otomatis (lihat configs/platform.cjs)
+  // sehingga proyek yang sama berjalan di Netlify, Vercel, Cloudflare, VPS, Docker, Render, Railway, Fly.io, dll.
   // Obfuscate JS klien saat build production
   OBFUSCATE_CLIENT: false,
   PORT: 3000,

@@ -1,5 +1,6 @@
 // Tanpa .env: semua pengaturan build ada di configs/siteConfig.cjs
 const site = require("./configs/siteConfig.cjs");
+const { platform, useStandalone } = require("./configs/platform.cjs");
 
 /**
  * File yang TIDAK dibutuhkan saat runtime server, tetapi sering ikut terbawa ke fungsi
@@ -67,9 +68,9 @@ const nextConfig = {
   // 3. Memperkecil ukuran deployment (hanya menyertakan node_modules yang terpakai).
   //    Jalankan production dengan `node .next/standalone/server.js` (setelah menyalin
   //    `.next/static` dan `public`), atau tetap pakai `npm start` (server custom + Socket.IO).
-  //    Di Netlify mode ini dimatikan karena runtime Netlify membangun fungsinya sendiri
-  //    dan folder standalone akan ikut terunggah sebagai file statis.
-  ...(site.DEPLOY_TARGET === "netlify" ? {} : { output: "standalone" }),
+  //    Platform terdeteksi otomatis (configs/platform.cjs): di Netlify/Vercel/Cloudflare/Amplify mode ini
+  //    dimatikan (runtime mereka membangun fungsinya sendiri); di VPS/Docker/Render/Railway/dll. aktif.
+  ...(useStandalone ? { output: "standalone" } : {}),
 
   reactStrictMode: true,
   poweredByHeader: false,

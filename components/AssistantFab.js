@@ -325,7 +325,7 @@ export default function AssistantFab() {
         .as-modes button { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: var(--r-l, 999px); border: 1px solid var(--border); background: transparent; color: var(--muted); font: inherit; font-size: .72rem; font-weight: 700; cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
         .as-modes button:hover { color: var(--text); border-color: var(--a2); }
         .as-modes button.on { color: var(--on-accent); border-color: transparent; background: linear-gradient(135deg, var(--a1), var(--a3)); }
-        .as-imgs { display: grid; gap: 6px; }
+        .as-imgs { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
         .as-imgs.n2, .as-imgs.n3 { grid-template-columns: repeat(2, 1fr); }
         .as-img { position: relative; border-radius: calc(var(--radius, 12px) - 4px); overflow: hidden; border: 1px solid var(--border); background: color-mix(in srgb, var(--text) 6%, transparent); }
         .as-img img { display: block; width: 100%; height: auto; max-height: 320px; object-fit: contain; }
@@ -351,11 +351,11 @@ export default function AssistantFab() {
         .as-msg { display: flex; gap: 8px; align-items: flex-end; max-width: 100%; }
         .as-msg.user { justify-content: flex-end; }
         .as-av { width: 24px; height: 24px; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--r-chip, 8px); color: var(--on-accent); background: linear-gradient(135deg, var(--a1), var(--a3)); }
-        .as-bub { min-width: 0; max-width: calc(100% - 32px); padding: 10px 12px; border-radius: var(--radius, 12px); border: 1px solid var(--border); background: var(--surface-2); font-size: .84rem; line-height: 1.5; display: grid; gap: 8px; }
+        .as-bub { min-width: 0; max-width: calc(100% - 32px); padding: 10px 12px; border-radius: var(--radius, 12px); border: 1px solid var(--border); background: var(--surface-2); font-size: .84rem; line-height: 1.5; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
         .as-msg.user .as-bub { background: linear-gradient(135deg, var(--a1), var(--a3)); color: var(--on-accent); border-color: transparent; max-width: 86%; }
         .as-bub p { margin: 0; white-space: pre-wrap; word-break: break-word; }
-        .as-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-        .as-cards button { position: relative; width: 100%; text-align: left; display: grid; gap: 2px; padding: 8px 28px 8px 10px; border-radius: var(--r-btn, 10px); border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 80%, transparent); color: var(--text); font: inherit; cursor: pointer; transition: border-color .2s, transform .2s; }
+        .as-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+        .as-cards button { position: relative; width: 100%; text-align: left; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 8px 28px 8px 10px; border-radius: var(--r-btn, 10px); border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 80%, transparent); color: var(--text); font: inherit; cursor: pointer; transition: border-color .2s, transform .2s; }
         .as-cards button:hover { border-color: var(--a2); transform: translateX(2px); }
         .as-cards b { font-family: var(--font-mono); font-size: .78rem; color: var(--a2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .as-cards small { color: var(--muted); font-size: .7rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
@@ -368,15 +368,15 @@ export default function AssistantFab() {
         .as-typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--a2); animation: as-dot 1s ease-in-out infinite; }
         .as-typing i:nth-child(2) { animation-delay: .15s; } .as-typing i:nth-child(3) { animation-delay: .3s; }
         @keyframes as-dot { 0%, 60%, 100% { transform: translateY(0); opacity: .4; } 30% { transform: translateY(-4px); opacity: 1; } }
-        .as-foot { padding: 8px 14px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--border); display: grid; gap: 8px; background: var(--surface-2); }
+        .as-foot { padding: 8px 14px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--border); display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; background: var(--surface-2); }
         .as-foot form { display: flex; gap: 8px; }
         .as-foot input { flex: 1; min-width: 0; height: 42px; padding: 0 12px; border-radius: var(--r-input, 10px); border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: .9rem; outline: none; }
         .as-foot input:focus { border-color: var(--a2); }
         .as-foot form button { width: 42px; height: 42px; display: grid; place-items: center; border-radius: var(--r-btn, 10px); border: 0; cursor: pointer; color: var(--on-accent); background: linear-gradient(135deg, var(--a1), var(--a3)); }
         .as-foot form button:disabled { opacity: .45; cursor: not-allowed; }
         .as-cfg { overflow: hidden; border-bottom: 1px solid var(--border); background: var(--surface-2); }
-        .as-cfg-in { padding: 12px 14px; display: grid; gap: 10px; max-height: 42vh; overflow-y: auto; overscroll-behavior: contain; }
-        .as-cfg label, .as-lbl { display: grid; gap: 4px; font-size: .68rem; font-family: var(--font-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+        .as-cfg-in { padding: 12px 14px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; max-height: 42vh; overflow-y: auto; overscroll-behavior: contain; }
+        .as-cfg label, .as-lbl { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; font-size: .68rem; font-family: var(--font-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
         .as-cfg input, .as-cfg textarea { width: 100%; padding: 8px 10px; border-radius: var(--r-input, 10px); border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: .8rem; text-transform: none; letter-spacing: 0; outline: none; resize: vertical; }
         .as-cfg input:focus, .as-cfg textarea:focus { border-color: var(--a2); }
         .as-seg { display: inline-flex; gap: 4px; padding: 3px; border-radius: var(--r-btn, 10px); border: 1px solid var(--border); background: var(--surface); }

@@ -127,7 +127,7 @@ export default function ContactCard({ items = CONTACT_ITEMS, heading: H = 'h3' }
         .ct-item { display: flex; align-items: center; gap: 12px; padding: 12px 6px; border-top: 1px solid var(--border); border-radius: 0; transition: background-color .2s ease; }
         .ct-item:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
         .ct-ico { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: var(--r-s); color: var(--on-accent); background: linear-gradient(135deg, var(--a1), var(--a3)); }
-        .ct-main { display: grid; gap: 2px; flex: 1; min-width: 0; }
+        .ct-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; flex: 1; min-width: 0; }
         .ct-main b { font-size: .88rem; }
         .ct-val { font-family: var(--font-mono); font-size: .76rem; overflow-wrap: anywhere; }
         .ct-hint { font-size: .72rem; color: var(--muted); }
@@ -143,7 +143,7 @@ export default function ContactCard({ items = CONTACT_ITEMS, heading: H = 'h3' }
         .ct-open { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--ac); text-decoration: none; }
         .ct-open svg { transition: transform .25s ease; }
         .ct-card:hover .ct-open svg { transform: translateX(5px); }
-        @media (max-width: 520px) { .ct-list { grid-template-columns: 1fr; } .ct-item { flex-wrap: wrap; } .ct-act { width: 100%; justify-content: flex-end; } }
+        @media (max-width: 520px) { .ct-list { grid-template-columns: minmax(0, 1fr); } .ct-item { flex-wrap: wrap; } .ct-act { width: 100%; justify-content: flex-end; } }
       `}</style>
     </motion.article>
   );

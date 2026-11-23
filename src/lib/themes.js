@@ -256,6 +256,51 @@ export const CARD_STYLES = [
   { id: 'panel', label: 'Panel' },
 ];
 
+
+/** Bentuk kartu (html[data-cshape], lihat styles/shapes.css). */
+export const CARD_SHAPES = [
+  { id: 'none', label: 'Ikuti model', desc: 'Pakai model kartu biasa' },
+  { id: 'tab', label: 'Kaca terpisah', desc: 'Header, isi & footer lepas, sudut kiri-atas tajam' },
+  { id: 'water', label: 'Air', desc: 'Tetesan membulat, kilau & riak' },
+  { id: 'wood', label: 'Kayu', desc: 'Serat papan, paku & bingkai tebal' },
+  { id: 'electric', label: 'Listrik', desc: 'Tepi petir berputar & kilat' },
+  { id: 'ice', label: 'Es', desc: 'Kaca beku dengan tetesan es' },
+  { id: 'cut', label: 'Potong', desc: 'Sudut miring ala sci-fi' },
+  { id: 'ticket', label: 'Tiket', desc: 'Takik samping & garis sobekan' },
+  { id: 'pixel', label: 'Pixel', desc: 'Sudut bertangga 8-bit' },
+  { id: 'stitch', label: 'Jahitan', desc: 'Kain dengan benang putus-putus' },
+  { id: 'bubble', label: 'Balon', desc: 'Balon percakapan' },
+  { id: 'torn', label: 'Kertas sobek', desc: 'Kertas bergaris, tepi sobek' },
+];
+
+/** Bentuk navbar atas (data-tshape) & bawah (data-bshape). */
+export const NAV_SHAPES = [
+  { id: 'none', label: 'Ikuti sudut' },
+  { id: 'square', label: 'Siku' },
+  { id: 'leaf', label: 'Daun' },
+  { id: 'tab', label: 'Terpisah' },
+  { id: 'water', label: 'Air' },
+  { id: 'wood', label: 'Kayu' },
+  { id: 'electric', label: 'Listrik' },
+  { id: 'ice', label: 'Es' },
+  { id: 'stitch', label: 'Jahitan' },
+];
+
+/** Gaya header kartu (data-chead). */
+export const CARD_HEADS = [
+  { id: 'bar', label: 'Bilah' },
+  { id: 'gradient', label: 'Gradien' },
+  { id: 'chrome', label: 'Jendela' },
+  { id: 'plain', label: 'Polos' },
+];
+
+/** Tata letak navbar (data-tlayout / data-blayout). */
+export const NAV_LAYOUTS = [
+  { id: 'float', label: 'Melayang' },
+  { id: 'bar', label: 'Menempel' },
+  { id: 'island', label: 'Pulau' },
+];
+
 /** Huruf judul (h1–h4). */
 export const HEADING_CASES = [
   { id: 'normal', label: 'Normal' },
@@ -313,7 +358,7 @@ export const BORDER_STYLES = [
   { id: 'none', label: 'Tanpa' },
 ];
 
-const TPL_BASE = { custom: {}, card: 'glass', cardBorderStyle: 'solid', cardBorderW: 0, cardBorderColor: 'theme', cardGlint: 'hover', cardDepth: 0.5, radius: 10, rBtn: 6, rInput: 6, rChip: 6, rDockTop: 14, rDockBottom: 14, rDockBtn: 8, rModal: 12, blur: 28, glass: 0.75, border: 0.12, blobs: true, blobIntensity: 0.22, grid: false, particle: 'off', animHover: 'tilt', bgType: 'none', density: 'normal', font: 'segoe', fontHeading: 'same', headingCase: 'normal', fontMono: 'jetbrains', navStyle: 'classic', navLabels: 'auto', navCenter: true };
+const TPL_BASE = { custom: {}, card: 'glass', cardBorderStyle: 'solid', cardBorderW: 0, cardBorderColor: 'theme', cardGlint: 'hover', cardDepth: 0.5, radius: 10, rBtn: 6, rInput: 6, rChip: 6, rDockTop: 14, rDockBottom: 14, rDockBtn: 8, rModal: 12, blur: 28, glass: 0.75, border: 0.12, blobs: true, blobIntensity: 0.22, grid: false, particle: 'off', animHover: 'tilt', bgType: 'none', density: 'normal', font: 'segoe', fontHeading: 'same', headingCase: 'normal', fontMono: 'jetbrains', navStyle: 'classic', navLabels: 'auto', navCenter: true, cardShape: 'none', cardHead: 'bar', cardFoot: true, topShape: 'none', bottomShape: 'none', topLayout: 'float', bottomLayout: 'float' };
 const T = (id, name, desc, theme, v) => ({ id, name, desc, theme, v: { ...TPL_BASE, theme, ...v } });
 
 /** Template: satu klik menerapkan tema, model kartu, bentuk, efek, dan font sekaligus. */
@@ -355,6 +400,13 @@ export const TEMPLATES = [
   T('lime', 'Electric Lime', 'Hitam & hijau lime, garis tegas ala Gen-Z', 'electric', { card: 'brutal', cardBorderColor: 'accent', cardDepth: 0.5, radius: 6, rBtn: 4, rInput: 4, rChip: 4, rDockTop: 8, rDockBottom: 8, rDockBtn: 4, rModal: 8, blur: 0, glass: 1, border: 0.4, blobs: false, grid: true, font: 'space', fontMono: 'spacemono', headingCase: 'upper', animHover: 'press', navStyle: 'beam' }),
   T('ube', 'Ube Pastel', 'Ungu ube dan pink, tepi gradien manis', 'ube', { card: 'gradient', cardDepth: 0.45, radius: 26, rBtn: 18, rInput: 16, rChip: 60, rDockTop: 34, rDockBottom: 34, rDockBtn: 20, rModal: 28, blur: 24, bgType: 'gradient', bgGradient: 'lavender', font: 'manrope', animHover: 'pop', navStyle: 'bubble' }),
   T('midnight', 'Midnight Aurora', 'Bawaan baru — malam pekat, cahaya aurora, kaca cair', 'midnight', { card: 'liquid', cardDepth: 0.6, radius: 28, rBtn: 20, rInput: 18, rChip: 60, rDockTop: 36, rDockBottom: 36, rDockBtn: 22, rModal: 30, blur: 38, glass: 0.4, border: 0.2, blobIntensity: 0.35, particle: 'stars', bgType: 'gradient', bgGradient: 'aurora', font: 'jakarta', animHover: 'float', navStyle: 'beam' }),
+  // ---- seri BENTUK: kartu header/isi/footer dengan bentuk khusus ----
+  T('glasstab', 'Kaca Terpisah', 'Header lepas di kiri-atas, isi & footer ikut terpisah', 'midnight', { card: 'glass', cardShape: 'tab', cardHead: 'bar', cardDepth: 0.55, radius: 24, rBtn: 16, rInput: 16, rChip: 60, rDockTop: 30, rDockBottom: 30, rDockBtn: 18, rModal: 28, blur: 30, glass: 0.45, border: 0.2, blobIntensity: 0.38, particle: 'stars', bgType: 'gradient', bgGradient: 'aurora', font: 'jakarta', navStyle: 'beam', topShape: 'tab', bottomShape: 'tab' }),
+  T('waterdrop', 'Tetes Air', 'Kartu & navbar bergerak seperti tetesan air', 'ocean', { card: 'liquid', cardShape: 'water', cardHead: 'plain', cardDepth: 0.6, radius: 36, rBtn: 22, rInput: 20, rChip: 60, rDockTop: 40, rDockBottom: 40, rDockBtn: 24, rModal: 34, blur: 30, glass: 0.45, border: 0.2, blobIntensity: 0.4, bgType: 'gradient', bgGradient: 'cryo', font: 'outfit', navStyle: 'bubble', topShape: 'water', bottomShape: 'water' }),
+  T('woodcabin', 'Kabin Kayu', 'Papan kayu berpaku, hangat & bertekstur', 'sunset', { card: 'solid', cardShape: 'wood', cardHead: 'bar', cardDepth: 0.6, radius: 10, rBtn: 8, rInput: 8, rChip: 8, rDockTop: 14, rDockBottom: 14, rDockBtn: 10, rModal: 14, blur: 0, glass: 1, border: 0.2, blobs: false, bgType: 'gradient', bgGradient: 'asteroid', font: 'fraunces', navStyle: 'label', topShape: 'wood', bottomShape: 'wood' }),
+  T('storm', 'Badai Listrik', 'Tepi petir berputar & kilat acak', 'cyberpunk', { card: 'neon', cardShape: 'electric', cardHead: 'gradient', cardDepth: 0.6, radius: 14, rBtn: 10, rInput: 10, rChip: 10, rDockTop: 16, rDockBottom: 16, rDockBtn: 10, rModal: 18, blur: 0, glass: 0.9, border: 0.2, particle: 'rain', grid: true, bgType: 'gradient', bgGradient: 'warp', font: 'chakra', navStyle: 'beam', topShape: 'electric', bottomShape: 'electric' }),
+  T('frostbite', 'Gigitan Es', 'Kaca beku dengan tetesan es di tepi', 'snow', { card: 'frosted', cardShape: 'ice', cardHead: 'plain', cardDepth: 0.5, radius: 22, rBtn: 14, rInput: 14, rChip: 60, rDockTop: 28, rDockBottom: 28, rDockBtn: 16, rModal: 26, blur: 30, glass: 0.6, border: 0.2, particle: 'snow', bgType: 'gradient', bgGradient: 'lavender', font: 'figtree', navStyle: 'bubble', topShape: 'ice', bottomShape: 'ice' }),
+  T('retroarcade', 'Arcade 8-bit', 'Sudut bertangga ala game pixel', 'matrix', { card: 'solid', cardShape: 'pixel', cardHead: 'chrome', cardDepth: 0.3, radius: 4, rBtn: 2, rInput: 2, rChip: 2, rDockTop: 6, rDockBottom: 6, rDockBtn: 4, rModal: 6, blur: 0, glass: 1, border: 0.3, blobs: false, grid: true, font: 'space', fontMono: 'spacemono', headingCase: 'upper', navStyle: 'label', topShape: 'square', bottomShape: 'square', bottomLayout: 'bar' }),
 ];
 
 export const COLOR_KEYS = [
@@ -397,6 +449,14 @@ export const DEFAULT_CONFIG = {
   cardDepth: 0.6, // 0..1 kedalaman bayangan & kemiringan 3D
   density: 'normal', // compact | normal | spacious
   cardSize: 'm', // s | m | l
+  // bentuk & struktur kartu (header / isi / footer) + bentuk navbar — lihat styles/shapes.css
+  cardShape: 'none', // none | tab | water | wood | electric | ice | cut | ticket | pixel | stitch | bubble | torn
+  cardHead: 'bar', // bar | gradient | chrome | plain
+  cardFoot: true, // footer kartu tampil / sembunyi
+  topShape: 'none', // bentuk header atas: none | square | leaf | tab | water | wood | electric | ice | stitch
+  bottomShape: 'none', // bentuk navbar bawah (pilihan sama)
+  topLayout: 'float', // float | bar | island
+  bottomLayout: 'float', // float | bar | island
   // navbar bawah (tab)
   navStyle: 'beam', // classic | notch | beam | bubble | label
   navLabels: 'auto', // auto (ikut model) | on | off
@@ -416,6 +476,8 @@ export const DEFAULT_CONFIG = {
   animPreview: true,
   animBlobs: true,
   animBtn: true,
+  smoothScroll: true, // gulir halus (Lenis)
+  scrollFx: 'full', // animasi saat gulir (GSAP ScrollTrigger): off | soft | full
   animSplash: true,
   splashStyle: 'ring', // ring | orbit | bars | pulse | morph | dots | typing
   splashBg: 'theme', // theme | gradient | mesh | glass
@@ -477,11 +539,19 @@ export function sanitizeConfig(raw) {
   c.navStyle = pick(c.navStyle, NAV_STYLES.map((n) => n.id), 'classic');
   c.navLabels = pick(c.navLabels, NAV_LABELS.map((n) => n.id), 'auto');
   c.navCenter = bool(c.navCenter, true);
+  c.scrollFx = pick(c.scrollFx, ['off', 'soft', 'full'], 'full');
+  c.cardShape = pick(c.cardShape, CARD_SHAPES.map((x) => x.id), 'none');
+  c.cardHead = pick(c.cardHead, CARD_HEADS.map((x) => x.id), 'bar');
+  c.cardFoot = bool(c.cardFoot, true);
+  c.topShape = pick(c.topShape, NAV_SHAPES.map((x) => x.id), 'none');
+  c.bottomShape = pick(c.bottomShape, NAV_SHAPES.map((x) => x.id), 'none');
+  c.topLayout = pick(c.topLayout, NAV_LAYOUTS.map((x) => x.id), 'float');
+  c.bottomLayout = pick(c.bottomLayout, NAV_LAYOUTS.map((x) => x.id), 'float');
   c.anim = c.anim === 'off' ? 'off' : 'on';
   c.animPage = pick(c.animPage, ['auto', 'slide', 'fade', 'zoom', 'blur', 'slideX', 'rise', 'flip', 'drop', 'skew', 'none'], 'auto');
   // migrasi: `tilt` (boolean) → animHover
   c.animHover = pick(r.animHover !== undefined ? c.animHover : r.tilt === false ? 'lift' : 'tilt', HOVERS.map((h) => h.id), 'tilt');
-  ['animEntrance', 'animPreview', 'animBlobs', 'animBtn', 'animSplash', 'animBar'].forEach((k) => { c[k] = bool(c[k], DEFAULT_CONFIG[k]); });
+  ['animEntrance', 'animPreview', 'animBlobs', 'animBtn', 'smoothScroll', 'animSplash', 'animBar'].forEach((k) => { c[k] = bool(c[k], DEFAULT_CONFIG[k]); });
 
   ['radius', 'rBtn', 'rInput', 'rChip', 'rDockTop', 'rDockBottom', 'rDockBtn', 'rModal'].forEach((k) => { c[k] = Math.round(num(c[k], 0, 60, DEFAULT_CONFIG[k])); });
   c.blur = num(c.blur, 0, 50, 26);
@@ -608,6 +678,13 @@ export function computeTheme(input) {
     'data-hcase': cfg.headingCase,
     'data-nav': cfg.navStyle,
     'data-nav-labels': navLabelsOn ? 'on' : 'off',
+    'data-cshape': cfg.cardShape,
+    'data-chead': cfg.cardHead,
+    'data-cfoot': cfg.cardFoot ? 'on' : 'off',
+    'data-tshape': cfg.topShape,
+    'data-bshape': cfg.bottomShape,
+    'data-tlayout': cfg.topLayout,
+    'data-blayout': cfg.bottomLayout,
     'data-bstyle': cfg.cardBorderStyle,
     'data-bw': cfg.cardBorderW ? 'on' : 'off',
     'data-bcolor': cfg.cardBorderColor,
@@ -620,6 +697,8 @@ export function computeTheme(input) {
     'data-anim-preview': cfg.animPreview ? 'on' : 'off',
     'data-anim-blobs': cfg.animBlobs ? 'on' : 'off',
     'data-anim-btn': cfg.animBtn ? 'on' : 'off',
+    'data-smooth': cfg.smoothScroll ? 'on' : 'off',
+    'data-scrollfx': cfg.scrollFx,
     'data-splash': cfg.animSplash ? 'on' : 'off',
     'data-splash-style': cfg.splashStyle,
     'data-splash-bg': cfg.splashBg,

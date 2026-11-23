@@ -220,7 +220,7 @@ export default function SiteFooter() {
         }
         @media (max-width: 760px) {
           .footer-top {
-            grid-template-columns: 1fr;
+            grid-template-columns: minmax(0, 1fr);
           }
           .footer-cols {
             grid-template-columns: repeat(2, minmax(0, 1fr));

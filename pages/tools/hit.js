@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { MousePointerClick, Plus, Eye, Copy, Check } from 'lucide-react';
+import { MousePointerClick, Plus, Eye, Copy, Check, Globe, ListChecks, Code2 } from 'lucide-react';
+import Card from '@/components/Card';
 import Seo from '@/components/Seo';
 import { PageHead, useToast, kit as s } from '@/components/PageKit';
 import { http, qs } from '@/src/lib/http';
@@ -33,7 +34,8 @@ export default function HitCounterPage() {
     } catch (e) { flash(e.message, 'err'); } finally { setBusy(''); }
   };
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const [origin, setOrigin] = useState('');
+  useEffect(() => setOrigin(window.location.origin), []);
   const site = name.trim() || 'nama-situs';
   const snippet = `fetch('${origin}/api/tools/hit/hit?sites=${encodeURIComponent(site)}')\n  .then((r) => r.json())\n  .then((d) => console.log(d.data.hit));`;
 
@@ -44,17 +46,16 @@ export default function HitCounterPage() {
       <div className={s.page}>
         <PageHead Icon={MousePointerClick} badge="HIT COUNTER" title="Penghitung Kunjungan" desc="Daftarkan nama situs, lalu panggil endpoint hit setiap ada kunjungan. Tanpa API key." />
 
-        <section className={`glass card ${s.form}`}>
+        <Card Icon={Globe} title="Daftarkan situs" subtitle="Nama situs jadi kunci penghitung" footer={<><span>Tanpa API key</span><span>maks 120 karakter</span></>}>
           <div className="field"><label htmlFor="ht-name">Nama situs</label><input id="ht-name" className="input" maxLength={120} value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. blog-saya" /></div>
           <div className={s.row}>
             <button type="button" className="btn primary" disabled={!!busy} onClick={() => run('create', (d) => `“${d.site_name}” terdaftar.`)}><Plus size={14} /> {busy === 'create' ? 'Mendaftarkan…' : 'Daftarkan'}</button>
             <button type="button" className="btn" disabled={!!busy} onClick={() => run('hit', (d) => `Hit ke-${d.hit} untuk “${d.site_name}”.`)}><MousePointerClick size={14} /> {busy === 'hit' ? 'Menambah…' : 'Tambah hit'}</button>
             <button type="button" className="btn" disabled={!!busy} onClick={() => run('view', (d) => `“${d.site_name}”: ${d.hit} hit.`)}><Eye size={14} /> {busy === 'view' ? 'Memuat…' : 'Lihat jumlah'}</button>
           </div>
-        </section>
+        </Card>
 
-        <section className="glass card">
-          <h3>Situs di browser ini <span className={s.muted}>({sites.length})</span></h3>
+        <Card Icon={ListChecks} title="Situs di browser ini" badge={sites.length} footer={<span>Disimpan di browser ini saja</span>}>
           {sites.length === 0 ? <p className={s.empty}>Belum ada. Daftarkan situs untuk mulai.</p> : (
             <ul className={s.list}>
               {sites.map((x) => (
@@ -65,15 +66,11 @@ export default function HitCounterPage() {
               ))}
             </ul>
           )}
-        </section>
+        </Card>
 
-        <section className="glass card">
-          <h3>Cara pakai</h3>
+        <Card Icon={Code2} title="Cara pakai" subtitle="Panggil dari situs mana pun" actions={<button type="button" className="btn" onClick={async () => { await copyText(snippet); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? <Check size={14} /> : <Copy size={14} />} Salin</button>} footer={<span>GET · JSON · CORS terbuka</span>}>
           <pre className={s.code}>{snippet}</pre>
-          <div className={s.row} style={{ marginTop: 8 }}>
-            <button type="button" className="btn" onClick={async () => { await copyText(snippet); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? <Check size={14} /> : <Copy size={14} />} Salin</button>
-          </div>
-        </section>
+        </Card>
       </div>
     </>
   );

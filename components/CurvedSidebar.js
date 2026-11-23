@@ -159,7 +159,7 @@ export default function CurvedSidebar({ open, onClose, user, pathname, onSearch,
         .sb-item.active { background: linear-gradient(90deg, color-mix(in srgb, var(--a1) 32%, transparent), color-mix(in srgb, var(--a1) 10%, transparent)); box-shadow: inset 3px 0 0 var(--a2); }
         .sb-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .sb-ext { opacity: .55; }
-        .sb-top { position: relative; display: grid; gap: 8px; padding-right: 14px; }
+        .sb-top { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding-right: 14px; }
         .sb-quick { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; }
         .sb-quick button { display: flex; align-items: center; justify-content: center; gap: 6px; height: 38px; border-radius: var(--r-btn, 10px); background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font: inherit; font-size: .74rem; font-weight: 600; cursor: pointer; transition: border-color .2s, transform .2s; }
         .sb-quick button:hover { border-color: var(--a2); transform: translateY(-2px); }

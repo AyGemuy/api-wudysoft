@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import mongoose from 'mongoose';
-import { Copy, Download, Eye, ThumbsUp, ThumbsDown, ArrowLeft, Check, ExternalLink } from 'lucide-react';
+import { Copy, Download, Eye, ThumbsUp, ThumbsDown, ArrowLeft, Check, ExternalLink, FileCode } from 'lucide-react';
 import Seo from '@/components/Seo';
+import { CardDeco, CardHead, CardBody, CardFoot } from '@/components/Card';
 import connectMongo from '@/lib/mongoose';
 import CodeShare from '@/models/CodeShare';
 import { fmtDateTime, copyText } from '@/src/lib/timeAgo';
@@ -83,10 +84,15 @@ export default function CodeView({ item }) {
           <button className="btn" onClick={() => copy('link', window.location.href)}>{copied === 'link' ? <Check size={14} /> : <ExternalLink size={14} />} Salin tautan</button>
           <a className="btn" download={item.fileName} href={`data:text/plain;charset=utf-8,${encodeURIComponent(item.code)}`}><Download size={14} /> Unduh</a>
         </div>
-        <pre className="glass card cv-code"><code>{item.code}</code></pre>
+        <div className="glass card kc">
+          <CardDeco />
+          <CardHead Icon={FileCode} title={item.fileName} subtitle={`${item.tag} · ${lines} baris`} />
+          <CardBody><pre className="cv-code"><code>{item.code}</code></pre></CardBody>
+          <CardFoot><span>oleh {item.author}</span><span>{fmtDateTime(item.createdAt)}</span></CardFoot>
+        </div>
       </div>
       <style jsx>{`
-        .cv-page { width: min(980px, 100%); margin: 0 auto; display: grid; gap: 14px; padding-bottom: 24px; }
+        .cv-page { width: min(980px, 100%); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding-bottom: 24px; }
         .cv-page :global(.cv-back) { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--muted); text-decoration: none; justify-self: start; }
         .cv-page h1 { overflow-wrap: anywhere; }
         .cv-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 0.76rem; color: var(--muted); margin-top: 6px; }

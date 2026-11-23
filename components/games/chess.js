@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import { Chess } from 'chess.js';
 import { Crown, Plus, Copy, Check, FlipVertical2 } from 'lucide-react';
+import Card from '@/components/Card';
 import { PageHead, useToast, kit as s } from '@/components/PageKit';
 import { http, qs } from '@/src/lib/http';
 import { copyText } from '@/src/lib/timeAgo';
@@ -77,7 +78,7 @@ export default function ChessPage() {
       {toast}
       <div className={s.page}>
         <PageHead Icon={Crown} badge="GAME" title="Catur" desc="Klik bidak lalu petak tujuan (petak sah ditandai titik). Bagikan tautan agar lawan bermain dari perangkat lain. Promosi pion otomatis menjadi Ratu." />
-        <section className={`glass card ${s.game}`}>
+        <Card Icon={Crown} title="Catur" subtitle="Papan permainan" bodyClassName={s.game} footer={<span>Bagikan tautan agar bisa dimainkan bersama</span>}>
           {!id || !game ? (
             <button type="button" className="btn primary" onClick={create} disabled={busy}><Plus size={14} /> {busy ? 'Membuat…' : 'Game baru'}</button>
           ) : (
@@ -107,7 +108,7 @@ export default function ChessPage() {
               <span className={s.muted}>ID game: <span className={s.mono}>{id}</span></span>
             </>
           )}
-        </section>
+        </Card>
       </div>
     </>
   );

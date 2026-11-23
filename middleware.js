@@ -78,7 +78,7 @@ export async function middleware(req) {
   if (
     req.method === "GET" &&
     pathname.startsWith("/api/") &&
-    !/^\/api\/(auth|avatar|og|preview|live|socket|stats)/.test(pathname) &&
+    !/^\/api\/(auth|avatar|og|preview|live|socket|stats|media)/.test(pathname) &&
     BOT_UA.test(req.headers.get("user-agent") || "")
   ) {
     const url = req.nextUrl.clone();

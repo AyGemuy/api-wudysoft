@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Code2, Plus, Trash2, Copy, ThumbsUp, ThumbsDown, Eye, Search, RefreshCw, Check, X, ExternalLink } from 'lucide-react';
 import Seo from '@/components/Seo';
+import { CardDeco, CardHead, CardBody, CardFoot } from '@/components/Card';
 import { sound } from '@/src/lib/interactiveEffects';
 import { timeAgo, copyText } from '@/src/lib/timeAgo';
 import { Reveal, Stagger, Item, TextReveal, Magnetic } from '@/components/motion';
@@ -55,7 +56,6 @@ export default function CodeSharePage() {
   const [form, setForm] = useState(EMPTY);
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [toast, setToast] = useState(null);
   const [open, setOpen] = useState(null);
   const [votes, setVotes] = useState({});
   const [mine, setMine] = useState({});
@@ -63,7 +63,7 @@ export default function CodeSharePage() {
 
   useEffect(() => { setVotes(store.get('wd_cs_votes')); setMine(store.get('wd_cs_mine')); }, []);
 
-  const flash = (message, type = 'ok') => { setToast({ message, type }); setTimeout(() => setToast(null), 3500); };
+  const flash = (message, type = 'ok') => toast(message, type);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -188,17 +188,13 @@ export default function CodeSharePage() {
           </Reveal>
         </header>
 
-        <AnimatePresence>
-          {toast && (
-            <motion.div className={`cs-toast ${toast.type}`} initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              {toast.type === 'err' ? <X size={16} /> : <Check size={16} />} {toast.message}
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         <AnimatePresence initial={false}>
           {showForm && (
-            <motion.section ref={formRef} className="glass card cs-form" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+            <motion.section ref={formRef} className="glass card kc cs-form" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+              <CardDeco />
+              <CardHead Icon={Code2} title="Bagikan kode" subtitle="Tempel potongan kode untuk komunitas" />
+              <CardBody>
               <form onSubmit={submit}>
                 <div className="cs-row">
                   <div className="field">
@@ -225,6 +221,8 @@ export default function CodeSharePage() {
                   <button className="btn" type="button" onClick={() => setShowForm(false)}>Batal</button>
                 </div>
               </form>
+              </CardBody>
+              <CardFoot><span>{form.code.length.toLocaleString('id-ID')} karakter</span></CardFoot>
             </motion.section>
           )}
         </AnimatePresence>
@@ -246,25 +244,20 @@ export default function CodeSharePage() {
         </div>
 
         {loading && !items.length && <div className="badge">Memuat…</div>}
-        {!loading && !loadErr && !items.length && <div className="glass card cs-empty">Belum ada kode{search || tag ? ' yang cocok' : ''}. Jadilah yang pertama berbagi!</div>}
+        {!loading && !loadErr && !items.length && <div className="glass card kc cs-empty"><CardDeco /><CardBody>Belum ada kode{search || tag ? ' yang cocok' : ''}. Jadilah yang pertama berbagi!</CardBody></div>}
 
         <Stagger className="cs-list" cycle gap={0.06} amount={0.05}>
           {items.map((it, idx) => (
-            <Item as="article" key={it._id} index={idx} layout className="glass card cs-item mo-lift">
-              <div className="cs-item-head">
-                <div className="cs-titlebox">
-                  <Link href={`/tools/code-share/${it._id}`} className="cs-title">{it.fileName}</Link>
-                  <small>oleh <b>{it.author}</b> · {timeAgo(it.createdAt)}</small>
-                </div>
-                <span className="badge">{it.tag}</span>
-              </div>
-
+            <Item as="article" key={it._id} index={idx} layout className="glass card kc cs-item mo-lift">
+              <CardDeco />
+              <CardHead Icon={Code2} title={<Link href={`/tools/code-share/${it._id}`} className="cs-title">{it.fileName}</Link>} subtitle={`oleh ${it.author} · ${timeAgo(it.createdAt)}`} badge={it.tag} />
+              <CardBody>
               <pre className={`cs-code ${open === it._id ? 'open' : ''}`}><code>{open === it._id ? it.code : it.code.split('\n').slice(0, 6).join('\n')}</code></pre>
               {it.code.split('\n').length > 6 && (
                 <button className="cs-more" onClick={() => toggleOpen(it)}>{open === it._id ? 'Ciutkan' : `Tampilkan semua (${it.code.split('\n').length} baris)`}</button>
               )}
-
-              <div className="cs-bar">
+              </CardBody>
+              <CardFoot className="cs-bar">
                 <div className="cs-stats">
                   <button className={`cs-vote ${votes[it._id] === 'like' ? 'on' : ''}`} onClick={() => vote(it, 'like')} aria-label="Suka"><ThumbsUp size={14} /> {it.likes}</button>
                   <button className={`cs-vote ${votes[it._id] === 'dislike' ? 'on bad' : ''}`} onClick={() => vote(it, 'dislike')} aria-label="Tidak suka"><ThumbsDown size={14} /> {it.dislikes}</button>
@@ -282,7 +275,7 @@ export default function CodeSharePage() {
                     <button className="btn cs-danger" onClick={() => setConfirmDel(it._id)} aria-label="Hapus"><Trash2 size={14} /></button>
                   ))}
                 </div>
-              </div>
+              </CardFoot>
             </Item>
           ))}
         </Stagger>
@@ -291,10 +284,10 @@ export default function CodeSharePage() {
       </div>
 
       <style jsx>{`
-        .cs-page { width: min(980px, 100%); margin: 0 auto; display: grid; gap: 16px; padding-bottom: 24px; }
+        .cs-page { width: min(980px, 100%); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding-bottom: 24px; }
         .cs-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
         :global(.cs-form) { overflow: hidden; }
-        :global(.cs-form) form { display: grid; gap: 12px; }
+        :global(.cs-form) form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
         .cs-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
         .cs-mono { font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5; resize: vertical; min-height: 180px; tab-size: 2; }
         .cs-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -306,17 +299,17 @@ export default function CodeSharePage() {
         .cs-tags::-webkit-scrollbar { display: none; }
         .cs-chip { flex-shrink: 0; padding: 6px 12px; border-radius: var(--r-chip, 8px); border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 0.76rem; cursor: pointer; }
         .cs-chip.on { color: var(--a2); border-color: var(--a2); background: color-mix(in srgb, var(--a2) 12%, transparent); }
-        :global(.cs-list) { display: grid; gap: 14px; }
-        :global(.cs-item) { display: grid; gap: 10px; min-width: 0; }
+        :global(.cs-list) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+        :global(.cs-item) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
         .cs-item-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-        .cs-titlebox { display: grid; gap: 2px; min-width: 0; }
+        .cs-titlebox { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; min-width: 0; }
         .cs-titlebox :global(.cs-title) { font-weight: 700; color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
         .cs-titlebox :global(.cs-title:hover) { color: var(--a2); }
         .cs-titlebox small { color: var(--muted); font-size: 0.72rem; }
         .cs-code { margin: 0; padding: 12px; border-radius: var(--r-s); overflow: auto; max-height: 150px; font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.5; background: color-mix(in srgb, var(--bg1) 55%, transparent); border: 1px solid var(--border); tab-size: 2; }
         .cs-code.open { max-height: 480px; }
         .cs-more { justify-self: start; background: none; border: none; color: var(--a2); font-size: 0.76rem; cursor: pointer; padding: 0; }
-        .cs-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+        :global(.cs-bar) { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
         .cs-stats { display: flex; gap: 8px; align-items: center; }
         .cs-vote { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: var(--r-s); border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 0.76rem; cursor: pointer; }
         .cs-vote.on { color: var(--a2); border-color: var(--a2); }
@@ -324,8 +317,6 @@ export default function CodeSharePage() {
         .cs-views { display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; color: var(--muted); }
         .cs-empty { text-align: center; color: var(--muted); }
         :global(.cs-danger) { color: var(--err); }
-        .cs-toast { position: fixed; top: 84px; right: 16px; z-index: 9999; display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: var(--r-m); color: #fff; font-size: 0.84rem; font-weight: 600; background: rgba(16, 124, 16, 0.95); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
-        .cs-toast.err { background: rgba(196, 43, 28, 0.95); }
       `}</style>
     </>
   );

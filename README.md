@@ -71,7 +71,7 @@ npm run start       # production dengan server kustom + Socket.IO
 Isi penting:
 
 - `DOMAIN_URL` / `SITE_URL` — domain situs (dipakai canonical, sitemap, OG).
-- `DEPLOY_TARGET` — `"netlify"` (serverless) atau `"vps"` (Node biasa, output `standalone`).
+- **Tanpa target deploy** — platform terdeteksi otomatis saat build (`configs/platform.cjs`): Netlify, Vercel, Cloudflare Pages, AWS Amplify memakai runtime mereka sendiri; VPS, Docker, Render, Railway, Fly.io, dsb. memakai output `standalone`.
 - `GITHUB_USER` — akun yang ditampilkan pada kartu GitHub di profil.
 - `DEFAULT_BGM_URL` — BGM bawaan (link YouTube); kosongkan bila tidak ingin musik otomatis.
 - `OBFUSCATE_CLIENT` — obfuscate JS klien saat build (menambah ±11% ukuran).
@@ -109,16 +109,16 @@ Isi penting:
 
 ## 🌐 Deploy
 
-### Netlify
-1. Atur `DEPLOY_TARGET: "netlify"` di `configs/siteConfig.cjs` (bawaan).
-2. Hubungkan repo, build command `npm run build`.
-3. Jika muncul *"The function exceeds the maximum size of 250 MB"*, jalankan `npm run build && npm run size` untuk melihat paket terbesar. `next.config.js` sudah mengecualikan alat build lewat `experimental.outputFileTracingExcludes`.
+Tidak ada pengaturan target: **tidak perlu mengubah apa pun** saat pindah platform.
+
+### Netlify / Vercel / Cloudflare Pages / Amplify
+1. Hubungkan repo, build command `npm run build` (terdeteksi otomatis, tanpa `standalone`).
+2. Jika muncul *"The function exceeds the maximum size of 250 MB"*, jalankan `npm run build && npm run size` untuk melihat paket terbesar. `next.config.js` sudah mengecualikan alat build lewat `experimental.outputFileTracingExcludes`.
 
 Di Netlify tidak ada WebSocket, jadi Live Stats memakai *polling* (`/api/stats/live`) otomatis.
 
-### VPS / server Node
+### VPS / Docker / Render / Railway / Fly.io (server Node)
 ```bash
-# set DEPLOY_TARGET: "vps"
 npm run build
 npm run start:standalone     # menyalin aset statis lalu menjalankan .next/standalone/server.js
 ```

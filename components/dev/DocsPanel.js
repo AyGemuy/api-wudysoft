@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { BookOpen, Search, Copy, Check, Lock, Play, Download, ChevronRight } from 'lucide-react';
 import { Reveal, TextReveal } from '@/components/motion';
+import { CardDeco, CardHead, CardBody, CardFoot } from '@/components/Card';
 import { copyText } from '@/src/lib/timeAgo';
 
 const METHODS = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'];
@@ -98,7 +99,10 @@ export default function DocsPage() {
 
         {spec && (
           <div className="dc-grid">
-            <aside className="glass card dc-side">
+            <aside className="glass card kc dc-side">
+              <CardDeco />
+              <CardHead Icon={BookOpen} title="Endpoint" badge={groups.reduce((n, [, l]) => n + l.length, 0)} />
+              <CardBody>
               <div className="dc-search"><Search size={15} /><input className="input" placeholder="Cari endpoint…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Cari endpoint" /></div>
               <nav className="dc-nav" aria-label="Daftar endpoint">
                 {groups.length === 0 && <p className="dc-muted">Tidak ada hasil.</p>}
@@ -114,13 +118,15 @@ export default function DocsPage() {
                   </div>
                 ))}
               </nav>
+              </CardBody>
             </aside>
 
             <main className="dc-main">
               {current ? (
-                <div className="glass card dc-detail" key={current.id}>
-                  <div className="dc-title"><span className={`dc-m big m-${current.method}`}>{current.method}</span><code>{current.path}</code></div>
-                  <h2>{current.summary}</h2>
+                <div className="glass card kc dc-detail" key={current.id}>
+                  <CardDeco />
+                  <CardHead Icon={BookOpen} title={<code className="dc-pathcode">{current.path}</code>} subtitle={current.summary} badge={current.method} />
+                  <CardBody><div className="dc-detail-in">
                   {current.description && <p className="dc-muted">{current.description}</p>}
                   {current.secure && <div className="badge warn" style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><Lock size={12} /> Butuh login (sesi browser atau Bearer token)</div>}
 
@@ -167,21 +173,25 @@ export default function DocsPage() {
                     </div>
                   </section>
                   <Link className="btn" href={`/playground?op=${encodeURIComponent(`${current.method} ${current.path}`)}`}><Play size={15} /> Coba di Playground</Link>
+                  </div></CardBody>
+                  <CardFoot><span className={`dc-m m-${current.method}`}>{current.method}</span><span>{current.secure ? 'Butuh login' : 'Publik'}</span></CardFoot>
                 </div>
-              ) : <div className="glass card">Pilih endpoint di sebelah kiri.</div>}
+              ) : <div className="glass card kc"><CardDeco /><CardBody>Pilih endpoint di sebelah kiri.</CardBody></div>}
             </main>
           </div>
         )}
       </div>
 
       <style jsx>{`
-        .dc-page { width: min(1180px, 100%); margin: 0 auto; display: grid; gap: 18px; padding-bottom: 24px; }
+        .dc-page { width: min(1180px, 100%); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; padding-bottom: 24px; }
         .dc-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
         .dc-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; }
-        .dc-side { position: sticky; top: 84px; display: grid; gap: 10px; max-height: calc(100vh - 110px); overflow: hidden; }
+        .dc-side { position: sticky; top: 84px; max-height: calc(100vh - 110px); overflow: hidden; }
+        :global(.dc-side .kc-body) { min-height: 0; overflow: hidden; grid-template-rows: auto minmax(0, 1fr); }
+        .dc-search { margin: 0; }
         .dc-search { display: flex; align-items: center; gap: 8px; color: var(--muted); }
         .dc-search :global(.input) { flex: 1; min-width: 0; }
-        .dc-nav { overflow: auto; display: grid; gap: 10px; padding-right: 2px; }
+        .dc-nav { overflow: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding-right: 2px; }
         .dc-tag { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 6px 4px; }
         .dc-op { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 9px; border-radius: min(var(--r-s), 12px); border: 1px solid transparent; background: transparent; color: var(--text); cursor: pointer; text-align: left; font-size: 0.78rem; transition: background 0.2s, border-color 0.2s, translate 0.2s; }
         .dc-op:hover { background: color-mix(in srgb, var(--a2) 10%, transparent); translate: 2px 0; }
@@ -190,7 +200,7 @@ export default function DocsPage() {
         .dc-m { font-size: 0.62rem; font-weight: 800; padding: 2px 6px; border-radius: 6px; font-family: var(--font-mono); color: #fff; min-width: 46px; text-align: center; }
         .dc-m.big { font-size: 0.8rem; padding: 4px 10px; }
         .m-GET { background: #2563eb; } .m-POST { background: #16a34a; } .m-PUT { background: #d97706; } .m-PATCH { background: #7c3aed; } .m-DELETE { background: #dc2626; } .m-HEAD, .m-OPTIONS { background: #64748b; }
-        .dc-detail { display: grid; gap: 14px; min-width: 0; animation: dc-in 0.35s ease both; }
+        .dc-detail-in { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; animation: dc-in 0.35s ease both; }
         @keyframes dc-in { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
         .dc-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .dc-title code { font-family: var(--font-mono); font-size: 1rem; overflow-wrap: anywhere; }
@@ -211,7 +221,7 @@ export default function DocsPage() {
         .dc-codewrap { position: relative; }
         .dc-code { margin: 0; padding: 14px; border-radius: var(--r-m); border: 1px solid var(--border); background: color-mix(in srgb, var(--bg1) 55%, transparent); font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.55; overflow: auto; white-space: pre; max-height: 360px; }
         .dc-copy { position: absolute; top: 8px; right: 8px; padding: 4px 10px; font-size: 0.72rem; }
-        .dc-resps { display: grid; gap: 8px; }
+        .dc-resps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
         .dc-resps details { border: 1px solid var(--border); border-radius: var(--r-m); padding: 8px 12px; }
         .dc-resps summary { cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.82rem; list-style: none; }
         .dc-resps summary::-webkit-details-marker { display: none; }
@@ -219,9 +229,9 @@ export default function DocsPage() {
         .dc-resps details[open] :global(.dc-chev) { rotate: 90deg; }
         .dc-resps .dc-code { margin-top: 8px; }
         @media (max-width: 900px) {
-          .dc-grid { grid-template-columns: 1fr; }
+          .dc-grid { grid-template-columns: minmax(0, 1fr); }
           .dc-side { position: static; max-height: 320px; }
-          .dc-row { grid-template-columns: 1fr; gap: 2px; }
+          .dc-row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
           .dc-base { margin-left: 0; max-width: 100%; }
         }
       `}</style>

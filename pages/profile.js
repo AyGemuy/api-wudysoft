@@ -12,6 +12,7 @@ import { logout } from '@/src/lib/nav';
 import { passwordStrength } from '@/src/lib/authErrors';
 import { Reveal, CountUp } from '@/components/motion';
 import GithubCard from '@/components/GithubCard';
+import { CardDeco, CardHead, CardBody, CardFoot } from '@/components/Card';
 import { toast } from '@/src/lib/toast';
 
 const STRENGTH_LABEL = ['Terlalu lemah', 'Lemah', 'Cukup', 'Kuat', 'Sangat kuat'];
@@ -212,7 +213,10 @@ function ProfilePanel() {
   return (
     <>
       <div className="pf-page">
-        <Reveal as="section" variant="zoom" className="glass pf-card pf-hero">
+        <Reveal as="section" variant="zoom" className="glass card kc pf-card pf-hero">
+          <CardDeco />
+          <CardHead Icon={Icons.User} title="Profil saya" subtitle={p.provider} badge={p.role} />
+          <CardBody><div className="pf-hero-in">
           <div className="pf-avatar-wrap">
             <Avatar src={p.image} name={p.name} size={96} />
             <button type="button" className="pf-cam" onClick={() => fileRef.current?.click()} disabled={!!busy} aria-label="Ganti foto profil" title="Ganti foto profil">
@@ -235,6 +239,7 @@ function ProfilePanel() {
               </button>
             )}
           </div>
+          </div></CardBody>
         </Reveal>
 
         <Reveal as="section" variant="up" className="pf-stats" aria-label="Ringkasan akun">
@@ -244,8 +249,10 @@ function ProfilePanel() {
           <div className="glass pf-stat"><b>{pct}%</b><span>Profil lengkap</span></div>
         </Reveal>
 
-        <Reveal as="section" variant="blur" className="glass pf-card">
-          <h3><Icons.User size={16} color="var(--a2)" /> Informasi profil</h3>
+        <Reveal as="section" variant="blur" className="glass card kc pf-card">
+          <CardDeco />
+          <CardHead Icon={Icons.User} title="Informasi profil" />
+          <CardBody>
           <form
             className="pf-form"
             onSubmit={(e) => { e.preventDefault(); if (dirty) save({ name, bio }, 'Profil disimpan.'); }}
@@ -262,20 +269,27 @@ function ProfilePanel() {
               {busy === 'profile' ? 'Menyimpan…' : 'Simpan perubahan'}
             </button>
           </form>
+          </CardBody>
+          <CardFoot><span>{dirty ? 'Ada perubahan belum disimpan' : 'Semua perubahan tersimpan'}</span></CardFoot>
         </Reveal>
 
         {pct < 100 && (
-          <Reveal as="section" variant="right" className="glass pf-card">
-            <h3><Icons.ShieldCheck size={16} color="var(--a2)" /> Kelengkapan profil · {pct}%</h3>
+          <Reveal as="section" variant="right" className="glass card kc pf-card">
+            <CardDeco />
+            <CardHead Icon={Icons.ShieldCheck} title={<>Kelengkapan profil · {pct}%</>} />
+            <CardBody>
             <div className="pf-meter" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${pct}%` }} /></div>
             <div className="pf-checks">
               {checks.map(([l, ok]) => <span key={l} className={ok ? 'badge ok' : 'badge'}>{ok ? '✓' : '○'} {l}</span>)}
             </div>
+            </CardBody>
           </Reveal>
         )}
 
-        <Reveal as="section" variant="left" className="glass pf-card">
-          <h3><Icons.Server size={16} color="var(--a2)" /> Akun</h3>
+        <Reveal as="section" variant="left" className="glass card kc pf-card">
+          <CardDeco />
+          <CardHead Icon={Icons.Server} title="Akun" />
+          <CardBody>
           <dl className="pf-dl">
             <div><dt>Email</dt><dd>{p.email}</dd></div>
             <div><dt>Nama</dt><dd>{p.name}</dd></div>
@@ -287,10 +301,13 @@ function ProfilePanel() {
             <div><dt>Login terakhir</dt><dd>{fmtDate(p.lastLoginAt)}</dd></div>
             <div><dt>ID</dt><dd className="mono">{p.id}</dd></div>
           </dl>
+          </CardBody>
         </Reveal>
 
-        <Reveal as="section" variant="flip" className="glass pf-card">
-          <h3><Icons.Key size={16} color="var(--a2)" /> {p.hasPassword ? 'Ganti password' : 'Buat password'}</h3>
+        <Reveal as="section" variant="flip" className="glass card kc pf-card">
+          <CardDeco />
+          <CardHead Icon={Icons.Key} title={<>{p.hasPassword ? 'Ganti password' : 'Buat password'}</>} />
+          <CardBody>
           {!p.hasPassword && <p className="pf-note">Akun ini masuk lewat {p.provider}. Buat password agar bisa juga masuk dengan email.</p>}
           <form className="pf-form" onSubmit={changePw}>
             {p.hasPassword && (
@@ -313,28 +330,35 @@ function ProfilePanel() {
               {busy === 'pw' ? 'Menyimpan…' : p.hasPassword ? 'Perbarui password' : 'Simpan password'}
             </button>
           </form>
+          </CardBody>
         </Reveal>
 
         {sUser.apiToken && (
-          <Reveal as="section" variant="right" className="glass pf-card">
-            <h3><Icons.Terminal size={16} color="var(--a2)" /> Token API</h3>
+          <Reveal as="section" variant="right" className="glass card kc pf-card">
+            <CardDeco />
+            <CardHead Icon={Icons.Terminal} title="Token API" />
+            <CardBody>
             <p className="pf-note">Dipakai untuk endpoint yang membutuhkan Bearer token. Berlaku 7 hari sejak login. Jangan dibagikan.</p>
             <div className="pf-token">
               <input className="input mono" readOnly value={showToken ? sUser.apiToken : '•'.repeat(32)} aria-label="Token API" onFocus={(e) => showToken && e.target.select()} />
               <button type="button" className="btn" onClick={() => setShowToken((v) => !v)}>{showToken ? 'Sembunyi' : 'Lihat'}</button>
               <button type="button" className="btn" onClick={copyToken}>{copied ? 'Tersalin' : 'Salin'}</button>
             </div>
+            </CardBody>
           </Reveal>
         )}
 
-        <Reveal as="section" variant="zoom" className="glass pf-card">
-          <h3><Icons.Shield size={16} color="var(--a2)" /> Sesi &amp; perangkat</h3>
+        <Reveal as="section" variant="zoom" className="glass card kc pf-card">
+          <CardDeco />
+          <CardHead Icon={Icons.Shield} title="Sesi & perangkat" />
+          <CardBody>
           <dl className="pf-dl">
             <div><dt>Sesi berakhir</dt><dd>{fmtDate(session?.expires)}</dd></div>
             <div><dt>Zona waktu</dt><dd>{env.tz}</dd></div>
             <div><dt>Bahasa</dt><dd>{env.lang}</dd></div>
             <div><dt>Layar</dt><dd>{env.scr}</dd></div>
           </dl>
+          </CardBody>
         </Reveal>
 
         <GithubCard variant="up" />
@@ -343,10 +367,10 @@ function ProfilePanel() {
       </div>
 
       <style jsx>{`
-        .pf-page { width: min(680px, 100%); margin: 0 auto; display: grid; gap: 16px; padding-bottom: 24px; }
-        :global(.pf-card) { padding: clamp(16px, 4vw, 24px); border-radius: var(--radius); display: grid; gap: 14px; }
+        .pf-page { width: min(680px, 100%); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding-bottom: 24px; }
+        :global(.pf-card) { padding: clamp(16px, 4vw, 24px); border-radius: var(--radius); display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
         :global(.pf-card) h3 { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
-        :global(.pf-hero) { grid-template-columns: auto 1fr; align-items: center; gap: 18px; }
+        .pf-hero-in { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 18px; }
         .pf-avatar-wrap { position: relative; }
         :global(.pf-avatar) {
           border-radius: 50%; overflow: hidden; display: grid; place-items: center; font-weight: 800;
@@ -362,23 +386,23 @@ function ProfilePanel() {
         }
         .pf-cam:disabled { opacity: 0.6; cursor: wait; }
         :global(.pf-stats) { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        :global(.pf-stat) { display: grid; gap: 2px; text-align: center; padding: 12px 6px; border-radius: var(--radius); }
+        :global(.pf-stat) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; text-align: center; padding: 12px 6px; border-radius: var(--radius); }
         :global(.pf-stat) b { font-size: 1.15rem; color: var(--a2); text-transform: capitalize; overflow-wrap: anywhere; }
         :global(.pf-stat) span { font-size: 0.68rem; color: var(--muted); }
         .pf-bio { font-size: 0.8rem; color: var(--muted); overflow-wrap: anywhere; }
         .pf-meter { height: 8px; border-radius: var(--r-l); background: var(--border); overflow: hidden; }
         .pf-meter i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--a1), var(--a3)); transition: width 0.8s cubic-bezier(.22,1,.36,1); }
         .pf-checks { display: flex; flex-wrap: wrap; gap: 6px; }
-        .pf-id { min-width: 0; display: grid; gap: 4px; }
+        .pf-id { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
         .pf-id h2 { font-size: 1.25rem; overflow-wrap: anywhere; }
         .pf-mail { font-size: 0.78rem; font-family: var(--font-mono); color: var(--muted); overflow-wrap: anywhere; }
         .pf-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
         .pf-link { justify-self: start; background: none; border: none; color: var(--err); font-size: 0.74rem; cursor: pointer; padding: 4px 0; }
-        .pf-form { display: grid; gap: 12px; }
+        .pf-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
         .pf-note { font-size: 0.78rem; color: var(--muted); }
         .pf-hint { font-size: 0.72rem; color: var(--muted); }
         .pf-hint.bad { color: var(--err); }
-        .pf-dl { display: grid; gap: 8px; }
+        .pf-dl { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
         .pf-dl div { display: flex; justify-content: space-between; gap: 12px; font-size: 0.8rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
         .pf-dl div:last-child { border: none; padding: 0; }
         .pf-dl dt { color: var(--muted); flex-shrink: 0; }
@@ -387,7 +411,7 @@ function ProfilePanel() {
         .pf-token { display: flex; gap: 8px; flex-wrap: wrap; }
         .pf-token .input { flex: 1 1 200px; min-width: 0; }
         .pf-logout { color: var(--err); }
-        @media (max-width: 480px) { :global(.pf-stats) { grid-template-columns: repeat(2, 1fr); } :global(.pf-hero) { grid-template-columns: 1fr; justify-items: center; text-align: center; } .pf-badges { justify-content: center; } .pf-link { justify-self: center; } }
+        @media (max-width: 480px) { :global(.pf-stats) { grid-template-columns: repeat(2, 1fr); } .pf-hero-in { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; } .pf-badges { justify-content: center; } .pf-link { justify-self: center; } }
       `}</style>
     </>
   );

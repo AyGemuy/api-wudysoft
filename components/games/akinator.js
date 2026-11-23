@@ -79,7 +79,7 @@ export default function AkinatorPage() {
     <>
       <div className={s.page}>
         <PageHead Icon={Sparkles} badge="GAME" title="Akinator" desc="Pikirkan seorang tokoh (nyata atau fiksi), jawab pertanyaanku, dan aku akan menebaknya." />
-        <section className={`glass card ${s.game}`}>
+        <Card Icon={Sparkles} title="Akinator" subtitle="Papan permainan" bodyClassName={s.game} footer={<span>Sesi disimpan 24 jam</span>}>
           {!game ? (
             <div className="ak-start">
               <div className="ak-orb" aria-hidden="true"><Sparkles size={34} /></div>
@@ -128,20 +128,20 @@ export default function AkinatorPage() {
               </div>
             </div>
           )}
-        </section>
+        </Card>
       </div>
 
       <style jsx global>{`
-        .ak-start, .ak-guess, .ak-q { display: grid; gap: 14px; justify-items: center; text-align: center; width: min(560px, 100%); }
+        .ak-start, .ak-guess, .ak-q { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; justify-items: center; text-align: center; width: min(560px, 100%); }
         .ak-orb { width: 84px; height: 84px; display: grid; place-items: center; border-radius: 50%; color: var(--on-accent); background: radial-gradient(circle at 30% 30%, var(--a2), var(--a1) 60%, var(--a3)); box-shadow: 0 0 40px -6px var(--a2); animation: ak-float 3.4s ease-in-out infinite; }
         @keyframes ak-float { 50% { transform: translateY(-6px); } }
         .ak-opts { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; align-items: end; }
-        .ak-opts label { display: grid; gap: 4px; font-size: .78rem; color: var(--muted); text-align: left; }
+        .ak-opts label { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; font-size: .78rem; color: var(--muted); text-align: left; }
         .ak-check { display: inline-flex !important; grid-auto-flow: column; align-items: center; gap: 8px !important; color: var(--text) !important; }
         .ak-prog { width: 100%; height: 8px; border-radius: 999px; background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
         .ak-prog i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--a1), var(--a2), var(--a3)); transition: width .5s ease; }
         .ak-q h2 { font-size: clamp(1.1rem, 3.4vw, 1.5rem); line-height: 1.35; margin: 4px 0 6px; min-height: 3.2em; display: grid; place-items: center; }
-        .ak-answers { display: grid; gap: 8px; width: 100%; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+        .ak-answers { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; width: 100%; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
         .ak-a { padding: 11px 14px; border-radius: var(--r-btn, 12px); border: 1px solid var(--border); background: color-mix(in srgb, var(--text) 5%, transparent); color: var(--text); font: inherit; font-weight: 700; cursor: pointer; transition: transform .15s, border-color .2s, background .2s; }
         .ak-a:hover:not(:disabled) { transform: translateY(-2px); }
         .ak-a:disabled { opacity: .55; cursor: wait; }

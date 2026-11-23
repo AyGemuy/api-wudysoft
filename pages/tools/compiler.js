@@ -38,7 +38,7 @@ export default function CompilerPage() {
         <p className="cp-note">Kode di browser berjalan dengan batas waktu dan tidak menyentuh server kami. Eksekusi server tidak punya akses internet, jadi uji request API dengan JavaScript/Python di browser atau lewat API Playground.</p>
       </div>
       <style jsx>{`
-        .cp { max-width: 960px; margin: 0 auto; display: grid; gap: 16px; }
+        .cp { max-width: 960px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
         .cp-h { display: flex; align-items: center; gap: 14px; }
         .cp-ico { width: 52px; height: 52px; border-radius: var(--r-m); display: grid; place-items: center; background: linear-gradient(135deg, var(--a1), var(--a3)); color: var(--on-accent); flex-shrink: 0; }
         h1 { margin: 0; font-size: clamp(1.4rem, 4vw, 2rem); }

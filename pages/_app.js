@@ -12,6 +12,7 @@ import PageTransition from '@/components/PageTransition';
 import { sound } from '@/src/lib/interactiveEffects';
 import { lockZoom } from '@/src/lib/lockZoom';
 import GlobalEffects from '@/components/motion/GlobalEffects';
+import ScrollEngine from '@/components/motion/ScrollEngine';
 import ToastHost from '@/components/ToastHost';
 
 // Widget non-kritis: dimuat setelah halaman interaktif (tidak masuk bundle awal)
@@ -20,6 +21,7 @@ const AssistantFab = dynamic(() => import('@/components/AssistantFab'), { ssr: f
 const JoinNotice = dynamic(() => import('@/components/JoinNotice'), { ssr: false });
 import '@/styles/globals.css';
 import '@/styles/motion.css';
+import '@/styles/shapes.css';
 import '@/styles/hljs.css';
 
 export default function App({ Component, pageProps: { session, ...pageProps } }) {
@@ -57,10 +59,11 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
 
       {/* Splash awal + indikator loading antar halaman */}
       <Preloader />
-      <GlobalEffects />
       <GlobalSounds />
 
       <Layout>
+        <GlobalEffects />
+        <ScrollEngine />
         <PageTransition>
           <Component {...pageProps} />
         </PageTransition>

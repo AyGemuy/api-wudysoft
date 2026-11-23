@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
-import { Copy, Download, ExternalLink, Pencil, ArrowLeft, Clock, Check } from 'lucide-react';
+import { Copy, Download, ExternalLink, Pencil, ArrowLeft, Clock, Check, FileText } from 'lucide-react';
 import Seo from '@/components/Seo';
+import { CardDeco, CardHead, CardBody, CardFoot } from '@/components/Card';
 import connectMongo from '@/lib/mongoose';
 import Paste from '@/models/Paste';
 import { fmtDateTime, copyText } from '@/src/lib/timeAgo';
@@ -77,11 +78,16 @@ export default function PasteView({ paste: p }) {
           <Link className="btn" href={`/tools/pastes?edit=${encodeURIComponent(p.key)}`}><Pencil size={14} /> Edit</Link>
         </div>
 
-        <pre className="glass card pv-code"><code>{p.content}</code></pre>
+        <div className="glass card kc">
+          <CardDeco />
+          <CardHead Icon={FileText} title={p.key} subtitle={`${p.syntax} · ${lines} baris`} />
+          <CardBody><pre className="pv-code"><code>{p.content}</code></pre></CardBody>
+          <CardFoot><span>dibuat {fmtDateTime(p.createdAt)}</span>{p.expiresAt && <span>kedaluwarsa {fmtDateTime(p.expiresAt)}</span>}</CardFoot>
+        </div>
       </div>
 
       <style jsx>{`
-        .pv-page { width: min(980px, 100%); margin: 0 auto; display: grid; gap: 14px; padding-bottom: 24px; }
+        .pv-page { width: min(980px, 100%); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding-bottom: 24px; }
         .pv-page :global(.pv-back) { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--muted); text-decoration: none; justify-self: start; }
         .pv-page h1 { overflow-wrap: anywhere; }
         .pv-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 0.74rem; color: var(--muted); margin-top: 6px; }

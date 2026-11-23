@@ -12,7 +12,11 @@ const SPRING = { type: 'spring', stiffness: 260, damping: 22, mass: 0.8 };
 
 export function useMotionOk() {
   const { config } = useTheme();
-  const reduced = useReducedMotion();
+  const reducedPref = useReducedMotion();
+  // sebelum mount dianggap tidak reduced → HTML klien pertama sama dengan HTML server (tanpa error hidrasi)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const reduced = mounted && reducedPref;
   const ok = config.anim !== 'off' && !reduced;
   const speed = Math.max(0.5, config.speed || 1);
   return { ok, entrance: ok && config.animEntrance !== false, speed };

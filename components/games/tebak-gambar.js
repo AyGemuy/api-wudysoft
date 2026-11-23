@@ -68,7 +68,7 @@ export default function TebakGambarPage() {
     <>
       <div className={s.page}>
         <PageHead Icon={ImageIcon} badge="GAME" title="Tebak Gambar" desc="Lihat gambar teka-teki, lalu tebak kata atau ungkapan yang dimaksud. Petunjuk mengurangi poin." />
-        <section className={`glass card ${s.game}`}>
+        <Card Icon={ImageIcon} title="Tebak Gambar" subtitle="Papan permainan" bodyClassName={s.game} footer={<span>Tebak sebelum waktu habis</span>}>
           <div className="tg-stats">
             <span><Trophy size={14} /> Skor <b>{score}</b></span>
             <span><Flame size={14} /> Streak <b>{streak}</b></span>
@@ -110,7 +110,7 @@ export default function TebakGambarPage() {
             )}
             <button type="button" className="btn" onClick={() => { setScore(0); setStreak(0); toast.info('Skor direset.'); }}><RotateCcw size={14} /> Reset skor</button>
           </div>
-        </section>
+        </Card>
       </div>
 
       <style jsx global>{`
@@ -119,7 +119,7 @@ export default function TebakGambarPage() {
         .tg-stats b { font-family: var(--font-mono); color: var(--a2); }
         .tg-frame { width: min(480px, 100%); min-height: 220px; display: grid; place-items: center; border-radius: var(--r-m); border: 1px solid var(--border); background: color-mix(in srgb, var(--text) 5%, transparent); overflow: hidden; }
         .tg-frame img { width: 100%; height: auto; max-height: 420px; object-fit: contain; display: block; }
-        .tg-bad { display: grid; gap: 10px; justify-items: center; padding: 20px; color: var(--muted); }
+        .tg-bad { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; justify-items: center; padding: 20px; color: var(--muted); }
         .tg-mask { font-family: var(--font-mono); font-size: clamp(1rem, 4vw, 1.5rem); letter-spacing: .12em; text-align: center; overflow-wrap: anywhere; min-height: 1.6em; }
         .tg-form { display: flex; gap: 8px; width: min(480px, 100%); }
         .tg-form .input { flex: 1; min-width: 0; }

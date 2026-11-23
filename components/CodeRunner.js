@@ -142,7 +142,7 @@ export default function CodeRunner({ code: codeProp, onCode, lang: langProp, onL
       </div>
 
       <style jsx global>{`
-        .cr { display: grid; gap: 10px; min-width: 0; }
+        .cr { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
         .cr-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .cr-bar select, .cr-in { height: 36px; padding: 0 10px; border-radius: var(--r-s); background: color-mix(in srgb, #fff 6%, transparent); border: 1px solid var(--border); color: var(--text); font: inherit; font-size: .8rem; }
         .cr-bar select option, .cr-bar select optgroup { background: var(--bg2, #111); color: var(--text); }

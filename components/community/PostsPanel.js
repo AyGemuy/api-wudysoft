@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Newspaper, Plus, Pencil, Trash2, Search, X } from 'lucide-react';
+import Card from '@/components/Card';
 import { PageHead, useToast, kit as s } from '@/components/PageKit';
 import { http, qs } from '@/src/lib/http';
 import { confirmToast } from '@/src/lib/toast';
@@ -55,18 +56,17 @@ export default function PostsPage() {
       <div className={s.page}>
         <PageHead Icon={Newspaper} badge="POSTS" title="Tulisan & Pengumuman" desc="Cari, baca, dan terbitkan post. Edit dan hapus hanya tersedia untuk admin." />
 
-        <form className={`glass card ${s.form}`} onSubmit={create}>
-          <h3><Plus size={16} /> Post baru</h3>
+        <Card as="form" Icon={Plus} title="Post baru" subtitle="Terbitkan tulisan" onSubmit={create} bodyClassName={s.form} footer={<span>Judul maks 200 · isi maks 20.000 karakter</span>}>
           <div className={s.fields}>
             <div className="field"><label htmlFor="ps-title">Judul</label><input id="ps-title" className="input" maxLength={200} required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
             <div className="field"><label htmlFor="ps-author">Penulis</label><input id="ps-author" className="input" maxLength={64} required value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} /></div>
           </div>
           <div className="field"><label htmlFor="ps-content">Isi</label><textarea id="ps-content" className="input" rows={5} maxLength={20000} required value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} /></div>
           <div className={s.row}><button className="btn primary" type="submit" disabled={busy}>{busy ? 'Menerbitkan…' : 'Terbitkan'}</button></div>
-        </form>
+        </Card>
 
-        <section className="glass card">
-          <div className={s.fields} style={{ marginBottom: 12 }}>
+        <Card Icon={Newspaper} title="Daftar post" badge={posts.length} footer={<span>{isAdmin ? 'Mode admin: edit & hapus aktif' : 'Edit & hapus khusus admin'}</span>}>
+          <div className={s.fields}>
             <div className="field"><label htmlFor="ps-q"><Search size={12} /> Cari judul</label><input id="ps-q" className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Kata kunci…" /></div>
             <div className="field"><label htmlFor="ps-sort">Urutkan</label><select id="ps-sort" className="input" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>{SORTS.map((x) => <option key={x.v} value={x.v}>{x.l}</option>)}</select></div>
           </div>
@@ -92,7 +92,7 @@ export default function PostsPage() {
               ))}
             </ul>
           )}
-        </section>
+        </Card>
       </div>
     </>
   );

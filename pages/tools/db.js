@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Database, Plus, Pencil, Trash2, X, Copy, Check, RefreshCw } from 'lucide-react';
 import Seo from '@/components/Seo';
+import Card from '@/components/Card';
 import { PageHead, useToast, kit as s } from '@/components/PageKit';
 import { http, qs } from '@/src/lib/http';
 import { confirmToast } from '@/src/lib/toast';
@@ -55,18 +56,13 @@ export default function DataStorePage() {
       <div className={s.page}>
         <PageHead Icon={Database} badge="DATA STORE" title="Penyimpanan JSON" desc="Simpan objek JSON bebas dengan ID kustom (atau ID acak), lalu ambil lagi lewat endpoint /api/tools/db. Data bersifat publik: jangan simpan rahasia." />
 
-        <form className={`glass card ${s.form}`} onSubmit={create}>
-          <h3><Plus size={16} /> Data baru</h3>
+        <Card as="form" Icon={Plus} title="Data baru" subtitle="ID kustom atau acak" onSubmit={create} bodyClassName={s.form} footer={<span>Data bersifat publik</span>}>
           <div className="field"><label htmlFor="db-id">ID kustom (opsional)</label><input id="db-id" className="input" maxLength={120} value={customId} onChange={(e) => setCustomId(e.target.value)} placeholder="Kosongkan untuk ID acak" /></div>
           <div className="field"><label htmlFor="db-json">Data (JSON)</label><textarea id="db-json" className="input" rows={6} spellCheck={false} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }} value={json} onChange={(e) => setJson(e.target.value)} /></div>
           <div className={s.row}><button className="btn primary" type="submit" disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan'}</button></div>
-        </form>
+        </Card>
 
-        <section className="glass card">
-          <div className={s.row} style={{ justifyContent: 'space-between' }}>
-            <h3 style={{ margin: 0 }}>Data tersimpan <span className={s.muted}>({items.length})</span></h3>
-            <button type="button" className="btn" onClick={load} disabled={loading}><RefreshCw size={14} /> Muat ulang</button>
-          </div>
+        <Card Icon={Database} title="Data tersimpan" badge={items.length} actions={<button type="button" className="btn" onClick={load} disabled={loading}><RefreshCw size={14} /> Muat ulang</button>}>
           {loading ? <p className={s.empty}>Memuat…</p> : items.length === 0 ? <p className={s.empty}>Belum ada data.</p> : (
             <ul className={s.list} style={{ marginTop: 10 }}>
               {items.map((u) => {
@@ -91,7 +87,7 @@ export default function DataStorePage() {
               })}
             </ul>
           )}
-        </section>
+        </Card>
       </div>
     </>
   );

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Seo from '@/components/Seo';
+import { CardDeco, CardHead, CardBody, CardFoot } from '@/components/Card';
 import {
   UploadCloud,
   Server,
@@ -234,10 +235,13 @@ export default function UploadPage() {
 
         {/* Form Panel */}
         <motion.div
-          className="glass card"
+          className="glass card kc"
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
         >
+          <CardDeco />
+          <CardHead Icon={UploadCloud} title="Unggah berkas" subtitle="Pilih server lalu file" badge={hosts.length ? `${hosts.length} host` : ''} />
+          <CardBody>
           {/* HOST SELECTION MENGGUNAKAN DROPDOWN LIST */}
           <div className="field" style={{ position: 'relative' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -457,17 +461,21 @@ export default function UploadPage() {
               </>
             )}
           </motion.button>
+          </CardBody>
+          <CardFoot><span>Maks. beberapa MB per file, tergantung host</span></CardFoot>
         </motion.div>
 
         {/* Results Stream */}
         {uploadResults.length > 0 && (
           <motion.div
-            className="glass card"
+            className="glass card kc"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <h3>Riwayat Unggahan Sesi Ini</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+            <CardDeco />
+            <CardHead Icon={CheckCircle2} title="Riwayat Unggahan Sesi Ini" badge={uploadResults.length} />
+            <CardBody>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {uploadResults.map((res, idx) => (
                 <div
                   key={idx}
@@ -524,6 +532,8 @@ export default function UploadPage() {
                 </div>
               ))}
             </div>
+            </CardBody>
+            <CardFoot><span>Hanya berlaku selama sesi ini</span></CardFoot>
           </motion.div>
         )}
       </div>

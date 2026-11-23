@@ -24,7 +24,7 @@ export default function Pagination({ page, pages, total, limit, loading, onPage,
   const go = (n) => n >= 1 && n <= pages && n !== page && onPage(n);
 
   return (
-    <nav className="pgn" aria-label="Navigasi halaman">
+    <nav className="glass pgn" aria-label="Navigasi halaman">
       <div className="pgn-info">
         Menampilkan <b>{from}–{to}</b> dari <b>{total}</b> {label}
       </div>

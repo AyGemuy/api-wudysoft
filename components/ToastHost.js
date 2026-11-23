@@ -129,7 +129,7 @@ export default function ToastHost() {
       </AnimatePresence>
 
       <style jsx global>{`
-        .wd-stack { position: fixed; z-index: 10000; top: calc(78px + env(safe-area-inset-top, 0px)); right: 16px; width: min(380px, calc(100vw - 32px)); display: grid; gap: 10px; pointer-events: none; }
+        .wd-stack { position: fixed; z-index: 10000; top: calc(78px + env(safe-area-inset-top, 0px)); right: 16px; width: min(380px, calc(100vw - 32px)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; pointer-events: none; }
         .wd-toast { --tc: var(--a2); pointer-events: auto; position: relative; overflow: hidden; display: flex; align-items: flex-start; gap: 10px; padding: 11px 36px 12px 12px;
           border-radius: var(--r-m); border: 1px solid color-mix(in srgb, var(--tc) 42%, var(--border));
           background: linear-gradient(135deg, color-mix(in srgb, var(--tc) 14%, var(--surface)), var(--surface));
@@ -140,7 +140,7 @@ export default function ToastHost() {
         .wd-toast.wd-warn { --tc: var(--warn, #f59e0b); }
         .wd-toast.wd-info { --tc: var(--a2); }
         .wd-ico { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: var(--r-s, 8px); color: var(--tc); background: color-mix(in srgb, var(--tc) 16%, transparent); border: 1px solid color-mix(in srgb, var(--tc) 32%, transparent); }
-        .wd-main { min-width: 0; display: grid; gap: 2px; padding-top: 3px; }
+        .wd-main { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding-top: 3px; }
         .wd-main b { font-size: .86rem; }
         .wd-msg { overflow-wrap: anywhere; white-space: pre-wrap; }
         .wd-x { position: absolute; top: 7px; right: 7px; width: 24px; height: 24px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }

@@ -5,12 +5,20 @@ import mongoose from "mongoose";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { handleOf, mediaKind } from "@/src/lib/chatUser";
+import MediaFile from "@/models/MediaFile";
+import { MEDIA_URL_RE, ownMediaId } from "@/src/lib/mediaStore";
 
 export const config = { api: { bodyParser: { sizeLimit: "200kb" } } };
 
 const MAX_TEXT = 4000;
 const MAX_MEDIA = 6;
-const isHttp = (u) => /^https?:\/\/[^\s]{4,1500}$/i.test(String(u || ""));
+// URL lampiran: http(s) publik ATAU penyimpanan permanen sendiri (/api/media/<id>)
+const isHttp = (u) => /^https?:\/\/[^\s]{4,1500}$/i.test(String(u || "")) || MEDIA_URL_RE.test(String(u || ""));
+/** Hapus berkas permanen yang dimiliki daftar URL (aman dipanggil dengan URL eksternal; diabaikan). */
+const dropFiles = (urls) => {
+  const ids = [...new Set((urls || []).map(ownMediaId).filter(Boolean))];
+  return ids.length ? MediaFile.deleteMany({ _id: { $in: ids } }).catch(() => {}) : null;
+};
 const cleanMedia = (list) =>
   (Array.isArray(list) ? list : [])
     .filter((m) => m && isHttp(m.url))
@@ -210,6 +218,9 @@ async function handler(req, res) {
       try {
         if (!mongoose.isValidObjectId(messageId)) return res.status(400).json({ success: false, message: "ID pesan tidak valid" });
         if (!(await ownsMessage(roomName, messageId))) return res.status(403).json({ success: false, message: "Hanya pengirim yang dapat menghapus pesan ini" });
+        // berkas permanen milik pesan ini ikut dibersihkan HANYA saat pesannya sengaja dihapus
+        const before = await Room.findOne({ roomName }, { messages: { $elemMatch: { _id: new mongoose.Types.ObjectId(messageId) } } }).lean();
+        const oldUrls = (before?.messages?.[0]?.media || []).map((m) => m.url);
         const updatedRoom = await Room.findOneAndUpdate(
           { roomName, "messages._id": new mongoose.Types.ObjectId(messageId) },
           {
@@ -222,6 +233,7 @@ async function handler(req, res) {
           { new: true }
         );
         if (!updatedRoom) return res.status(404).json({ success: false, message: "Pesan tidak ditemukan" });
+        await dropFiles(oldUrls);
         return res.status(200).json({ success: true, data: updatedRoom });
       } catch (error) {
         return res.status(500).json({ success: false, message: "Error deleting message" });
@@ -286,6 +298,7 @@ async function handler(req, res) {
       try {
         const deletedRoom = await Room.findOneAndDelete({ roomName });
         if (!deletedRoom) return res.status(404).json({ success: false, message: "Grup tidak ditemukan." });
+        await dropFiles((deletedRoom.messages || []).flatMap((m) => (m.media || []).map((x) => x.url)));
         return res.status(200).json({ success: true, message: "Grup berhasil dihapus!" });
       } catch (error) {
         return res.status(500).json({ success: false, message: "Gagal menghapus grup." });

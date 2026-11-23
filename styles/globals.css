@@ -89,6 +89,12 @@ pre {
   overflow-x: auto;
 }
 
+/* Cegah isi (kode, URL panjang, grid) mendorong kartu melebihi lebar layar */
+.glass.card, .kc, .hx-card { min-width: 0; max-width: 100%; }
+.glass.card :is(pre, code, table) { max-width: 100%; }
+.glass.card :is(h1, h2, h3, p) { overflow-wrap: anywhere; }
+.wrap.app-main > * { max-width: 100%; }
+
 button, a, [role='button'] {
   touch-action: manipulation;
 }
@@ -675,7 +681,7 @@ html { accent-color: var(--a2); caret-color: var(--a2); }
     font-size: 16px !important;
   }
   .dash-columns {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .card {
     padding: calc(18px * var(--space));
@@ -1350,3 +1356,9 @@ html[data-anim='off'] .nav-tab > svg { transition: none; }
 @media (prefers-reduced-motion: reduce) {
   :is(.hx-card, .rp-card), :is(.hx-card, .rp-card)::after { animation: none !important; scale: none !important; translate: none !important; rotate: none !important; }
 }
+
+/* ---------- Lenis (gulir halus) ---------- */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }

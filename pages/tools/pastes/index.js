@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardList, Plus, Pencil, Trash2, Copy, ExternalLink, FileText, RefreshCw, Search, Clock, Check, X } from 'lucide-react';
 import Seo from '@/components/Seo';
+import { CardDeco, CardHead, CardBody, CardFoot } from '@/components/Card';
 import { sound } from '@/src/lib/interactiveEffects';
 import { timeAgo, fmtDateTime, copyText } from '@/src/lib/timeAgo';
 import { Reveal, Stagger, Item, TextReveal, Magnetic } from '@/components/motion';
@@ -48,14 +49,10 @@ export default function PastesPage() {
   const [form, setForm] = useState(EMPTY);
   const [editing, setEditing] = useState(null); // key yang sedang diedit
   const [busy, setBusy] = useState(false);
-  const [toast, setToast] = useState(null);
   const [created, setCreated] = useState(null);
   const [confirmDel, setConfirmDel] = useState(null);
 
-  const flash = (message, type = 'ok') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3500);
-  };
+  const flash = (message, type = 'ok') => toast(message, type);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -176,17 +173,12 @@ export default function PastesPage() {
           <Reveal as="p" variant="blur" delay={0.15}>Buat, ubah, dan hapus paste. Setiap paste punya tautan singkat dengan preview link otomatis.</Reveal>
         </header>
 
-        <AnimatePresence>
-          {toast && (
-            <motion.div className={`pp-toast ${toast.type}`} initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              {toast.type === 'err' ? <X size={16} /> : <Check size={16} />} {toast.message}
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* ---- form buat / edit ---- */}
-        <Reveal as="section" variant="blur" delay={0.1} className="glass card pp-form" ref={formRef}>
-          <h3>{editing ? <><Pencil size={16} /> Edit paste <code>{editing}</code></> : <><Plus size={16} /> Paste baru</>}</h3>
+        <Reveal as="section" variant="blur" delay={0.1} className="glass card kc pp-form" ref={formRef}>
+          <CardDeco />
+          <CardHead Icon={editing ? Pencil : Plus} title={editing ? <>Edit paste <code>{editing}</code></> : 'Paste baru'} subtitle="Simpan teks atau kode, bagikan lewat tautan" />
+          <CardBody>
           <form onSubmit={submit}>
             <div className="field">
               <label htmlFor="pp-title">Judul</label>
@@ -233,6 +225,8 @@ export default function PastesPage() {
               </div>
             </div>
           )}
+          </CardBody>
+          <CardFoot><span>Kedaluwarsa bisa diatur</span><span>{form.content.length.toLocaleString('id-ID')} karakter</span></CardFoot>
         </Reveal>
 
         {/* ---- daftar ---- */}
@@ -246,24 +240,23 @@ export default function PastesPage() {
 
         {loading && !list.length && <div className="badge">Memuat…</div>}
         {!loading && !loadErr && !shown.length && (
-          <div className="glass card pp-empty">{q ? 'Tidak ada paste yang cocok.' : 'Belum ada paste. Buat yang pertama di atas.'}</div>
+          <div className="glass card kc pp-empty"><CardDeco /><CardBody>{q ? 'Tidak ada paste yang cocok.' : 'Belum ada paste. Buat yang pertama di atas.'}</CardBody></div>
         )}
 
         <Stagger className="pp-grid" cycle gap={0.06} amount={0.05}>
           {shown.map((p, idx) => (
-            <Item as="article" key={p.key} index={idx} layout className="glass card pp-item mo-lift">
-              <div className="pp-item-head">
-                <FileText size={16} color="var(--a2)" />
-                <Link href={`/tools/pastes/${p.key}`} className="pp-title">{p.title}</Link>
-              </div>
+            <Item as="article" key={p.key} index={idx} layout className="glass card kc pp-item mo-lift">
+              <CardDeco />
+              <CardHead Icon={FileText} title={<Link href={`/tools/pastes/${p.key}`} className="pp-title">{p.title}</Link>} badge={p.syntax || 'text'} />
+              <CardBody>
               <pre className="pp-snippet">{p.content.slice(0, 220)}{(p.length || p.content.length) > 220 ? '…' : ''}</pre>
               <div className="pp-meta">
-                <span className="badge">{p.syntax || 'text'}</span>
                 <code>{p.key}</code>
                 <span title={fmtDateTime(p.createdAt)}>{timeAgo(p.createdAt)}</span>
                 {p.expiresAt && <span className="pp-exp" title={fmtDateTime(p.expiresAt)}><Clock size={12} /> sampai {fmtDateTime(p.expiresAt)}</span>}
               </div>
-              <div className="pp-actions">
+              </CardBody>
+              <CardFoot className="pp-actions">
                 <button className="btn" onClick={() => doCopy(link(p.key), 'Tautan disalin.')} aria-label="Salin tautan"><Copy size={14} /></button>
                 <a className="btn" href={`${API}?action=get&key=${encodeURIComponent(p.key)}&raw=true`} target="_blank" rel="noreferrer">Raw</a>
                 <button className="btn" onClick={() => startEdit(p)}><Pencil size={14} /> Edit</button>
@@ -275,7 +268,7 @@ export default function PastesPage() {
                 ) : (
                   <button className="btn pp-danger" onClick={() => setConfirmDel(p.key)} aria-label="Hapus"><Trash2 size={14} /></button>
                 )}
-              </div>
+              </CardFoot>
             </Item>
           ))}
         </Stagger>
@@ -284,20 +277,20 @@ export default function PastesPage() {
       </div>
 
       <style jsx>{`
-        .pp-page { width: min(980px, 100%); margin: 0 auto; display: grid; gap: 18px; padding-bottom: 24px; }
-        :global(.pp-form) { display: grid; gap: 12px; }
+        .pp-page { width: min(980px, 100%); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; padding-bottom: 24px; }
+        :global(.pp-form) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
         :global(.pp-form) h3 { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; }
-        :global(.pp-form) form { display: grid; gap: 12px; }
+        :global(.pp-form) form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
         .pp-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
         .pp-mono { font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5; resize: vertical; min-height: 180px; tab-size: 2; }
-        .pp-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-        .pp-created { display: grid; gap: 8px; padding: 12px; border-radius: var(--r-m); border: 1px solid var(--border); background: color-mix(in srgb, var(--a2) 8%, transparent); }
+        :global(.pp-actions) { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .pp-created { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px; border-radius: var(--r-m); border: 1px solid var(--border); background: color-mix(in srgb, var(--a2) 8%, transparent); }
         .pp-created code { font-family: var(--font-mono); font-size: 0.78rem; overflow-wrap: anywhere; }
         .pp-list-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .pp-search { flex: 1 1 240px; display: flex; align-items: center; gap: 8px; }
         .pp-search :global(.input) { flex: 1; }
         :global(.pp-grid) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 14px; }
-        :global(.pp-item) { display: grid; gap: 10px; min-width: 0; }
+        :global(.pp-item) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
         .pp-item-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
         .pp-item-head :global(.pp-title) { font-weight: 700; color: var(--text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .pp-item-head :global(.pp-title:hover) { color: var(--a2); }
@@ -307,8 +300,6 @@ export default function PastesPage() {
         .pp-exp { display: inline-flex; align-items: center; gap: 4px; }
         .pp-empty { text-align: center; color: var(--muted); }
         :global(.pp-danger) { color: var(--err); }
-        .pp-toast { position: fixed; top: 84px; right: 16px; z-index: 9999; display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: var(--r-m); color: #fff; font-size: 0.84rem; font-weight: 600; background: rgba(16, 124, 16, 0.95); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
-        .pp-toast.err { background: rgba(196, 43, 28, 0.95); }
       `}</style>
     </>
   );

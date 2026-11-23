@@ -4,7 +4,7 @@ import { RotateCcw } from 'lucide-react';
 import { Icons } from './Icons';
 import { sound } from '@/src/lib/interactiveEffects';
 import {
-  PRESETS, TEMPLATES, BORDER_STYLES, BORDER_COLORS, GLINTS, SPLASH_STYLES, SPLASH_BGS, FONTS, FONT_CATS, GRADIENTS, RADIUS_PRESETS, PARTICLES, CARD_STYLES, HEADING_CASES, NAV_STYLES, NAV_LABELS, HOVERS, COLOR_KEYS, DEFAULT_CONFIG,
+  PRESETS, TEMPLATES, BORDER_STYLES, BORDER_COLORS, GLINTS, SPLASH_STYLES, SPLASH_BGS, FONTS, FONT_CATS, GRADIENTS, RADIUS_PRESETS, PARTICLES, CARD_STYLES, CARD_SHAPES, NAV_SHAPES, CARD_HEADS, NAV_LAYOUTS, HEADING_CASES, NAV_STYLES, NAV_LABELS, HOVERS, COLOR_KEYS, DEFAULT_CONFIG,
   resolveColors, sanitizeConfig, randomPalette, hexToRgb, isLight, fontPreviewHref,
 } from '@/src/lib/themes';
 import { saveBackgroundFile, clearBackground, readBackground } from '@/src/lib/bgUpload';
@@ -126,6 +126,24 @@ function CardPicker({ value, colors, onChange }) {
           <button key={s.id} type="button" className={`cp-tile ${value === s.id ? 'active' : ''}`} onClick={() => onChange(s.id)} aria-pressed={value === s.id} style={{ background: `linear-gradient(135deg, ${colors.bg1}, ${colors.bg2})` }}>
             <span className="cp-demo" style={{ borderRadius: 8, ...cardPreviewStyle(s.id, colors) }} />
             <span className="cp-name" style={{ color: colors.text || (isLight(colors.bg1) ? '#0f172a' : '#f8fafc') }}>{s.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Pilihan bentuk (kartu / navbar) dengan pratinjau langsung dari styles/shapes.css. */
+function ShapePicker({ value, options, nav, colors, onChange, label }) {
+  const txt = colors.text || (isLight(colors.bg1) ? '#0f172a' : '#f8fafc');
+  return (
+    <div className="cfg">
+      {label && <span className="cfg-label">{label}</span>}
+      <div className="cp-grid sp-grid" role="radiogroup" aria-label={label || 'Bentuk'}>
+        {options.map((o) => (
+          <button key={o.id} type="button" role="radio" aria-checked={value === o.id} title={o.desc || o.label} className={`cp-tile ${value === o.id ? 'active' : ''}`} onClick={() => onChange(o.id)} style={{ background: `linear-gradient(135deg, ${colors.bg1}, ${colors.bg2})` }}>
+            <span className="sp-box"><span className="sp-demo" data-sp={o.id} {...(nav ? { 'data-nav': '' } : {})} style={{ '--a1': colors.a1, '--a2': colors.a2, '--a3': colors.a3 }} /></span>
+            <span className="cp-name" style={{ color: txt }}>{o.label}</span>
           </button>
         ))}
       </div>
@@ -420,6 +438,13 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
                     <Slider label="Tombol ikon di dalamnya" value={config.rDockBtn} min={0} max={60} unit="px" pill onChange={(v) => set({ rDockBtn: v }, true)} />
                   </Section>
 
+                  <Section title="BENTUK KARTU" hint="Header · isi · footer seperti kartu Home, di semua halaman">
+                    <ShapePicker label="Gaya bentuk" value={config.cardShape} options={CARD_SHAPES} colors={colors} onChange={(v) => set({ cardShape: v })} />
+                    <p className="cfg-note">{CARD_SHAPES.find((x) => x.id === config.cardShape)?.desc}</p>
+                    <Segmented label="Gaya header kartu" value={config.cardHead} options={CARD_HEADS} onChange={(v) => set({ cardHead: v })} />
+                    <Toggle label="Footer kartu" hint="Baris bawah berisi aksi / keterangan" value={config.cardFoot} onChange={(v) => set({ cardFoot: v })} />
+                  </Section>
+
                   <Section title="KARTU & PANEL">
                     <CardPicker value={config.card} colors={colors} onChange={(v) => set({ card: v })} />
                     <Segmented label="Gaya garis tepi" value={config.cardBorderStyle} options={BORDER_STYLES} onChange={(v) => set({ cardBorderStyle: v })} />
@@ -458,7 +483,17 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
                     <Toggle label="Tombol menu cepat ⚡" hint="Tombol tengah yang membuka pintasan Playground, Compiler, Pastes & Rooms" value={config.navCenter} onChange={(v) => set({ navCenter: v })} />
                   </Section>
 
-                  <Section title="BENTUK NAVBAR" hint="Sama dengan tab Bentuk">
+                  <Section title="BENTUK NAVBAR ATAS" hint="Header yang melayang di atas">
+                    <ShapePicker nav value={config.topShape} options={NAV_SHAPES} colors={colors} onChange={(v) => set({ topShape: v })} />
+                    <Segmented label="Tata letak" value={config.topLayout} options={NAV_LAYOUTS} onChange={(v) => set({ topLayout: v })} />
+                  </Section>
+
+                  <Section title="BENTUK NAVBAR BAWAH" hint="Dock tab di bawah">
+                    <ShapePicker nav value={config.bottomShape} options={NAV_SHAPES} colors={colors} onChange={(v) => set({ bottomShape: v })} />
+                    <Segmented label="Tata letak" value={config.bottomLayout} options={NAV_LAYOUTS} onChange={(v) => set({ bottomLayout: v })} />
+                  </Section>
+
+                  <Section title="SUDUT NAVBAR" hint="Sama dengan tab Bentuk">
                     <Slider label="Sudut atas" value={config.rDockTop} min={0} max={60} unit="px" pill onChange={(v) => set({ rDockTop: v }, true)} />
                     <Slider label="Sudut bawah" value={config.rDockBottom} min={0} max={60} unit="px" pill onChange={(v) => set({ rDockBottom: v }, true)} />
                     <Slider label="Tombol ikon di dalamnya" value={config.rDockBtn} min={0} max={60} unit="px" pill onChange={(v) => set({ rDockBtn: v }, true)} />
@@ -475,6 +510,11 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
                   <Section title="TRANSISI HALAMAN">
                     <Segmented value={config.animPage} options={[{ id: 'auto', label: 'Auto' }, { id: 'slide', label: 'Geser' }, { id: 'slideX', label: 'Samping' }, { id: 'fade', label: 'Pudar' }, { id: 'zoom', label: 'Zoom' }, { id: 'blur', label: 'Blur' }, { id: 'rise', label: 'Naik' }, { id: 'flip', label: 'Flip' }, { id: 'drop', label: 'Turun' }, { id: 'skew', label: 'Miring' }, { id: 'none', label: 'Mati' }]} onChange={(v) => set({ animPage: v })} />
                     <Toggle label="Animasi masuk konten" hint="Kartu & hero muncul bertahap" value={config.animEntrance} onChange={(v) => set({ animEntrance: v })} />
+                  </Section>
+                  <Section title="GULIR & SCROLL" hint="Lenis + GSAP ScrollTrigger">
+                    <Toggle label="Gulir halus" hint="Scroll mengalir dengan inersia (Lenis)" value={config.smoothScroll} onChange={(v) => set({ smoothScroll: v })} />
+                    <Segmented label="Animasi saat gulir" value={config.scrollFx} options={[{ id: 'off', label: 'Mati' }, { id: 'soft', label: 'Halus' }, { id: 'full', label: 'Penuh' }]} onChange={(v) => set({ scrollFx: v })} />
+                    <p className="cfg-note">Penuh: kartu masuk bertahap (ikon, judul, isi, footer), kedalaman parallax pada latar.</p>
                   </Section>
                   <Section title="INTERAKSI">
                     <Segmented label="Efek hover kartu" value={config.animHover} options={HOVERS} onChange={(v) => set({ animHover: v })} />
@@ -777,7 +817,7 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
 
         .studio-panel-solid .tpl-hint { display: block; color: var(--muted); font-size: 0.74rem; line-height: 1.45; margin: 6px 0 12px; }
         .studio-panel-solid .tpl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .studio-panel-solid .tpl-card { display: grid; gap: 4px; padding: 8px; text-align: left; border-radius: min(var(--r-btn, 12px), 16px); border: 1px solid var(--border); cursor: pointer; min-width: 0; font: inherit; transition: transform .25s var(--mo-spring, ease), border-color .2s, box-shadow .2s; }
+        .studio-panel-solid .tpl-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 8px; text-align: left; border-radius: min(var(--r-btn, 12px), 16px); border: 1px solid var(--border); cursor: pointer; min-width: 0; font: inherit; transition: transform .25s var(--mo-spring, ease), border-color .2s, box-shadow .2s; }
         .studio-panel-solid .tpl-card:hover { transform: translateY(-3px) scale(1.015); }
         .studio-panel-solid .tpl-card:active { transform: scale(.97); }
         .studio-panel-solid .tpl-card.active { border-color: var(--a2); box-shadow: 0 0 0 2px color-mix(in srgb, var(--a2) 35%, transparent); }
@@ -794,10 +834,13 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
         .studio-panel-solid .nv-tile[aria-checked='true'] { border-color: var(--a2); box-shadow: 0 0 0 2px color-mix(in srgb, var(--a2) 35%, transparent); }
         .studio-panel-solid .nv-desc { font-size: 0.62rem; line-height: 1.3; }
         .studio-panel-solid .cp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
-        .studio-panel-solid .cp-tile { display: grid; gap: 6px; padding: 8px 6px 6px; justify-items: center; border-radius: min(var(--r-btn, 10px), 16px); border: 1px solid var(--border); cursor: pointer; font: inherit; transition: transform .2s var(--mo-spring, ease), border-color .2s; min-width: 0; }
+        .studio-panel-solid .cp-tile { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 8px 6px 6px; justify-items: center; border-radius: min(var(--r-btn, 10px), 16px); border: 1px solid var(--border); cursor: pointer; font: inherit; transition: transform .2s var(--mo-spring, ease), border-color .2s; min-width: 0; }
         .studio-panel-solid .cp-tile:hover { transform: translateY(-2px); }
         .studio-panel-solid .cp-tile.active { border-color: var(--a2); box-shadow: 0 0 0 2px color-mix(in srgb, var(--a2) 35%, transparent); }
         .studio-panel-solid .cp-demo { display: block; width: 100%; height: 34px; }
+        .studio-panel-solid .sp-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .studio-panel-solid .sp-box { display: block; width: 100%; height: 46px; padding: 3px; }
+        .studio-panel-solid .cfg-note { margin: 2px 0 6px; font-size: .7rem; color: var(--muted); line-height: 1.35; }
         .studio-panel-solid .cp-name { font-family: var(--font-mono); font-size: .64rem; font-weight: 700; }
 
         .studio-panel-solid .palette-grid {
