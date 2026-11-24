@@ -4,7 +4,7 @@ import { RotateCcw } from 'lucide-react';
 import { Icons } from './Icons';
 import { sound } from '@/src/lib/interactiveEffects';
 import {
-  PRESETS, TEMPLATES, BORDER_STYLES, BORDER_COLORS, GLINTS, SPLASH_STYLES, SPLASH_BGS, FONTS, FONT_CATS, GRADIENTS, RADIUS_PRESETS, PARTICLES, CARD_STYLES, CARD_SHAPES, NAV_SHAPES, CARD_HEADS, NAV_LAYOUTS, FAB_STYLES, HEADING_CASES, NAV_STYLES, NAV_LABELS, HOVERS, COLOR_KEYS, DEFAULT_CONFIG,
+  PRESETS, TEMPLATES, BORDER_STYLES, BORDER_COLORS, GLINTS, SPLASH_STYLES, SPLASH_BGS, FONTS, FONT_CATS, GRADIENTS, RADIUS_PRESETS, PARTICLES, CARD_STYLES, CARD_SHAPES, NAV_SHAPES, CARD_HEADS, NAV_LAYOUTS, FAB_STYLES, SIDEBAR_STYLES, HEADING_CASES, NAV_STYLES, NAV_LABELS, HOVERS, COLOR_KEYS, DEFAULT_CONFIG,
   resolveColors, sanitizeConfig, randomPalette, hexToRgb, isLight, fontPreviewHref,
 } from '@/src/lib/themes';
 import { saveBackgroundFile, clearBackground, readBackground } from '@/src/lib/bgUpload';
@@ -147,6 +147,35 @@ function ShapePicker({ value, options, nav, colors, onChange, label }) {
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** Pilih gaya sidebar dengan pratinjau mini (panel + item, "Rel" memakai rel putih di kanan). */
+function SidebarPicker({ value, options, colors, onChange }) {
+  const txt = colors.text || (isLight(colors.bg1) ? '#0f172a' : '#f8fafc');
+  return (
+    <div className="cfg">
+      <div className="cp-grid sp-grid" role="radiogroup" aria-label="Gaya sidebar">
+        {options.map((o) => (
+          <button key={o.id} type="button" role="radio" aria-checked={value === o.id} className={`cp-tile ${value === o.id ? 'active' : ''}`} onClick={() => onChange(o.id)}>
+            <span className="sp-box sbd-box"><span className="sbd" data-sbd={o.id} style={{ '--a1': colors.a1, '--a2': colors.a2, '--a3': colors.a3, '--fg': txt }}><b /><i /><i className="on" /><i /></span></span>
+            <span className="cp-name" style={{ color: txt }}>{o.label}</span>
+          </button>
+        ))}
+      </div>
+      <style jsx global>{`
+        .sbd-box { position: relative; overflow: hidden; }
+        .sbd { position: absolute; left: 8px; top: 6px; bottom: 6px; width: 46px; display: grid; align-content: start; gap: 4px; padding: 5px 0 5px 5px; border-radius: 0 10px 10px 0; background: color-mix(in srgb, var(--fg) 14%, transparent); border: 1px solid color-mix(in srgb, var(--fg) 18%, transparent); }
+        .sbd b { height: 6px; width: 60%; border-radius: 3px; background: var(--a2); } .sbd i { height: 7px; border-radius: 99px; background: color-mix(in srgb, var(--fg) 22%, transparent); } .sbd i.on { background: linear-gradient(90deg, var(--a1), var(--a3)); }
+        .sbd[data-sbd='rail'] { border-radius: 12px; padding-right: 12px; } .sbd[data-sbd='rail']::after { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 8px; border-radius: 0 11px 11px 0; background: var(--fg); opacity: .9; }
+        .sbd[data-sbd='rail'] i.on { background: var(--fg); border-radius: 99px 0 0 99px; margin-right: -12px; position: relative; z-index: 1; }
+        .sbd[data-sbd='aurora'] { border-radius: 12px; padding-right: 12px; } .sbd[data-sbd='aurora']::after { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 8px; border-radius: 0 11px 11px 0; background: var(--fg); opacity: .9; }
+        .sbd[data-sbd='aurora'] i.on { background: var(--fg); border-radius: 99px 0 0 99px; margin-right: -12px; position: relative; z-index: 1; }
+        .sbd[data-sbd='dock'] { width: 16px; border-radius: 10px; align-items: center; padding: 5px 0; left: 12px; } .sbd[data-sbd='dock'] b { width: 6px; } .sbd[data-sbd='dock'] i { width: 6px; height: 6px; border-radius: 50%; }
+        .sbd[data-sbd='glass'] { border-radius: 12px; left: 10px; top: 8px; bottom: 8px; backdrop-filter: blur(4px); } .sbd[data-sbd='glass'] i { border-radius: 5px; }
+        .sbd[data-sbd='minimal'] { border-radius: 0; left: 0; top: 0; bottom: 0; border-width: 0 1px 0 0; background: transparent; } .sbd[data-sbd='minimal'] i { border-radius: 3px; height: 6px; }
+      `}</style>
     </div>
   );
 }
@@ -520,6 +549,10 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
                   <Section title="BENTUK NAVBAR BAWAH" hint="Dock tab di bawah">
                     <ShapePicker nav value={config.bottomShape} options={NAV_SHAPES} colors={colors} onChange={(v) => set({ bottomShape: v })} />
                     <Segmented label="Tata letak" value={config.bottomLayout} options={NAV_LAYOUTS} onChange={(v) => set({ bottomLayout: v })} />
+                  </Section>
+
+                  <Section title="SIDEBAR MENU" hint="Dibuka dari tombol ☰ di header">
+                    <SidebarPicker value={config.sidebarStyle} options={SIDEBAR_STYLES} colors={colors} onChange={(v) => set({ sidebarStyle: v })} />
                   </Section>
 
                   <Section title="TOMBOL DI TEPI LAYAR" hint="Tema · Audio · Asisten">

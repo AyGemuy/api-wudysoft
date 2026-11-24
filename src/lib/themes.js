@@ -301,6 +301,16 @@ export const NAV_LAYOUTS = [
   { id: 'island', label: 'Pulau' },
 ];
 
+/** Gaya sidebar menu (tombol ☰ di header). */
+export const SIDEBAR_STYLES = [
+  { id: 'curved', label: 'Melengkung' },
+  { id: 'rail', label: 'Rel kaca' },
+  { id: 'aurora', label: 'Aurora (lengkap)' },
+  { id: 'dock', label: 'Dok ikon' },
+  { id: 'glass', label: 'Kaca melayang' },
+  { id: 'minimal', label: 'Minimal' },
+];
+
 /** Gaya tiga tombol melayang di tepi layar (Tema · Audio · Asisten). */
 export const FAB_STYLES = [
   { id: 'tab', label: 'Tab tepi' },
@@ -489,6 +499,7 @@ export const DEFAULT_CONFIG = {
   animBtn: true,
   smoothScroll: true, // gulir halus (Lenis)
   scrollFx: 'full', // animasi saat gulir (GSAP ScrollTrigger): off | soft | full
+  sidebarStyle: 'curved', // curved | rail | aurora | dock | glass | minimal
   fabStyle: 'tab', // gaya tombol kanan: tab | orb | pill | square | dock | neon | minimal
   fabSide: 'right', // right | left
   fabY: 'mid', // top | mid | low
@@ -554,6 +565,7 @@ export function sanitizeConfig(raw) {
   c.navLabels = pick(c.navLabels, NAV_LABELS.map((n) => n.id), 'auto');
   c.navCenter = bool(c.navCenter, true);
   c.scrollFx = pick(c.scrollFx, ['off', 'soft', 'full'], 'full');
+  c.sidebarStyle = pick(c.sidebarStyle, SIDEBAR_STYLES.map((x) => x.id), 'curved');
   c.fabStyle = pick(c.fabStyle, FAB_STYLES.map((x) => x.id), 'tab');
   c.fabSide = pick(c.fabSide, ['right', 'left'], 'right');
   c.fabY = pick(c.fabY, ['top', 'mid', 'low'], 'mid');
@@ -716,6 +728,7 @@ export function computeTheme(input) {
     'data-anim-btn': cfg.animBtn ? 'on' : 'off',
     'data-smooth': cfg.smoothScroll ? 'on' : 'off',
     'data-scrollfx': cfg.scrollFx,
+    'data-sbs': cfg.sidebarStyle,
     'data-fab': cfg.fabStyle,
     'data-fab-side': cfg.fabSide,
     'data-fab-y': cfg.fabY,
