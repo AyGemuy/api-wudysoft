@@ -8,7 +8,7 @@ export { s as kit };
 /** Kepala halaman seragam: badge kecil, judul beranimasi, dan deskripsi. */
 export function PageHead({ Icon, badge, title, desc }) {
   return (
-    <header>
+    <header className="pg-head">
       <Reveal variant="down">
         <div className="badge ok" style={{ marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           {Icon && <Icon size={14} color="var(--a2)" />} <span>{badge}</span>

@@ -22,6 +22,7 @@ const JoinNotice = dynamic(() => import('@/components/JoinNotice'), { ssr: false
 import '@/styles/globals.css';
 import '@/styles/motion.css';
 import '@/styles/shapes.css';
+import '@/styles/modern.css';
 import '@/styles/hljs.css';
 
 export default function App({ Component, pageProps: { session, ...pageProps } }) {

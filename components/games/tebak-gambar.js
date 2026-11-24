@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ImageIcon, Lightbulb, SkipForward, Eye, RotateCcw, Send, Flame, Trophy, Loader2 } from 'lucide-react';
+import Card from '@/components/Card';
 import { PageHead, kit as s } from '@/components/PageKit';
 import { http } from '@/src/lib/http';
 import { toast } from '@/src/lib/toast';

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dices, Plus, RotateCcw, Copy, Check, Users, Trophy, Wifi, MonitorSmartphone } from 'lucide-react';
+import Card from '@/components/Card';
 import { PageHead, kit as s } from '@/components/PageKit';
 import { http } from '@/src/lib/http';
 import { copyText } from '@/src/lib/timeAgo';

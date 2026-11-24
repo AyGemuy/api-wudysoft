@@ -1,4 +1,4 @@
-.page { width: min(960px, 100%); max-width: 100%; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding-bottom: 24px; }
+.page { width: min(1160px, 100%); max-width: 100%; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding-bottom: 24px; }
 .page > * { min-width: 0; max-width: 100%; }
 .page :is(h1, h2, h3, p, small, b) { overflow-wrap: anywhere; }
 .page h3 { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; margin: 0 0 10px; }
@@ -25,3 +25,13 @@
 .hubCard { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 16px; border-radius: var(--r-m); color: inherit; text-decoration: none; transition: translate 0.2s, border-color 0.2s; }
 .hubCard:hover { translate: 0 -3px; border-color: color-mix(in srgb, var(--a2) 50%, var(--border)); }
 .hubCard p { margin: 0; font-size: 0.8rem; color: var(--muted); }
+
+/* ===== Tata letak editorial: hero kiri (menempel) + kartu kanan, hanya di layar lebar ===== */
+.page > header:first-child { display: grid; gap: 10px; align-content: start; padding: 6px 0 4px; }
+.page > header:first-child h1 { font-size: clamp(2rem, 1.3rem + 3.4vw, 3.4rem); line-height: 1.02; letter-spacing: -0.04em; text-wrap: balance; margin: 0; }
+.page > header:first-child p { margin: 0; max-width: 46ch; font-size: 0.96rem; text-wrap: pretty; }
+@media (min-width: 1080px) {
+  .page:has(> header:first-child) { grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.9fr); column-gap: clamp(32px, 4vw, 64px); row-gap: 0; align-items: start; }
+  .page:has(> header:first-child) > header:first-child { grid-column: 1; grid-row: 1 / span 40; position: sticky; top: 104px; align-self: start; padding-right: 8px; }
+  .page:has(> header:first-child) > :not(header:first-child) { grid-column: 2; margin-bottom: 16px; }
+}

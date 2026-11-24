@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, RotateCcw, Undo2, Play, PartyPopper, Frown, Loader2 } from 'lucide-react';
+import Card from '@/components/Card';
 import { PageHead, kit as s } from '@/components/PageKit';
 import { http } from '@/src/lib/http';
 import { toast } from '@/src/lib/toast';
