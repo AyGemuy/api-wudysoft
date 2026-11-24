@@ -5,7 +5,9 @@ import { checkRateLimit, clientIp } from "./src/lib/rateLimit";
 import { safeNext } from "./src/lib/safeNext";
 
 /** Halaman yang wajib login. Tambahkan path lain di sini bila perlu. */
-const PROTECTED = ["/playground", "/webhooks"];
+const PROTECTED = ["/playground", "/webhooks", "/profile", "/tools/db", "/tools/upload"];
+/** Pengecualian: path + query yang tetap publik walau berada di bawah halaman terproteksi. */
+const PUBLIC_EXCEPTIONS = [(p, q) => p === "/profile" && q.get("tab") === "kontak"];
 const DEFAULT_AFTER_LOGIN = "/";
 
 // User-Agent crawler pembuat preview tautan
@@ -15,7 +17,8 @@ const BOT_UA = /(facebookexternalhit|facebot|whatsapp|telegrambot|twitterbot|dis
 // di sini kita ikuti protokol yang sama, lalu coba mode lain sebagai cadangan.
 const isHttps = (req) => (req.headers.get("x-forwarded-proto") || req.nextUrl.protocol.replace(":", "")).split(",")[0].trim() === "https";
 
-const isProtected = (p) => PROTECTED.some((b) => p === b || p.startsWith(`${b}/`));
+const isProtected = (p, q = new URLSearchParams()) =>
+  PROTECTED.some((b) => p === b || p.startsWith(`${b}/`)) && !PUBLIC_EXCEPTIONS.some((f) => f(p, q));
 const isAuthRoot = (p) => p === "/auth" || p === "/auth/";
 
 /**
@@ -37,7 +40,12 @@ async function readSession(req) {
   return null;
 }
 
-function withSecurityHeaders(res) {
+function withSecurityHeaders(res, req) {
+  // HSTS hanya bermakna lewat HTTPS (Netlify/Vercel/Cloudflare sudah HTTPS; localhost tidak terkena)
+  if (req && isHttps(req)) res.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  res.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups"); // popup login OAuth tetap jalan
+  res.headers.set("X-DNS-Prefetch-Control", "on");
+  res.headers.set("X-Permitted-Cross-Domain-Policies", "none");
   res.headers.set("X-Frame-Options", "SAMEORIGIN");
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -88,24 +96,27 @@ export async function middleware(req) {
   }
 
   // 2. Guard halaman terproteksi & halaman /auth
-  if (isProtected(pathname) || isAuthRoot(pathname)) {
+  if (isProtected(pathname, req.nextUrl.searchParams) || isAuthRoot(pathname)) {
     const session = await readSession(req);
 
-    if (isProtected(pathname) && !session) {
+    if (isProtected(pathname, req.nextUrl.searchParams) && !session) {
       const url = req.nextUrl.clone();
       url.pathname = "/auth";
       url.search = "";
       url.searchParams.set("next", safeNext(`${pathname}${search}`, DEFAULT_AFTER_LOGIN));
-      return withSecurityHeaders(NextResponse.redirect(url));
+      return withSecurityHeaders(NextResponse.redirect(url), req);
     }
 
     if (isAuthRoot(pathname) && session) {
       const dest = safeNext(req.nextUrl.searchParams.get("next"), DEFAULT_AFTER_LOGIN);
-      return withSecurityHeaders(NextResponse.redirect(new URL(dest, req.url)));
+      return withSecurityHeaders(NextResponse.redirect(new URL(dest, req.url)), req);
     }
   }
 
-  return withSecurityHeaders(NextResponse.next());
+  const res = withSecurityHeaders(NextResponse.next(), req);
+  // halaman terproteksi & /auth tidak boleh disimpan cache (tombol Back setelah logout tidak menampilkan isi lama)
+  if (isProtected(pathname, req.nextUrl.searchParams) || isAuthRoot(pathname)) res.headers.set("Cache-Control", "private, no-store, max-age=0");
+  return res;
 }
 
 export const config = {

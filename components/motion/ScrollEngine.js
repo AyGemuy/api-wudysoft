@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useReducedMotion } from 'framer-motion';
 import { useTheme } from '@/components/ThemeContext';
+import { useFullscreen } from '@/src/lib/fullscreen';
 
 /**
  * Mesin gulir modern (dipasang sekali di _app):
@@ -36,7 +37,10 @@ export default function ScrollEngine() {
   const router = useRouter();
   const { config } = useTheme();
   const reduced = useReducedMotion();
-  const animOn = config.anim !== 'off' && !reduced;
+  // Saat layar penuh, <html> menjadi wadah gulir sendiri (bukan window) → Lenis/ScrollTrigger dimatikan
+  // dan gulir native browser dipakai, jadi roda mouse, sentuhan, dan keyboard bekerja seperti biasa.
+  const { active: fsActive } = useFullscreen();
+  const animOn = config.anim !== 'off' && !reduced && !fsActive;
   const smooth = animOn && config.smoothScroll !== false;
   const fx = animOn ? config.scrollFx || 'full' : 'off';
   const speed = Math.max(0.5, config.speed || 1);

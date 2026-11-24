@@ -72,7 +72,10 @@ html[data-anim='off'] body::after { opacity: 0.03; }
 /* ---------- LAYAR PENUH ---------- */
 .hd-fs { flex: none; }
 @media (max-width: 380px) { .hd-fs { display: none; } }
-:fullscreen body, :-webkit-full-screen body { overflow-y: auto; }
+/* html layar penuh = kotak tetap seukuran layar; jadikan ia wadah gulir supaya halaman panjang bisa digulir */
+html:fullscreen, html:-webkit-full-screen { overflow-x: hidden !important; overflow-y: auto !important; overscroll-behavior: contain; scroll-behavior: auto !important; }
+html:fullscreen body, html:-webkit-full-screen body { height: auto; min-height: 100%; overflow: visible; }
+html:fullscreen[data-room-full='on'], html:-webkit-full-screen[data-room-full='on'] { overflow: hidden !important; }
 /* room imersif: chat memenuhi seluruh layar, semua chrome disembunyikan */
 html[data-room-full='on'] .top-header-wrap,
 html[data-room-full='on'] .floating-navbar-wrap,
@@ -93,3 +96,27 @@ html[data-room-full='on'] :is(body, #__next, main, div, section):has(.rooms-cont
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important; perspective: none !important; contain: none !important;
   will-change: auto !important; content-visibility: visible !important; clip-path: none !important; overflow: visible !important;
 }
+
+/* ---------- sidebar: sambungan mulus rel ↔ panel, tepi bawah daftar memudar ---------- */
+html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-rail { margin-left: -2px !important; padding-left: 2px; }
+html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-item.active { margin-right: -2px !important; }
+html:is([data-sbs='rail'], [data-sbs='aurora'], [data-sbs='glass'], [data-sbs='dock']) .sb-nav {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 10px, #000 calc(100% - 26px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 10px, #000 calc(100% - 26px), transparent 100%);
+}
+html:is([data-sbs='aurora'], [data-sbs='dock']) .sb-foot { padding-top: 6px; }
+.sb-nav { overscroll-behavior: contain; }
+
+/* ---------- sidebar: lekukan tab aktif harus sama membulat di atas & bawah ----------
+   Tiap item dibungkus elemen bertransformasi (animasi masuk) sehingga membentuk stacking context sendiri;
+   pembungkus item aktif diangkat agar lekukan bawah tidak tertutup item berikutnya (sebelumnya runcing). */
+.sb-group > div:has(> .sb-item.active) { position: relative; z-index: 3; }
+html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-rail > button, html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-rail > .rl-btn { border-radius: 50%; }
+html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-item.active::before { top: calc(var(--sb-nr, 24px) * -1); }
+/* motion.css memberi .sb-item::after efek kilau (inset:0, opacity:0, blend) → itu yang membuat lekukan bawah hilang/runcing */
+html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-item.active::after {
+  inset: auto 0 calc(var(--sb-nr, 24px) * -1) auto !important; width: var(--sb-nr, 24px); height: var(--sb-nr, 24px); border-radius: 0 !important; opacity: 1 !important; mix-blend-mode: normal !important;
+  background-size: auto !important; background-position: 0 0 !important; background-repeat: no-repeat !important; animation: none !important; z-index: 0;
+}
+html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-item.active::before { border-radius: 0 !important; }
+html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-item.active { margin-top: 10px !important; margin-bottom: 10px !important; }
