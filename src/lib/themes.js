@@ -301,6 +301,17 @@ export const NAV_LAYOUTS = [
   { id: 'island', label: 'Pulau' },
 ];
 
+/** Gaya tiga tombol melayang di tepi layar (Tema · Audio · Asisten). */
+export const FAB_STYLES = [
+  { id: 'tab', label: 'Tab tepi' },
+  { id: 'orb', label: 'Bulat' },
+  { id: 'pill', label: 'Kapsul' },
+  { id: 'square', label: 'Kotak' },
+  { id: 'dock', label: 'Dock menyatu' },
+  { id: 'neon', label: 'Neon' },
+  { id: 'minimal', label: 'Minimal' },
+];
+
 /** Huruf judul (h1–h4). */
 export const HEADING_CASES = [
   { id: 'normal', label: 'Normal' },
@@ -478,6 +489,9 @@ export const DEFAULT_CONFIG = {
   animBtn: true,
   smoothScroll: true, // gulir halus (Lenis)
   scrollFx: 'full', // animasi saat gulir (GSAP ScrollTrigger): off | soft | full
+  fabStyle: 'tab', // gaya tombol kanan: tab | orb | pill | square | dock | neon | minimal
+  fabSide: 'right', // right | left
+  fabY: 'mid', // top | mid | low
   animSplash: true,
   splashStyle: 'ring', // ring | orbit | bars | pulse | morph | dots | typing
   splashBg: 'theme', // theme | gradient | mesh | glass
@@ -540,6 +554,9 @@ export function sanitizeConfig(raw) {
   c.navLabels = pick(c.navLabels, NAV_LABELS.map((n) => n.id), 'auto');
   c.navCenter = bool(c.navCenter, true);
   c.scrollFx = pick(c.scrollFx, ['off', 'soft', 'full'], 'full');
+  c.fabStyle = pick(c.fabStyle, FAB_STYLES.map((x) => x.id), 'tab');
+  c.fabSide = pick(c.fabSide, ['right', 'left'], 'right');
+  c.fabY = pick(c.fabY, ['top', 'mid', 'low'], 'mid');
   c.cardShape = pick(c.cardShape, CARD_SHAPES.map((x) => x.id), 'none');
   c.cardHead = pick(c.cardHead, CARD_HEADS.map((x) => x.id), 'bar');
   c.cardFoot = bool(c.cardFoot, true);
@@ -699,6 +716,9 @@ export function computeTheme(input) {
     'data-anim-btn': cfg.animBtn ? 'on' : 'off',
     'data-smooth': cfg.smoothScroll ? 'on' : 'off',
     'data-scrollfx': cfg.scrollFx,
+    'data-fab': cfg.fabStyle,
+    'data-fab-side': cfg.fabSide,
+    'data-fab-y': cfg.fabY,
     'data-splash': cfg.animSplash ? 'on' : 'off',
     'data-splash-style': cfg.splashStyle,
     'data-splash-bg': cfg.splashBg,

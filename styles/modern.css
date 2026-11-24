@@ -68,3 +68,28 @@ html[data-anim='off'] body::after { opacity: 0.03; }
   body::after { opacity: 0.04; }
 }
 @media (prefers-reduced-motion: reduce) { html::before { display: none; } }
+
+/* ---------- LAYAR PENUH ---------- */
+.hd-fs { flex: none; }
+@media (max-width: 380px) { .hd-fs { display: none; } }
+:fullscreen body, :-webkit-full-screen body { overflow-y: auto; }
+/* room imersif: chat memenuhi seluruh layar, semua chrome disembunyikan */
+html[data-room-full='on'] .top-header-wrap,
+html[data-room-full='on'] .floating-navbar-wrap,
+html[data-room-full='on'] footer,
+html[data-room-full='on'] .tf-fab, html[data-room-full='on'] .au-fab, html[data-room-full='on'] .ai-fab { display: none !important; }
+html[data-room-full='on'] body { overflow: hidden; padding: 0; }
+html[data-room-full='on'] .rooms-container {
+  position: fixed !important; inset: 0 !important; z-index: 1200; width: 100vw !important; max-width: none !important;
+  height: 100dvh !important; max-height: none !important; min-height: 0 !important; border-radius: 0 !important; margin: 0 !important;
+  background: var(--bg1);
+}
+html[data-room-full='on'] .rooms-container.kc, html[data-room-full='on'] .rooms-container.glass { border-radius: 0 !important; clip-path: none !important; }
+html[data-room-full='on'] .rooms-container::before, html[data-room-full='on'] .rooms-container::after { display: none; }
+@media (max-width: 420px) { .rf-lbl { display: none; } }
+/* leluhur .rooms-container tidak boleh membuat "containing block" baru, supaya position: fixed benar-benar memenuhi layar */
+html[data-room-full='on'] :is(body, #__next, main, div, section):has(.rooms-container) {
+  transform: none !important; translate: none !important; scale: none !important; rotate: none !important; filter: none !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important; perspective: none !important; contain: none !important;
+  will-change: auto !important; content-visibility: visible !important; clip-path: none !important; overflow: visible !important;
+}

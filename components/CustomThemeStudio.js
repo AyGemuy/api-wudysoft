@@ -4,7 +4,7 @@ import { RotateCcw } from 'lucide-react';
 import { Icons } from './Icons';
 import { sound } from '@/src/lib/interactiveEffects';
 import {
-  PRESETS, TEMPLATES, BORDER_STYLES, BORDER_COLORS, GLINTS, SPLASH_STYLES, SPLASH_BGS, FONTS, FONT_CATS, GRADIENTS, RADIUS_PRESETS, PARTICLES, CARD_STYLES, CARD_SHAPES, NAV_SHAPES, CARD_HEADS, NAV_LAYOUTS, HEADING_CASES, NAV_STYLES, NAV_LABELS, HOVERS, COLOR_KEYS, DEFAULT_CONFIG,
+  PRESETS, TEMPLATES, BORDER_STYLES, BORDER_COLORS, GLINTS, SPLASH_STYLES, SPLASH_BGS, FONTS, FONT_CATS, GRADIENTS, RADIUS_PRESETS, PARTICLES, CARD_STYLES, CARD_SHAPES, NAV_SHAPES, CARD_HEADS, NAV_LAYOUTS, FAB_STYLES, HEADING_CASES, NAV_STYLES, NAV_LABELS, HOVERS, COLOR_KEYS, DEFAULT_CONFIG,
   resolveColors, sanitizeConfig, randomPalette, hexToRgb, isLight, fontPreviewHref,
 } from '@/src/lib/themes';
 import { saveBackgroundFile, clearBackground, readBackground } from '@/src/lib/bgUpload';
@@ -147,6 +147,35 @@ function ShapePicker({ value, options, nav, colors, onChange, label }) {
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** Pilih gaya tiga tombol tepi layar, dengan pratinjau mini (tiga tombol bertumpuk di tepi kanan kotak). */
+function FabPicker({ value, options, colors, onChange, label }) {
+  const txt = colors.text || (isLight(colors.bg1) ? '#0f172a' : '#f8fafc');
+  return (
+    <div className="cfg">
+      {label && <span className="cfg-label">{label}</span>}
+      <div className="cp-grid sp-grid" role="radiogroup" aria-label={label || 'Gaya tombol'}>
+        {options.map((o) => (
+          <button key={o.id} type="button" role="radio" aria-checked={value === o.id} className={`cp-tile ${value === o.id ? 'active' : ''}`} onClick={() => onChange(o.id)}>
+            <span className="sp-box fd-box"><span className="fd" data-fd={o.id} style={{ '--a1': colors.a1, '--a2': colors.a2, '--a3': colors.a3, '--fg': txt }}><i /><i /><i /></span></span>
+            <span className="cp-name" style={{ color: txt }}>{o.label}</span>
+          </button>
+        ))}
+      </div>
+      <style jsx global>{`
+        .fd-box { position: relative; overflow: hidden; }
+        .fd { position: absolute; right: 0; top: 50%; translate: 0 -50%; display: grid; gap: 4px; }
+        .fd i { display: block; width: 14px; height: 15px; background: linear-gradient(135deg, var(--a1), var(--a3)); border-radius: 6px 0 0 6px; opacity: .92; }
+        .fd[data-fd='orb'] { right: 5px; } .fd[data-fd='orb'] i { width: 15px; border-radius: 50%; }
+        .fd[data-fd='pill'] { right: 5px; } .fd[data-fd='pill'] i { width: 12px; height: 18px; border-radius: 99px; }
+        .fd[data-fd='square'] { right: 5px; } .fd[data-fd='square'] i { width: 15px; border-radius: 4px; }
+        .fd[data-fd='dock'] { gap: 0; } .fd[data-fd='dock'] i { border-radius: 0; height: 13px; border-bottom: 1px solid rgba(0,0,0,.25); } .fd[data-fd='dock'] i:first-child { border-radius: 7px 0 0 0; } .fd[data-fd='dock'] i:last-child { border-radius: 0 0 0 7px; border: 0; }
+        .fd[data-fd='neon'] { right: 5px; } .fd[data-fd='neon'] i { width: 15px; border-radius: 50%; background: transparent; border: 1.5px solid var(--a2); box-shadow: 0 0 8px var(--a2), inset 0 0 6px var(--a2); }
+        .fd[data-fd='minimal'] { right: 5px; } .fd[data-fd='minimal'] i { width: 9px; height: 9px; border-radius: 50%; background: var(--fg); opacity: .55; margin: 3px; }
+      `}</style>
     </div>
   );
 }
@@ -491,6 +520,12 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
                   <Section title="BENTUK NAVBAR BAWAH" hint="Dock tab di bawah">
                     <ShapePicker nav value={config.bottomShape} options={NAV_SHAPES} colors={colors} onChange={(v) => set({ bottomShape: v })} />
                     <Segmented label="Tata letak" value={config.bottomLayout} options={NAV_LAYOUTS} onChange={(v) => set({ bottomLayout: v })} />
+                  </Section>
+
+                  <Section title="TOMBOL DI TEPI LAYAR" hint="Tema · Audio · Asisten">
+                    <FabPicker label="Gaya tombol" value={config.fabStyle} options={FAB_STYLES} colors={colors} onChange={(v) => set({ fabStyle: v })} />
+                    <Segmented label="Sisi layar" value={config.fabSide} options={[{ id: 'right', label: 'Kanan' }, { id: 'left', label: 'Kiri' }]} onChange={(v) => set({ fabSide: v })} />
+                    <Segmented label="Posisi vertikal" value={config.fabY} options={[{ id: 'top', label: 'Atas' }, { id: 'mid', label: 'Tengah' }, { id: 'low', label: 'Bawah' }]} onChange={(v) => set({ fabY: v })} />
                   </Section>
 
                   <Section title="SUDUT NAVBAR" hint="Sama dengan tab Bentuk">

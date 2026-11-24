@@ -6,6 +6,7 @@ import { audioStore, bgm, CUES, parseYouTube } from '@/src/lib/audio';
 import { sound, PACKS, EVENTS } from '@/src/lib/interactiveEffects';
 import { useTheme } from '@/components/ThemeContext';
 import { toast } from '@/src/lib/toast';
+import MusicPlayer from '@/components/MusicPlayer';
 
 function useStore(store) {
   const [v, setV] = useState(store.get());
@@ -160,6 +161,7 @@ export default function AudioControl() {
                 <div className="au-input"><Link2 size={14} /><input id="au-link" className="input" placeholder="Link YouTube (video / playlist)" value={url} onChange={(e) => { setUrl(e.target.value); setUrlErr(''); }} inputMode="url" autoComplete="off" spellCheck={false} /></div>
                 <button className="btn primary" type="submit">Setel</button>
               </form>
+              <MusicPlayer url={a.bgmUrl} state={b} on={a.bgmOn} />
               <div className={`au-status ${b.status}`} aria-live="polite">
                 {playing && <span className="au-eq" aria-hidden="true"><i /><i /><i /></span>}
                 <span className="au-status-t">{statusText}</span>
@@ -217,7 +219,7 @@ export default function AudioControl() {
         <span className="au-ico">
           {playing ? <span className="au-eq big" aria-hidden="true"><i /><i /><i /><i /></span> : a.bgmOn || sfxOn ? <Music size={22} /> : <VolumeX size={22} />}
         </span>
-        <span className="au-tip" aria-hidden="true">Audio</span>
+        <span className="au-tip" aria-hidden="true">{playing && b.title ? b.title : 'Audio'}</span>
       </button>
 
       <style jsx global>{`
@@ -236,11 +238,11 @@ export default function AudioControl() {
         .au-fab:hover .au-ico { animation: au-sway 0.9s ease-in-out infinite; }
         .au-ring { position: absolute; inset: 6px 4px 6px 8px; border-radius: max(min(var(--r-modal, 16px), 22px) - 6px, 2px) 0 0 max(min(var(--r-modal, 16px), 22px) - 6px, 2px); border: 1px dashed color-mix(in srgb, var(--a3) 45%, transparent); border-right: none; opacity: .5; pointer-events: none; }
         .au-fab.live .au-ring { opacity: .9; border-style: solid; border-color: color-mix(in srgb, var(--a2) 60%, transparent); }
-        .au-tip { position: absolute; right: calc(100% + 10px); top: 50%; transform: translate(8px, -50%); padding: 5px 10px; border-radius: var(--r-chip, 10px); background: var(--dock-bg); border: 1px solid var(--dock-border); font-size: .72rem; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+        .au-tip { max-width: 220px; overflow: hidden; text-overflow: ellipsis; position: absolute; right: calc(100% + 10px); top: 50%; transform: translate(8px, -50%); padding: 5px 10px; border-radius: var(--r-chip, 10px); background: var(--dock-bg); border: 1px solid var(--dock-border); font-size: .72rem; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
         .au-fab:hover .au-tip, .au-fab:focus-visible .au-tip { opacity: 1; transform: translate(0, -50%); }
         @keyframes au-sway { 0%, 100% { transform: rotate(-8deg) scale(1); } 50% { transform: rotate(8deg) scale(1.1); } }
         .au-backdrop { position: fixed; inset: 0; z-index: 99999; display: flex; justify-content: flex-end; background: color-mix(in srgb, var(--shadow-c) 60%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
-        .au-panel { width: 100%; max-width: 380px; height: 100%; height: 100dvh; display: flex; flex-direction: column; background: var(--surface); color: var(--text); border-left: 1px solid var(--border); box-shadow: -10px 0 30px color-mix(in srgb, var(--shadow-c) 55%, transparent); }
+        .au-panel { width: 100%; max-width: 420px; height: 100%; height: 100dvh; display: flex; flex-direction: column; background: var(--surface); color: var(--text); border-left: 1px solid var(--border); box-shadow: -10px 0 30px color-mix(in srgb, var(--shadow-c) 55%, transparent); }
         .au-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-content: start; }
         @media (max-width: 560px) { .au-fab { top: calc(40% + 62px); width: 40px; height: 52px; } .au-fab:hover { width: 40px; } .au-tip { display: none; } }
         html[data-anim='off'] .au-ico { animation: none; }

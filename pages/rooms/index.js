@@ -30,8 +30,11 @@ import {
   FileText,
   Film,
   Music2,
-  ImagePlus
+  ImagePlus,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
+import { setRoomFull, fsElement, fsSupported } from '@/src/lib/fullscreen';
 import { sound } from '@/src/lib/interactiveEffects';
 
 export default function RoomsPage() {
@@ -75,6 +78,19 @@ export default function RoomsPage() {
     const el = streamRef.current;
     if (el) stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 140;
   };
+
+  // Layar penuh room: sembunyikan navigasi/footer (CSS di modern.css) + Fullscreen API bila tersedia
+  const [roomFull, setRoomFullState] = useState(false);
+  useEffect(() => {
+    setRoomFull(roomFull && !!activeRoom);
+    return () => setRoomFull(false);
+  }, [roomFull, activeRoom]);
+  useEffect(() => {
+    const onChange = () => { if (!fsElement() && fsSupported()) setRoomFullState(false); };
+    document.addEventListener('fullscreenchange', onChange);
+    document.addEventListener('webkitfullscreenchange', onChange);
+    return () => { document.removeEventListener('fullscreenchange', onChange); document.removeEventListener('webkitfullscreenchange', onChange); };
+  }, []);
 
   // Buka / tutup grup; ?room= menjaga pilihan saat refresh & bisa dibagikan
   const openRoom = (r) => {
@@ -433,9 +449,14 @@ export default function RoomsPage() {
                   {activeMeta?.createdBy && <small style={{ color: 'var(--muted)', fontSize: '0.68rem' }}>oleh {activeMeta.createdBy}</small>}
                 </div>
               </div>
-              <button onClick={fetchMessages} className="btn" style={{ padding: '6px 12px', fontSize: '0.75rem' }}>
-                <RefreshCw size={13} /> Refresh
-              </button>
+              <div style={{ display: 'flex', gap: 6, flex: 'none' }}>
+                <button onClick={fetchMessages} className="btn" style={{ padding: '6px 12px', fontSize: '0.75rem' }}>
+                  <RefreshCw size={13} /> <span className="rf-lbl">Refresh</span>
+                </button>
+                <button onClick={() => { sound.playClick(); setRoomFullState((v) => !v); }} className="btn" style={{ padding: '6px 10px', fontSize: '0.75rem' }} aria-pressed={roomFull} aria-label={roomFull ? 'Keluar layar penuh' : 'Layar penuh'} title={roomFull ? 'Keluar layar penuh' : 'Layar penuh'}>
+                  {roomFull ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                </button>
+              </div>
             </div>
 
             {/* Message History */}

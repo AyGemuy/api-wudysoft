@@ -7,6 +7,7 @@ import { Icons } from './Icons';
 import dynamic from 'next/dynamic';
 import BgLayer from './BgLayer';
 import SiteFooter from './SiteFooter';
+import { useFullscreen } from '@/src/lib/fullscreen';
 import WudysoftBrand from './WudysoftBrand';
 import CurvedSidebar from './CurvedSidebar';
 import ThemeFab from './ThemeFab';
@@ -51,6 +52,7 @@ export default function Layout({ children }) {
   const [studioOpen, setStudioOpen] = useState(false);
   const [studioEver, setStudioEver] = useState(false); // studio tema baru diunduh setelah pertama dibuka
   useEffect(() => { if (studioOpen) setStudioEver(true); }, [studioOpen]);
+  const fs = useFullscreen();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dialOpen, setDialOpen] = useState(false);
 
@@ -236,6 +238,11 @@ export default function Layout({ children }) {
           </button>
 
           <div className="hd-side hd-tools">
+            {fs.supported && (
+              <button className="hd-btn hd-fs" aria-label={fs.active ? 'Keluar layar penuh' : 'Layar penuh'} aria-pressed={fs.active} title={fs.active ? 'Keluar layar penuh (Esc)' : 'Layar penuh'} onClick={() => { sound.playClick(); fs.toggle(); }}>
+                {fs.active ? <Icons.Minimize size={17} /> : <Icons.Maximize size={17} />}
+              </button>
+            )}
             {status === 'loading' ? (
               <div className="skeleton hd-btn" aria-hidden="true" />
             ) : user ? (

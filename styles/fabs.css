@@ -1,0 +1,83 @@
+/* =====================================================================
+   TIGA TOMBOL TEPI LAYAR  (.tf-fab Tema · .au-fab Audio · .ai-fab Asisten)
+   html[data-fab]      : tab | orb | pill | square | dock | neon | minimal
+   html[data-fab-side] : right | left
+   html[data-fab-y]    : top | mid | low
+   Posisi: top = var(--fx-y) + indeks × (tinggi + celah).
+   ===================================================================== */
+html { --fx-grp: calc(3 * var(--fx-h) + 2 * var(--fx-gap)); --fx-y: calc(50% - var(--fx-grp) / 2); --fx-w: 46px; --fx-h: 58px; --fx-gap: 12px; --fx-edge: 0px; }
+html[data-fab-y='top'] { --fx-y: 18%; }
+html[data-fab-y='low'] { --fx-y: calc(68% - var(--fx-grp) / 2); }
+.tf-fab { --fi: 0; } .au-fab { --fi: 1; } .ai-fab { --fi: 2; }
+
+html[data-fab] :is(.tf-fab, .au-fab, .ai-fab) {
+  top: calc(var(--fx-y) + var(--fi) * (var(--fx-h) + var(--fx-gap))) !important; width: var(--fx-w); height: var(--fx-h) !important;
+}
+html[data-fab] :is(.tf-fab, .au-fab, .ai-fab):hover { width: var(--fx-w); }
+
+/* ---- sisi kiri (cermin dari bawaan kanan) ---- */
+html[data-fab-side='left'] :is(.tf-fab, .au-fab, .ai-fab) { right: auto; left: var(--fx-edge); padding: 0 4px 0 0; border-right: 1px solid var(--dock-border); border-left: none; }
+html[data-fab-side='left'] :is(.tf-tip, .au-tip, .ai-tip) { right: auto; left: calc(100% + 10px); transform: translate(-8px, -50%); }
+html[data-fab-side='left'] :is(.tf-fab, .au-fab, .ai-fab):is(:hover, :focus-visible) :is(.tf-tip, .au-tip, .ai-tip) { transform: translate(0, -50%); }
+html[data-fab-side='left'] :is(.tf-fab.hide) { transform: translateX(-100%); }
+html[data-fab-side='left'][data-fab='tab'] :is(.tf-fab, .au-fab, .ai-fab) { border-radius: 0 min(var(--r-modal, 16px), 22px) min(var(--r-modal, 16px), 22px) 0; }
+html[data-fab-side='left'] :is([data-overlay] .au-fab, [data-overlay] .ai-fab) { transform: translateX(-100%); }
+html[data-fab-side='left'] :is(.tf-ring, .au-ring, .ai-ring) { inset: 6px 8px 6px 4px; border-radius: 0 12px 12px 0; border-left: none; border-right: 1px dashed color-mix(in srgb, var(--a2) 45%, transparent); }
+html[data-fab-side='left'] .ai-dot { right: auto; left: 8px; }
+
+/* ---- BULAT ---- */
+html[data-fab='orb'] { --fx-w: 52px; --fx-h: 52px; --fx-gap: 12px; --fx-edge: 12px; }
+html[data-fab='orb'][data-fab-side='right'] :is(.tf-fab, .au-fab, .ai-fab) { right: var(--fx-edge); padding: 0; border: 1px solid var(--dock-border); }
+html[data-fab='orb'][data-fab-side='left'] :is(.tf-fab, .au-fab, .ai-fab) { padding: 0; border: 1px solid var(--dock-border); }
+html[data-fab='orb'] :is(.tf-fab, .au-fab, .ai-fab) { border-radius: 50%; box-shadow: 0 14px 30px -12px rgba(0,0,0,.7), inset 0 1px 0 color-mix(in srgb, #fff 26%, transparent); }
+html[data-fab='orb'] :is(.tf-fab, .au-fab, .ai-fab):hover { transform: scale(1.1); }
+html[data-fab='orb'] :is(.tf-ring, .au-ring, .ai-ring) { inset: 4px; border-radius: 50%; border: 1px dashed color-mix(in srgb, var(--a2) 45%, transparent); }
+
+/* ---- KAPSUL (tinggi) ---- */
+html[data-fab='pill'] { --fx-w: 44px; --fx-h: 68px; --fx-gap: 10px; --fx-edge: 10px; }
+html[data-fab='pill'][data-fab-side='right'] :is(.tf-fab, .au-fab, .ai-fab) { right: var(--fx-edge); padding: 0; border: 1px solid var(--dock-border); }
+html[data-fab='pill'][data-fab-side='left'] :is(.tf-fab, .au-fab, .ai-fab) { padding: 0; border: 1px solid var(--dock-border); }
+html[data-fab='pill'] :is(.tf-fab, .au-fab, .ai-fab) { border-radius: 999px; }
+html[data-fab='pill'] :is(.tf-ring, .au-ring, .ai-ring) { inset: 5px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--a2) 28%, transparent); }
+
+/* ---- KOTAK ---- */
+html[data-fab='square'] { --fx-w: 48px; --fx-h: 48px; --fx-gap: 10px; --fx-edge: 12px; }
+html[data-fab='square'][data-fab-side='right'] :is(.tf-fab, .au-fab, .ai-fab) { right: var(--fx-edge); padding: 0; border: 1px solid var(--dock-border); }
+html[data-fab='square'][data-fab-side='left'] :is(.tf-fab, .au-fab, .ai-fab) { padding: 0; border: 1px solid var(--dock-border); }
+html[data-fab='square'] :is(.tf-fab, .au-fab, .ai-fab) { border-radius: min(var(--r-btn, 14px), 16px); }
+html[data-fab='square'] :is(.tf-ring, .au-ring, .ai-ring) { inset: 4px; border-radius: min(var(--r-btn, 14px), 12px); border: 1px solid color-mix(in srgb, var(--a2) 24%, transparent); }
+
+/* ---- DOCK MENYATU: tiga tombol satu kolom tanpa celah ---- */
+html[data-fab='dock'] { --fx-w: 48px; --fx-h: 52px; --fx-gap: 0px; }
+html[data-fab='dock'] :is(.tf-fab, .au-fab, .ai-fab) { border-radius: 0; box-shadow: none; background: color-mix(in srgb, var(--surface) 82%, transparent); border-bottom-color: color-mix(in srgb, var(--border) 60%, transparent); }
+html[data-fab='dock'][data-fab-side='right'] .tf-fab { border-radius: 18px 0 0 0; }
+html[data-fab='dock'][data-fab-side='right'] .ai-fab { border-radius: 0 0 0 18px; border-bottom: 1px solid var(--dock-border); box-shadow: -10px 16px 30px -14px rgba(0,0,0,.7); }
+html[data-fab='dock'][data-fab-side='left'] .tf-fab { border-radius: 0 18px 0 0; }
+html[data-fab='dock'][data-fab-side='left'] .ai-fab { border-radius: 0 0 18px 0; border-bottom: 1px solid var(--dock-border); box-shadow: 10px 16px 30px -14px rgba(0,0,0,.7); }
+html[data-fab='dock'] :is(.tf-ring, .au-ring, .ai-ring) { display: none; }
+
+/* ---- NEON ---- */
+html[data-fab='neon'] { --fx-w: 50px; --fx-h: 50px; --fx-gap: 14px; --fx-edge: 12px; }
+html[data-fab='neon'][data-fab-side='right'] :is(.tf-fab, .au-fab, .ai-fab) { right: var(--fx-edge); }
+html[data-fab='neon'] :is(.tf-fab, .au-fab, .ai-fab) { padding: 0; border: 1.5px solid var(--a2); border-radius: 50%; background: color-mix(in srgb, var(--bg1) 70%, transparent); color: var(--a2);
+  box-shadow: 0 0 14px -2px var(--a2), inset 0 0 12px -4px var(--a2); }
+html[data-fab='neon'] :is(.tf-fab, .au-fab, .ai-fab):hover { box-shadow: 0 0 26px 0 var(--a2), inset 0 0 16px -2px var(--a2); transform: scale(1.08); }
+html[data-fab='neon'] .au-fab { border-color: var(--a3); color: var(--a3); box-shadow: 0 0 14px -2px var(--a3), inset 0 0 12px -4px var(--a3); }
+html[data-fab='neon'] .ai-fab { border-color: var(--a1); color: var(--a1); box-shadow: 0 0 14px -2px var(--a1), inset 0 0 12px -4px var(--a1); }
+html[data-fab='neon'] :is(.tf-ring, .au-ring, .ai-ring) { display: none; }
+
+/* ---- MINIMAL: hanya ikon, latar muncul saat disorot ---- */
+html[data-fab='minimal'] { --fx-w: 42px; --fx-h: 42px; --fx-gap: 4px; --fx-edge: 6px; }
+html[data-fab='minimal'][data-fab-side='right'] :is(.tf-fab, .au-fab, .ai-fab) { right: var(--fx-edge); }
+html[data-fab='minimal'] :is(.tf-fab, .au-fab, .ai-fab) { padding: 0; border: 1px solid transparent; border-radius: 12px; background: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; opacity: .72; }
+html[data-fab='minimal'] :is(.tf-fab, .au-fab, .ai-fab):hover { opacity: 1; background: color-mix(in srgb, var(--surface) 80%, transparent); border-color: var(--dock-border); }
+html[data-fab='minimal'] :is(.tf-ring, .au-ring, .ai-ring) { display: none; }
+
+/* ---- mobile: sedikit lebih kecil ---- */
+@media (max-width: 560px) {
+  html[data-fab] { --fx-w: 40px; --fx-h: 50px; }
+  html[data-fab='orb'], html[data-fab='neon'], html[data-fab='square'] { --fx-w: 44px; --fx-h: 44px; }
+  html[data-fab='pill'] { --fx-w: 40px; --fx-h: 60px; }
+  html[data-fab='minimal'] { --fx-w: 38px; --fx-h: 38px; }
+  html[data-fab='dock'] { --fx-w: 42px; --fx-h: 46px; }
+}

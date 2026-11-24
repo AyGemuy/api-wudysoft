@@ -1,5 +1,7 @@
 import {
   Menu,
+  Maximize,
+  Minimize,
   Columns2,
   Rows2,
   Square,
@@ -74,6 +76,8 @@ import {
 export const Icons = {
   Terminal: Terminal,
   Menu: Menu,
+  Maximize: Maximize,
+  Minimize: Minimize,
   Columns2: Columns2,
   Rows2: Rows2,
   Square: Square,

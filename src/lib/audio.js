@@ -94,7 +94,7 @@ const ERR = {
 };
 
 const bgmListeners = new Set();
-let bgmState = { status: 'idle', title: '', error: '' }; // idle | loading | playing | paused | error
+let bgmState = { status: 'idle', title: '', author: '', videoId: '', index: 0, ids: [], error: '' }; // idle | loading | playing | paused | error
 let player = null;
 let apiPromise = null;
 let loadedKey = '';
@@ -148,12 +148,19 @@ async function load(parsed, autoplay) {
           onStateChange: (e) => {
             const S = window.YT.PlayerState;
             if (e.data === S.PLAYING) {
-              let title = '';
-              try { title = player.getVideoData?.().title || ''; } catch {}
-              setBgm({ status: 'playing', title, error: '' });
+              let title = ''; let author = ''; let videoId = ''; let ids = []; let index = 0;
+              try { const d = player.getVideoData?.() || {}; title = d.title || ''; author = d.author || ''; videoId = d.video_id || ''; } catch {}
+              try { ids = player.getPlaylist?.() || []; index = Math.max(0, player.getPlaylistIndex?.() || 0); } catch {}
+              setBgm({ status: 'playing', title, author, videoId, ids, index, error: '' });
             } else if (e.data === S.PAUSED) setBgm({ status: 'paused' });
             else if (e.data === S.BUFFERING) setBgm({ status: 'loading' });
-            else if (e.data === S.ENDED) { try { player.seekTo(0); player.playVideo(); } catch {} } // ulangi
+            else if (e.data === S.ENDED) { // playlist: lanjut ke lagu berikutnya (kembali ke awal di akhir); video tunggal: ulangi
+              try {
+                const n = (player.getPlaylist?.() || []).length;
+                if (n > 1) { const i = player.getPlaylistIndex?.() ?? 0; if (i >= n - 1) player.playVideoAt(0); else player.nextVideo(); }
+                else { player.seekTo(0); player.playVideo(); }
+              } catch {}
+            }
             else if (e.data === S.UNSTARTED && audioStore.get().bgmOn) setBgm({ status: 'loading' });
           },
           onError: (e) => setBgm({ status: 'error', error: ERR[e.data] || 'Gagal memutar BGM.' }),
@@ -192,4 +199,26 @@ export const bgm = {
   setOn(on) { audioStore.set({ bgmOn: !!on }); return this.sync(true); },
   setVolume(v) { audioStore.set({ bgmVol: clamp(v) }); applyVolume(); },
   toggle() { return this.setOn(!audioStore.get().bgmOn); },
+  next() { try { const n = (player?.getPlaylist?.() || []).length; if (n > 1) { const i = player.getPlaylistIndex(); if (i >= n - 1) player.playVideoAt(0); else player.nextVideo(); } else player?.seekTo?.(0); } catch {} },
+  prev() { try { const n = (player?.getPlaylist?.() || []).length; if (n > 1 && (player.getCurrentTime?.() || 0) < 4) player.previousVideo(); else player?.seekTo?.(0); } catch {} },
+  playIndex(i) { try { player?.playVideoAt?.(i); if (!audioStore.get().bgmOn) audioStore.set({ bgmOn: true }); } catch {} },
+  /** Posisi putar: { t, d } dalam detik. */
+  progress() { try { return { t: player?.getCurrentTime?.() || 0, d: player?.getDuration?.() || 0 }; } catch { return { t: 0, d: 0 }; } },
+  seek(sec) { try { player?.seekTo?.(Math.max(0, sec), true); } catch {} },
 };
+
+/* ----------------------- metadata (sampul, artis, deskripsi, daftar lagu) ----------------------- */
+const metaCache = new Map();
+/** { id } untuk satu video, atau { list } untuk playlist. Hasil di-cache di memori; null bila gagal. */
+export async function fetchMusicMeta(q) {
+  const key = q.id ? `v:${q.id}` : `l:${q.list}`;
+  if (metaCache.has(key)) return metaCache.get(key);
+  try {
+    const r = await fetch(`/api/music/meta?${q.id ? `id=${encodeURIComponent(q.id)}` : `list=${encodeURIComponent(q.list)}`}`);
+    const j = await r.json();
+    const d = j?.success ? j.data : null;
+    if (d) metaCache.set(key, d);
+    return d;
+  } catch { return null; }
+}
+export const ytThumb = (id) => (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : '');
