@@ -112,11 +112,23 @@ html:is([data-sbs='aurora'], [data-sbs='dock']) .sb-foot { padding-top: 6px; }
    pembungkus item aktif diangkat agar lekukan bawah tidak tertutup item berikutnya (sebelumnya runcing). */
 .sb-group > div:has(> .sb-item.active) { position: relative; z-index: 3; }
 html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-rail > button, html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-rail > .rl-btn { border-radius: 50%; }
-html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-item.active::before { top: calc(var(--sb-nr, 24px) * -1); }
+html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-item.active::before { top: calc(var(--sb-nr, 36px) * -1); }
 /* motion.css memberi .sb-item::after efek kilau (inset:0, opacity:0, blend) → itu yang membuat lekukan bawah hilang/runcing */
 html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-item.active::after {
-  inset: auto 0 calc(var(--sb-nr, 24px) * -1) auto !important; width: var(--sb-nr, 24px); height: var(--sb-nr, 24px); border-radius: 0 !important; opacity: 1 !important; mix-blend-mode: normal !important;
+  inset: auto 2px calc(var(--sb-nr, 36px) * -1 + 1px) auto !important; width: var(--sb-nr, 36px); height: var(--sb-nr, 36px); border-radius: 0 !important; opacity: 1 !important; mix-blend-mode: normal !important;
   background-size: auto !important; background-position: 0 0 !important; background-repeat: no-repeat !important; animation: none !important; z-index: 0;
 }
 html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-item.active::before { border-radius: 0 !important; }
-html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-item.active { margin-top: 10px !important; margin-bottom: 10px !important; }
+html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-item.active { margin-top: 12px !important; margin-bottom: 12px !important; border-radius: 999px 0 0 999px !important; }
+/* Lekukan tab ↔ rel: kurva bezier "squircle" (kelengkungan bertahap, bukan busur lingkaran) → tanpa titik tajam saat menyatu dengan rel */
+html:is([data-sbs='rail'], [data-sbs='aurora']) {
+  --sb-nr: 36px;
+  --sb-mask-top: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path d='M100 0 L100 100 L0 100 A100 100 0 0 0 100 0 Z'/></svg>");
+  --sb-mask-bot: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path d='M0 0 L100 0 L100 100 A100 100 0 0 0 0 0 Z'/></svg>");
+}
+
+/* ujung lekukan harus tepat di tepi kolom (item aktif menjorok 2px ke rel) → singgung vertikal, tanpa sudut */
+html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-item.active::before { right: 2px !important; }
+
+/* rel putih = kolom mandiri seperti referensi: keempat sudutnya membulat (sudut kiri atas/bawah memperlihatkan panel kaca) */
+html:is([data-sbs='rail'], [data-sbs='aurora']) .sb-rail { border-radius: 36px !important; margin-left: -2px !important; }
