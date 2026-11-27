@@ -1,0 +1,100 @@
+/* Gaya sidebar tambahan: Crema · Lumen · Planora · Canopy (dipilih lewat Theme Studio → data-sbs) */
+html[data-night='1']::after { content: ''; position: fixed; inset: 0; z-index: 2147483000; pointer-events: none; background: rgba(255, 150, 50, .16); mix-blend-mode: multiply; }
+
+html:is([data-sbs='crema'], [data-sbs='lumen'], [data-sbs='planora'], [data-sbs='canopy']) .sb-panel {
+  top: 12px; bottom: 12px; left: 12px; height: auto; width: min(304px, calc(100vw - 24px)); padding: 0; gap: 0;
+  box-shadow: 0 30px 70px -22px rgba(0, 0, 0, .7), inset 0 1px 0 rgba(255, 255, 255, .22);
+}
+html:is([data-sbs='crema'], [data-sbs='lumen'], [data-sbs='planora'], [data-sbs='canopy']) .sb-main { padding: 16px 12px 12px 14px; gap: 10px; }
+html:is([data-sbs='crema'], [data-sbs='lumen'], [data-sbs='planora'], [data-sbs='canopy']) :is(.sb-top, .sb-foot, .sb-spacer, .sb-glow, .sb-rail, .sb-collapse) { display: none; }
+html:is([data-sbs='crema'], [data-sbs='lumen'], [data-sbs='planora'], [data-sbs='canopy']) .sb-head { padding-right: 0; }
+html:is([data-sbs='crema'], [data-sbs='lumen'], [data-sbs='planora'], [data-sbs='canopy']) .sb-item { margin: 2px 0; border-radius: 14px; height: 44px; padding: 0 12px 0 8px; box-shadow: none; }
+html:is([data-sbs='crema'], [data-sbs='lumen'], [data-sbs='planora'], [data-sbs='canopy']) .sb-item::before,
+html:is([data-sbs='crema'], [data-sbs='lumen'], [data-sbs='planora'], [data-sbs='canopy']) .sb-item::after { display: none; }
+html:is([data-sbs='crema'], [data-sbs='lumen'], [data-sbs='planora'], [data-sbs='canopy']) .sb-item.active { margin: 2px 0; }
+html:is([data-sbs='crema'], [data-sbs='lumen'], [data-sbs='planora'], [data-sbs='canopy']) :is(.sb-search) { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; border-radius: 14px; border: 1px solid color-mix(in srgb, currentColor 16%, transparent); background: color-mix(in srgb, #fff 10%, transparent); color: inherit; font: inherit; font-size: .82rem; cursor: pointer; }
+html:is([data-sbs='crema'], [data-sbs='lumen'], [data-sbs='planora'], [data-sbs='canopy']) .sb-search kbd { margin-left: auto; font-size: .62rem; opacity: .6; }
+.sb-extras button, .sb-extras a { font: inherit; }
+
+/* ---------- CREMA: kaca hangat, ikon berwarna, pemutar mini, night shift ---------- */
+html[data-sbs='crema'] .sb-panel { border-radius: 30px; background: linear-gradient(165deg, rgba(255, 214, 170, .34), rgba(255, 255, 255, .08) 55%), color-mix(in srgb, var(--surface) 70%, #3a2412); border: 1px solid rgba(255, 235, 210, .28); backdrop-filter: blur(24px) saturate(1.4); }
+html[data-sbs='crema'] .sb-ico { background: var(--tile, var(--a1)); color: #fff; border-radius: 10px; width: 30px; height: 30px; box-shadow: 0 6px 14px -6px var(--tile, var(--a1)); }
+html[data-sbs='crema'] .sb-item { color: var(--text); }
+html[data-sbs='crema'] .sb-item.active { background: rgba(255, 255, 255, .22); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3); }
+html[data-sbs='crema'] .sb-item.active .sb-ico { background: var(--tile, var(--a1)); box-shadow: 0 6px 14px -6px var(--tile, var(--a1)); }
+html[data-sbs='crema'] .sb-extras { display: grid; gap: 8px; }
+html[data-sbs='crema'] .sb-notice { display: none; }
+html[data-sbs='crema'] .sb-nav { gap: 8px; }
+
+.sb-player { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 4px 10px; align-items: center; padding: 10px; border-radius: 18px; background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .22); }
+.sb-pcov { width: 40px; height: 40px; border-radius: 12px; overflow: hidden; display: grid; place-items: center; background: rgba(255, 255, 255, .16); grid-row: span 1; }
+.sb-pcov img { width: 100%; height: 100%; object-fit: cover; }
+.sb-ptxt { display: grid; min-width: 0; }
+.sb-ptxt b { font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-ptxt small { font-size: .66rem; opacity: .7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-pctl { grid-column: 1 / -1; display: flex; justify-content: center; gap: 10px; }
+.sb-pctl button { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: transparent; border: 0; color: inherit; cursor: pointer; }
+.sb-pctl button.pp { background: var(--a1); color: var(--on-accent, #fff); width: 36px; height: 36px; }
+.sb-pctl button:disabled { opacity: .4; cursor: default; }
+.sb-night { display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 12px; border-radius: 14px; background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .2); color: inherit; cursor: pointer; }
+.sb-night span { flex: 1; text-align: left; font-size: .8rem; font-weight: 600; }
+.sb-night i { position: relative; width: 36px; height: 20px; border-radius: 99px; background: rgba(255, 255, 255, .25); transition: background .25s; }
+.sb-night i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .25s; }
+.sb-night i.on { background: #f59e0b; } .sb-night i.on::after { transform: translateX(16px); }
+.sb-notice { display: flex; gap: 8px; padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, .1); border: 1px dashed rgba(255, 255, 255, .3); font-size: .7rem; line-height: 1.4; }
+.sb-notice b { display: block; font-size: .64rem; letter-spacing: .12em; text-transform: uppercase; opacity: .8; }
+.sb-bottom { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; }
+.sb-bottom :is(button, a) { display: flex; align-items: center; justify-content: center; gap: 6px; height: 38px; border-radius: 12px; background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .2); color: inherit; text-decoration: none; font-size: .76rem; font-weight: 600; cursor: pointer; }
+.sb-pctl { color: inherit; }
+
+/* ---------- LUMEN: panel dengan tepi melengkung keluar, kartu profil, akordeon, catatan ---------- */
+html[data-sbs='lumen'] .sb-panel { width: min(318px, calc(100vw - 24px)); border-radius: 28px 120px 120px 28px / 28px 46% 46% 28px; background: linear-gradient(170deg, rgba(255, 255, 255, .26), rgba(255, 255, 255, .06)), color-mix(in srgb, var(--surface) 62%, transparent); border: 1px solid rgba(255, 255, 255, .3); backdrop-filter: blur(26px) saturate(1.5); }
+html[data-sbs='lumen'] .sb-main { padding: 18px 34px 18px 16px; }
+html[data-sbs='lumen'] .sb-profile { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 18px; background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .26); }
+.sb-pava { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: linear-gradient(135deg, var(--a1), var(--a3)); color: var(--on-accent, #fff); font-weight: 800; flex: none; }
+.sb-pava img { width: 100%; height: 100%; object-fit: cover; }
+.sb-pgo { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .18); color: inherit; }
+html[data-sbs='lumen'] .sb-item { color: var(--text); }
+html[data-sbs='lumen'] .sb-ico { background: transparent; width: 28px; }
+html[data-sbs='lumen'] .sb-item.active { background: rgba(255, 255, 255, .26); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .34); }
+html[data-sbs='lumen'] .sb-gitems { margin-left: 14px; padding-left: 8px; border-left: 1px solid rgba(255, 255, 255, .24); }
+html[data-sbs='lumen'] .sb-extras { display: grid; gap: 8px; }
+html[data-sbs='lumen'] :is(.sb-player, .sb-night) { display: none; }
+
+/* ---------- PLANORA: rel ungu sempit hanya ikon ---------- */
+html[data-sbs='planora'] .sb-panel { width: 78px; border-radius: 28px; background: linear-gradient(180deg, #7c5cff, #4a2fd0); color: #fff; border: 1px solid rgba(255, 255, 255, .25); }
+html[data-sbs='planora'] .sb-main { padding: 16px 10px; align-items: center; }
+html[data-sbs='planora'] :is(.sb-label, .sb-cap, .sb-ext, .sb-search, .sb-recent, .sb-x) { display: none; }
+html[data-sbs='planora'] .sb-head { justify-content: center; }
+html[data-sbs='planora'] .sb-nav { justify-items: center; padding: 8px 0; width: 100%; }
+html[data-sbs='planora'] .sb-group { display: grid; justify-items: center; gap: 4px; padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, .2); }
+html[data-sbs='planora'] .sb-item { width: 48px; height: 48px; padding: 0; justify-content: center; color: rgba(255, 255, 255, .8); border-radius: 16px; }
+html[data-sbs='planora'] .sb-item:hover { background: rgba(255, 255, 255, .16); transform: none; }
+html[data-sbs='planora'] .sb-ico { background: transparent; width: 32px; height: 32px; }
+html[data-sbs='planora'] .sb-item.active { background: #fff; color: #4a2fd0; box-shadow: 0 10px 20px -8px rgba(0, 0, 0, .5); }
+html[data-sbs='planora'] .sb-item.active .sb-ico { background: transparent; color: #4a2fd0; box-shadow: none; }
+html[data-sbs='planora'] .sb-extras { display: grid; gap: 6px; width: 100%; }
+html[data-sbs='planora'] :is(.sb-player, .sb-night, .sb-notice) { display: none; }
+html[data-sbs='planora'] .sb-bottom { grid-auto-flow: row; }
+html[data-sbs='planora'] .sb-bottom :is(button, a) { font-size: 0; gap: 0; height: 44px; background: rgba(255, 255, 255, .14); }
+html[data-sbs='planora'] .sb-bottom svg { width: 18px; height: 18px; }
+
+/* ---------- CANOPY: hijau tua, rapi seperti dasbor CRM ---------- */
+html[data-sbs='canopy'] .sb-panel { top: 0; bottom: 0; left: 0; width: min(286px, 90vw); border-radius: 0 26px 26px 0; background: linear-gradient(180deg, #0f3d2e, #0a2a20); color: #e6f4ec; border: 0; border-right: 1px solid rgba(126, 226, 168, .2); }
+html[data-sbs='canopy'] .sb-main { padding: 18px 12px 14px 14px; }
+html[data-sbs='canopy'] .sb-cap { color: rgba(230, 244, 236, .55); }
+html[data-sbs='canopy'] .sb-item { color: rgba(230, 244, 236, .82); }
+html[data-sbs='canopy'] .sb-item:hover { background: rgba(126, 226, 168, .1); }
+html[data-sbs='canopy'] .sb-ico { background: transparent; }
+html[data-sbs='canopy'] .sb-item.active { background: rgba(126, 226, 168, .16); color: #fff; box-shadow: inset 3px 0 0 #7ee2a8; }
+html[data-sbs='canopy'] .sb-item.active .sb-ico { background: #7ee2a8; color: #0a2a20; box-shadow: none; }
+html[data-sbs='canopy'] .sb-extras { display: grid; gap: 8px; }
+html[data-sbs='canopy'] :is(.sb-player, .sb-night, .sb-notice) { display: none; }
+html[data-sbs='canopy'] .sb-x { background: rgba(255, 255, 255, .08); color: #e6f4ec; }
+html[data-sbs='canopy'] .sb-search { background: rgba(255, 255, 255, .08); color: #e6f4ec; }
+
+/* perbaikan: Lumen tidak boleh memotong tombol di tepi lengkung; Planora hanya logo ikon */
+html[data-sbs='lumen'] .sb-main { padding-right: 52px; }
+html[data-sbs='lumen'] .sb-x { display: none; }
+html[data-sbs='planora'] .wd-word { display: none; }
+html[data-sbs='planora'] .sb-head { width: 100%; overflow: hidden; }

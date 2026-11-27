@@ -174,6 +174,10 @@ function SidebarPicker({ value, options, colors, onChange }) {
         .sbd[data-sbd='aurora'] i.on { background: var(--fg); border-radius: 99px 0 0 99px; margin-right: -12px; position: relative; z-index: 1; }
         .sbd[data-sbd='dock'] { width: 16px; border-radius: 10px; align-items: center; padding: 5px 0; left: 12px; } .sbd[data-sbd='dock'] b { width: 6px; } .sbd[data-sbd='dock'] i { width: 6px; height: 6px; border-radius: 50%; }
         .sbd[data-sbd='glass'] { border-radius: 12px; left: 10px; top: 8px; bottom: 8px; backdrop-filter: blur(4px); } .sbd[data-sbd='glass'] i { border-radius: 5px; }
+        .sbd[data-sbd='crema'] { border-radius: 12px; left: 9px; top: 7px; bottom: 7px; background: linear-gradient(160deg, rgba(255,214,170,.5), rgba(255,255,255,.1)); } .sbd[data-sbd='crema'] i { height: 7px; border-radius: 4px; background: #f97316; opacity: .75; } .sbd[data-sbd='crema'] i:nth-child(4) { background: #22c55e; } .sbd[data-sbd='crema'] i.on { background: #fff; opacity: .9; }
+        .sbd[data-sbd='lumen'] { border-radius: 8px 22px 22px 8px / 8px 50% 50% 8px; left: 9px; top: 6px; bottom: 6px; width: 50px; padding-right: 8px; background: linear-gradient(160deg, rgba(255,255,255,.45), rgba(255,255,255,.1)); } .sbd[data-sbd='lumen'] b { height: 9px; width: 100%; border-radius: 6px; background: color-mix(in srgb, var(--fg) 30%, transparent); }
+        .sbd[data-sbd='planora'] { width: 15px; left: 12px; border-radius: 8px; align-items: center; padding: 5px 0; background: linear-gradient(180deg, #7c5cff, #4a2fd0); border-color: transparent; } .sbd[data-sbd='planora'] b { width: 7px; background: #fff; } .sbd[data-sbd='planora'] i { width: 7px; height: 7px; border-radius: 3px; background: rgba(255,255,255,.55); } .sbd[data-sbd='planora'] i.on { background: #fff; }
+        .sbd[data-sbd='canopy'] { border-radius: 0 10px 10px 0; left: 0; top: 0; bottom: 0; background: linear-gradient(180deg, #0f3d2e, #0a2a20); border-color: transparent; } .sbd[data-sbd='canopy'] b { background: #7ee2a8; } .sbd[data-sbd='canopy'] i { background: rgba(230,244,236,.3); border-radius: 4px; } .sbd[data-sbd='canopy'] i.on { background: #7ee2a8; }
         .sbd[data-sbd='minimal'] { border-radius: 0; left: 0; top: 0; bottom: 0; border-width: 0 1px 0 0; background: transparent; } .sbd[data-sbd='minimal'] i { border-radius: 3px; height: 6px; }
       `}</style>
     </div>
@@ -553,6 +557,10 @@ export default function CustomThemeStudio({ isOpen, onClose, config, setConfig }
 
                   <Section title="SIDEBAR MENU" hint="Dibuka dari tombol ☰ di header">
                     <SidebarPicker value={config.sidebarStyle} options={SIDEBAR_STYLES} colors={colors} onChange={(v) => set({ sidebarStyle: v })} />
+                  </Section>
+
+                  <Section title="PEMILIH GAME" hint="Halaman Arena Game">
+                    <Segmented label="Tampilan pemilih" value={config.gameView || 'tabs'} options={[{ id: 'tabs', label: 'Tab' }, { id: 'carousel', label: 'Carousel kaca 3D' }]} onChange={(v) => set({ gameView: v })} />
                   </Section>
 
                   <Section title="TOMBOL DI TEPI LAYAR" hint="Tema · Audio · Asisten">

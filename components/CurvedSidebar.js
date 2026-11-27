@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Home, Terminal, Activity, MessageSquare, FileText, FileCode, Wand2, UploadCloud, User, LogIn, LogOut, Search, Sliders, X, ChevronLeft, MoreHorizontal, TerminalSquare, BookOpen, ExternalLink, Gauge, Webhook, MessageSquareText, Newspaper, MousePointerClick, Database, Gamepad2 } from 'lucide-react';
+import { Home, Terminal, Activity, MessageSquare, FileText, FileCode, Wand2, UploadCloud, User, LogIn, LogOut, Search, Sliders, X, ChevronLeft, MoreHorizontal, TerminalSquare, BookOpen, ExternalLink, Gauge, Webhook, MessageSquareText, Newspaper, MousePointerClick, Database, Gamepad2, Moon, Play, Pause, SkipBack, SkipForward, ChevronDown, Settings, Info, Music2 } from 'lucide-react';
 import WudysoftBrand from '@/components/WudysoftBrand';
 import { sound } from '@/src/lib/interactiveEffects';
+import { bgm, audioStore, parseYouTube, ytThumb } from '@/src/lib/audio';
 
 const GROUPS = [
   { title: 'Navigasi', items: [
@@ -38,6 +39,7 @@ const GROUPS = [
 const ALL_ITEMS = GROUPS.flatMap((g) => g.items).filter((it) => !it.external);
 const DOTS = ['#f59e0b', '#34d399', '#f472b6', '#60a5fa', '#a78bfa', '#fb7185'];
 const dotOf = (str) => DOTS[[...str].reduce((a, c) => a + c.charCodeAt(0), 0) % DOTS.length];
+const TILES = ['#f97316', '#22c55e', '#ec4899', '#3b82f6', '#a855f7', '#ef4444', '#14b8a6', '#eab308'];
 const REC_KEY = 'wd_recent_v1';
 const readRecent = () => { try { return JSON.parse(localStorage.getItem(REC_KEY) || '[]'); } catch { return []; } };
 const labelOf = (path) => (ALL_ITEMS.find((it) => it.href.split('?')[0] === path) || {}).label || path.split('/').filter(Boolean).pop() || 'Beranda';
@@ -59,6 +61,19 @@ export default function CurvedSidebar({ open, onClose, user, pathname, onSearch,
   const [mini, setMini] = useState(false);
   const [menu, setMenu] = useState(false);
   const [recent, setRecent] = useState([]);
+  const [fold, setFold] = useState({});
+  const [night, setNight] = useState(false);
+  const [mus, setMus] = useState({ title: '', on: false, url: '' });
+  // Night shift: lapisan hangat nyata di seluruh halaman (disimpan di perangkat)
+  useEffect(() => { try { const v = localStorage.getItem('wd_night') === '1'; setNight(v); document.documentElement.dataset.night = v ? '1' : '0'; } catch {} }, []);
+  const toggleNight = () => setNight((v) => { try { localStorage.setItem('wd_night', v ? '0' : '1'); } catch {} document.documentElement.dataset.night = v ? '0' : '1'; return !v; });
+  useEffect(() => {
+    const read = () => { const a = audioStore.get(); setMus({ title: bgm.get().title || '', on: !!a.bgmOn, url: a.bgmUrl || '' }); };
+    read();
+    const u1 = bgm.subscribe(read); const u2 = audioStore.subscribe(read);
+    return () => { u1?.(); u2?.(); };
+  }, []);
+  const toggleFold = (t) => setFold((f) => ({ ...f, [t]: !f[t] }));
   useEffect(() => { try { setMini(localStorage.getItem('wd_sb_mini') === '1'); } catch {} }, []);
   const toggleMini = () => setMini((v) => { try { localStorage.setItem('wd_sb_mini', v ? '0' : '1'); } catch {} return !v; });
   // halaman terakhir dikunjungi (lokal di perangkat): path → { n: jumlah kunjungan, t: waktu }
@@ -108,6 +123,12 @@ export default function CurvedSidebar({ open, onClose, user, pathname, onSearch,
               <button className="sb-x" onClick={() => { sound.playClick(); onClose(); }} aria-label="Tutup menu"><X size={18} /></button>
             </header>
 
+            <div className="sb-profile">
+              <span className="sb-pava">{user?.image ? <img src={user.image} alt="" referrerPolicy="no-referrer" /> : <b>{(user?.name || 'T').trim()[0]?.toUpperCase()}</b>}</span>
+              <span className="sb-uinfo"><b>{user?.name || 'Tamu'}</b><small>{user?.email || 'Belum masuk'}</small></span>
+              <Link href={user ? '/profile' : '/auth'} className="sb-pgo" onClick={() => { sound.playClick(); onClose(); }} aria-label={user ? 'Profil saya' : 'Masuk'}>{user ? <User size={15} /> : <LogIn size={15} />}</Link>
+            </div>
+
             <button type="button" className="sb-search" onClick={() => { sound.playClick(); onClose(); onSearch(); }}>
               <Search size={16} /> <span>Cari halaman…</span> <kbd>⌘K</kbd>
             </button>
@@ -133,20 +154,21 @@ export default function CurvedSidebar({ open, onClose, user, pathname, onSearch,
             <nav className="sb-nav" aria-label="Menu">
               {GROUPS.map((g) => (
                 <div key={g.title} className="sb-group">
-                  <div className="sb-cap">{g.title}</div>
+                  <button type="button" className="sb-cap" onClick={() => toggleFold(g.title)} aria-expanded={!fold[g.title]}>{g.title}<ChevronDown size={13} className="sb-capc" /></button>
+                  <div className={`sb-gitems ${fold[g.title] ? 'is-fold' : ''}`}>
                   {g.items.map(({ href, label, Icon, external }) => {
                     const i = n++;
                     const on = isActive(pathname, href);
                     return (
                       <motion.div key={href} initial={{ opacity: 0, x: -22 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.08 + i * 0.045, type: 'spring', stiffness: 280, damping: 26 }}>
                         {external ? (
-                          <a href={href} target="_blank" rel="noopener noreferrer" className="sb-item" onClick={() => sound.playClick()}>
+                          <a href={href} target="_blank" rel="noopener noreferrer" title={label} data-tip={label} style={{ '--tile': TILES[(n + i) % TILES.length] }} className="sb-item" onClick={() => sound.playClick()}>
                             <span className="sb-ico"><Icon size={18} /></span>
                             <span className="sb-label">{label}</span>
                             <ExternalLink size={13} className="sb-ext" />
                           </a>
                         ) : (
-                          <Link href={href} className={`sb-item ${on ? 'active' : ''}`} aria-current={on ? 'page' : undefined} onClick={() => { sound.playClick(); onClose(); }}>
+                          <Link href={href} title={label} data-tip={label} style={{ '--tile': TILES[(n + i) % TILES.length] }} className={`sb-item ${on ? 'active' : ''}`} aria-current={on ? 'page' : undefined} onClick={() => { sound.playClick(); onClose(); }}>
                             <span className="sb-ico"><Icon size={18} /></span>
                             <span className="sb-label">{label}</span>
                           </Link>
@@ -154,6 +176,7 @@ export default function CurvedSidebar({ open, onClose, user, pathname, onSearch,
                       </motion.div>
                     );
                   })}
+                  </div>
                 </div>
               ))}
 
@@ -170,6 +193,25 @@ export default function CurvedSidebar({ open, onClose, user, pathname, onSearch,
                 </div>
               )}
             </nav>
+            <div className="sb-extras">
+              <div className="sb-player">
+                <span className="sb-pcov">{(() => { const y = parseYouTube(mus.url); const t = y?.id ? ytThumb(y.id) : ''; return t ? <img src={t} alt="" /> : <Music2 size={18} />; })()}</span>
+                <span className="sb-ptxt"><b>{mus.url ? (mus.title || 'Memuat…') : 'Belum ada musik'}</b><small>{mus.url ? (mus.on ? 'Sedang diputar' : 'Dijeda') : 'Atur di Tema → Audio'}</small></span>
+                <span className="sb-pctl">
+                  <button type="button" onClick={() => bgm.prev()} disabled={!mus.url} aria-label="Sebelumnya"><SkipBack size={14} /></button>
+                  <button type="button" className="pp" onClick={() => (mus.url ? bgm.toggle() : (onClose(), onTheme()))} aria-label={mus.on ? 'Jeda' : 'Putar'}>{mus.on ? <Pause size={15} /> : <Play size={15} />}</button>
+                  <button type="button" onClick={() => bgm.next()} disabled={!mus.url} aria-label="Berikutnya"><SkipForward size={14} /></button>
+                </span>
+              </div>
+              <button type="button" className="sb-night" onClick={() => { sound.playClick(); toggleNight(); }} role="switch" aria-checked={night}>
+                <Moon size={15} /> <span>Night shift</span><i className={night ? 'on' : ''} />
+              </button>
+              <div className="sb-notice"><Info size={14} /><span><b>Catatan</b>Tampilan dan tema tersimpan di perangkat ini. Ubah kapan saja lewat Tema.</span></div>
+              <div className="sb-bottom">
+                <button type="button" onClick={() => { sound.playClick(); onClose(); onTheme(); }}><Settings size={15} /> Pengaturan</button>
+                {user ? <button type="button" onClick={() => { onClose(); onLogout(); }}><LogOut size={15} /> Keluar</button> : <Link href="/auth" onClick={() => { sound.playClick(); onClose(); }}><LogIn size={15} /> Masuk</Link>}
+              </div>
+            </div>
             <div className="sb-foot">
               {menu && (
                 <div className="sb-pop" role="menu">
@@ -247,7 +289,13 @@ export default function CurvedSidebar({ open, onClose, user, pathname, onSearch,
 
         /* ---------------- struktur umum ---------------- */
         .sb-main { position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-        .sb-rail, .sb-search { display: none; }
+        .sb-rail, .sb-search, .sb-profile, .sb-extras { display: none; }
+        .sb-capc { display: none; }
+        .sb-cap { background: none; border: 0; text-align: left; width: 100%; cursor: default; }
+        html:is([data-sbs='lumen'], [data-sbs='canopy'], [data-sbs='crema']) .sb-gitems.is-fold { display: none; }
+        html:is([data-sbs='lumen'], [data-sbs='canopy'], [data-sbs='crema']) .sb-cap { cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding-right: 14px; }
+        html:is([data-sbs='lumen'], [data-sbs='canopy'], [data-sbs='crema']) .sb-capc { display: block; transition: transform .25s; }
+        html:is([data-sbs='lumen'], [data-sbs='canopy'], [data-sbs='crema']) .sb-cap[aria-expanded='false'] .sb-capc { transform: rotate(-90deg); }
 
         /* ============ GAYA "REL": panel kaca + rel putih di kanan, tab aktif menyatu ke rel ============ */
         html:is([data-sbs='rail'], [data-sbs='aurora']) { --sb-w: 64px; --sb-paper: color-mix(in srgb, var(--text) 93%, var(--bg1)); --sb-ink: color-mix(in srgb, var(--bg1) 94%, #000); }

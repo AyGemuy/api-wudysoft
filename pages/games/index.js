@@ -5,6 +5,8 @@ import { Gamepad2, Grid3x3, Crown, Spade, Sparkles, Dices, ImageIcon, Loader2 } 
 import Seo from '@/components/Seo';
 import Tabs from '@/components/Tabs';
 import { kit as s } from '@/components/PageKit';
+import GlassCarousel from '@/components/GlassCarousel';
+import { useTheme } from '@/components/ThemeContext';
 
 // Tiap game dimuat hanya saat tab-nya dibuka → halaman awal tetap ringan.
 const Loading = () => (
@@ -26,6 +28,7 @@ const TABS = GAMES.map(({ id, label, Icon }) => ({ id, label, Icon }));
 
 export default function GamesPage() {
   const router = useRouter();
+  const { config } = useTheme();
   const g = typeof router.query.g === 'string' ? router.query.g : '';
   const active = GAMES.find((x) => x.id === g) || GAMES[0];
 
@@ -49,7 +52,9 @@ export default function GamesPage() {
           <h1 style={{ fontSize: '1.15rem' }}>Arena Game</h1>
           <span className="badge">24 JAM SESI</span>
         </div>
-        <Tabs tabs={TABS} value={active.id} onChange={pick} label="Pilih game" />
+        {config?.gameView === 'carousel'
+          ? <GlassCarousel items={TABS} value={active.id} onChange={pick} label="Pilih game" />
+          : <Tabs tabs={TABS} value={active.id} onChange={pick} label="Pilih game" />}
         <div key={active.id} role="tabpanel">
           <Game />
         </div>

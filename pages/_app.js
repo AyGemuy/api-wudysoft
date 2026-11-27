@@ -24,6 +24,7 @@ import '@/styles/motion.css';
 import '@/styles/shapes.css';
 import '@/styles/modern.css';
 import '@/styles/fabs.css';
+import '@/styles/sidebars2.css';
 import '@/styles/hljs.css';
 
 export default function App({ Component, pageProps: { session, ...pageProps } }) {
